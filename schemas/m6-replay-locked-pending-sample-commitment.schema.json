@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "M6RegressionExecutionEntry": {
+      "additionalProperties": false,
+      "description": "Blinded candidate input; it contains no membership or expected decision.",
+      "properties": {
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "execution_entry_id"
+      ],
+      "title": "M6RegressionExecutionEntry",
+      "type": "object"
+    },
+    "M6ReplayLockedExecutionRoute": {
+      "enum": [
+        "M3_FAST_TERMINAL_POST_PARSE",
+        "M4_HEARING_GATE_TERMINAL_POST_PARSE"
+      ],
+      "title": "M6ReplayLockedExecutionRoute",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-pending-sample-commitment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Durable intent fixed before one locked candidate sample is materialized.",
+  "properties": {
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "execution_component_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Component Authority Id",
+      "type": "string"
+    },
+    "execution_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Dataset Snapshot Id",
+      "type": "string"
+    },
+    "execution_entry": {
+      "$ref": "#/$defs/M6RegressionExecutionEntry"
+    },
+    "execution_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Entry Id",
+      "type": "string"
+    },
+    "execution_scope_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Scope Authority Id",
+      "type": "string"
+    },
+    "ledger_sequence": {
+      "minimum": 0,
+      "title": "Ledger Sequence",
+      "type": "integer"
+    },
+    "pending_commitment_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pending Commitment Authority Id",
+      "type": "string"
+    },
+    "previous_ledger_entry_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Ledger Entry Hash",
+      "type": "string"
+    },
+    "route": {
+      "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-pending-sample-commitment-v1",
+      "default": "m6-replay-locked-pending-sample-commitment-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_catalog_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Entry Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_scope_authority_id",
+    "candidate_run_id",
+    "command_id",
+    "execution_dataset_snapshot_id",
+    "execution_component_authority_id",
+    "source_catalog_entry_id",
+    "route",
+    "execution_entry",
+    "ledger_sequence",
+    "previous_ledger_entry_hash",
+    "sample_id",
+    "execution_entry_id",
+    "pending_commitment_authority_id"
+  ],
+  "title": "M6ReplayLockedPendingSampleCommitmentAuthority",
+  "type": "object"
+}

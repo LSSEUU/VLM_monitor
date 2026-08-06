@@ -1,0 +1,72 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m5-appeal-review-command-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Durable identity returned for SUBMITTED -> UNDER_REVIEW.",
+  "properties": {
+    "appeal_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Appeal Authority Sha256",
+      "type": "string"
+    },
+    "appeal_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Appeal Id",
+      "type": "string"
+    },
+    "appeal_version": {
+      "const": 2,
+      "default": 2,
+      "title": "Appeal Version",
+      "type": "integer"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "committed_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Committed Case Revision",
+      "type": "integer"
+    },
+    "previous_appeal_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Appeal Authority Sha256",
+      "type": "string"
+    },
+    "reviewer_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Reviewer Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "source_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Revision",
+      "type": "integer"
+    },
+    "status": {
+      "const": "UNDER_REVIEW",
+      "default": "UNDER_REVIEW",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "appeal_id",
+    "source_case_revision",
+    "committed_case_revision",
+    "reviewer_id",
+    "previous_appeal_authority_sha256",
+    "appeal_authority_sha256"
+  ],
+  "title": "M5AppealReviewCommandReport",
+  "type": "object"
+}

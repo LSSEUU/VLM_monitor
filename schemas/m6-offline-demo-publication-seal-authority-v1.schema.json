@@ -1,0 +1,88 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m6-offline-demo-publication-seal-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "demo_manifest_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Demo Manifest Content Sha256",
+      "type": "string"
+    },
+    "demo_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Demo Manifest Id",
+      "type": "string"
+    },
+    "demo_manifest_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 67108864,
+      "title": "Demo Manifest Size Bytes",
+      "type": "integer"
+    },
+    "landing_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Landing Content Sha256",
+      "type": "string"
+    },
+    "landing_relative_path": {
+      "const": "demo/index.html",
+      "readOnly": true,
+      "title": "Landing Relative Path",
+      "type": "string"
+    },
+    "landing_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 16777216,
+      "title": "Landing Size Bytes",
+      "type": "integer"
+    },
+    "manifest_relative_path": {
+      "readOnly": true,
+      "title": "Manifest Relative Path",
+      "type": "string"
+    },
+    "scenario_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Scenario Inventory Root Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-offline-demo-publication-seal-authority-v1",
+      "default": "m6-offline-demo-publication-seal-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seal_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Seal Id",
+      "type": "string"
+    },
+    "seal_relative_path": {
+      "const": "demo/seal.json",
+      "readOnly": true,
+      "title": "Seal Relative Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_run_id",
+    "demo_manifest_id",
+    "demo_manifest_content_sha256",
+    "demo_manifest_size_bytes",
+    "landing_content_sha256",
+    "landing_size_bytes",
+    "scenario_inventory_root_sha256",
+    "landing_relative_path",
+    "manifest_relative_path",
+    "seal_relative_path",
+    "seal_id"
+  ],
+  "title": "M6OfflineDemoPublicationSealAuthorityV1",
+  "type": "object"
+}

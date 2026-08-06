@@ -1,0 +1,126 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/hearing-model-cache-entry.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Run/case/session-scoped immutable cache binding for one hearing call.",
+  "properties": {
+    "cache_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Cache Entry Id",
+      "type": "string"
+    },
+    "cache_key": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Cache Key",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "current_evidence_pack_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Current Evidence Pack Id",
+      "type": "string"
+    },
+    "current_evidence_pack_version": {
+      "exclusiveMinimum": 0,
+      "title": "Current Evidence Pack Version",
+      "type": "integer"
+    },
+    "hearing_session_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Hearing Session Id",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Manifest Id",
+      "type": "string"
+    },
+    "output_schema_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Output Schema Sha256",
+      "type": "string"
+    },
+    "prompt_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Manifest Id",
+      "type": "string"
+    },
+    "request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Sha256",
+      "type": "string"
+    },
+    "response_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Response Content Sha256",
+      "type": "string"
+    },
+    "response_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Response Id",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "round_index": {
+      "exclusiveMinimum": 0,
+      "maximum": 5,
+      "title": "Round Index",
+      "type": "integer"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m4-hearing-cache-entry-v1",
+      "default": "m4-hearing-cache-entry-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "hearing_session_id",
+    "round_index",
+    "role",
+    "current_evidence_pack_id",
+    "current_evidence_pack_version",
+    "cache_key",
+    "request_id",
+    "request_sha256",
+    "response_id",
+    "response_content_sha256",
+    "model_manifest_id",
+    "prompt_manifest_id",
+    "output_schema_sha256",
+    "manifest_id",
+    "cache_entry_id"
+  ],
+  "title": "HearingModelCacheEntry",
+  "type": "object"
+}

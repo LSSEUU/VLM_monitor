@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "MediaAvailability": {
+      "enum": [
+        "AVAILABLE",
+        "PURGING",
+        "PURGED_BY_RETENTION"
+      ],
+      "title": "MediaAvailability",
+      "type": "string"
+    },
+    "PurgeDisposition": {
+      "enum": [
+        "PURGED",
+        "RETAINED",
+        "RECOVERY_REQUIRED"
+      ],
+      "title": "PurgeDisposition",
+      "type": "string"
+    },
+    "PurgeReasonCode": {
+      "enum": [
+        "EXPIRED_AND_PURGED",
+        "RECOVERED_PURGE_COMPLETED",
+        "ACTIVE_RETENTION_HOLD",
+        "RETENTION_NOT_EXPIRED",
+        "ALREADY_PURGED",
+        "PURGE_ALREADY_IN_PROGRESS",
+        "MEDIA_FILE_MISSING",
+        "MEDIA_INTEGRITY_FAILURE",
+        "WORKSPACE_OPERATION_FAILED",
+        "TRASH_CLEANUP_FAILED"
+      ],
+      "title": "PurgeReasonCode",
+      "type": "string"
+    },
+    "RetentionHoldKind": {
+      "enum": [
+        "APPEAL",
+        "GOLD_SET",
+        "CHALLENGE_SET",
+        "MANUAL_LEGAL_HOLD"
+      ],
+      "title": "RetentionHoldKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/purge-item-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed outcome for one content-addressed media retention decision.",
+  "properties": {
+    "audit_sequences": {
+      "default": [],
+      "items": {
+        "type": "integer"
+      },
+      "title": "Audit Sequences",
+      "type": "array"
+    },
+    "crop_refs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "minItems": 1,
+      "title": "Crop Refs",
+      "type": "array"
+    },
+    "current_availability": {
+      "$ref": "#/$defs/MediaAvailability"
+    },
+    "disposition": {
+      "$ref": "#/$defs/PurgeDisposition"
+    },
+    "hold_kinds": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RetentionHoldKind"
+      },
+      "title": "Hold Kinds",
+      "type": "array"
+    },
+    "media_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "previous_availability": {
+      "$ref": "#/$defs/MediaAvailability"
+    },
+    "reason_code": {
+      "$ref": "#/$defs/PurgeReasonCode"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "media_ref",
+    "crop_refs",
+    "disposition",
+    "reason_code",
+    "previous_availability",
+    "current_availability"
+  ],
+  "title": "PurgeItemResult",
+  "type": "object"
+}

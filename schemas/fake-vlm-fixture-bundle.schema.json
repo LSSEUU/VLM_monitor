@@ -1,0 +1,115 @@
+{
+  "$defs": {
+    "FakeVLMFailureFixtureInput": {
+      "additionalProperties": false,
+      "description": "Explicit provider failure; failure fixtures cannot hide response semantics.",
+      "properties": {
+        "cache_key": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cache Key",
+          "type": "string"
+        },
+        "disposition": {
+          "enum": [
+            "OUTAGE",
+            "TIMEOUT"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "disposition",
+        "cache_key"
+      ],
+      "title": "FakeVLMFailureFixtureInput",
+      "type": "object"
+    },
+    "FakeVLMResponseFixtureInput": {
+      "additionalProperties": false,
+      "description": "Exact UTF-8 response and explicit usage receipt for one fake call.",
+      "properties": {
+        "cache_key": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cache Key",
+          "type": "string"
+        },
+        "disposition": {
+          "const": "RESPONSE",
+          "title": "Disposition",
+          "type": "string"
+        },
+        "input_tokens": {
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "latency_ms": {
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        },
+        "raw_response_utf8": {
+          "maxLength": 262144,
+          "title": "Raw Response Utf8",
+          "type": "string"
+        }
+      },
+      "required": [
+        "disposition",
+        "cache_key",
+        "raw_response_utf8",
+        "input_tokens",
+        "output_tokens",
+        "latency_ms"
+      ],
+      "title": "FakeVLMResponseFixtureInput",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/fake-vlm-fixture-bundle.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bounded fake inputs with unique, stable exact-cache-key selection.",
+  "properties": {
+    "fixtures": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "OUTAGE": "#/$defs/FakeVLMFailureFixtureInput",
+            "RESPONSE": "#/$defs/FakeVLMResponseFixtureInput",
+            "TIMEOUT": "#/$defs/FakeVLMFailureFixtureInput"
+          },
+          "propertyName": "disposition"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/FakeVLMResponseFixtureInput"
+          },
+          {
+            "$ref": "#/$defs/FakeVLMFailureFixtureInput"
+          }
+        ]
+      },
+      "maxItems": 1000,
+      "title": "Fixtures",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m3-fake-vlm-fixture-bundle-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "fixtures"
+  ],
+  "title": "FakeVLMFixtureBundle",
+  "type": "object"
+}

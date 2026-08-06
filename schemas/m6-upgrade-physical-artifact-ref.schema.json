@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "M6UpgradePhysicalArtifactKind": {
+      "enum": [
+        "FRAME",
+        "DETECTION",
+        "MODEL_REQUEST",
+        "MODEL_RESPONSE",
+        "MODEL_CACHE",
+        "MODEL_PARSE_RECEIPT",
+        "MODEL_PARSED_OUTPUT",
+        "MODEL_CALL_FAILURE",
+        "MODEL_USAGE_RECEIPT",
+        "EMBEDDING",
+        "PRECEDENT_EXPOSURE",
+        "TOOL_EXECUTION_MANIFEST",
+        "TOOL_RESULT",
+        "EVIDENCE_PACK"
+      ],
+      "title": "M6UpgradePhysicalArtifactKind",
+      "type": "string"
+    },
+    "M6UpgradePhysicalArtifactSource": {
+      "enum": [
+        "M2_PERCEPTION",
+        "M2_EVIDENCE",
+        "M3_SCREENING_MODEL",
+        "M4_HEARING_MODEL",
+        "M4_ACQUISITION",
+        "M5_PRECEDENT"
+      ],
+      "title": "M6UpgradePhysicalArtifactSource",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-upgrade-physical-artifact-ref.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One resolver-addressable artifact with exact canonical/raw byte identity.",
+  "properties": {
+    "artifact_id": {
+      "maxLength": 192,
+      "minLength": 1,
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "artifact_ref_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Artifact Ref Id",
+      "type": "string"
+    },
+    "container_id": {
+      "anyOf": [
+        {
+          "maxLength": 192,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Container Id"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Document Sha256",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/M6UpgradePhysicalArtifactKind"
+    },
+    "schema_version": {
+      "const": "m6-upgrade-physical-artifact-ref-v1",
+      "default": "m6-upgrade-physical-artifact-ref-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 4294967296,
+      "title": "Size Bytes",
+      "type": "integer"
+    },
+    "source": {
+      "$ref": "#/$defs/M6UpgradePhysicalArtifactSource"
+    }
+  },
+  "required": [
+    "source",
+    "kind",
+    "artifact_id",
+    "document_sha256",
+    "content_sha256",
+    "size_bytes",
+    "artifact_ref_id"
+  ],
+  "title": "M6UpgradePhysicalArtifactRef",
+  "type": "object"
+}

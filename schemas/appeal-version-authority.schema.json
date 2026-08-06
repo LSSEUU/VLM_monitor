@@ -1,0 +1,502 @@
+{
+  "$defs": {
+    "AffectedPrecedentCitation": {
+      "additionalProperties": false,
+      "description": "One immutable historical citation affected by a precedent revocation.",
+      "properties": {
+        "citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Citation Id",
+          "type": "string"
+        },
+        "citing_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Citing Case Id",
+          "type": "string"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "similarity_score": {
+          "maximum": 10,
+          "minimum": -10,
+          "title": "Similarity Score",
+          "type": "number"
+        },
+        "source_citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Citation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_citation_id",
+        "citing_case_id",
+        "precedent_id",
+        "similarity_score",
+        "citation_id"
+      ],
+      "title": "AffectedPrecedentCitation",
+      "type": "object"
+    },
+    "Appeal": {
+      "additionalProperties": false,
+      "properties": {
+        "appeal_id": {
+          "minLength": 1,
+          "title": "Appeal Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "resolution_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution Summary"
+        },
+        "resolved_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reviewer_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewer Id"
+        },
+        "status": {
+          "$ref": "#/$defs/AppealStatus"
+        },
+        "submitted_by": {
+          "minLength": 1,
+          "title": "Submitted By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "appeal_id",
+        "case_id",
+        "status",
+        "reason",
+        "submitted_by"
+      ],
+      "title": "Appeal",
+      "type": "object"
+    },
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "AppealableAlertAuthority": {
+      "additionalProperties": false,
+      "description": "An original adjudicated alert that has not yet been rescinded.",
+      "properties": {
+        "alert_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "rescinded": {
+          "const": false,
+          "default": false,
+          "title": "Rescinded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alert_id"
+      ],
+      "title": "AppealableAlertAuthority",
+      "type": "object"
+    },
+    "AutomaticPrecedentAppealAuthority": {
+      "additionalProperties": false,
+      "description": "The exact automatic precedent state visible before appeal resolution.",
+      "properties": {
+        "citations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AffectedPrecedentCitation"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "decision_direction": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "precedent_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Precedent Authority Id",
+          "type": "string"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "precedent_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Precedent Revision",
+          "type": "integer"
+        },
+        "source": {
+          "const": "AUTOMATIC",
+          "default": "AUTOMATIC",
+          "title": "Source",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROVISIONAL",
+            "ACTIVE",
+            "CONFLICT",
+            "INVALIDATED"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "precedent_authority_id",
+        "precedent_revision",
+        "status",
+        "decision_direction",
+        "source_case_id"
+      ],
+      "title": "AutomaticPrecedentAppealAuthority",
+      "type": "object"
+    },
+    "ClosedCaseAppealAuthority": {
+      "additionalProperties": false,
+      "description": "Minimal immutable Case projection authorized to accept one appeal.",
+      "properties": {
+        "alerts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AppealableAlertAuthority"
+          },
+          "title": "Alerts",
+          "type": "array"
+        },
+        "authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Sha256",
+          "type": "string"
+        },
+        "automatic_precedents": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AutomaticPrecedentAppealAuthority"
+          },
+          "title": "Automatic Precedents",
+          "type": "array"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Case Revision",
+          "type": "integer"
+        },
+        "case_status": {
+          "const": "CLOSED",
+          "default": "CLOSED",
+          "title": "Case Status",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "detector_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Detector Manifest Id",
+          "type": "string"
+        },
+        "effective_appeal_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "title": "Effective Appeal Ids",
+          "type": "array"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "final_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "text_embedding_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Text Embedding Manifest Id",
+          "type": "string"
+        },
+        "verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Id",
+          "type": "string"
+        },
+        "verdict_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Sha256",
+          "type": "string"
+        },
+        "verdict_version": {
+          "exclusiveMinimum": 0,
+          "title": "Verdict Version",
+          "type": "integer"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "visual_embedding_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Visual Embedding Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "case_revision",
+        "verdict_id",
+        "verdict_version",
+        "verdict_sha256",
+        "final_decision",
+        "evidence_class",
+        "violation_type",
+        "detector_manifest_id",
+        "text_embedding_manifest_id",
+        "visual_embedding_manifest_id",
+        "manifest_id",
+        "config_sha256",
+        "rule_version",
+        "authority_sha256"
+      ],
+      "title": "ClosedCaseAppealAuthority",
+      "type": "object"
+    },
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/appeal-version-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One append-only version in the fixed three-step appeal state machine.",
+  "properties": {
+    "appeal": {
+      "$ref": "#/$defs/Appeal"
+    },
+    "assigned_reviewer_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assigned Reviewer Id"
+    },
+    "authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Authority Sha256",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "previous_authority_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Previous Authority Sha256"
+    },
+    "rule_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "source_case_authority": {
+      "$ref": "#/$defs/ClosedCaseAppealAuthority"
+    },
+    "source_case_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Case Authority Sha256",
+      "type": "string"
+    },
+    "source_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Revision",
+      "type": "integer"
+    },
+    "source_decision": {
+      "$ref": "#/$defs/VerdictDecision"
+    },
+    "source_verdict_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Verdict Id",
+      "type": "string"
+    },
+    "source_verdict_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Verdict Sha256",
+      "type": "string"
+    },
+    "source_verdict_version": {
+      "exclusiveMinimum": 0,
+      "title": "Source Verdict Version",
+      "type": "integer"
+    },
+    "text_embedding_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Text Embedding Manifest Id",
+      "type": "string"
+    },
+    "version": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "visual_embedding_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Visual Embedding Manifest Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "appeal",
+    "version",
+    "source_case_authority",
+    "source_case_revision",
+    "source_case_authority_sha256",
+    "source_verdict_id",
+    "source_verdict_version",
+    "source_verdict_sha256",
+    "source_decision",
+    "text_embedding_manifest_id",
+    "visual_embedding_manifest_id",
+    "manifest_id",
+    "rule_version",
+    "authority_sha256"
+  ],
+  "title": "AppealVersionAuthority",
+  "type": "object"
+}

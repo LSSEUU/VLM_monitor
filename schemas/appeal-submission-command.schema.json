@@ -1,0 +1,54 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/appeal-submission-command.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "appeal_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Appeal Id",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "expected_case_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Case Authority Sha256",
+      "type": "string"
+    },
+    "expected_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Expected Case Revision",
+      "type": "integer"
+    },
+    "reason": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "submitted_by": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Submitted By",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "appeal_id",
+    "expected_case_revision",
+    "expected_case_authority_sha256",
+    "reason",
+    "submitted_by"
+  ],
+  "title": "AppealSubmissionCommand",
+  "type": "object"
+}

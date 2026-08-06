@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "Argument": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "stance": {
+          "$ref": "#/$defs/ArgumentStance"
+        },
+        "uncertainty": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Uncertainty",
+          "type": "number"
+        }
+      },
+      "required": [
+        "stance",
+        "claim",
+        "uncertainty"
+      ],
+      "title": "Argument",
+      "type": "object"
+    },
+    "ArgumentStance": {
+      "enum": [
+        "PROSECUTION",
+        "DEFENSE"
+      ],
+      "title": "ArgumentStance",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/prosecutor-model-payload.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Strict provider payload for the prosecution role.",
+  "properties": {
+    "arguments": {
+      "items": {
+        "$ref": "#/$defs/Argument"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Arguments",
+      "type": "array"
+    },
+    "case_summary": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Case Summary",
+      "type": "string"
+    },
+    "role": {
+      "const": "PROSECUTOR",
+      "default": "PROSECUTOR",
+      "title": "Role",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m4-prosecutor-payload-v1",
+      "default": "m4-prosecutor-payload-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "arguments",
+    "case_summary"
+  ],
+  "title": "ProsecutorModelPayload",
+  "type": "object"
+}

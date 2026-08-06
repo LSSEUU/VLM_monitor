@@ -1,0 +1,416 @@
+{
+  "$defs": {
+    "AnchorType": {
+      "enum": [
+        "HEAD",
+        "HANDS",
+        "TORSO"
+      ],
+      "title": "AnchorType",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AssociationMethod": {
+      "enum": [
+        "KEYPOINT",
+        "BODY_FALLBACK"
+      ],
+      "title": "AssociationMethod",
+      "type": "string"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "CropSource": {
+      "enum": [
+        "PANORAMA",
+        "SUBJECT",
+        "DETECTION_FOCUS",
+        "ANCHOR_FOCUS",
+        "RECROP"
+      ],
+      "title": "CropSource",
+      "type": "string"
+    },
+    "Keypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "x",
+        "y",
+        "score"
+      ],
+      "title": "Keypoint",
+      "type": "object"
+    },
+    "ObservabilityComponents": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "frontality": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Frontality",
+          "type": "number"
+        },
+        "keypoint_visibility": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Visibility",
+          "type": "number"
+        },
+        "non_occlusion": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Non Occlusion",
+          "type": "number"
+        },
+        "person_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Person Confidence",
+          "type": "number"
+        },
+        "sharpness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sharpness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "person_confidence",
+        "keypoint_visibility",
+        "frontality",
+        "sharpness",
+        "exposure",
+        "non_occlusion"
+      ],
+      "title": "ObservabilityComponents",
+      "type": "object"
+    },
+    "ObservabilityScore": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "$ref": "#/$defs/ObservabilityComponents"
+        },
+        "source": {
+          "$ref": "#/$defs/ObservationSource"
+        },
+        "total": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Total",
+          "type": "number"
+        }
+      },
+      "required": [
+        "total",
+        "components",
+        "source"
+      ],
+      "title": "ObservabilityScore",
+      "type": "object"
+    },
+    "ObservationSource": {
+      "enum": [
+        "PIXEL_COMPUTED",
+        "PRECOMPUTED_FIXTURE"
+      ],
+      "title": "ObservationSource",
+      "type": "string"
+    },
+    "PpeType": {
+      "enum": [
+        "GOGGLES",
+        "GLOVES",
+        "LAB_COAT"
+      ],
+      "title": "PpeType",
+      "type": "string"
+    },
+    "PrivacyPolicy": {
+      "enum": [
+        "EPHEMERAL_RAW",
+        "PPE_PRESERVING_REDACTION",
+        "FULL_REDACTION"
+      ],
+      "title": "PrivacyPolicy",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/crop-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "anchor_bbox": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "anchor_type": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AnchorType"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "association_method": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AssociationMethod"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "bbox": {
+      "$ref": "#/$defs/BBoxXYXY"
+    },
+    "encoding_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Encoding Version",
+      "type": "string"
+    },
+    "frame_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+      "title": "Frame Id",
+      "type": "string"
+    },
+    "keypoints": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Keypoint"
+      },
+      "title": "Keypoints",
+      "type": "array"
+    },
+    "observability": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObservabilityScore"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "output_height": {
+      "exclusiveMinimum": 0,
+      "maximum": 4294967295,
+      "title": "Output Height",
+      "type": "integer"
+    },
+    "output_width": {
+      "exclusiveMinimum": 0,
+      "maximum": 4294967295,
+      "title": "Output Width",
+      "type": "integer"
+    },
+    "panorama_long_edge_limit": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967295,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Panorama Long Edge Limit"
+    },
+    "ppe_type": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PpeType"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "primary_track_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Primary Track Ref"
+    },
+    "privacy_policy": {
+      "$ref": "#/$defs/PrivacyPolicy"
+    },
+    "privacy_transform_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Privacy Transform Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/CropSource"
+    },
+    "source_refs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "minItems": 1,
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "tags": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "object"
+    }
+  },
+  "required": [
+    "frame_id",
+    "source",
+    "bbox",
+    "output_width",
+    "output_height",
+    "source_refs",
+    "privacy_policy",
+    "privacy_transform_version",
+    "encoding_version"
+  ],
+  "title": "CropRequest",
+  "type": "object"
+}

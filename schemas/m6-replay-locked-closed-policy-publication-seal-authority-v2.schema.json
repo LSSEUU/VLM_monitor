@@ -1,0 +1,159 @@
+{
+  "$defs": {
+    "M6ReplayLockedClosedPolicyPublicationDocumentEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Entry Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M6ReplayLockedClosedPolicyPublicationDocumentKind"
+        },
+        "relative_path": {
+          "readOnly": true,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id",
+        "content_sha256",
+        "size_bytes",
+        "relative_path",
+        "entry_id"
+      ],
+      "title": "M6ReplayLockedClosedPolicyPublicationDocumentEntry",
+      "type": "object"
+    },
+    "M6ReplayLockedClosedPolicyPublicationDocumentKind": {
+      "enum": [
+        "COMMAND",
+        "EVALUATOR_DATASET",
+        "CLOSED_POLICY_EXECUTION_SEAL",
+        "REGRESSION_REPORT"
+      ],
+      "title": "M6ReplayLockedClosedPolicyPublicationDocumentKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-closed-policy-publication-seal-authority-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Four immutable documents with ``regression.json`` as the commit point.",
+  "properties": {
+    "candidate_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Manifest Id",
+      "type": "string"
+    },
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "closed_policy_execution_seal_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Closed Policy Execution Seal Authority Id",
+      "type": "string"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "document_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Document Inventory Root Sha256",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/M6ReplayLockedClosedPolicyPublicationDocumentEntry"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Entries",
+      "type": "array"
+    },
+    "evaluator_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evaluator Dataset Snapshot Id",
+      "type": "string"
+    },
+    "execution_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Dataset Snapshot Id",
+      "type": "string"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-closed-policy-publication-seal-authority-v2",
+      "default": "m6-replay-locked-closed-policy-publication-seal-authority-v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seal_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Seal Id",
+      "type": "string"
+    },
+    "seal_relative_path": {
+      "readOnly": true,
+      "title": "Seal Relative Path",
+      "type": "string"
+    },
+    "source_catalog_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Authority Id",
+      "type": "string"
+    },
+    "source_catalog_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Document Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_run_id",
+    "candidate_manifest_id",
+    "source_catalog_authority_id",
+    "source_catalog_document_sha256",
+    "command_id",
+    "execution_dataset_snapshot_id",
+    "evaluator_dataset_snapshot_id",
+    "closed_policy_execution_seal_authority_id",
+    "report_id",
+    "entries",
+    "document_inventory_root_sha256",
+    "seal_id",
+    "seal_relative_path"
+  ],
+  "title": "M6ReplayLockedClosedPolicyPublicationSealAuthorityV2",
+  "type": "object"
+}

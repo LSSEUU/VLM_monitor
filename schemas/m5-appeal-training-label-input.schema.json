@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-appeal-training-label-input.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Reviewer-authored label facts; authority fields are bound by the application.",
+  "properties": {
+    "bbox": {
+      "$ref": "#/$defs/BBoxXYXY"
+    },
+    "crop_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Crop Id",
+      "type": "string"
+    },
+    "label_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Label Name",
+      "type": "string"
+    },
+    "label_value": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Label Value"
+    }
+  },
+  "required": [
+    "crop_id",
+    "bbox",
+    "label_name",
+    "label_value"
+  ],
+  "title": "M5AppealTrainingLabelInput",
+  "type": "object"
+}

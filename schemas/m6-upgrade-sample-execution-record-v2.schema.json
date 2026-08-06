@@ -1,0 +1,368 @@
+{
+  "$defs": {
+    "M6RegressionExecutionEntry": {
+      "additionalProperties": false,
+      "description": "Blinded candidate input; it contains no membership or expected decision.",
+      "properties": {
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "execution_entry_id"
+      ],
+      "title": "M6RegressionExecutionEntry",
+      "type": "object"
+    },
+    "M6ReplayExecutionOutcome": {
+      "enum": [
+        "CASE_REPLAYED",
+        "NO_CASE"
+      ],
+      "title": "M6ReplayExecutionOutcome",
+      "type": "string"
+    },
+    "M6UpgradeArtifactUsage": {
+      "description": "Relationship to this candidate sample execution, not global ownership.",
+      "enum": [
+        "CONSUMED",
+        "PRODUCED"
+      ],
+      "title": "M6UpgradeArtifactUsage",
+      "type": "string"
+    },
+    "M6UpgradeCandidateCaseBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "case_audit_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Audit Entry Hash",
+          "type": "string"
+        },
+        "case_audit_sequence": {
+          "minimum": 0,
+          "title": "Case Audit Sequence",
+          "type": "integer"
+        },
+        "case_binding_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Case Binding Id",
+          "type": "string"
+        },
+        "case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Document Sha256",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Case Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "case_id",
+        "case_revision",
+        "case_document_sha256",
+        "case_audit_sequence",
+        "case_audit_entry_hash",
+        "case_binding_id"
+      ],
+      "title": "M6UpgradeCandidateCaseBinding",
+      "type": "object"
+    },
+    "M6UpgradePhysicalArtifactKind": {
+      "enum": [
+        "FRAME",
+        "DETECTION",
+        "MODEL_REQUEST",
+        "MODEL_RESPONSE",
+        "MODEL_CACHE",
+        "MODEL_PARSE_RECEIPT",
+        "MODEL_PARSED_OUTPUT",
+        "MODEL_CALL_FAILURE",
+        "MODEL_USAGE_RECEIPT",
+        "EMBEDDING",
+        "PRECEDENT_EXPOSURE",
+        "TOOL_EXECUTION_MANIFEST",
+        "TOOL_RESULT",
+        "EVIDENCE_PACK"
+      ],
+      "title": "M6UpgradePhysicalArtifactKind",
+      "type": "string"
+    },
+    "M6UpgradePhysicalArtifactRef": {
+      "additionalProperties": false,
+      "description": "One resolver-addressable artifact with exact canonical/raw byte identity.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 192,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_ref_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Artifact Ref Id",
+          "type": "string"
+        },
+        "container_id": {
+          "anyOf": [
+            {
+              "maxLength": 192,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Container Id"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M6UpgradePhysicalArtifactKind"
+        },
+        "schema_version": {
+          "const": "m6-upgrade-physical-artifact-ref-v1",
+          "default": "m6-upgrade-physical-artifact-ref-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967296,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/M6UpgradePhysicalArtifactSource"
+        }
+      },
+      "required": [
+        "source",
+        "kind",
+        "artifact_id",
+        "document_sha256",
+        "content_sha256",
+        "size_bytes",
+        "artifact_ref_id"
+      ],
+      "title": "M6UpgradePhysicalArtifactRef",
+      "type": "object"
+    },
+    "M6UpgradePhysicalArtifactSource": {
+      "enum": [
+        "M2_PERCEPTION",
+        "M2_EVIDENCE",
+        "M3_SCREENING_MODEL",
+        "M4_HEARING_MODEL",
+        "M4_ACQUISITION",
+        "M5_PRECEDENT"
+      ],
+      "title": "M6UpgradePhysicalArtifactSource",
+      "type": "string"
+    },
+    "M6UpgradeSampleArtifactLink": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/M6UpgradePhysicalArtifactRef"
+        },
+        "artifact_link_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Artifact Link Id",
+          "type": "string"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "usage": {
+          "$ref": "#/$defs/M6UpgradeArtifactUsage"
+        }
+      },
+      "required": [
+        "ordinal",
+        "usage",
+        "artifact",
+        "artifact_link_id"
+      ],
+      "title": "M6UpgradeSampleArtifactLink",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-upgrade-sample-execution-record-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Observation-backed sample record without changing the public v1 wire contract.",
+  "properties": {
+    "artifact_link_count": {
+      "readOnly": true,
+      "title": "Artifact Link Count",
+      "type": "integer"
+    },
+    "artifact_link_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Artifact Link Inventory Root Sha256",
+      "type": "string"
+    },
+    "artifact_links": {
+      "items": {
+        "$ref": "#/$defs/M6UpgradeSampleArtifactLink"
+      },
+      "maxItems": 20000,
+      "minItems": 1,
+      "title": "Artifact Links",
+      "type": "array"
+    },
+    "candidate_case": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M6UpgradeCandidateCaseBinding"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "execution_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Dataset Snapshot Id",
+      "type": "string"
+    },
+    "execution_entry": {
+      "$ref": "#/$defs/M6RegressionExecutionEntry"
+    },
+    "execution_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Entry Id",
+      "type": "string"
+    },
+    "execution_scope_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Scope Authority Id",
+      "type": "string"
+    },
+    "ledger_sequence": {
+      "minimum": 0,
+      "title": "Ledger Sequence",
+      "type": "integer"
+    },
+    "observation_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Observation Authority Id",
+      "type": "string"
+    },
+    "outcome": {
+      "$ref": "#/$defs/M6ReplayExecutionOutcome"
+    },
+    "previous_ledger_entry_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Ledger Entry Hash",
+      "type": "string"
+    },
+    "sample_execution_record_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Sample Execution Record Id",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-upgrade-sample-execution-record-v2",
+      "default": "m6-upgrade-sample-execution-record-v2",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_scope_authority_id",
+    "candidate_run_id",
+    "command_id",
+    "execution_dataset_snapshot_id",
+    "execution_entry",
+    "outcome",
+    "artifact_links",
+    "ledger_sequence",
+    "previous_ledger_entry_hash",
+    "observation_authority_id",
+    "sample_id",
+    "execution_entry_id",
+    "artifact_link_count",
+    "artifact_link_inventory_root_sha256",
+    "sample_execution_record_id"
+  ],
+  "title": "M6UpgradeSampleExecutionRecordV2",
+  "type": "object"
+}

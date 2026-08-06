@@ -1,0 +1,122 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-source-determinism-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Two-read source projection proof, deliberately not a replay receipt.\n\nThis authority binds a future, distinct candidate run while proving only\nthat one immutable source closure produced the same source projection on\ntwo fresh reads.  It contains no candidate snapshot or provider-trap claim.",
+  "properties": {
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "execution_component_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Component Manifest Id",
+      "type": "string"
+    },
+    "execution_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Entry Id",
+      "type": "string"
+    },
+    "first_semantic_case_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "First Semantic Case Hash",
+      "type": "string"
+    },
+    "first_source_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "First Source Snapshot Id",
+      "type": "string"
+    },
+    "projection_read_count": {
+      "const": 2,
+      "default": 2,
+      "title": "Projection Read Count",
+      "type": "integer"
+    },
+    "replay_input_closure_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Replay Input Closure Authority Id",
+      "type": "string"
+    },
+    "replay_input_closure_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Replay Input Closure Document Sha256",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-source-determinism-authority-v1",
+      "default": "m6-replay-locked-source-determinism-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "second_semantic_case_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Second Semantic Case Hash",
+      "type": "string"
+    },
+    "second_source_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Second Source Snapshot Id",
+      "type": "string"
+    },
+    "source_determinism_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Determinism Authority Id",
+      "type": "string"
+    },
+    "source_determinism_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Determinism Document Sha256",
+      "type": "string"
+    },
+    "source_identity_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Identity Sha256",
+      "type": "string"
+    },
+    "source_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Manifest Id",
+      "type": "string"
+    },
+    "source_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Source Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "command_id",
+    "execution_entry_id",
+    "sample_id",
+    "source_run_id",
+    "candidate_run_id",
+    "source_manifest_id",
+    "execution_component_manifest_id",
+    "replay_input_closure_authority_id",
+    "replay_input_closure_document_sha256",
+    "source_identity_sha256",
+    "first_source_snapshot_id",
+    "second_source_snapshot_id",
+    "first_semantic_case_hash",
+    "second_semantic_case_hash",
+    "source_determinism_authority_id",
+    "source_determinism_document_sha256"
+  ],
+  "title": "M6ReplayLockedSourceDeterminismAuthority",
+  "type": "object"
+}

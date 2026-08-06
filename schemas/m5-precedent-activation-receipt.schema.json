@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "M5PrecedentActivationOutcome": {
+      "enum": [
+        "ACTIVATED",
+        "TOO_EARLY",
+        "APPEAL_PRESENT",
+        "NOT_AUTOMATIC",
+        "NOT_PROVISIONAL"
+      ],
+      "title": "M5PrecedentActivationOutcome",
+      "type": "string"
+    },
+    "PrecedentStatus": {
+      "enum": [
+        "PROVISIONAL",
+        "ACTIVE",
+        "CONFLICT",
+        "INVALIDATED",
+        "REVOKED"
+      ],
+      "title": "PrecedentStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-precedent-activation-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "appeal_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Appeal Snapshot Id",
+      "type": "string"
+    },
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    },
+    "outcome": {
+      "$ref": "#/$defs/M5PrecedentActivationOutcome"
+    },
+    "precedent_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Precedent Id",
+      "type": "string"
+    },
+    "prior_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prior Authority Id",
+      "type": "string"
+    },
+    "prior_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Prior Revision",
+      "type": "integer"
+    },
+    "receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "resulting_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resulting Authority Id",
+      "type": "string"
+    },
+    "resulting_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Resulting Revision",
+      "type": "integer"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-precedent-activation-receipt-v1",
+      "default": "m5-precedent-activation-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status_after": {
+      "$ref": "#/$defs/PrecedentStatus"
+    },
+    "status_before": {
+      "$ref": "#/$defs/PrecedentStatus"
+    }
+  },
+  "required": [
+    "run_id",
+    "precedent_id",
+    "prior_authority_id",
+    "prior_revision",
+    "appeal_snapshot_id",
+    "evaluated_at",
+    "outcome",
+    "resulting_authority_id",
+    "resulting_revision",
+    "status_before",
+    "status_after",
+    "receipt_id"
+  ],
+  "title": "M5PrecedentActivationReceipt",
+  "type": "object"
+}

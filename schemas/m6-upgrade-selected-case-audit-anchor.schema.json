@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AuditAction": {
+      "enum": [
+        "CASE_CREATED",
+        "CASE_STATE_CHANGED",
+        "CASE_CLOSED",
+        "EVIDENCE_PACK_PUBLISHED",
+        "MEDIA_PURGE_REQUESTED",
+        "PURGED_BY_RETENTION",
+        "RETENTION_HOLD_CREATED",
+        "RETENTION_HOLD_RELEASED"
+      ],
+      "title": "AuditAction",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-upgrade-selected-case-audit-anchor.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Explicit selected-Case audit action and object bound to a legacy Case binding.",
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/AuditAction"
+    },
+    "candidate_case_binding_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Case Binding Id",
+      "type": "string"
+    },
+    "object_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "schema_version": {
+      "const": "m6-upgrade-selected-case-audit-anchor-v1",
+      "default": "m6-upgrade-selected-case-audit-anchor-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_case_audit_anchor_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Selected Case Audit Anchor Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_case_binding_id",
+    "action",
+    "object_ref",
+    "selected_case_audit_anchor_id"
+  ],
+  "title": "M6UpgradeSelectedCaseAuditAnchor",
+  "type": "object"
+}

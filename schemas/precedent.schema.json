@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "PrecedentSource": {
+      "enum": [
+        "PRESET",
+        "AUTOMATIC",
+        "HUMAN_REVIEW",
+        "APPEAL_OVERTURN"
+      ],
+      "title": "PrecedentSource",
+      "type": "string"
+    },
+    "PrecedentStatus": {
+      "enum": [
+        "PROVISIONAL",
+        "ACTIVE",
+        "CONFLICT",
+        "INVALIDATED",
+        "REVOKED"
+      ],
+      "title": "PrecedentStatus",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/precedent.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "activation_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Activation At"
+    },
+    "citation_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Citation Count",
+      "type": "integer"
+    },
+    "decision_direction": {
+      "$ref": "#/$defs/VerdictDecision"
+    },
+    "evidence_class": {
+      "$ref": "#/$defs/EvidenceClass"
+    },
+    "invalidated_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Invalidated By"
+    },
+    "precedent_id": {
+      "minLength": 1,
+      "title": "Precedent Id",
+      "type": "string"
+    },
+    "rule_version": {
+      "minLength": 1,
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "situation_text": {
+      "minLength": 1,
+      "title": "Situation Text",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/PrecedentSource"
+    },
+    "source_case_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Case Id"
+    },
+    "status": {
+      "$ref": "#/$defs/PrecedentStatus"
+    },
+    "text_embedding_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Text Embedding Ref"
+    },
+    "violation_type": {
+      "$ref": "#/$defs/ViolationType"
+    },
+    "visual_embedding_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Visual Embedding Refs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "precedent_id",
+    "situation_text",
+    "decision_direction",
+    "source",
+    "status",
+    "evidence_class",
+    "violation_type",
+    "rule_version"
+  ],
+  "title": "Precedent",
+  "type": "object"
+}

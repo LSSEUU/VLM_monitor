@@ -1,0 +1,364 @@
+{
+  "$defs": {
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "M5PrecedentConflictCandidateAuthority": {
+      "additionalProperties": false,
+      "description": "One exact ACTIVE head in a complete conflict-scan snapshot.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "decision_direction": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "rule_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/PrecedentSource"
+        },
+        "source_priority": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Source Priority",
+          "type": "integer"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "authority_id",
+        "revision",
+        "source",
+        "source_priority",
+        "evidence_class",
+        "violation_type",
+        "rule_version",
+        "decision_direction"
+      ],
+      "title": "M5PrecedentConflictCandidateAuthority",
+      "type": "object"
+    },
+    "M5PrecedentConflictCausalCut": {
+      "additionalProperties": false,
+      "description": "Authority-only ledger watermark and complete ACTIVE-head root.",
+      "properties": {
+        "active_head_count": {
+          "maximum": 9999,
+          "minimum": 0,
+          "title": "Active Head Count",
+          "type": "integer"
+        },
+        "active_head_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Active Head Root Sha256",
+          "type": "string"
+        },
+        "authority_event_sequence": {
+          "minimum": 0,
+          "title": "Authority Event Sequence",
+          "type": "integer"
+        },
+        "authority_event_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Authority Event Sha256",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "cut_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Cut Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "policy_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m5-precedent-conflict-causal-cut-v1",
+          "default": "m5-precedent-conflict-causal-cut-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "manifest_id",
+        "config_sha256",
+        "policy_id",
+        "authority_event_sequence",
+        "authority_event_sha256",
+        "active_head_count",
+        "active_head_root_sha256",
+        "cut_id"
+      ],
+      "title": "M5PrecedentConflictCausalCut",
+      "type": "object"
+    },
+    "M5PrecedentConflictEdge": {
+      "additionalProperties": false,
+      "description": "One threshold-qualified opposite-direction edge in the complete graph.",
+      "properties": {
+        "edge_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Edge Id",
+          "type": "string"
+        },
+        "left_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Left Authority Id",
+          "type": "string"
+        },
+        "left_precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Left Precedent Id",
+          "type": "string"
+        },
+        "left_priority": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Left Priority",
+          "type": "integer"
+        },
+        "normalized_text_weight": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Normalized Text Weight",
+          "type": "number"
+        },
+        "normalized_visual_weight": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Normalized Visual Weight",
+          "type": "number"
+        },
+        "right_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Right Authority Id",
+          "type": "string"
+        },
+        "right_precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Right Precedent Id",
+          "type": "string"
+        },
+        "right_priority": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Right Priority",
+          "type": "integer"
+        },
+        "similarity": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Similarity",
+          "type": "number"
+        },
+        "text_similarity": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": -1,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Similarity"
+        },
+        "threshold": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Threshold",
+          "type": "number"
+        },
+        "visual_similarity": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": -1,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Visual Similarity"
+        }
+      },
+      "required": [
+        "left_precedent_id",
+        "right_precedent_id",
+        "left_authority_id",
+        "right_authority_id",
+        "left_priority",
+        "right_priority",
+        "normalized_text_weight",
+        "normalized_visual_weight",
+        "similarity",
+        "threshold",
+        "edge_id"
+      ],
+      "title": "M5PrecedentConflictEdge",
+      "type": "object"
+    },
+    "PrecedentSource": {
+      "enum": [
+        "PRESET",
+        "AUTOMATIC",
+        "HUMAN_REVIEW",
+        "APPEAL_OVERTURN"
+      ],
+      "title": "PrecedentSource",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-precedent-conflict-batch-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Content-addressed evidence for one complete, budgeted ACTIVE snapshot.",
+  "properties": {
+    "batch_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Batch Authority Id",
+      "type": "string"
+    },
+    "candidates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M5PrecedentConflictCandidateAuthority"
+      },
+      "maxItems": 9999,
+      "title": "Candidates",
+      "type": "array"
+    },
+    "causal_cut": {
+      "$ref": "#/$defs/M5PrecedentConflictCausalCut"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "edges": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M5PrecedentConflictEdge"
+      },
+      "maxItems": 49985001,
+      "title": "Edges",
+      "type": "array"
+    },
+    "evaluated_pair_count": {
+      "maximum": 49985001,
+      "minimum": 0,
+      "title": "Evaluated Pair Count",
+      "type": "integer"
+    },
+    "policy_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scan_limit": {
+      "exclusiveMinimum": 0,
+      "maximum": 9999,
+      "title": "Scan Limit",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m5-precedent-conflict-batch-authority-v1",
+      "default": "m5-precedent-conflict-batch-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "config_sha256",
+    "policy_id",
+    "causal_cut",
+    "scan_limit",
+    "evaluated_pair_count",
+    "batch_authority_id"
+  ],
+  "title": "M5PrecedentConflictBatchAuthority",
+  "type": "object"
+}

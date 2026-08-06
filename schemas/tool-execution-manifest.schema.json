@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "AcquisitionAction": {
+      "enum": [
+        "REQUEST_MORE_FRAMES",
+        "RECROP",
+        "OTHER_CAMERA_SAME_TIME",
+        "TRACK_CONFIDENCE_CURVE",
+        "REDETECT_HIGH_RES"
+      ],
+      "title": "AcquisitionAction",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/tool-execution-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable implementation authority for one whitelisted acquisition action.",
+  "properties": {
+    "acquisition_request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Acquisition Request Id",
+      "type": "string"
+    },
+    "action": {
+      "$ref": "#/$defs/AcquisitionAction"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "component_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Component Manifest Id",
+      "type": "string"
+    },
+    "execution_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Manifest Id",
+      "type": "string"
+    },
+    "hearing_session_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Hearing Session Id",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "model_manifest_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Manifest Id"
+    },
+    "parameters_schema_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Parameters Schema Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m4-tool-execution-manifest-v1",
+      "default": "m4-tool-execution-manifest-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Tool Id",
+      "type": "string"
+    },
+    "tool_revision": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Tool Revision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "hearing_session_id",
+    "acquisition_request_id",
+    "action",
+    "tool_id",
+    "tool_revision",
+    "parameters_schema_sha256",
+    "component_manifest_id",
+    "manifest_id",
+    "execution_manifest_id"
+  ],
+  "title": "ToolExecutionManifest",
+  "type": "object"
+}

@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "PpeType": {
+      "enum": [
+        "GOGGLES",
+        "GLOVES",
+        "LAB_COAT"
+      ],
+      "title": "PpeType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/soft-reminder.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An anonymous L0 notification that is never an audit or case artifact.",
+  "properties": {
+    "channel": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Channel",
+      "type": "string"
+    },
+    "message": {
+      "enum": [
+        "请佩戴护目镜。",
+        "请佩戴防护手套。",
+        "请穿着实验服。"
+      ],
+      "title": "Message",
+      "type": "string"
+    },
+    "ppe_type": {
+      "$ref": "#/$defs/PpeType"
+    },
+    "zone_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Zone Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "zone_id",
+    "ppe_type",
+    "message",
+    "channel"
+  ],
+  "title": "SoftReminder",
+  "type": "object"
+}

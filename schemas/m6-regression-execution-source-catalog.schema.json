@@ -1,0 +1,911 @@
+{
+  "$defs": {
+    "M6HistoricalCausalCut": {
+      "additionalProperties": false,
+      "properties": {
+        "causal_cut_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Causal Cut Id",
+          "type": "string"
+        },
+        "degraded_retrieval_count": {
+          "readOnly": true,
+          "title": "Degraded Retrieval Count",
+          "type": "integer"
+        },
+        "retrieval_cycle_count": {
+          "readOnly": true,
+          "title": "Retrieval Cycle Count",
+          "type": "integer"
+        },
+        "retrieval_cycles": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedRetrievalCycleInput"
+          },
+          "maxItems": 64,
+          "title": "Retrieval Cycles",
+          "type": "array"
+        },
+        "successful_exposure_count": {
+          "readOnly": true,
+          "title": "Successful Exposure Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "retrieval_cycle_count",
+        "successful_exposure_count",
+        "degraded_retrieval_count",
+        "causal_cut_id"
+      ],
+      "title": "M6HistoricalCausalCut",
+      "type": "object"
+    },
+    "M6LockedDetectionInput": {
+      "additionalProperties": false,
+      "properties": {
+        "detection_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Detection Id",
+          "type": "string"
+        },
+        "detection_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Detection Input Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "detection_id",
+        "frame_id",
+        "document_sha256",
+        "model_manifest_id",
+        "detection_input_id"
+      ],
+      "title": "M6LockedDetectionInput",
+      "type": "object"
+    },
+    "M6LockedEmbeddingChannel": {
+      "enum": [
+        "TEXT",
+        "VISUAL"
+      ],
+      "title": "M6LockedEmbeddingChannel",
+      "type": "string"
+    },
+    "M6LockedEmbeddingInput": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "$ref": "#/$defs/M6LockedEmbeddingChannel"
+        },
+        "embedding_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Embedding Input Id",
+          "type": "string"
+        },
+        "embedding_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/M6LockedEmbeddingScope"
+        }
+      },
+      "required": [
+        "scope",
+        "channel",
+        "embedding_ref",
+        "request_id",
+        "model_manifest_id",
+        "embedding_input_id"
+      ],
+      "title": "M6LockedEmbeddingInput",
+      "type": "object"
+    },
+    "M6LockedEmbeddingScope": {
+      "enum": [
+        "QUERY",
+        "PRECEDENT"
+      ],
+      "title": "M6LockedEmbeddingScope",
+      "type": "string"
+    },
+    "M6LockedFrameInput": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "frame_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Frame Input Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame_id",
+        "document_sha256",
+        "content_sha256",
+        "frame_input_id"
+      ],
+      "title": "M6LockedFrameInput",
+      "type": "object"
+    },
+    "M6LockedModelCallInput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_index": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Attempt Index",
+          "type": "integer"
+        },
+        "cache_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "failure_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "$ref": "#/$defs/M6LockedModelCallLayer"
+        },
+        "model_call_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Call Input Id",
+          "type": "string"
+        },
+        "parse_receipt_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parsed_output_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "raw_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Content Sha256"
+        },
+        "raw_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Size Bytes"
+        },
+        "request_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "response_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "result_kind": {
+          "$ref": "#/$defs/M6LockedModelCallResultKind"
+        },
+        "role": {
+          "$ref": "#/$defs/M6LockedModelRole"
+        }
+      },
+      "required": [
+        "layer",
+        "role",
+        "attempt_index",
+        "request_ref",
+        "result_kind",
+        "model_call_input_id"
+      ],
+      "title": "M6LockedModelCallInput",
+      "type": "object"
+    },
+    "M6LockedModelCallLayer": {
+      "enum": [
+        "SCREENING",
+        "HEARING"
+      ],
+      "title": "M6LockedModelCallLayer",
+      "type": "string"
+    },
+    "M6LockedModelCallResultKind": {
+      "enum": [
+        "RESPONSE",
+        "FAILURE"
+      ],
+      "title": "M6LockedModelCallResultKind",
+      "type": "string"
+    },
+    "M6LockedModelRole": {
+      "enum": [
+        "SCREENING",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "M6LockedModelRole",
+      "type": "string"
+    },
+    "M6LockedRetrievalCycleInput": {
+      "additionalProperties": false,
+      "description": "One exact historical retrieval authority for one hearing cycle.\n\nSuccessful cycles bind the M5 prompt-visible exposure.  Degraded cycles have\nno exposure and bind the exact M4 durable retrieval receipt preserving the\ntyped degraded reason.  Source applications, alerts, appeals, and every\ntraining-label authority remain evaluator-side outputs.",
+      "properties": {
+        "authority_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "cycle_index": {
+          "exclusiveMinimum": 0,
+          "title": "Cycle Index",
+          "type": "integer"
+        },
+        "cycle_scope_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cycle Scope Id",
+          "type": "string"
+        },
+        "hearing_session_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Hearing Session Id",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/M6LockedRetrievalOutcomeKind"
+        },
+        "retrieval_cycle_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Retrieval Cycle Input Id",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_run_id",
+        "source_case_id",
+        "hearing_session_id",
+        "cycle_index",
+        "cycle_scope_id",
+        "outcome",
+        "authority_ref",
+        "retrieval_cycle_input_id"
+      ],
+      "title": "M6LockedRetrievalCycleInput",
+      "type": "object"
+    },
+    "M6LockedRetrievalOutcomeKind": {
+      "enum": [
+        "SUCCESS",
+        "DEGRADED"
+      ],
+      "title": "M6LockedRetrievalOutcomeKind",
+      "type": "string"
+    },
+    "M6LockedToolResultInput": {
+      "additionalProperties": false,
+      "properties": {
+        "acquisition_request_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "evidence_pack_derivation_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "execution_manifest_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "execution_publication_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "resulting_evidence_pack_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "tool_receipt_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "tool_result_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tool Result Document Sha256",
+          "type": "string"
+        },
+        "tool_result_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tool Result Id",
+          "type": "string"
+        },
+        "tool_result_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Tool Result Input Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_result_id",
+        "tool_result_document_sha256",
+        "acquisition_request_ref",
+        "execution_manifest_ref",
+        "execution_publication_ref",
+        "tool_receipt_ref",
+        "evidence_pack_derivation_ref",
+        "resulting_evidence_pack_ref",
+        "tool_result_input_id"
+      ],
+      "title": "M6LockedToolResultInput",
+      "type": "object"
+    },
+    "M6RegressionExecutionSourceCatalogEntry": {
+      "additionalProperties": false,
+      "description": "Candidate-safe replay source with no evaluator-only classifications.",
+      "properties": {
+        "catalog_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Catalog Entry Id",
+          "type": "string"
+        },
+        "input_authority_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Content Sha256",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "input_authority_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Input Authority Size Bytes",
+          "type": "integer"
+        },
+        "replay_input_closure": {
+          "$ref": "#/$defs/M6ReplayInputClosureAuthority"
+        },
+        "replay_input_closure_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Content Sha256",
+          "type": "string"
+        },
+        "replay_input_closure_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Replay Input Closure Size Bytes",
+          "type": "integer"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "source_item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Item Id",
+          "type": "string"
+        },
+        "source_seal_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Seal Content Sha256",
+          "type": "string"
+        },
+        "source_seal_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Seal Id",
+          "type": "string"
+        },
+        "source_seal_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Source Seal Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_item_id",
+        "sample_id",
+        "source_seal_id",
+        "source_seal_content_sha256",
+        "source_seal_size_bytes",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "input_authority_content_sha256",
+        "input_authority_size_bytes",
+        "replay_input_closure_content_sha256",
+        "replay_input_closure_size_bytes",
+        "replay_input_closure",
+        "catalog_entry_id"
+      ],
+      "title": "M6RegressionExecutionSourceCatalogEntry",
+      "type": "object"
+    },
+    "M6ReplayAuthorityKind": {
+      "enum": [
+        "RUN_MANIFEST",
+        "CASE_VERSION",
+        "EVIDENCE_PACK",
+        "FRAME",
+        "DETECTION",
+        "M3_MODEL_REQUEST",
+        "M3_MODEL_RESPONSE",
+        "M3_MODEL_CACHE",
+        "M3_PARSE_RECEIPT",
+        "M3_PARSED_OUTPUT",
+        "M3_MODEL_CALL_FAILURE",
+        "M4_MODEL_REQUEST",
+        "M4_MODEL_RESPONSE",
+        "M4_MODEL_CACHE",
+        "M4_PARSE_RECEIPT",
+        "M4_ROLE_OUTPUT",
+        "M4_PRECEDENT_RETRIEVAL_RECEIPT",
+        "M4_MODEL_CALL_FAILURE",
+        "M4_ACQUISITION_REQUEST",
+        "M4_TOOL_EXECUTION_MANIFEST",
+        "M4_ACQUISITION_PUBLICATION",
+        "M4_TOOL_EXECUTION_RECEIPT",
+        "M4_EVIDENCE_PACK_DERIVATION",
+        "M5_EMBEDDING",
+        "M5_PRECEDENT_EXPOSURE"
+      ],
+      "title": "M6ReplayAuthorityKind",
+      "type": "string"
+    },
+    "M6ReplayAuthorityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "authority_ref_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Ref Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M6ReplayAuthorityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id",
+        "document_sha256",
+        "authority_ref_id"
+      ],
+      "title": "M6ReplayAuthorityRef",
+      "type": "object"
+    },
+    "M6ReplayInputClosureAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "detection_count": {
+          "readOnly": true,
+          "title": "Detection Count",
+          "type": "integer"
+        },
+        "detection_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Detection Inventory Root Sha256",
+          "type": "string"
+        },
+        "detections": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedDetectionInput"
+          },
+          "maxItems": 250000,
+          "title": "Detections",
+          "type": "array"
+        },
+        "embedding_count": {
+          "readOnly": true,
+          "title": "Embedding Count",
+          "type": "integer"
+        },
+        "embedding_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Embedding Inventory Root Sha256",
+          "type": "string"
+        },
+        "embeddings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedEmbeddingInput"
+          },
+          "maxItems": 4096,
+          "title": "Embeddings",
+          "type": "array"
+        },
+        "frame_count": {
+          "readOnly": true,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "frame_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Frame Inventory Root Sha256",
+          "type": "string"
+        },
+        "frames": {
+          "items": {
+            "$ref": "#/$defs/M6LockedFrameInput"
+          },
+          "maxItems": 100000,
+          "minItems": 1,
+          "title": "Frames",
+          "type": "array"
+        },
+        "historical_cut": {
+          "$ref": "#/$defs/M6HistoricalCausalCut"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "model_call_count": {
+          "readOnly": true,
+          "title": "Model Call Count",
+          "type": "integer"
+        },
+        "model_call_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Call Inventory Root Sha256",
+          "type": "string"
+        },
+        "model_calls": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedModelCallInput"
+          },
+          "maxItems": 256,
+          "title": "Model Calls",
+          "type": "array"
+        },
+        "model_response_count": {
+          "readOnly": true,
+          "title": "Model Response Count",
+          "type": "integer"
+        },
+        "model_response_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Response Inventory Root Sha256",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-input-closure-authority-v1",
+          "default": "m6-replay-input-closure-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Document Sha256"
+        },
+        "source_case_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Id"
+        },
+        "source_case_revision": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Revision"
+        },
+        "source_manifest_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Document Sha256",
+          "type": "string"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "source_validation_report_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Validation Report Document Sha256",
+          "type": "string"
+        },
+        "source_validation_report_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Validation Report Id",
+          "type": "string"
+        },
+        "tool_result_count": {
+          "readOnly": true,
+          "title": "Tool Result Count",
+          "type": "integer"
+        },
+        "tool_result_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Tool Result Inventory Root Sha256",
+          "type": "string"
+        },
+        "tool_results": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedToolResultInput"
+          },
+          "maxItems": 64,
+          "title": "Tool Results",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_manifest_id",
+        "source_manifest_document_sha256",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "source_validation_report_id",
+        "source_validation_report_document_sha256",
+        "frames",
+        "frame_count",
+        "frame_inventory_root_sha256",
+        "detection_count",
+        "detection_inventory_root_sha256",
+        "model_call_count",
+        "model_call_inventory_root_sha256",
+        "model_response_count",
+        "model_response_inventory_root_sha256",
+        "embedding_count",
+        "embedding_inventory_root_sha256",
+        "tool_result_count",
+        "tool_result_inventory_root_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256"
+      ],
+      "title": "M6ReplayInputClosureAuthority",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-regression-execution-source-catalog.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Full candidate-facing source catalog, deliberately free of evaluator truth.",
+  "properties": {
+    "baseline_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Baseline Manifest Id",
+      "type": "string"
+    },
+    "catalog_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Catalog Inventory Root Sha256",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/M6RegressionExecutionSourceCatalogEntry"
+      },
+      "maxItems": 100000,
+      "minItems": 1,
+      "title": "Entries",
+      "type": "array"
+    },
+    "entry_count": {
+      "readOnly": true,
+      "title": "Entry Count",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m6-regression-execution-source-catalog-v1",
+      "default": "m6-regression-execution-source-catalog-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_catalog_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Catalog Authority Id",
+      "type": "string"
+    },
+    "source_inventory_cut_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Inventory Cut Authority Id",
+      "type": "string"
+    },
+    "source_inventory_cut_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Inventory Cut Content Sha256",
+      "type": "string"
+    },
+    "source_inventory_item_count": {
+      "exclusiveMinimum": 0,
+      "maximum": 100000,
+      "title": "Source Inventory Item Count",
+      "type": "integer"
+    },
+    "source_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Inventory Root Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "baseline_manifest_id",
+    "source_inventory_cut_authority_id",
+    "source_inventory_cut_content_sha256",
+    "source_inventory_item_count",
+    "source_inventory_root_sha256",
+    "entries",
+    "entry_count",
+    "catalog_inventory_root_sha256",
+    "source_catalog_authority_id"
+  ],
+  "title": "M6RegressionExecutionSourceCatalogAuthority",
+  "type": "object"
+}

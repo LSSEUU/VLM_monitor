@@ -1,0 +1,100 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m6-privacy-safe-static-report-publication-seal-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "evidence_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evidence Inventory Root Sha256",
+      "type": "string"
+    },
+    "html_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Html Content Sha256",
+      "type": "string"
+    },
+    "html_relative_path": {
+      "const": "index.html",
+      "readOnly": true,
+      "title": "Html Relative Path",
+      "type": "string"
+    },
+    "html_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 268435456,
+      "title": "Html Size Bytes",
+      "type": "integer"
+    },
+    "manifest_relative_path": {
+      "readOnly": true,
+      "title": "Manifest Relative Path",
+      "type": "string"
+    },
+    "regression_publication_seal_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Regression Publication Seal Id",
+      "type": "string"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-privacy-safe-static-report-publication-seal-authority-v1",
+      "default": "m6-privacy-safe-static-report-publication-seal-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seal_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Seal Id",
+      "type": "string"
+    },
+    "seal_relative_path": {
+      "const": "m6-static-report/seal.json",
+      "readOnly": true,
+      "title": "Seal Relative Path",
+      "type": "string"
+    },
+    "static_report_manifest_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Static Report Manifest Content Sha256",
+      "type": "string"
+    },
+    "static_report_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Static Report Manifest Id",
+      "type": "string"
+    },
+    "static_report_manifest_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 67108864,
+      "title": "Static Report Manifest Size Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "candidate_run_id",
+    "report_id",
+    "regression_publication_seal_id",
+    "static_report_manifest_id",
+    "static_report_manifest_content_sha256",
+    "static_report_manifest_size_bytes",
+    "html_content_sha256",
+    "html_size_bytes",
+    "evidence_inventory_root_sha256",
+    "html_relative_path",
+    "manifest_relative_path",
+    "seal_relative_path",
+    "seal_id"
+  ],
+  "title": "M6PrivacySafeStaticReportPublicationSealAuthorityV1",
+  "type": "object"
+}

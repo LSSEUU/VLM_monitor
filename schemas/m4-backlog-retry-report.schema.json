@@ -1,0 +1,317 @@
+{
+  "$defs": {
+    "BacklogLeaseIdentity": {
+      "additionalProperties": false,
+      "description": "Non-secret CAS identity for one exact leased backlog generation.",
+      "properties": {
+        "attempt_count": {
+          "exclusiveMinimum": 0,
+          "title": "Attempt Count",
+          "type": "integer"
+        },
+        "item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Item Id",
+          "type": "string"
+        },
+        "lease_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Lease Id",
+          "type": "string"
+        },
+        "lease_identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Lease Identity Sha256",
+          "type": "string"
+        },
+        "retry_generation": {
+          "minimum": 0,
+          "title": "Retry Generation",
+          "type": "integer"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "item_id",
+        "lease_id",
+        "attempt_count",
+        "retry_generation",
+        "lease_identity_sha256"
+      ],
+      "title": "BacklogLeaseIdentity",
+      "type": "object"
+    },
+    "BacklogStatus": {
+      "enum": [
+        "PENDING",
+        "LEASED",
+        "COMPLETED",
+        "EXHAUSTED"
+      ],
+      "title": "BacklogStatus",
+      "type": "string"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "M4BacklogRetryDisposition": {
+      "description": "Stable result of one bounded HEARING worker iteration.",
+      "enum": [
+        "NO_WORK",
+        "COMPLETED",
+        "REQUEUED",
+        "EXHAUSTED"
+      ],
+      "title": "M4BacklogRetryDisposition",
+      "type": "string"
+    },
+    "VlmRole": {
+      "enum": [
+        "SCREENING",
+        "STRUCTURE_REPAIR",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "VlmRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m4-backlog-retry-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Secret-free closure summary for one exact HEARING lease exit.\n\nThe full request, response, and completion documents remain SQLite\nauthority.  This report exposes only their content-addressed identities,\nthe non-secret lease CAS identity, and the resulting state boundary.",
+  "properties": {
+    "acquisition_fixture_count": {
+      "default": 0,
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Acquisition Fixture Count",
+      "type": "integer"
+    },
+    "backlog_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BacklogStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "case_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Case Id"
+    },
+    "completion_receipt_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completion Receipt Id"
+    },
+    "disposition": {
+      "$ref": "#/$defs/M4BacklogRetryDisposition"
+    },
+    "fixture_bundle_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Fixture Bundle Id",
+      "type": "string"
+    },
+    "fixture_entry_count": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Fixture Entry Count",
+      "type": "integer"
+    },
+    "human_review_receipt_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Human Review Receipt Id"
+    },
+    "lease": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BacklogLeaseIdentity"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "model_mode": {
+      "const": "FAKE VLM",
+      "default": "FAKE VLM",
+      "title": "Model Mode",
+      "type": "string"
+    },
+    "outcome_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Outcome Id"
+    },
+    "perception_mode": {
+      "const": "SIMULATED PERCEPTION",
+      "default": "SIMULATED PERCEPTION",
+      "title": "Perception Mode",
+      "type": "string"
+    },
+    "precedent_mode": {
+      "const": "CONTROLLED FAKE",
+      "default": "CONTROLLED FAKE",
+      "title": "Precedent Mode",
+      "type": "string"
+    },
+    "reclaimed_completion_receipt_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Reclaimed Completion Receipt Ids",
+      "type": "array"
+    },
+    "resulting_case_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "resulting_checkpoint_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resulting Checkpoint Id"
+    },
+    "resulting_retry_generation": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resulting Retry Generation"
+    },
+    "role": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VlmRole"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m4-backlog-retry-report-v1",
+      "default": "m4-backlog-retry-report-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_checkpoint_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Checkpoint Id"
+    }
+  },
+  "required": [
+    "run_id",
+    "manifest_id",
+    "fixture_bundle_id",
+    "fixture_entry_count",
+    "disposition"
+  ],
+  "title": "M4BacklogRetryReport",
+  "type": "object"
+}

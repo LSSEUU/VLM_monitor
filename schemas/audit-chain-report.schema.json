@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "AuditChainFailureReason": {
+      "enum": [
+        "RUN_MISMATCH",
+        "MANIFEST_MISMATCH",
+        "SEQUENCE_MISMATCH",
+        "ENTRY_HASH_MISMATCH",
+        "PREVIOUS_HASH_MISMATCH",
+        "DUPLICATE_ENTRY_HASH",
+        "HEAD_SEQUENCE_MISMATCH",
+        "HEAD_HASH_MISMATCH"
+      ],
+      "title": "AuditChainFailureReason",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/audit-chain-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed first-error result bound to a run, manifest, and authoritative head.",
+  "properties": {
+    "actual_head_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Actual Head Hash",
+      "type": "string"
+    },
+    "actual_head_sequence": {
+      "minimum": -1,
+      "title": "Actual Head Sequence",
+      "type": "integer"
+    },
+    "checked_entry_count": {
+      "minimum": 0,
+      "title": "Checked Entry Count",
+      "type": "integer"
+    },
+    "expected_head_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Head Hash",
+      "type": "string"
+    },
+    "expected_head_sequence": {
+      "minimum": -1,
+      "title": "Expected Head Sequence",
+      "type": "integer"
+    },
+    "expected_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Manifest Id",
+      "type": "string"
+    },
+    "expected_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Expected Run Id",
+      "type": "string"
+    },
+    "failure_reason": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AuditChainFailureReason"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "failure_sequence": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Sequence"
+    },
+    "passed": {
+      "readOnly": true,
+      "title": "Passed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "expected_run_id",
+    "expected_manifest_id",
+    "expected_head_sequence",
+    "expected_head_hash",
+    "actual_head_sequence",
+    "actual_head_hash",
+    "checked_entry_count",
+    "passed"
+  ],
+  "title": "AuditChainReport",
+  "type": "object"
+}

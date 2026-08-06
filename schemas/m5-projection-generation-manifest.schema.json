@@ -1,0 +1,180 @@
+{
+  "$defs": {
+    "M5AuthorityKind": {
+      "enum": [
+        "PRECEDENT_EMBEDDING",
+        "PRECEDENT",
+        "PRECEDENT_EXPOSURE",
+        "PRECEDENT_APPLICATION_BATCH",
+        "PRECEDENT_CAUSAL_EVENT",
+        "PRECEDENT_CITATION",
+        "PRECEDENT_CONFLICT_BATCH",
+        "PRECEDENT_CONFLICT_BATCH_RECEIPT",
+        "PRECEDENT_LIFECYCLE",
+        "ALERT",
+        "ALERT_COOLDOWN",
+        "ALERT_OUTBOX",
+        "ALERT_CHANNEL_CAPABILITY",
+        "ALERT_DISPATCH_ATTEMPT",
+        "ALERT_DISPATCH_RECEIPT",
+        "IMMEDIATE_SAFETY_DELIVERY",
+        "APPEAL",
+        "APPEAL_RESOLUTION",
+        "APPEAL_RESOLUTION_COMMIT",
+        "VERDICT_RESCISSION",
+        "ALERT_RESCISSION",
+        "TRAINING_LABEL",
+        "STRONG_TRAINING_LABEL_PROVENANCE",
+        "TRAINING_CAUSAL_EVENT",
+        "DATASET_ARTIFACT",
+        "DATASET_REGISTRATION_SNAPSHOT",
+        "DATASET_CROP_SNAPSHOT"
+      ],
+      "title": "M5AuthorityKind",
+      "type": "string"
+    },
+    "M5ProjectionFileKind": {
+      "enum": [
+        "ALERTS",
+        "PRECEDENTS",
+        "APPEALS",
+        "TRAIN_BUFFER"
+      ],
+      "title": "M5ProjectionFileKind",
+      "type": "string"
+    },
+    "M5ProjectionGenerationEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_kinds": {
+          "items": {
+            "$ref": "#/$defs/M5AuthorityKind"
+          },
+          "title": "Authority Kinds",
+          "type": "array"
+        },
+        "file_kind": {
+          "$ref": "#/$defs/M5ProjectionFileKind"
+        },
+        "record_count": {
+          "minimum": 0,
+          "title": "Record Count",
+          "type": "integer"
+        },
+        "records": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M5ProjectionRecordReceipt"
+          },
+          "title": "Records",
+          "type": "array"
+        },
+        "relative_path": {
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "file_kind",
+        "relative_path",
+        "sha256",
+        "size_bytes",
+        "record_count",
+        "authority_kinds"
+      ],
+      "title": "M5ProjectionGenerationEntry",
+      "type": "object"
+    },
+    "M5ProjectionRecordReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,255}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "authority_kind": {
+          "$ref": "#/$defs/M5AuthorityKind"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authority_kind",
+        "artifact_id",
+        "sha256"
+      ],
+      "title": "M5ProjectionRecordReceipt",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-projection-generation-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority_record_count": {
+      "minimum": 0,
+      "title": "Authority Record Count",
+      "type": "integer"
+    },
+    "authority_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authority Root Sha256",
+      "type": "string"
+    },
+    "case_root_count": {
+      "minimum": 0,
+      "title": "Case Root Count",
+      "type": "integer"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/M5ProjectionGenerationEntry"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "generation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-projection-generation-v1",
+      "default": "m5-projection-generation-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "authority_root_sha256",
+    "authority_record_count",
+    "case_root_count",
+    "entries",
+    "generation_id"
+  ],
+  "title": "M5ProjectionGenerationManifest",
+  "type": "object"
+}

@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "AlertPolicyDisposition": {
+      "enum": [
+        "ENQUEUE",
+        "SUPPRESSED_MERGED",
+        "CLOSE_NO_ALERT"
+      ],
+      "title": "AlertPolicyDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-close-case-outcome.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "alert_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Alert Id"
+    },
+    "alert_policy_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Alert Policy Authority Id",
+      "type": "string"
+    },
+    "application_batch_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Application Batch Id"
+    },
+    "applied_citation_count": {
+      "default": 0,
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Applied Citation Count",
+      "type": "integer"
+    },
+    "automatic_precedent_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Automatic Precedent Authority Id",
+      "type": "string"
+    },
+    "automatic_precedent_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Automatic Precedent Id",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "closed_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Closed Revision",
+      "type": "integer"
+    },
+    "disposition": {
+      "$ref": "#/$defs/AlertPolicyDisposition"
+    },
+    "source_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Source Revision",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "case_id",
+    "source_revision",
+    "closed_revision",
+    "disposition",
+    "alert_policy_authority_id",
+    "automatic_precedent_id",
+    "automatic_precedent_authority_id"
+  ],
+  "title": "M5CloseCaseOutcome",
+  "type": "object"
+}

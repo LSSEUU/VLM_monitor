@@ -1,0 +1,1720 @@
+{
+  "$defs": {
+    "AcquisitionAction": {
+      "enum": [
+        "REQUEST_MORE_FRAMES",
+        "RECROP",
+        "OTHER_CAMERA_SAME_TIME",
+        "TRACK_CONFIDENCE_CURVE",
+        "REDETECT_HIGH_RES"
+      ],
+      "title": "AcquisitionAction",
+      "type": "string"
+    },
+    "AcquisitionExecutionMode": {
+      "description": "Crash semantics promised by one acquisition executor adapter.",
+      "enum": [
+        "PURE",
+        "IDEMPOTENT_EXTERNAL"
+      ],
+      "title": "AcquisitionExecutionMode",
+      "type": "string"
+    },
+    "AcquisitionRequest": {
+      "additionalProperties": false,
+      "description": "Scoped executable request derived exactly from one Judge proposal.",
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "current_evidence_pack_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Current Evidence Pack Id",
+          "type": "string"
+        },
+        "current_evidence_pack_version": {
+          "exclusiveMinimum": 0,
+          "title": "Current Evidence Pack Version",
+          "type": "integer"
+        },
+        "hearing_session_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Hearing Session Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "prior_acquisition_rounds": {
+          "exclusiveMaximum": 2,
+          "minimum": 0,
+          "title": "Prior Acquisition Rounds",
+          "type": "integer"
+        },
+        "prior_rework_rounds": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Prior Rework Rounds",
+          "type": "integer"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "request_payload": {
+          "$ref": "#/$defs/AcquisitionRequestPayload"
+        },
+        "round_index": {
+          "exclusiveMinimum": 0,
+          "maximum": 5,
+          "title": "Round Index",
+          "type": "integer"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m4-acquisition-request-v1",
+          "default": "m4-acquisition-request-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_judge_output_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Judge Output Id",
+          "type": "string"
+        },
+        "source_model_request_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "source_model_response_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "hearing_session_id",
+        "round_index",
+        "prior_acquisition_rounds",
+        "prior_rework_rounds",
+        "current_evidence_pack_id",
+        "current_evidence_pack_version",
+        "source_judge_output_id",
+        "source_model_request_ref",
+        "source_model_response_ref",
+        "request_payload",
+        "manifest_id",
+        "request_id"
+      ],
+      "title": "AcquisitionRequest",
+      "type": "object"
+    },
+    "AcquisitionRequestPayload": {
+      "additionalProperties": false,
+      "description": "Model-authored, non-authoritative proposal for one whitelisted tool action.",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/AcquisitionAction"
+        },
+        "reason_summary": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Reason Summary",
+          "type": "string"
+        },
+        "request_payload_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Request Payload Id",
+          "type": "string"
+        },
+        "supporting_evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "maxItems": 32,
+          "title": "Supporting Evidence Refs",
+          "type": "array"
+        },
+        "validated_parameters": {
+          "discriminator": {
+            "mapping": {
+              "OTHER_CAMERA_SAME_TIME": "#/$defs/OtherCameraSameTimeParameters",
+              "RECROP": "#/$defs/RecropParameters",
+              "REDETECT_HIGH_RES": "#/$defs/RedetectHighResolutionParameters",
+              "REQUEST_MORE_FRAMES": "#/$defs/RequestMoreFramesParameters",
+              "TRACK_CONFIDENCE_CURVE": "#/$defs/TrackConfidenceCurveParameters"
+            },
+            "propertyName": "action"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/RequestMoreFramesParameters"
+            },
+            {
+              "$ref": "#/$defs/RecropParameters"
+            },
+            {
+              "$ref": "#/$defs/OtherCameraSameTimeParameters"
+            },
+            {
+              "$ref": "#/$defs/TrackConfidenceCurveParameters"
+            },
+            {
+              "$ref": "#/$defs/RedetectHighResolutionParameters"
+            }
+          ],
+          "title": "Validated Parameters"
+        }
+      },
+      "required": [
+        "action",
+        "validated_parameters",
+        "reason_summary",
+        "request_payload_id"
+      ],
+      "title": "AcquisitionRequestPayload",
+      "type": "object"
+    },
+    "AnchorType": {
+      "enum": [
+        "HEAD",
+        "HANDS",
+        "TORSO"
+      ],
+      "title": "AnchorType",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AssociationMethod": {
+      "enum": [
+        "KEYPOINT",
+        "BODY_FALLBACK"
+      ],
+      "title": "AssociationMethod",
+      "type": "string"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "Crop": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/MediaAvailability"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "encoding_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Encoding Version",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "local_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\<>:\\\"|?*])(?:[^/\\x00-\\x1f]+/)*[^/\\x00-\\x1f]+$",
+          "title": "Local Path"
+        },
+        "media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Sha256",
+          "type": "string"
+        },
+        "media_type": {
+          "const": "IMAGE_PNG",
+          "title": "Media Type",
+          "type": "string"
+        },
+        "observability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservabilityScore"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "output_height": {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967295,
+          "title": "Output Height",
+          "type": "integer"
+        },
+        "output_width": {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967295,
+          "title": "Output Width",
+          "type": "integer"
+        },
+        "panorama_long_edge_limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 4294967295,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Panorama Long Edge Limit"
+        },
+        "pixel_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pixel Sha256",
+          "type": "string"
+        },
+        "primary_track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Track Ref"
+        },
+        "privacy_receipt": {
+          "$ref": "#/$defs/PrivacyReceipt"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/CropSource"
+        },
+        "source_media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Media Sha256",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "tags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "object"
+        }
+      },
+      "required": [
+        "frame_id",
+        "source",
+        "bbox",
+        "source_refs",
+        "availability",
+        "source_media_sha256",
+        "pixel_sha256",
+        "media_sha256",
+        "output_width",
+        "output_height",
+        "size_bytes",
+        "media_type",
+        "encoding_version",
+        "privacy_receipt",
+        "crop_id"
+      ],
+      "title": "Crop",
+      "type": "object"
+    },
+    "CropRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBoxXYXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "anchor_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnchorType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "association_method": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssociationMethod"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "encoding_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Encoding Version",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "keypoints": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Keypoint"
+          },
+          "title": "Keypoints",
+          "type": "array"
+        },
+        "observability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservabilityScore"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "output_height": {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967295,
+          "title": "Output Height",
+          "type": "integer"
+        },
+        "output_width": {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967295,
+          "title": "Output Width",
+          "type": "integer"
+        },
+        "panorama_long_edge_limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 4294967295,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Panorama Long Edge Limit"
+        },
+        "ppe_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PpeType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "primary_track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Track Ref"
+        },
+        "privacy_policy": {
+          "$ref": "#/$defs/PrivacyPolicy"
+        },
+        "privacy_transform_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Privacy Transform Version",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/CropSource"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "tags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "object"
+        }
+      },
+      "required": [
+        "frame_id",
+        "source",
+        "bbox",
+        "output_width",
+        "output_height",
+        "source_refs",
+        "privacy_policy",
+        "privacy_transform_version",
+        "encoding_version"
+      ],
+      "title": "CropRequest",
+      "type": "object"
+    },
+    "CropSource": {
+      "enum": [
+        "PANORAMA",
+        "SUBJECT",
+        "DETECTION_FOCUS",
+        "ANCHOR_FOCUS",
+        "RECROP"
+      ],
+      "title": "CropSource",
+      "type": "string"
+    },
+    "Detection": {
+      "additionalProperties": false,
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Attributes",
+          "type": "object"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "detection_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Detection Id",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "keypoints": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Keypoint"
+          },
+          "title": "Keypoints",
+          "type": "array"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Track Ref"
+        }
+      },
+      "required": [
+        "detection_id",
+        "frame_id",
+        "label",
+        "bbox",
+        "score",
+        "model_manifest_id"
+      ],
+      "title": "Detection",
+      "type": "object"
+    },
+    "FrameRef": {
+      "additionalProperties": false,
+      "properties": {
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Sha256"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "readOnly": true,
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        },
+        "timestamp_ms": {
+          "readOnly": true,
+          "title": "Timestamp Ms",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "camera_id",
+        "stream_id",
+        "frame_index",
+        "fps_num",
+        "fps_den",
+        "width",
+        "height",
+        "frame_id",
+        "timestamp_ms"
+      ],
+      "title": "FrameRef",
+      "type": "object"
+    },
+    "Keypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "x",
+        "y",
+        "score"
+      ],
+      "title": "Keypoint",
+      "type": "object"
+    },
+    "MediaAccess": {
+      "enum": [
+        "LOCAL_ONLY",
+        "CLOUD_ALLOWED"
+      ],
+      "title": "MediaAccess",
+      "type": "string"
+    },
+    "MediaAvailability": {
+      "enum": [
+        "AVAILABLE",
+        "PURGING",
+        "PURGED_BY_RETENTION"
+      ],
+      "title": "MediaAvailability",
+      "type": "string"
+    },
+    "ObjectiveFact": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "DURATION_FRAMES",
+                  "PERSON_COUNT"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "FRAME_INTERVAL",
+                  "TRACK_PRESENCE_INTERVAL"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "ZONE_ID"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "minLength": 1,
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "RISK_LEVEL"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH"
+                ],
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "DETECTION_SCORE",
+                  "OBSERVABILITY"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "fact_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ObjectiveFactKind"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "fact_id",
+        "kind",
+        "value",
+        "source_ref",
+        "source_manifest_id"
+      ],
+      "title": "ObjectiveFact",
+      "type": "object"
+    },
+    "ObjectiveFactKind": {
+      "enum": [
+        "DURATION_FRAMES",
+        "PERSON_COUNT",
+        "ZONE_ID",
+        "RISK_LEVEL",
+        "FRAME_INTERVAL",
+        "TRACK_PRESENCE_INTERVAL",
+        "DETECTION_SCORE",
+        "OBSERVABILITY"
+      ],
+      "title": "ObjectiveFactKind",
+      "type": "string"
+    },
+    "ObservabilityComponents": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "frontality": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Frontality",
+          "type": "number"
+        },
+        "keypoint_visibility": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Visibility",
+          "type": "number"
+        },
+        "non_occlusion": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Non Occlusion",
+          "type": "number"
+        },
+        "person_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Person Confidence",
+          "type": "number"
+        },
+        "sharpness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sharpness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "person_confidence",
+        "keypoint_visibility",
+        "frontality",
+        "sharpness",
+        "exposure",
+        "non_occlusion"
+      ],
+      "title": "ObservabilityComponents",
+      "type": "object"
+    },
+    "ObservabilityScore": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "$ref": "#/$defs/ObservabilityComponents"
+        },
+        "source": {
+          "$ref": "#/$defs/ObservationSource"
+        },
+        "total": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Total",
+          "type": "number"
+        }
+      },
+      "required": [
+        "total",
+        "components",
+        "source"
+      ],
+      "title": "ObservabilityScore",
+      "type": "object"
+    },
+    "ObservationSource": {
+      "enum": [
+        "PIXEL_COMPUTED",
+        "PRECOMPUTED_FIXTURE"
+      ],
+      "title": "ObservationSource",
+      "type": "string"
+    },
+    "OtherCameraSameTimeParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "OTHER_CAMERA_SAME_TIME",
+          "title": "Action",
+          "type": "string"
+        },
+        "source_frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Source Frame Id",
+          "type": "string"
+        },
+        "target_camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Target Camera Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "source_frame_id",
+        "target_camera_id"
+      ],
+      "title": "OtherCameraSameTimeParameters",
+      "type": "object"
+    },
+    "PpeType": {
+      "enum": [
+        "GOGGLES",
+        "GLOVES",
+        "LAB_COAT"
+      ],
+      "title": "PpeType",
+      "type": "string"
+    },
+    "PrivacyPolicy": {
+      "enum": [
+        "EPHEMERAL_RAW",
+        "PPE_PRESERVING_REDACTION",
+        "FULL_REDACTION"
+      ],
+      "title": "PrivacyPolicy",
+      "type": "string"
+    },
+    "PrivacyReasonCode": {
+      "enum": [
+        "PPE_REGION_PRESERVED",
+        "KEYPOINTS_INSUFFICIENT_LOCAL_ONLY",
+        "PANORAMA_FULL_REDACTION",
+        "SUBJECT_FULL_REDACTION",
+        "POLICY_LOCAL_ONLY"
+      ],
+      "title": "PrivacyReasonCode",
+      "type": "string"
+    },
+    "PrivacyReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBoxXYXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "anchor_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnchorType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "association_method": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssociationMethod"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallback_used": {
+          "default": false,
+          "title": "Fallback Used",
+          "type": "boolean"
+        },
+        "fill_rgb": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            }
+          ],
+          "title": "Fill Rgb",
+          "type": "array"
+        },
+        "input_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "keypoints": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Keypoint"
+          },
+          "title": "Keypoints",
+          "type": "array"
+        },
+        "media_access": {
+          "$ref": "#/$defs/MediaAccess"
+        },
+        "policy": {
+          "$ref": "#/$defs/PrivacyPolicy"
+        },
+        "ppe_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PpeType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "preserved_regions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BBoxXYXY"
+          },
+          "title": "Preserved Regions",
+          "type": "array"
+        },
+        "reason_code": {
+          "$ref": "#/$defs/PrivacyReasonCode"
+        },
+        "transform_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Transform Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy",
+        "transform_version",
+        "media_access",
+        "reason_code",
+        "input_refs",
+        "fill_rgb"
+      ],
+      "title": "PrivacyReceipt",
+      "type": "object"
+    },
+    "RecropParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "RECROP",
+          "title": "Action",
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "frame_id",
+        "bbox"
+      ],
+      "title": "RecropParameters",
+      "type": "object"
+    },
+    "RedetectHighResolutionParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "REDETECT_HIGH_RES",
+          "title": "Action",
+          "type": "string"
+        },
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "prompts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Prompts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "action",
+        "crop_id",
+        "prompts"
+      ],
+      "title": "RedetectHighResolutionParameters",
+      "type": "object"
+    },
+    "RequestMoreFramesParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "REQUEST_MORE_FRAMES",
+          "title": "Action",
+          "type": "string"
+        },
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "step": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Step",
+          "type": "integer"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "camera_id",
+        "stream_id",
+        "start_frame",
+        "end_frame_exclusive"
+      ],
+      "title": "RequestMoreFramesParameters",
+      "type": "object"
+    },
+    "ToolExecutionManifest": {
+      "additionalProperties": false,
+      "description": "Immutable implementation authority for one whitelisted acquisition action.",
+      "properties": {
+        "acquisition_request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Acquisition Request Id",
+          "type": "string"
+        },
+        "action": {
+          "$ref": "#/$defs/AcquisitionAction"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "component_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Component Manifest Id",
+          "type": "string"
+        },
+        "execution_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Manifest Id",
+          "type": "string"
+        },
+        "hearing_session_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Hearing Session Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Manifest Id"
+        },
+        "parameters_schema_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Parameters Schema Sha256",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m4-tool-execution-manifest-v1",
+          "default": "m4-tool-execution-manifest-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "tool_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Tool Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "hearing_session_id",
+        "acquisition_request_id",
+        "action",
+        "tool_id",
+        "tool_revision",
+        "parameters_schema_sha256",
+        "component_manifest_id",
+        "manifest_id",
+        "execution_manifest_id"
+      ],
+      "title": "ToolExecutionManifest",
+      "type": "object"
+    },
+    "ToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/AcquisitionAction"
+        },
+        "execution_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Manifest Id",
+          "type": "string"
+        },
+        "input_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "output_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Output Refs",
+          "type": "array"
+        },
+        "tool_result_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Tool Result Id",
+          "type": "string"
+        },
+        "validated_parameters": {
+          "discriminator": {
+            "mapping": {
+              "OTHER_CAMERA_SAME_TIME": "#/$defs/OtherCameraSameTimeParameters",
+              "RECROP": "#/$defs/RecropParameters",
+              "REDETECT_HIGH_RES": "#/$defs/RedetectHighResolutionParameters",
+              "REQUEST_MORE_FRAMES": "#/$defs/RequestMoreFramesParameters",
+              "TRACK_CONFIDENCE_CURVE": "#/$defs/TrackConfidenceCurveParameters"
+            },
+            "propertyName": "action"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/RequestMoreFramesParameters"
+            },
+            {
+              "$ref": "#/$defs/RecropParameters"
+            },
+            {
+              "$ref": "#/$defs/OtherCameraSameTimeParameters"
+            },
+            {
+              "$ref": "#/$defs/TrackConfidenceCurveParameters"
+            },
+            {
+              "$ref": "#/$defs/RedetectHighResolutionParameters"
+            }
+          ],
+          "title": "Validated Parameters"
+        }
+      },
+      "required": [
+        "tool_result_id",
+        "action",
+        "input_refs",
+        "output_refs",
+        "validated_parameters",
+        "execution_manifest_id"
+      ],
+      "title": "ToolResult",
+      "type": "object"
+    },
+    "TrackConfidenceCurveParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "TRACK_CONFIDENCE_CURVE",
+          "title": "Action",
+          "type": "string"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "track_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Track Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "track_ref",
+        "start_frame",
+        "end_frame_exclusive"
+      ],
+      "title": "TrackConfidenceCurveParameters",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/acquisition-execution-publication.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Durable result authority published before EvidencePack mutation.\n\nThe publication closes one fenced executor owner and makes the exact tool\nresult recoverable without crossing the external tool boundary again.",
+  "properties": {
+    "claim_fence": {
+      "exclusiveMinimum": 0,
+      "title": "Claim Fence",
+      "type": "integer"
+    },
+    "claim_owner_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Claim Owner Sha256",
+      "type": "string"
+    },
+    "crop_request": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CropRequest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "crops": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Crop"
+      },
+      "title": "Crops",
+      "type": "array"
+    },
+    "detections": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Detection"
+      },
+      "title": "Detections",
+      "type": "array"
+    },
+    "execution_manifest": {
+      "$ref": "#/$defs/ToolExecutionManifest"
+    },
+    "execution_mode": {
+      "$ref": "#/$defs/AcquisitionExecutionMode"
+    },
+    "frames": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FrameRef"
+      },
+      "title": "Frames",
+      "type": "array"
+    },
+    "idempotency_key": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "objective_facts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ObjectiveFact"
+      },
+      "title": "Objective Facts",
+      "type": "array"
+    },
+    "publication_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Publication Id",
+      "type": "string"
+    },
+    "request": {
+      "$ref": "#/$defs/AcquisitionRequest"
+    },
+    "schema_version": {
+      "const": "m4-acquisition-execution-publication-v1",
+      "default": "m4-acquisition-execution-publication-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool_result": {
+      "$ref": "#/$defs/ToolResult"
+    }
+  },
+  "required": [
+    "request",
+    "execution_manifest",
+    "tool_result",
+    "execution_mode",
+    "idempotency_key",
+    "claim_owner_sha256",
+    "claim_fence",
+    "publication_id"
+  ],
+  "title": "AcquisitionExecutionPublication",
+  "type": "object"
+}

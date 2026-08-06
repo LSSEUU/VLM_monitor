@@ -1,0 +1,2572 @@
+{
+  "$defs": {
+    "ArtifactInventoryKind": {
+      "enum": [
+        "AUDIT_ENTRY",
+        "EVENT",
+        "CASE",
+        "PACK",
+        "MEDIA"
+      ],
+      "title": "ArtifactInventoryKind",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ArtifactValidationArea": {
+      "enum": [
+        "AUTHORITY",
+        "AUDIT",
+        "EVENT",
+        "CASE",
+        "PACK",
+        "MEDIA",
+        "PROJECTION",
+        "BUDGET"
+      ],
+      "title": "ArtifactValidationArea",
+      "type": "string"
+    },
+    "ArtifactValidationBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_audit_entries": {
+          "default": 100000,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max Audit Entries",
+          "type": "integer"
+        },
+        "max_cases": {
+          "default": 10000,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max Cases",
+          "type": "integer"
+        },
+        "max_database_bytes": {
+          "default": 4294967296,
+          "exclusiveMinimum": 0,
+          "maximum": 68719476736,
+          "title": "Max Database Bytes",
+          "type": "integer"
+        },
+        "max_document_bytes": {
+          "default": 16777216,
+          "exclusiveMinimum": 0,
+          "maximum": 1073741824,
+          "title": "Max Document Bytes",
+          "type": "integer"
+        },
+        "max_events": {
+          "default": 10000,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max Events",
+          "type": "integer"
+        },
+        "max_media": {
+          "default": 200000,
+          "exclusiveMinimum": 0,
+          "maximum": 2000000,
+          "title": "Max Media",
+          "type": "integer"
+        },
+        "max_packs": {
+          "default": 50000,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max Packs",
+          "type": "integer"
+        },
+        "max_projection_bytes": {
+          "default": 268435456,
+          "exclusiveMinimum": 0,
+          "maximum": 4294967296,
+          "title": "Max Projection Bytes",
+          "type": "integer"
+        }
+      },
+      "title": "ArtifactValidationBudget",
+      "type": "object"
+    },
+    "ArtifactValidationCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "audit_entries": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Audit Entries",
+          "type": "integer"
+        },
+        "cases": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Cases",
+          "type": "integer"
+        },
+        "events": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Events",
+          "type": "integer"
+        },
+        "max_document_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Document Bytes",
+          "type": "integer"
+        },
+        "media": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Media",
+          "type": "integer"
+        },
+        "packs": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Packs",
+          "type": "integer"
+        },
+        "projection_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Projection Bytes",
+          "type": "integer"
+        },
+        "projections": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Projections",
+          "type": "integer"
+        }
+      },
+      "title": "ArtifactValidationCounts",
+      "type": "object"
+    },
+    "ArtifactValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Sha256"
+        },
+        "actual_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Size Bytes"
+        },
+        "area": {
+          "$ref": "#/$defs/ArtifactValidationArea"
+        },
+        "artifact_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "audit_failure_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AuditChainFailureReason"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "authoritative_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Authoritative Count"
+        },
+        "closure_defect_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ClosureDefectCode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "code": {
+          "$ref": "#/$defs/ArtifactValidationIssueCode"
+        },
+        "expected_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Sha256"
+        },
+        "expected_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Size Bytes"
+        },
+        "inventory_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactInventoryKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "media_availability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MediaAvailability"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed"
+        },
+        "projection_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Projection Id"
+        },
+        "projection_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProjectionArtifactKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        },
+        "root_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sequence": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sequence"
+        },
+        "traversed_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Traversed Count"
+        }
+      },
+      "required": [
+        "code",
+        "area"
+      ],
+      "title": "ArtifactValidationIssue",
+      "type": "object"
+    },
+    "ArtifactValidationIssueCode": {
+      "enum": [
+        "AUTHORITY_DOCUMENT_INVALID",
+        "AUTHORITY_INVENTORY_MISMATCH",
+        "AUDIT_DOCUMENT_INVALID",
+        "AUDIT_CHAIN_INVALID",
+        "EVENT_DOCUMENT_INVALID",
+        "CASE_DOCUMENT_INVALID",
+        "CASE_SCOPE_MISMATCH",
+        "PACK_DOCUMENT_INVALID",
+        "PACK_SCOPE_MISMATCH",
+        "CURRENT_CLOSURE_INVALID",
+        "CURRENT_CLOSURE_DEFECT",
+        "MEDIA_UNAVAILABLE",
+        "PROJECTION_MISSING",
+        "PROJECTION_UNSAFE",
+        "PROJECTION_CONTENT_MISMATCH",
+        "DOCUMENT_BYTES_BUDGET_EXCEEDED",
+        "AUDIT_BUDGET_EXCEEDED",
+        "EVENT_BUDGET_EXCEEDED",
+        "CASE_BUDGET_EXCEEDED",
+        "PACK_BUDGET_EXCEEDED",
+        "MEDIA_BUDGET_EXCEEDED",
+        "PROJECTION_BYTES_BUDGET_EXCEEDED"
+      ],
+      "title": "ArtifactValidationIssueCode",
+      "type": "string"
+    },
+    "ArtifactValidationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "audit_head_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audit Head Hash"
+        },
+        "audit_head_sequence": {
+          "anyOf": [
+            {
+              "minimum": -1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audit Head Sequence"
+        },
+        "budget": {
+          "$ref": "#/$defs/ArtifactValidationBudget"
+        },
+        "counts": {
+          "$ref": "#/$defs/ArtifactValidationCounts"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactValidationIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "manifest_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manifest Id"
+        },
+        "passed": {
+          "readOnly": true,
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/ArtifactValidationScope"
+        },
+        "validator_version": {
+          "const": "m2-artifacts-v1",
+          "default": "m2-artifacts-v1",
+          "title": "Validator Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "passed"
+      ],
+      "title": "ArtifactValidationReport",
+      "type": "object"
+    },
+    "ArtifactValidationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "audit_chain_and_head": {
+          "const": true,
+          "default": true,
+          "title": "Audit Chain And Head",
+          "type": "boolean"
+        },
+        "authority": {
+          "const": "SQLITE",
+          "default": "SQLITE",
+          "title": "Authority",
+          "type": "string"
+        },
+        "canonical_projections": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Projections",
+          "type": "boolean"
+        },
+        "creation_privacy_basis": {
+          "const": "IMMUTABLE_DB_AND_CREATION_CLOSURE",
+          "default": "IMMUTABLE_DB_AND_CREATION_CLOSURE",
+          "title": "Creation Privacy Basis",
+          "type": "string"
+        },
+        "current_closure": {
+          "const": true,
+          "default": true,
+          "title": "Current Closure",
+          "type": "boolean"
+        },
+        "database_documents": {
+          "const": true,
+          "default": true,
+          "title": "Database Documents",
+          "type": "boolean"
+        },
+        "privacy_transform_replay": {
+          "const": false,
+          "default": false,
+          "title": "Privacy Transform Replay",
+          "type": "boolean"
+        },
+        "source_pixel_replay": {
+          "const": false,
+          "default": false,
+          "title": "Source Pixel Replay",
+          "type": "boolean"
+        },
+        "stored_media": {
+          "const": true,
+          "default": true,
+          "title": "Stored Media",
+          "type": "boolean"
+        }
+      },
+      "title": "ArtifactValidationScope",
+      "type": "object"
+    },
+    "AuditChainFailureReason": {
+      "enum": [
+        "RUN_MISMATCH",
+        "MANIFEST_MISMATCH",
+        "SEQUENCE_MISMATCH",
+        "ENTRY_HASH_MISMATCH",
+        "PREVIOUS_HASH_MISMATCH",
+        "DUPLICATE_ENTRY_HASH",
+        "HEAD_SEQUENCE_MISMATCH",
+        "HEAD_HASH_MISMATCH"
+      ],
+      "title": "AuditChainFailureReason",
+      "type": "string"
+    },
+    "ClosureDefectCode": {
+      "enum": [
+        "MISSING_REFERENCE",
+        "CROSS_RUN_REFERENCE",
+        "CROSS_CASE_REFERENCE",
+        "CROSS_STREAM_FRAME",
+        "FRAME_OUTSIDE_WINDOW",
+        "MISSING_TRIGGER_FRAME",
+        "BBOX_OUT_OF_BOUNDS",
+        "CROP_ROLE_MISMATCH",
+        "TRACK_MISMATCH",
+        "OBJECTIVE_SOURCE_MISSING",
+        "TOOL_INPUT_MISSING",
+        "TOOL_OUTPUT_MISSING",
+        "PATH_BOUNDARY_VIOLATION",
+        "UNSAFE_LINK",
+        "NOT_REGULAR_FILE",
+        "MEDIA_MISSING",
+        "MEDIA_PURGED_BY_RETENTION",
+        "SOURCE_HASH_MISMATCH",
+        "MEDIA_HASH_MISMATCH",
+        "MEDIA_SIZE_MISMATCH",
+        "PIXEL_HASH_MISMATCH",
+        "MEDIA_DIMENSION_MISMATCH",
+        "PRIVACY_POLICY_VIOLATION",
+        "MANIFEST_MISMATCH",
+        "IDENTITY_MISMATCH"
+      ],
+      "title": "ClosureDefectCode",
+      "type": "string"
+    },
+    "M3ArtifactInventoryKind": {
+      "enum": [
+        "MODEL_CALL_CLAIM",
+        "MODEL_CALL_FAILURE_AUTHORITY",
+        "MODEL_RESPONSE",
+        "PARSED_SCREENING_OUTPUT",
+        "MODEL_PARSE_RECEIPT",
+        "MODEL_CACHE_ENTRY",
+        "MODEL_CALL_USAGE",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "PROCEDURAL_REVIEW",
+        "PROCEDURAL_DEFECT",
+        "BACKLOG_ITEM",
+        "BACKLOG_ITEM_VERSION",
+        "BACKLOG_HEAD",
+        "BACKLOG_COMPLETION_RECEIPT"
+      ],
+      "title": "M3ArtifactInventoryKind",
+      "type": "string"
+    },
+    "M3ArtifactValidationArea": {
+      "enum": [
+        "CLAIM",
+        "RESPONSE",
+        "CACHE",
+        "PARSE",
+        "SCREENING",
+        "VERDICT",
+        "REVIEW",
+        "BACKLOG",
+        "USAGE",
+        "RAW_RESPONSE",
+        "BUDGET"
+      ],
+      "title": "M3ArtifactValidationArea",
+      "type": "string"
+    },
+    "M3ArtifactValidationBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_document_bytes": {
+          "default": 16777216,
+          "exclusiveMinimum": 0,
+          "maximum": 1073741824,
+          "title": "Max Document Bytes",
+          "type": "integer"
+        },
+        "max_documents": {
+          "default": 1000000,
+          "exclusiveMinimum": 0,
+          "maximum": 10000000,
+          "title": "Max Documents",
+          "type": "integer"
+        },
+        "max_raw_response_bytes": {
+          "default": 67108864,
+          "exclusiveMinimum": 0,
+          "maximum": 1073741824,
+          "title": "Max Raw Response Bytes",
+          "type": "integer"
+        },
+        "max_raw_response_files": {
+          "default": 1000000,
+          "exclusiveMinimum": 0,
+          "maximum": 10000000,
+          "title": "Max Raw Response Files",
+          "type": "integer"
+        },
+        "max_raw_response_name_bytes": {
+          "default": 255,
+          "exclusiveMinimum": 0,
+          "maximum": 4096,
+          "title": "Max Raw Response Name Bytes",
+          "type": "integer"
+        },
+        "max_raw_response_total_bytes": {
+          "default": 4294967296,
+          "exclusiveMinimum": 0,
+          "maximum": 68719476736,
+          "title": "Max Raw Response Total Bytes",
+          "type": "integer"
+        }
+      },
+      "title": "M3ArtifactValidationBudget",
+      "type": "object"
+    },
+    "M3ArtifactValidationCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "backlog_completion_receipts": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Backlog Completion Receipts",
+          "type": "integer"
+        },
+        "backlog_heads": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Backlog Heads",
+          "type": "integer"
+        },
+        "backlog_item_versions": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Backlog Item Versions",
+          "type": "integer"
+        },
+        "backlog_items": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Backlog Items",
+          "type": "integer"
+        },
+        "documents": {
+          "readOnly": true,
+          "title": "Documents",
+          "type": "integer"
+        },
+        "max_document_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Document Bytes",
+          "type": "integer"
+        },
+        "max_physical_raw_response_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Physical Raw Response Bytes",
+          "type": "integer"
+        },
+        "max_raw_response_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Raw Response Bytes",
+          "type": "integer"
+        },
+        "model_cache_entries": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Model Cache Entries",
+          "type": "integer"
+        },
+        "model_call_claims": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Model Call Claims",
+          "type": "integer"
+        },
+        "model_call_failure_authorities": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Model Call Failure Authorities",
+          "type": "integer"
+        },
+        "model_call_usage": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Model Call Usage",
+          "type": "integer"
+        },
+        "model_parse_receipts": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Model Parse Receipts",
+          "type": "integer"
+        },
+        "model_responses": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Model Responses",
+          "type": "integer"
+        },
+        "parsed_screening_outputs": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Parsed Screening Outputs",
+          "type": "integer"
+        },
+        "physical_raw_response_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Physical Raw Response Bytes",
+          "type": "integer"
+        },
+        "physical_raw_response_entries": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Physical Raw Response Entries",
+          "type": "integer"
+        },
+        "physical_raw_response_files": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Physical Raw Response Files",
+          "type": "integer"
+        },
+        "procedural_defects": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Procedural Defects",
+          "type": "integer"
+        },
+        "procedural_reviews": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Procedural Reviews",
+          "type": "integer"
+        },
+        "raw_response_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Raw Response Bytes",
+          "type": "integer"
+        },
+        "screening_results": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Screening Results",
+          "type": "integer"
+        },
+        "verdicts": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Verdicts",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "documents"
+      ],
+      "title": "M3ArtifactValidationCounts",
+      "type": "object"
+    },
+    "M3ArtifactValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Sha256"
+        },
+        "actual_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Size Bytes"
+        },
+        "area": {
+          "$ref": "#/$defs/M3ArtifactValidationArea"
+        },
+        "artifact_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Id"
+        },
+        "authoritative_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Authoritative Count"
+        },
+        "code": {
+          "$ref": "#/$defs/M3ArtifactValidationIssueCode"
+        },
+        "expected_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Sha256"
+        },
+        "expected_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Size Bytes"
+        },
+        "inventory_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M3ArtifactInventoryKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        },
+        "record_identity_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Record Identity Sha256"
+        },
+        "source_token": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Token"
+        },
+        "traversed_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Traversed Count"
+        }
+      },
+      "required": [
+        "code",
+        "area"
+      ],
+      "title": "M3ArtifactValidationIssue",
+      "type": "object"
+    },
+    "M3ArtifactValidationIssueCode": {
+      "enum": [
+        "AUTHORITY_DOCUMENT_INVALID",
+        "AUTHORITY_INDEX_MISMATCH",
+        "AUTHORITY_REFERENCE_INVALID",
+        "AUTHORITY_INVENTORY_MISMATCH",
+        "RAW_RESPONSE_MISSING",
+        "RAW_RESPONSE_UNSAFE",
+        "RAW_RESPONSE_CONTENT_MISMATCH",
+        "RAW_RESPONSE_UNREFERENCED",
+        "RAW_RESPONSE_INVENTORY_UNSAFE",
+        "DOCUMENT_BYTES_BUDGET_EXCEEDED",
+        "DOCUMENT_COUNT_BUDGET_EXCEEDED",
+        "RAW_RESPONSE_BYTES_BUDGET_EXCEEDED",
+        "RAW_RESPONSE_TOTAL_BYTES_BUDGET_EXCEEDED",
+        "RAW_RESPONSE_FILE_COUNT_BUDGET_EXCEEDED"
+      ],
+      "title": "M3ArtifactValidationIssueCode",
+      "type": "string"
+    },
+    "M3ArtifactValidationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "budget": {
+          "$ref": "#/$defs/M3ArtifactValidationBudget"
+        },
+        "counts": {
+          "$ref": "#/$defs/M3ArtifactValidationCounts"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M3ArtifactValidationIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "m2_report": {
+          "$ref": "#/$defs/ArtifactValidationReport"
+        },
+        "passed": {
+          "readOnly": true,
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "physical_raw_response_inventory_complete": {
+          "readOnly": true,
+          "title": "Physical Raw Response Inventory Complete",
+          "type": "boolean"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/M3ArtifactValidationScope"
+        },
+        "validator_version": {
+          "const": "m3-artifacts-v1",
+          "default": "m3-artifacts-v1",
+          "title": "Validator Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "m2_report",
+        "passed",
+        "physical_raw_response_inventory_complete"
+      ],
+      "title": "M3ArtifactValidationReport",
+      "type": "object"
+    },
+    "M3ArtifactValidationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "authority": {
+          "const": "SQLITE_SNAPSHOT",
+          "default": "SQLITE_SNAPSHOT",
+          "title": "Authority",
+          "type": "string"
+        },
+        "canonical_backlog_history": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Backlog History",
+          "type": "boolean"
+        },
+        "canonical_model_cache": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Model Cache",
+          "type": "boolean"
+        },
+        "canonical_model_call_claims": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Model Call Claims",
+          "type": "boolean"
+        },
+        "canonical_model_call_failure_authorities": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Model Call Failure Authorities",
+          "type": "boolean"
+        },
+        "canonical_model_responses": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Model Responses",
+          "type": "boolean"
+        },
+        "canonical_parse_artifacts": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Parse Artifacts",
+          "type": "boolean"
+        },
+        "canonical_screening_results": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Screening Results",
+          "type": "boolean"
+        },
+        "canonical_usage_accounting": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Usage Accounting",
+          "type": "boolean"
+        },
+        "canonical_verdicts_and_reviews": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Verdicts And Reviews",
+          "type": "boolean"
+        },
+        "model_semantic_replay": {
+          "const": false,
+          "default": false,
+          "title": "Model Semantic Replay",
+          "type": "boolean"
+        },
+        "provider_replay": {
+          "const": false,
+          "default": false,
+          "title": "Provider Replay",
+          "type": "boolean"
+        },
+        "raw_response_bidirectional_closure": {
+          "const": true,
+          "default": true,
+          "title": "Raw Response Bidirectional Closure",
+          "type": "boolean"
+        },
+        "raw_response_content_and_size": {
+          "const": true,
+          "default": true,
+          "title": "Raw Response Content And Size",
+          "type": "boolean"
+        },
+        "raw_response_inventory_consistency": {
+          "const": "FAIL_CLOSED_RESCAN",
+          "default": "FAIL_CLOSED_RESCAN",
+          "title": "Raw Response Inventory Consistency",
+          "type": "string"
+        },
+        "raw_response_locator_binding": {
+          "const": true,
+          "default": true,
+          "title": "Raw Response Locator Binding",
+          "type": "boolean"
+        },
+        "raw_response_physical_inventory": {
+          "const": true,
+          "default": true,
+          "title": "Raw Response Physical Inventory",
+          "type": "boolean"
+        },
+        "relational_bindings": {
+          "const": true,
+          "default": true,
+          "title": "Relational Bindings",
+          "type": "boolean"
+        }
+      },
+      "title": "M3ArtifactValidationScope",
+      "type": "object"
+    },
+    "M4ArtifactValidationArea": {
+      "enum": [
+        "AUTHORITY",
+        "EMBEDDED_M3",
+        "PROJECTION",
+        "BUDGET"
+      ],
+      "title": "M4ArtifactValidationArea",
+      "type": "string"
+    },
+    "M4ArtifactValidationBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_authority_document_bytes": {
+          "default": 16777216,
+          "exclusiveMinimum": 0,
+          "maximum": 1073741824,
+          "title": "Max Authority Document Bytes",
+          "type": "integer"
+        },
+        "max_authority_documents": {
+          "default": 1000000,
+          "exclusiveMinimum": 0,
+          "maximum": 10000000,
+          "title": "Max Authority Documents",
+          "type": "integer"
+        },
+        "max_projection_file_bytes": {
+          "default": 67108864,
+          "exclusiveMinimum": 0,
+          "maximum": 1073741824,
+          "title": "Max Projection File Bytes",
+          "type": "integer"
+        },
+        "max_projection_files": {
+          "default": 1000000,
+          "exclusiveMinimum": 0,
+          "maximum": 10000000,
+          "title": "Max Projection Files",
+          "type": "integer"
+        },
+        "max_projection_name_bytes": {
+          "default": 512,
+          "exclusiveMinimum": 0,
+          "maximum": 4096,
+          "title": "Max Projection Name Bytes",
+          "type": "integer"
+        },
+        "max_projection_total_bytes": {
+          "default": 268435456,
+          "exclusiveMinimum": 0,
+          "maximum": 4294967296,
+          "title": "Max Projection Total Bytes",
+          "type": "integer"
+        }
+      },
+      "title": "M4ArtifactValidationBudget",
+      "type": "object"
+    },
+    "M4ArtifactValidationCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_failures": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Authority Failures",
+          "type": "integer"
+        },
+        "authority_rows": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Authority Rows",
+          "type": "integer"
+        },
+        "embedded_m3_gating_issues": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Embedded M3 Gating Issues",
+          "type": "integer"
+        },
+        "embedded_m3_issues": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Embedded M3 Issues",
+          "type": "integer"
+        },
+        "embedded_m3_superseded_issues": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Embedded M3 Superseded Issues",
+          "type": "integer"
+        },
+        "hearing_roots": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Hearing Roots",
+          "type": "integer"
+        },
+        "inventories": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M4ArtifactValidationInventoryCount"
+          },
+          "title": "Inventories",
+          "type": "array"
+        },
+        "max_authority_document_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Authority Document Bytes",
+          "type": "integer"
+        },
+        "max_projection_file_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Projection File Bytes",
+          "type": "integer"
+        },
+        "media_failures": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Media Failures",
+          "type": "integer"
+        },
+        "projection_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Projection Bytes",
+          "type": "integer"
+        },
+        "projection_documents": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Projection Documents",
+          "type": "integer"
+        },
+        "projection_files": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Projection Files",
+          "type": "integer"
+        },
+        "validated_authority_documents": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Validated Authority Documents",
+          "type": "integer"
+        },
+        "validated_media": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Validated Media",
+          "type": "integer"
+        }
+      },
+      "title": "M4ArtifactValidationCounts",
+      "type": "object"
+    },
+    "M4ArtifactValidationInventoryCount": {
+      "additionalProperties": false,
+      "properties": {
+        "authoritative_count": {
+          "minimum": 0,
+          "title": "Authoritative Count",
+          "type": "integer"
+        },
+        "inventory_kind": {
+          "$ref": "#/$defs/M4ProjectionArtifactKind"
+        },
+        "projected_count": {
+          "minimum": 0,
+          "title": "Projected Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "inventory_kind",
+        "authoritative_count",
+        "projected_count"
+      ],
+      "title": "M4ArtifactValidationInventoryCount",
+      "type": "object"
+    },
+    "M4ArtifactValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Sha256"
+        },
+        "actual_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Size Bytes"
+        },
+        "area": {
+          "$ref": "#/$defs/M4ArtifactValidationArea"
+        },
+        "artifact_id": {
+          "anyOf": [
+            {
+              "maxLength": 214,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,213}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Id"
+        },
+        "authoritative_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Authoritative Count"
+        },
+        "code": {
+          "$ref": "#/$defs/M4ArtifactValidationIssueCode"
+        },
+        "expected_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Sha256"
+        },
+        "expected_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Size Bytes"
+        },
+        "inventory_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M4ProjectionArtifactKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed"
+        },
+        "projected_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Projected Count"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        },
+        "record_identity_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Record Identity Sha256"
+        },
+        "source_token": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Token"
+        }
+      },
+      "required": [
+        "code",
+        "area"
+      ],
+      "title": "M4ArtifactValidationIssue",
+      "type": "object"
+    },
+    "M4ArtifactValidationIssueCode": {
+      "enum": [
+        "AUTHORITY_DOCUMENT_INVALID",
+        "AUTHORITY_INDEX_MISMATCH",
+        "AUTHORITY_REFERENCE_INVALID",
+        "AUTHORITY_MEDIA_INVALID",
+        "AUTHORITY_SCHEMA_INVALID",
+        "AUTHORITY_SCHEMA_UNSUPPORTED",
+        "PROJECTION_MISSING",
+        "PROJECTION_UNSAFE",
+        "PROJECTION_CONTENT_MISMATCH",
+        "PROJECTION_ROOT_MISMATCH",
+        "PROJECTION_INVENTORY_MISMATCH",
+        "EMBEDDED_M3_DEFECT",
+        "AUTHORITY_DOCUMENT_COUNT_BUDGET_EXCEEDED",
+        "AUTHORITY_DOCUMENT_BYTES_BUDGET_EXCEEDED",
+        "PROJECTION_FILE_COUNT_BUDGET_EXCEEDED",
+        "PROJECTION_FILE_BYTES_BUDGET_EXCEEDED",
+        "PROJECTION_TOTAL_BYTES_BUDGET_EXCEEDED"
+      ],
+      "title": "M4ArtifactValidationIssueCode",
+      "type": "string"
+    },
+    "M4ArtifactValidationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_root_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Authority Root Sha256"
+        },
+        "budget": {
+          "$ref": "#/$defs/M4ArtifactValidationBudget"
+        },
+        "counts": {
+          "$ref": "#/$defs/M4ArtifactValidationCounts"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M4ArtifactValidationIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "m3_report": {
+          "$ref": "#/$defs/M3ArtifactValidationReport"
+        },
+        "passed": {
+          "readOnly": true,
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/M4ArtifactValidationScope"
+        },
+        "validator_version": {
+          "const": "m4-artifacts-v1",
+          "default": "m4-artifacts-v1",
+          "title": "Validator Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "m3_report",
+        "passed"
+      ],
+      "title": "M4ArtifactValidationReport",
+      "type": "object"
+    },
+    "M4ArtifactValidationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "authority": {
+          "const": "SQLITE_SNAPSHOT",
+          "default": "SQLITE_SNAPSHOT",
+          "title": "Authority",
+          "type": "string"
+        },
+        "authority_mutation": {
+          "const": false,
+          "default": false,
+          "title": "Authority Mutation",
+          "type": "boolean"
+        },
+        "base_audit_chain": {
+          "const": true,
+          "default": true,
+          "title": "Base Audit Chain",
+          "type": "boolean"
+        },
+        "base_case_history_and_current_head": {
+          "const": true,
+          "default": true,
+          "title": "Base Case History And Current Head",
+          "type": "boolean"
+        },
+        "base_current_pack_closure": {
+          "const": true,
+          "default": true,
+          "title": "Base Current Pack Closure",
+          "type": "boolean"
+        },
+        "base_physical_media": {
+          "const": true,
+          "default": true,
+          "title": "Base Physical Media",
+          "type": "boolean"
+        },
+        "bidirectional_relational_bindings": {
+          "const": true,
+          "default": true,
+          "title": "Bidirectional Relational Bindings",
+          "type": "boolean"
+        },
+        "canonical_hearing_documents": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Hearing Documents",
+          "type": "boolean"
+        },
+        "current_projection_documents": {
+          "const": true,
+          "default": true,
+          "title": "Current Projection Documents",
+          "type": "boolean"
+        },
+        "current_projection_exact_inventory": {
+          "const": true,
+          "default": true,
+          "title": "Current Projection Exact Inventory",
+          "type": "boolean"
+        },
+        "current_projection_manifest": {
+          "const": true,
+          "default": true,
+          "title": "Current Projection Manifest",
+          "type": "boolean"
+        },
+        "current_projection_pointer": {
+          "const": true,
+          "default": true,
+          "title": "Current Projection Pointer",
+          "type": "boolean"
+        },
+        "duplicated_index_columns": {
+          "const": true,
+          "default": true,
+          "title": "Duplicated Index Columns",
+          "type": "boolean"
+        },
+        "embedded_m3_defect_translation": {
+          "const": "SUCCESSOR_AWARE",
+          "default": "SUCCESSOR_AWARE",
+          "title": "Embedded M3 Defect Translation",
+          "type": "string"
+        },
+        "embedded_m3_gating": {
+          "const": false,
+          "default": false,
+          "title": "Embedded M3 Gating",
+          "type": "boolean"
+        },
+        "embedded_m3_report": {
+          "const": true,
+          "default": true,
+          "title": "Embedded M3 Report",
+          "type": "boolean"
+        },
+        "projection_mutation": {
+          "const": false,
+          "default": false,
+          "title": "Projection Mutation",
+          "type": "boolean"
+        },
+        "projection_rebuild": {
+          "const": false,
+          "default": false,
+          "title": "Projection Rebuild",
+          "type": "boolean"
+        }
+      },
+      "title": "M4ArtifactValidationScope",
+      "type": "object"
+    },
+    "M4ProjectionArtifactKind": {
+      "description": "Every canonical document needed to reconstruct an M4 hearing graph.",
+      "enum": [
+        "HEARING_SESSION",
+        "HEARING_CYCLE",
+        "HEARING_CHECKPOINT",
+        "PRECEDENT_RETRIEVAL",
+        "MODEL_REQUEST",
+        "MODEL_RESPONSE",
+        "MODEL_PARSE_RECEIPT",
+        "ROLE_OUTPUT",
+        "MODEL_CACHE_ENTRY",
+        "USAGE_RECEIPT",
+        "ACQUISITION_REQUEST",
+        "ACQUISITION_EXECUTION_CLAIM",
+        "ACQUISITION_EXECUTION_PUBLICATION",
+        "HEARING_ROUND",
+        "HEARING_RECORD",
+        "TOOL_EXECUTION_MANIFEST",
+        "ACQUIRED_CROP",
+        "TOOL_EXECUTION_RECEIPT",
+        "EVIDENCE_PACK_DERIVATION",
+        "VERDICT_BINDING",
+        "REWORK_RECEIPT",
+        "HEARING_BACKLOG_COMPLETION",
+        "MODEL_CALL_FAILURE_AUTHORITY",
+        "STRICT_PARSE_FAILURE_ATTEMPT",
+        "STRICT_PARSE_FAILURE_PROOF",
+        "BACKLOG_RETRY_OUTCOME",
+        "HUMAN_REVIEW_RECEIPT",
+        "CASE_VERSION",
+        "EVIDENCE_PACK",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "PROCEDURAL_REVIEW",
+        "BACKLOG_ITEM",
+        "BACKLOG_ITEM_VERSION",
+        "FRAME",
+        "DETECTION",
+        "AUDIT_ENTRY"
+      ],
+      "title": "M4ProjectionArtifactKind",
+      "type": "string"
+    },
+    "M5ArtifactValidationArea": {
+      "enum": [
+        "AUTHORITY",
+        "DATASET",
+        "PROJECTION",
+        "RETENTION",
+        "BUDGET"
+      ],
+      "title": "M5ArtifactValidationArea",
+      "type": "string"
+    },
+    "M5ArtifactValidationCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Authority Bytes",
+          "type": "integer"
+        },
+        "authority_failures": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Authority Failures",
+          "type": "integer"
+        },
+        "authority_rows": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Authority Rows",
+          "type": "integer"
+        },
+        "case_roots": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Case Roots",
+          "type": "integer"
+        },
+        "dataset_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Dataset Bytes",
+          "type": "integer"
+        },
+        "dataset_registrations": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Dataset Registrations",
+          "type": "integer"
+        },
+        "dataset_retention_holds": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Dataset Retention Holds",
+          "type": "integer"
+        },
+        "inventories": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M5ArtifactValidationInventoryCount"
+          },
+          "title": "Inventories",
+          "type": "array"
+        },
+        "max_authority_record_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Authority Record Bytes",
+          "type": "integer"
+        },
+        "max_dataset_file_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Dataset File Bytes",
+          "type": "integer"
+        },
+        "max_projection_file_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Projection File Bytes",
+          "type": "integer"
+        },
+        "max_retention_record_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Retention Record Bytes",
+          "type": "integer"
+        },
+        "orphan_retention_holds": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Orphan Retention Holds",
+          "type": "integer"
+        },
+        "projection_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Projection Bytes",
+          "type": "integer"
+        },
+        "projection_files": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Projection Files",
+          "type": "integer"
+        },
+        "projection_records": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Projection Records",
+          "type": "integer"
+        },
+        "projections": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M5ArtifactValidationProjectionCount"
+          },
+          "title": "Projections",
+          "type": "array"
+        },
+        "retention_bytes": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Retention Bytes",
+          "type": "integer"
+        },
+        "retention_rows": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Retention Rows",
+          "type": "integer"
+        },
+        "unregistered_dataset_files": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Unregistered Dataset Files",
+          "type": "integer"
+        },
+        "validated_authority_documents": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Validated Authority Documents",
+          "type": "integer"
+        },
+        "verified_dataset_files": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Verified Dataset Files",
+          "type": "integer"
+        }
+      },
+      "title": "M5ArtifactValidationCounts",
+      "type": "object"
+    },
+    "M5ArtifactValidationInventoryCount": {
+      "additionalProperties": false,
+      "properties": {
+        "authoritative_count": {
+          "minimum": 0,
+          "title": "Authoritative Count",
+          "type": "integer"
+        },
+        "authority_kind": {
+          "$ref": "#/$defs/M5AuthorityKind"
+        }
+      },
+      "required": [
+        "authority_kind",
+        "authoritative_count"
+      ],
+      "title": "M5ArtifactValidationInventoryCount",
+      "type": "object"
+    },
+    "M5ArtifactValidationIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Sha256"
+        },
+        "area": {
+          "$ref": "#/$defs/M5ArtifactValidationArea"
+        },
+        "authority_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M5AuthorityKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "code": {
+          "$ref": "#/$defs/M5ArtifactValidationIssueCode"
+        },
+        "dataset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Id"
+        },
+        "expected_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Sha256"
+        },
+        "file_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M5ProjectionFileKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hold_identity_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hold Identity Sha256"
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limit"
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed"
+        },
+        "reason_code": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "record_identity_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Record Identity Sha256"
+        },
+        "source_token": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Token"
+        }
+      },
+      "required": [
+        "code",
+        "area",
+        "reason_code"
+      ],
+      "title": "M5ArtifactValidationIssue",
+      "type": "object"
+    },
+    "M5ArtifactValidationIssueCode": {
+      "enum": [
+        "AUTHORITY_DOCUMENT_INVALID",
+        "AUTHORITY_INDEX_MISMATCH",
+        "AUTHORITY_REFERENCE_INVALID",
+        "AUTHORITY_HEAD_INVALID",
+        "AUTHORITY_SCHEMA_INVALID",
+        "ALERT_POLICY_REPLAY_INVALID",
+        "ALERT_AUTOMATIC_PRECEDENT_INVALID",
+        "PRECEDENT_ACTIVATION_INVALID",
+        "PRECEDENT_CAUSAL_LEDGER_INVALID",
+        "TRAINING_CAUSAL_LEDGER_INVALID",
+        "DATASET_SNAPSHOT_CLOSURE_INVALID",
+        "PROJECTION_MISSING",
+        "PROJECTION_UNSAFE",
+        "PROJECTION_CONTENT_MISMATCH",
+        "PROJECTION_ROOT_MISMATCH",
+        "PROJECTION_INVENTORY_MISMATCH",
+        "DATASET_PATH_UNSAFE",
+        "DATASET_CONTENT_MISSING",
+        "DATASET_CONTENT_HASH_MISMATCH",
+        "DATASET_CONTENT_SIZE_MISMATCH",
+        "DATASET_CROP_AUTHORITY_INVALID",
+        "DATASET_REPORT_REBUILD_MISMATCH",
+        "DATASET_CONTENT_REBUILD_MISMATCH",
+        "DATASET_UNREGISTERED_FILE",
+        "DATASET_DIRECTORY_UNSAFE",
+        "DATASET_RETENTION_HOLD_MISSING",
+        "DATASET_RETENTION_HOLD_EXTRA",
+        "DATASET_RETENTION_HOLD_RELEASED",
+        "DATASET_RETENTION_HOLD_OWNER_MISMATCH",
+        "DATASET_RETENTION_HOLD_DOCUMENT_MISMATCH",
+        "DATASET_RETENTION_AUDIT_LINK_INVALID",
+        "ORPHAN_APPEAL_RETENTION_HOLD",
+        "ORPHAN_DATASET_RETENTION_HOLD",
+        "AUTHORITY_RECORD_COUNT_BUDGET_EXCEEDED",
+        "AUTHORITY_RECORD_BYTES_BUDGET_EXCEEDED",
+        "AUTHORITY_TOTAL_BYTES_BUDGET_EXCEEDED",
+        "PROJECTION_FILE_BYTES_BUDGET_EXCEEDED",
+        "PROJECTION_TOTAL_BYTES_BUDGET_EXCEEDED",
+        "DATASET_FILE_COUNT_BUDGET_EXCEEDED",
+        "DATASET_FILE_BYTES_BUDGET_EXCEEDED",
+        "DATASET_TOTAL_BYTES_BUDGET_EXCEEDED",
+        "RETENTION_RECORD_COUNT_BUDGET_EXCEEDED",
+        "RETENTION_RECORD_BYTES_BUDGET_EXCEEDED",
+        "RETENTION_TOTAL_BYTES_BUDGET_EXCEEDED"
+      ],
+      "title": "M5ArtifactValidationIssueCode",
+      "type": "string"
+    },
+    "M5ArtifactValidationProjectionCount": {
+      "additionalProperties": false,
+      "properties": {
+        "file_kind": {
+          "$ref": "#/$defs/M5ProjectionFileKind"
+        },
+        "record_count": {
+          "minimum": 0,
+          "title": "Record Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "file_kind",
+        "record_count"
+      ],
+      "title": "M5ArtifactValidationProjectionCount",
+      "type": "object"
+    },
+    "M5ArtifactValidationScope": {
+      "additionalProperties": false,
+      "properties": {
+        "appeal_dataset_orphan_hold_classification": {
+          "const": true,
+          "default": true,
+          "title": "Appeal Dataset Orphan Hold Classification",
+          "type": "boolean"
+        },
+        "application_reference_closure": {
+          "const": true,
+          "default": true,
+          "title": "Application Reference Closure",
+          "type": "boolean"
+        },
+        "authority_mutation": {
+          "const": false,
+          "default": false,
+          "title": "Authority Mutation",
+          "type": "boolean"
+        },
+        "automatic_activation_case_cut_replay": {
+          "const": true,
+          "default": true,
+          "title": "Automatic Activation Case Cut Replay",
+          "type": "boolean"
+        },
+        "canonical_documents": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Documents",
+          "type": "boolean"
+        },
+        "canonical_run_manifest": {
+          "const": true,
+          "default": true,
+          "title": "Canonical Run Manifest",
+          "type": "boolean"
+        },
+        "config_manifest_binding": {
+          "const": true,
+          "default": true,
+          "title": "Config Manifest Binding",
+          "type": "boolean"
+        },
+        "current_appeal_heads": {
+          "const": true,
+          "default": true,
+          "title": "Current Appeal Heads",
+          "type": "boolean"
+        },
+        "current_case_heads": {
+          "const": true,
+          "default": true,
+          "title": "Current Case Heads",
+          "type": "boolean"
+        },
+        "current_cooldown_heads": {
+          "const": true,
+          "default": true,
+          "title": "Current Cooldown Heads",
+          "type": "boolean"
+        },
+        "current_precedent_heads": {
+          "const": true,
+          "default": true,
+          "title": "Current Precedent Heads",
+          "type": "boolean"
+        },
+        "current_projection_exact_inventory": {
+          "const": true,
+          "default": true,
+          "title": "Current Projection Exact Inventory",
+          "type": "boolean"
+        },
+        "current_training_crop_verification": {
+          "const": true,
+          "default": true,
+          "title": "Current Training Crop Verification",
+          "type": "boolean"
+        },
+        "dataset_directory_exact_inventory": {
+          "const": true,
+          "default": true,
+          "title": "Dataset Directory Exact Inventory",
+          "type": "boolean"
+        },
+        "dataset_mutation": {
+          "const": false,
+          "default": false,
+          "title": "Dataset Mutation",
+          "type": "boolean"
+        },
+        "dataset_physical_bytes": {
+          "const": true,
+          "default": true,
+          "title": "Dataset Physical Bytes",
+          "type": "boolean"
+        },
+        "dataset_retention_closure": {
+          "const": true,
+          "default": true,
+          "title": "Dataset Retention Closure",
+          "type": "boolean"
+        },
+        "deterministic_dataset_rebuild": {
+          "const": true,
+          "default": true,
+          "title": "Deterministic Dataset Rebuild",
+          "type": "boolean"
+        },
+        "duplicated_index_columns": {
+          "const": true,
+          "default": true,
+          "title": "Duplicated Index Columns",
+          "type": "boolean"
+        },
+        "foreign_key_closure": {
+          "const": true,
+          "default": true,
+          "title": "Foreign Key Closure",
+          "type": "boolean"
+        },
+        "precedent_causal_ledger_bijection": {
+          "const": true,
+          "default": true,
+          "title": "Precedent Causal Ledger Bijection",
+          "type": "boolean"
+        },
+        "projection_mutation": {
+          "const": false,
+          "default": false,
+          "title": "Projection Mutation",
+          "type": "boolean"
+        },
+        "sql_authority_budget_preflight": {
+          "const": true,
+          "default": true,
+          "title": "Sql Authority Budget Preflight",
+          "type": "boolean"
+        },
+        "sqlite_snapshot": {
+          "const": true,
+          "default": true,
+          "title": "Sqlite Snapshot",
+          "type": "boolean"
+        },
+        "streaming_limit_plus_one": {
+          "const": true,
+          "default": true,
+          "title": "Streaming Limit Plus One",
+          "type": "boolean"
+        }
+      },
+      "title": "M5ArtifactValidationScope",
+      "type": "object"
+    },
+    "M5AuthorityKind": {
+      "enum": [
+        "PRECEDENT_EMBEDDING",
+        "PRECEDENT",
+        "PRECEDENT_EXPOSURE",
+        "PRECEDENT_APPLICATION_BATCH",
+        "PRECEDENT_CAUSAL_EVENT",
+        "PRECEDENT_CITATION",
+        "PRECEDENT_CONFLICT_BATCH",
+        "PRECEDENT_CONFLICT_BATCH_RECEIPT",
+        "PRECEDENT_LIFECYCLE",
+        "ALERT",
+        "ALERT_COOLDOWN",
+        "ALERT_OUTBOX",
+        "ALERT_CHANNEL_CAPABILITY",
+        "ALERT_DISPATCH_ATTEMPT",
+        "ALERT_DISPATCH_RECEIPT",
+        "IMMEDIATE_SAFETY_DELIVERY",
+        "APPEAL",
+        "APPEAL_RESOLUTION",
+        "APPEAL_RESOLUTION_COMMIT",
+        "VERDICT_RESCISSION",
+        "ALERT_RESCISSION",
+        "TRAINING_LABEL",
+        "STRONG_TRAINING_LABEL_PROVENANCE",
+        "TRAINING_CAUSAL_EVENT",
+        "DATASET_ARTIFACT",
+        "DATASET_REGISTRATION_SNAPSHOT",
+        "DATASET_CROP_SNAPSHOT"
+      ],
+      "title": "M5AuthorityKind",
+      "type": "string"
+    },
+    "M5ProjectionFileKind": {
+      "enum": [
+        "ALERTS",
+        "PRECEDENTS",
+        "APPEALS",
+        "TRAIN_BUFFER"
+      ],
+      "title": "M5ProjectionFileKind",
+      "type": "string"
+    },
+    "MediaAvailability": {
+      "enum": [
+        "AVAILABLE",
+        "PURGING",
+        "PURGED_BY_RETENTION"
+      ],
+      "title": "MediaAvailability",
+      "type": "string"
+    },
+    "ProjectionArtifactKind": {
+      "enum": [
+        "EVENTS_JSONL",
+        "AUDIT_JSONL",
+        "CASE_JSON",
+        "PACK_JSON"
+      ],
+      "title": "ProjectionArtifactKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-artifact-validation-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority_root_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Authority Root Sha256"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "counts": {
+      "$ref": "#/$defs/M5ArtifactValidationCounts"
+    },
+    "issues": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M5ArtifactValidationIssue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "passed": {
+      "readOnly": true,
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "predecessor_report": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M3ArtifactValidationReport"
+        },
+        {
+          "$ref": "#/$defs/M4ArtifactValidationReport"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Predecessor Report"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Report Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/M5ArtifactValidationScope"
+    },
+    "validator_version": {
+      "const": "m5-artifacts-v1",
+      "default": "m5-artifacts-v1",
+      "title": "Validator Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "manifest_id",
+    "config_sha256",
+    "passed",
+    "report_id"
+  ],
+  "title": "M5ArtifactValidationReport",
+  "type": "object"
+}

@@ -1,0 +1,312 @@
+{
+  "$defs": {
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "M5EmbeddingChannel": {
+      "enum": [
+        "TEXT",
+        "VISUAL"
+      ],
+      "title": "M5EmbeddingChannel",
+      "type": "string"
+    },
+    "M5EmbeddingRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "FAKE_SHA256_SIGNED_PROJECTION_V1",
+          "default": "FAKE_SHA256_SIGNED_PROJECTION_V1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/$defs/M5EmbeddingChannel"
+        },
+        "dimensions": {
+          "exclusiveMinimum": 0,
+          "maximum": 4096,
+          "title": "Dimensions",
+          "type": "integer"
+        },
+        "input_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Input Ref",
+          "type": "string"
+        },
+        "input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m5-embedding-request-v1",
+          "default": "m5-embedding-request-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "channel",
+        "input_ref",
+        "input_sha256",
+        "model_manifest_id",
+        "dimensions",
+        "request_id"
+      ],
+      "title": "M5EmbeddingRequest",
+      "type": "object"
+    },
+    "M5EmbeddingVector": {
+      "additionalProperties": false,
+      "properties": {
+        "embedding_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Embedding Id",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/M5EmbeddingRequest"
+        },
+        "schema_version": {
+          "const": "m5-embedding-vector-v1",
+          "default": "m5-embedding-vector-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "request",
+        "values",
+        "embedding_id"
+      ],
+      "title": "M5EmbeddingVector",
+      "type": "object"
+    },
+    "M5PrecedentPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "automatic_activation_delay_seconds": {
+          "maximum": 316224000,
+          "minimum": 0,
+          "title": "Automatic Activation Delay Seconds",
+          "type": "integer"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "conflict_similarity": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Conflict Similarity",
+          "type": "number"
+        },
+        "policy_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m5-precedent-policy-v1",
+          "default": "m5-precedent-policy-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_priorities": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/PrecedentSource"
+          },
+          "title": "Source Priorities",
+          "type": "object"
+        },
+        "source_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/PrecedentSource"
+          },
+          "title": "Source Weights",
+          "type": "object"
+        },
+        "text_weight": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Text Weight",
+          "type": "number"
+        },
+        "visual_weight": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Visual Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "config_sha256",
+        "text_weight",
+        "visual_weight",
+        "source_weights",
+        "source_priorities",
+        "conflict_similarity",
+        "automatic_activation_delay_seconds",
+        "policy_id"
+      ],
+      "title": "M5PrecedentPolicy",
+      "type": "object"
+    },
+    "PrecedentSource": {
+      "enum": [
+        "PRESET",
+        "AUTOMATIC",
+        "HUMAN_REVIEW",
+        "APPEAL_OVERTURN"
+      ],
+      "title": "PrecedentSource",
+      "type": "string"
+    },
+    "RunMode": {
+      "enum": [
+        "STANDARD",
+        "OFFLINE_EXPERIMENT"
+      ],
+      "title": "RunMode",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-precedent-retrieval-query.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "evidence_class": {
+      "$ref": "#/$defs/EvidenceClass"
+    },
+    "include_provisional_experiment": {
+      "default": false,
+      "title": "Include Provisional Experiment",
+      "type": "boolean"
+    },
+    "policy": {
+      "$ref": "#/$defs/M5PrecedentPolicy"
+    },
+    "query_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Query Id",
+      "type": "string"
+    },
+    "rule_version": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "run_mode": {
+      "$ref": "#/$defs/RunMode",
+      "default": "STANDARD"
+    },
+    "schema_version": {
+      "const": "m5-precedent-retrieval-query-v1",
+      "default": "m5-precedent-retrieval-query-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "situation_text": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "title": "Situation Text",
+      "type": "string"
+    },
+    "text_embedding": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M5EmbeddingVector"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "text_embedding_model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Text Embedding Model Manifest Id",
+      "type": "string"
+    },
+    "top_k": {
+      "exclusiveMinimum": 0,
+      "maximum": 100,
+      "title": "Top K",
+      "type": "integer"
+    },
+    "visual_embedding_model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Visual Embedding Model Manifest Id",
+      "type": "string"
+    },
+    "visual_embeddings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M5EmbeddingVector"
+      },
+      "maxItems": 32,
+      "title": "Visual Embeddings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "evidence_class",
+    "rule_version",
+    "situation_text",
+    "text_embedding_model_manifest_id",
+    "visual_embedding_model_manifest_id",
+    "policy",
+    "top_k",
+    "query_id"
+  ],
+  "title": "M5PrecedentRetrievalQuery",
+  "type": "object"
+}

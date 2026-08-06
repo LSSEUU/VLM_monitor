@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "ObservabilityComponents": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "frontality": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Frontality",
+          "type": "number"
+        },
+        "keypoint_visibility": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Visibility",
+          "type": "number"
+        },
+        "non_occlusion": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Non Occlusion",
+          "type": "number"
+        },
+        "person_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Person Confidence",
+          "type": "number"
+        },
+        "sharpness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sharpness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "person_confidence",
+        "keypoint_visibility",
+        "frontality",
+        "sharpness",
+        "exposure",
+        "non_occlusion"
+      ],
+      "title": "ObservabilityComponents",
+      "type": "object"
+    },
+    "ObservationSource": {
+      "enum": [
+        "PIXEL_COMPUTED",
+        "PRECOMPUTED_FIXTURE"
+      ],
+      "title": "ObservationSource",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/observability-score.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "components": {
+      "$ref": "#/$defs/ObservabilityComponents"
+    },
+    "source": {
+      "$ref": "#/$defs/ObservationSource"
+    },
+    "total": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Total",
+      "type": "number"
+    }
+  },
+  "required": [
+    "total",
+    "components",
+    "source"
+  ],
+  "title": "ObservabilityScore",
+  "type": "object"
+}

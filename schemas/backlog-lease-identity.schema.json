@@ -1,0 +1,49 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/backlog-lease-identity.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Non-secret CAS identity for one exact leased backlog generation.",
+  "properties": {
+    "attempt_count": {
+      "exclusiveMinimum": 0,
+      "title": "Attempt Count",
+      "type": "integer"
+    },
+    "item_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Item Id",
+      "type": "string"
+    },
+    "lease_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Lease Id",
+      "type": "string"
+    },
+    "lease_identity_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Lease Identity Sha256",
+      "type": "string"
+    },
+    "retry_generation": {
+      "minimum": 0,
+      "title": "Retry Generation",
+      "type": "integer"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "item_id",
+    "lease_id",
+    "attempt_count",
+    "retry_generation",
+    "lease_identity_sha256"
+  ],
+  "title": "BacklogLeaseIdentity",
+  "type": "object"
+}

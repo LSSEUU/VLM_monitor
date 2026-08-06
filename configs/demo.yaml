@@ -1,0 +1,228 @@
+schema_version: "2.0.0"
+rule_version: "laboratory-v1"
+
+run:
+  mode: STANDARD
+  reproducibility_mode: REPLAY_LOCKED
+  random_seed: 20260725
+  workspace: "runs"
+  storage_boundary: LOCAL_FILESYSTEM
+
+storage:
+  database_filename: "labcourt.sqlite3"
+  busy_timeout_ms: 5000
+  max_media_bytes: 104857600
+  max_image_pixels: 100000000
+
+providers:
+  fake-screening:
+    provider: fake
+    model: deterministic-screening
+    revision: "1.0.0"
+    quantization: null
+    execution_location: LOCAL
+    transport: IN_PROCESS
+    allow_full_frame: false
+    endpoint_env: null
+    api_key_env: null
+    timeout_seconds: 15
+    cache_enabled: true
+    pricing_currency: USD
+    input_cost_per_million_tokens: 0.0
+    output_cost_per_million_tokens: 0.0
+  fake-prosecutor:
+    provider: fake
+    model: deterministic-prosecutor
+    revision: "1.0.0"
+    quantization: null
+    execution_location: LOCAL
+    transport: IN_PROCESS
+    allow_full_frame: false
+    endpoint_env: null
+    api_key_env: null
+    timeout_seconds: 30
+    cache_enabled: true
+    pricing_currency: USD
+    input_cost_per_million_tokens: 0.0
+    output_cost_per_million_tokens: 0.0
+  fake-defender:
+    provider: fake
+    model: deterministic-defender
+    revision: "1.0.0"
+    quantization: null
+    execution_location: LOCAL
+    transport: IN_PROCESS
+    allow_full_frame: false
+    endpoint_env: null
+    api_key_env: null
+    timeout_seconds: 30
+    cache_enabled: true
+    pricing_currency: USD
+    input_cost_per_million_tokens: 0.0
+    output_cost_per_million_tokens: 0.0
+  fake-judge:
+    provider: fake
+    model: deterministic-judge
+    revision: "1.0.0"
+    quantization: null
+    execution_location: LOCAL
+    transport: IN_PROCESS
+    allow_full_frame: false
+    endpoint_env: null
+    api_key_env: null
+    timeout_seconds: 30
+    cache_enabled: true
+    pricing_currency: USD
+    input_cost_per_million_tokens: 0.0
+    output_cost_per_million_tokens: 0.0
+
+zones:
+  - zone_id: "hood-01"
+    camera_id: "cam-01"
+    polygon: [[120, 90], [980, 90], [980, 700], [120, 700]]
+    risk_level: HIGH
+    required_ppe: [GOGGLES, LAB_COAT]
+    reminder_channel: "display-hood-01"
+
+l0:
+  enabled: true
+  reminder_cooldown_seconds: 30
+  persist_events: false
+
+perception:
+  provider: precomputed
+  detector:
+    model_id: "precomputed-demo-v1"
+    score_threshold: 0.35
+    high_confidence_threshold: 0.50
+    prompts:
+      person: ["person"]
+      goggles: ["safety goggles", "protective eyewear"]
+      gloves: ["nitrile gloves", "latex gloves on hands"]
+      lab_coat: ["white lab coat", "laboratory coat"]
+      reagent_bottle: ["laboratory reagent bottle", "chemical bottle"]
+      bottle_cap: ["bottle cap", "bottle lid"]
+      fume_sash: ["fume hood sash window"]
+      food: ["food", "drink cup", "snack"]
+  association:
+    iou_threshold: 0.15
+    keypoint_threshold: 0.30
+  observability:
+    weights:
+      person_confidence: 0.15
+      keypoint_visibility: 0.25
+      frontality: 0.20
+      sharpness: 0.20
+      exposure: 0.10
+      non_occlusion: 0.10
+    clear_frame_threshold: 0.65
+
+absence:
+  dwell_seconds_by_risk:
+    LOW: 15
+    MEDIUM: 10
+    HIGH: 5
+  confirmation_policy: STRICT_CAUSAL
+  context_lookahead_seconds: 10
+  track_grace_seconds: 1
+  temporal_crop_count: 3
+  minimum_consistent_clear_frames: 2
+  source_compat_enabled_for_offline_experiments: false
+
+presence:
+  default_dwell_seconds: 3
+  default_cooldown_seconds: 30
+
+evidence:
+  pre_seconds: 15
+  post_seconds: 15
+  panorama_long_edge: 768
+  subject_expand_ratio: 0.15
+  persist_raw_full_frames: false
+  privacy_policy: PPE_PRESERVING_REDACTION
+  privacy_transform_version: "ppe-redaction-v1"
+  encoding_version: "png-v1"
+
+screening:
+  provider_profile: "fake-screening"
+  low_probability: 0.15
+  high_probability: 0.88
+  strong_signal_threshold: 0.50
+  router_version: "screening-router-v1"
+  conflict_policy_version: "strong-signal-v1"
+  backlog_max_attempts: 3
+  timeout_seconds: 15
+  max_images: 8
+  max_input_pixels: 16777216
+  max_prompt_bytes: 524288
+  max_input_tokens: 32768
+  max_output_tokens: 2048
+  max_estimated_cost: 1.0
+  max_response_bytes: 262144
+  max_json_depth: 16
+  max_json_fields: 512
+  max_string_chars: 8192
+
+hearing:
+  prosecutor_profile: "fake-prosecutor"
+  defender_profile: "fake-defender"
+  judge_profile: "fake-judge"
+  precedent_top_k: 4
+  max_acquisition_rounds: 2
+  max_rework_rounds: 2
+  max_total_images: 20
+  max_total_output_tokens: 6000
+
+procedural_gate:
+  gate_version: "procedural-gate-v1"
+  objective_numeric_tolerance:
+    duration_frames: 1
+    person_count: 0
+    frame_interval_frames: 1
+    track_presence_interval_frames: 1
+    detection_score: 0.01
+    observability: 0.01
+  precedent_similarity_min: 0.55
+  absence_clear_frame_threshold: 0.65
+  minimum_absence_clear_frames: 2
+
+precedents:
+  text_weight: 0.70
+  visual_weight: 0.30
+  source_weights:
+    PRESET: 1.00
+    AUTOMATIC: 0.75
+    HUMAN_REVIEW: 1.10
+    APPEAL_OVERTURN: 1.25
+  conflict_similarity: 0.55
+  automatic_activation_delay_days: 7
+
+alerts:
+  cooldown_seconds: 60
+  repeat_window_days: 7
+  confirmed_min_confidence: 0.80
+  insufficient_evidence_max_level: ADVISORY
+
+regression:
+  maximum_machine_flip_rate: 0.05
+  gold_set_max_accuracy_drop: 0.0
+
+training:
+  export_minimum_quality: HUMAN_CONFIRMED
+  include_weak_labels: false
+
+retention:
+  raw_frame_cache_minutes: 10
+  redacted_crop_days: 30
+  case_metadata_days: 365
+  preserve_appeals_and_gold_sets: true
+
+safety:
+  hard_alerts_enabled: true
+  provider: "fixture-certified"
+  allowed_signal_types: [OPEN_FLAME, SMOKE, MANUAL_EMERGENCY]
+  certification_ids: ["demo-fixture-cert-v1"]
+  allowed_direct_sources:
+    - PHYSICAL_SENSOR
+    - VALIDATED_DETERMINISTIC
+    - MANUAL

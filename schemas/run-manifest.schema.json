@@ -1,0 +1,490 @@
+{
+  "$defs": {
+    "DecodingParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "temperature": {
+          "minimum": 0,
+          "title": "Temperature",
+          "type": "number"
+        }
+      },
+      "required": [
+        "temperature"
+      ],
+      "title": "DecodingParameters",
+      "type": "object"
+    },
+    "DeviceClass": {
+      "enum": [
+        "CPU_ONLY",
+        "GPU_AVAILABLE"
+      ],
+      "title": "DeviceClass",
+      "type": "string"
+    },
+    "ModelManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "minLength": 1,
+          "title": "Component",
+          "type": "string"
+        },
+        "license_id": {
+          "minLength": 1,
+          "title": "License Id",
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "provider_revision_guarantee": {
+          "default": true,
+          "title": "Provider Revision Guarantee",
+          "type": "boolean"
+        },
+        "quantization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantization"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "weights_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weights Sha256"
+        }
+      },
+      "required": [
+        "component",
+        "provider",
+        "model",
+        "revision",
+        "license_id",
+        "model_manifest_id"
+      ],
+      "title": "ModelManifest",
+      "type": "object"
+    },
+    "OperatingSystemFamily": {
+      "enum": [
+        "WINDOWS",
+        "LINUX",
+        "MACOS",
+        "OTHER"
+      ],
+      "title": "OperatingSystemFamily",
+      "type": "string"
+    },
+    "PlatformSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Architecture",
+          "type": "string"
+        },
+        "device_class": {
+          "$ref": "#/$defs/DeviceClass"
+        },
+        "os_family": {
+          "$ref": "#/$defs/OperatingSystemFamily"
+        },
+        "python_version": {
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Python Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "os_family",
+        "architecture",
+        "python_version",
+        "device_class"
+      ],
+      "title": "PlatformSummary",
+      "type": "object"
+    },
+    "ReproducibilityMode": {
+      "enum": [
+        "REPLAY_LOCKED",
+        "REINFER_PINNED",
+        "UPGRADE_REGRESSION"
+      ],
+      "title": "ReproducibilityMode",
+      "type": "string"
+    },
+    "SoftwareComponentManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Component",
+          "type": "string"
+        },
+        "license_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "License Id",
+          "type": "string"
+        },
+        "package": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Package",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "package",
+        "version",
+        "license_id"
+      ],
+      "title": "SoftwareComponentManifest",
+      "type": "object"
+    },
+    "StreamManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Backend",
+          "type": "string"
+        },
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "codec": {
+          "pattern": "^[\\x20-\\x7e]{4}$",
+          "title": "Codec",
+          "type": "string"
+        },
+        "color_conversion": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Color Conversion",
+          "type": "string"
+        },
+        "decoder": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Decoder",
+          "type": "string"
+        },
+        "decoder_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Decoder Version",
+          "type": "string"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "frame_count": {
+          "exclusiveMinimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "input_file_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input File Sha256",
+          "type": "string"
+        },
+        "library": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Library",
+          "type": "string"
+        },
+        "library_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Library Version",
+          "type": "string"
+        },
+        "pixel_format": {
+          "const": "RGB8",
+          "title": "Pixel Format",
+          "type": "string"
+        },
+        "pixel_hash_algorithm": {
+          "const": "LCPIX1",
+          "title": "Pixel Hash Algorithm",
+          "type": "string"
+        },
+        "software_component": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Software Component",
+          "type": "string"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        },
+        "timing_authority": {
+          "enum": [
+            "CALLER_ATTESTED",
+            "TRUSTED_SIDECAR"
+          ],
+          "title": "Timing Authority",
+          "type": "string"
+        },
+        "timing_evidence_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Timing Evidence Sha256",
+          "type": "string"
+        },
+        "timing_evidence_type": {
+          "enum": [
+            "CALLER_DECLARATION",
+            "TRUSTED_SIDECAR_JSON"
+          ],
+          "title": "Timing Evidence Type",
+          "type": "string"
+        },
+        "timing_mode": {
+          "const": "CFR",
+          "title": "Timing Mode",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "camera_id",
+        "stream_id",
+        "input_file_sha256",
+        "fps_num",
+        "fps_den",
+        "timing_mode",
+        "timing_authority",
+        "timing_evidence_type",
+        "timing_evidence_sha256",
+        "width",
+        "height",
+        "frame_count",
+        "decoder",
+        "decoder_version",
+        "backend",
+        "software_component",
+        "library",
+        "library_version",
+        "codec",
+        "color_conversion",
+        "pixel_format",
+        "pixel_hash_algorithm"
+      ],
+      "title": "StreamManifest",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/run-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "code_commit": {
+      "minLength": 1,
+      "title": "Code Commit",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "decoding_parameters": {
+      "$ref": "#/$defs/DecodingParameters"
+    },
+    "image_encoding_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Image Encoding Version",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "models": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ModelManifest"
+      },
+      "minProperties": 9,
+      "title": "Models",
+      "type": "object"
+    },
+    "pixel_format": {
+      "const": "RGB8",
+      "title": "Pixel Format",
+      "type": "string"
+    },
+    "pixel_hash_algorithm": {
+      "const": "LCPIX1",
+      "title": "Pixel Hash Algorithm",
+      "type": "string"
+    },
+    "platform_summary": {
+      "$ref": "#/$defs/PlatformSummary"
+    },
+    "privacy_transform_version": {
+      "minLength": 1,
+      "title": "Privacy Transform Version",
+      "type": "string"
+    },
+    "prompt_bundle_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Bundle Sha256",
+      "type": "string"
+    },
+    "random_seed": {
+      "title": "Random Seed",
+      "type": "integer"
+    },
+    "reproducibility_mode": {
+      "$ref": "#/$defs/ReproducibilityMode"
+    },
+    "rule_bundle_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Rule Bundle Sha256",
+      "type": "string"
+    },
+    "rule_version": {
+      "minLength": 1,
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "2.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "software_components": {
+      "additionalProperties": {
+        "$ref": "#/$defs/SoftwareComponentManifest"
+      },
+      "title": "Software Components",
+      "type": "object"
+    },
+    "storage_boundary": {
+      "const": "LOCAL_FILESYSTEM",
+      "title": "Storage Boundary",
+      "type": "string"
+    },
+    "streams": {
+      "items": {
+        "$ref": "#/$defs/StreamManifest"
+      },
+      "title": "Streams",
+      "type": "array"
+    }
+  },
+  "required": [
+    "code_commit",
+    "schema_version",
+    "config_sha256",
+    "rule_version",
+    "rule_bundle_sha256",
+    "prompt_bundle_sha256",
+    "models",
+    "privacy_transform_version",
+    "reproducibility_mode",
+    "random_seed",
+    "decoding_parameters",
+    "platform_summary",
+    "storage_boundary",
+    "streams",
+    "software_components",
+    "pixel_format",
+    "pixel_hash_algorithm",
+    "image_encoding_version",
+    "manifest_id"
+  ],
+  "title": "RunManifest",
+  "type": "object"
+}

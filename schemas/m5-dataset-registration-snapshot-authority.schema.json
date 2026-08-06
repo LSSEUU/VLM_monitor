@@ -1,0 +1,161 @@
+{
+  "$defs": {
+    "M5TrainingCausalWatermark": {
+      "additionalProperties": false,
+      "description": "The exact training-ledger head observed before dataset registration.",
+      "properties": {
+        "event_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Event Id"
+        },
+        "event_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Event Sha256",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m5-training-causal-watermark-v1",
+          "default": "m5-training-causal-watermark-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "watermark_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Watermark Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "sequence",
+        "event_sha256",
+        "watermark_id"
+      ],
+      "title": "M5TrainingCausalWatermark",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-dataset-registration-snapshot-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Fixed-size roots for one causal label cut and historical Crop cut.",
+  "properties": {
+    "authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Authority Id",
+      "type": "string"
+    },
+    "causal_cut": {
+      "$ref": "#/$defs/M5TrainingCausalWatermark"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "crop_count": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Crop Count",
+      "type": "integer"
+    },
+    "crop_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Crop Inventory Root Sha256",
+      "type": "string"
+    },
+    "dataset_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "detector_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Detector Manifest Id",
+      "type": "string"
+    },
+    "label_count": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Label Count",
+      "type": "integer"
+    },
+    "label_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Label Inventory Root Sha256",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "report_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Report Document Sha256",
+      "type": "string"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "rule_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-dataset-registration-snapshot-authority-v1",
+      "default": "m5-dataset-registration-snapshot-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "dataset_id",
+    "report_id",
+    "command_id",
+    "report_document_sha256",
+    "causal_cut",
+    "label_count",
+    "label_inventory_root_sha256",
+    "crop_count",
+    "crop_inventory_root_sha256",
+    "manifest_id",
+    "rule_version",
+    "detector_manifest_id",
+    "authority_id"
+  ],
+  "title": "M5DatasetRegistrationSnapshotAuthority",
+  "type": "object"
+}

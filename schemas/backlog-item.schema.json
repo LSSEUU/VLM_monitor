@@ -1,0 +1,228 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "BacklogStage": {
+      "enum": [
+        "SCREENING",
+        "HEARING",
+        "EVIDENCE",
+        "HUMAN_REVIEW"
+      ],
+      "title": "BacklogStage",
+      "type": "string"
+    },
+    "BacklogStatus": {
+      "enum": [
+        "PENDING",
+        "LEASED",
+        "COMPLETED",
+        "EXHAUSTED"
+      ],
+      "title": "BacklogStatus",
+      "type": "string"
+    },
+    "VlmRole": {
+      "enum": [
+        "SCREENING",
+        "STRUCTURE_REPAIR",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "VlmRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/backlog-item.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One immutable retry identity with explicit mutable lease progress.",
+  "properties": {
+    "attempt_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Attempt Count",
+      "type": "integer"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "completed": {
+      "readOnly": true,
+      "title": "Completed",
+      "type": "boolean"
+    },
+    "item_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "lease_expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Expires At"
+    },
+    "lease_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Id"
+    },
+    "lease_owner_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Owner Sha256"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "max_attempts": {
+      "exclusiveMinimum": 0,
+      "title": "Max Attempts",
+      "type": "integer"
+    },
+    "reason_code": {
+      "enum": [
+        "PROVIDER_UNAVAILABLE",
+        "MODEL_OUTPUT_INVALID",
+        "BUDGET_EXCEEDED",
+        "RESPONSE_INTEGRITY_FAILURE",
+        "CURRENT_PACK_CHANGED"
+      ],
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "retry_generation": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Retry Generation",
+      "type": "integer"
+    },
+    "role": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VlmRole"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "stage": {
+      "$ref": "#/$defs/BacklogStage"
+    },
+    "stage_input_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "stage_input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Stage Input Sha256",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/BacklogStatus",
+      "default": "PENDING"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "stage",
+    "reason_code",
+    "stage_input_ref",
+    "stage_input_sha256",
+    "max_attempts",
+    "manifest_id",
+    "item_id",
+    "completed"
+  ],
+  "title": "BacklogItem",
+  "type": "object"
+}

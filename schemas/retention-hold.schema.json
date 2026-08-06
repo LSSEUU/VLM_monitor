@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "RetentionHoldKind": {
+      "enum": [
+        "APPEAL",
+        "GOLD_SET",
+        "CHALLENGE_SET",
+        "MANUAL_LEGAL_HOLD"
+      ],
+      "title": "RetentionHoldKind",
+      "type": "string"
+    },
+    "ScopedArtifactRef": {
+      "additionalProperties": false,
+      "description": "An artifact reference whose owning run is explicit and immutable.",
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "ref"
+      ],
+      "title": "ScopedArtifactRef",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/retention-hold.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active": {
+      "const": true,
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+    },
+    "hold_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Hold Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/RetentionHoldKind"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "owner_ref": {
+      "$ref": "#/$defs/ScopedArtifactRef"
+    },
+    "policy_version": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason Code"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "target_ref": {
+      "$ref": "#/$defs/ScopedArtifactRef"
+    }
+  },
+  "required": [
+    "run_id",
+    "hold_id",
+    "target_ref",
+    "kind",
+    "owner_ref",
+    "manifest_id",
+    "policy_version"
+  ],
+  "title": "RetentionHold",
+  "type": "object"
+}

@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "VlmRole": {
+      "enum": [
+        "SCREENING",
+        "STRUCTURE_REPAIR",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "VlmRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/prompt-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable prompt-template authority bound to the existing run prompt bundle.",
+  "properties": {
+    "output_schema_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Output Schema Sha256",
+      "type": "string"
+    },
+    "prompt_bundle_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Bundle Sha256",
+      "type": "string"
+    },
+    "prompt_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Prompt Id",
+      "type": "string"
+    },
+    "prompt_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Prompt Manifest Id",
+      "type": "string"
+    },
+    "renderer": {
+      "const": "JINJA2_STRICT",
+      "default": "JINJA2_STRICT",
+      "title": "Renderer",
+      "type": "string"
+    },
+    "renderer_version": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Renderer Version",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/VlmRole"
+    },
+    "schema_version": {
+      "const": "m3-prompt-v1",
+      "default": "m3-prompt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "template_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Template Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "prompt_id",
+    "role",
+    "template_sha256",
+    "output_schema_sha256",
+    "prompt_bundle_sha256",
+    "renderer_version",
+    "prompt_manifest_id"
+  ],
+  "title": "PromptManifest",
+  "type": "object"
+}

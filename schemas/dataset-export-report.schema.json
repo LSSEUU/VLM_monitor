@@ -1,0 +1,266 @@
+{
+  "$defs": {
+    "DatasetArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "dataset_id": {
+          "minLength": 1,
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "format": {
+          "$ref": "#/$defs/DatasetFormat"
+        },
+        "label_count": {
+          "minimum": 0,
+          "title": "Label Count",
+          "type": "integer"
+        },
+        "minimum_quality": {
+          "$ref": "#/$defs/TrainingLabelQuality"
+        },
+        "relative_path": {
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "format",
+        "relative_path",
+        "content_sha256",
+        "label_count",
+        "minimum_quality",
+        "rule_version"
+      ],
+      "title": "DatasetArtifact",
+      "type": "object"
+    },
+    "DatasetExportCropReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Authority Sha256",
+          "type": "string"
+        },
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "crop_id",
+        "authority_sha256"
+      ],
+      "title": "DatasetExportCropReceipt",
+      "type": "object"
+    },
+    "DatasetFormat": {
+      "enum": [
+        "COCO"
+      ],
+      "title": "DatasetFormat",
+      "type": "string"
+    },
+    "TrainingLabelQuality": {
+      "enum": [
+        "WEAK_AUTO",
+        "CONSENSUS_REVIEWED",
+        "HUMAN_CONFIRMED",
+        "APPEAL_CONFIRMED"
+      ],
+      "title": "TrainingLabelQuality",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/dataset-export-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Auditable default-selection and byte-identity report for one COCO export.",
+  "properties": {
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "consensus_reviewed_count": {
+      "minimum": 0,
+      "title": "Consensus Reviewed Count",
+      "type": "integer"
+    },
+    "content_size_bytes": {
+      "maximum": 67108864,
+      "minimum": 0,
+      "title": "Content Size Bytes",
+      "type": "integer"
+    },
+    "crop_receipts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DatasetExportCropReceipt"
+      },
+      "maxItems": 10000,
+      "title": "Crop Receipts",
+      "type": "array"
+    },
+    "dataset": {
+      "$ref": "#/$defs/DatasetArtifact"
+    },
+    "detector_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Detector Manifest Id",
+      "type": "string"
+    },
+    "excluded_reason_count": {
+      "minimum": 0,
+      "title": "Excluded Reason Count",
+      "type": "integer"
+    },
+    "exported_category_count": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Exported Category Count",
+      "type": "integer"
+    },
+    "exported_image_count": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Exported Image Count",
+      "type": "integer"
+    },
+    "exported_label_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Exported Label Ids",
+      "type": "array"
+    },
+    "input_label_count": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Input Label Count",
+      "type": "integer"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "max_content_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 67108864,
+      "title": "Max Content Bytes",
+      "type": "integer"
+    },
+    "max_input_labels": {
+      "exclusiveMinimum": 0,
+      "maximum": 10000,
+      "title": "Max Input Labels",
+      "type": "integer"
+    },
+    "purpose": {
+      "const": "DETECTOR_TRAINING_FROM_REVIEWED_LABELS",
+      "title": "Purpose",
+      "type": "string"
+    },
+    "quarantined_label_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Quarantined Label Ids",
+      "type": "array"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Report Id",
+      "type": "string"
+    },
+    "requested_relative_path": {
+      "minLength": 1,
+      "title": "Requested Relative Path",
+      "type": "string"
+    },
+    "retention_hold_kind": {
+      "const": "GOLD_SET",
+      "title": "Retention Hold Kind",
+      "type": "string"
+    },
+    "retention_period": {
+      "const": "UNTIL_EXPLICIT_RELEASE",
+      "title": "Retention Period",
+      "type": "string"
+    },
+    "retention_policy_version": {
+      "const": "m5-gold-set-retention-v1",
+      "title": "Retention Policy Version",
+      "type": "string"
+    },
+    "rule_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "selection_policy": {
+      "const": "HUMAN_OR_APPEAL_CONFIRMED_V1",
+      "default": "HUMAN_OR_APPEAL_CONFIRMED_V1",
+      "title": "Selection Policy",
+      "type": "string"
+    },
+    "weak_auto_count": {
+      "minimum": 0,
+      "title": "Weak Auto Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "command_id",
+    "run_id",
+    "dataset",
+    "requested_relative_path",
+    "detector_manifest_id",
+    "manifest_id",
+    "rule_version",
+    "purpose",
+    "retention_hold_kind",
+    "retention_policy_version",
+    "retention_period",
+    "max_input_labels",
+    "max_content_bytes",
+    "input_label_count",
+    "weak_auto_count",
+    "consensus_reviewed_count",
+    "excluded_reason_count",
+    "exported_image_count",
+    "exported_category_count",
+    "content_size_bytes",
+    "report_id"
+  ],
+  "title": "DatasetExportReport",
+  "type": "object"
+}

@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "M6OfflineDemoScenarioName": {
+      "enum": [
+        "presence_true_positive",
+        "presence_false_positive",
+        "absence_true_violation",
+        "absence_detector_miss_but_worn",
+        "absence_all_unclear",
+        "absence_don_after_threshold",
+        "late_result_inside_interval",
+        "fabricated_crop_reference",
+        "objective_person_count_conflict",
+        "unanswered_defense",
+        "precedent_direction_mismatch",
+        "provider_outage",
+        "hard_signal_uncertified",
+        "appeal_overturn",
+        "replay_locked_identical",
+        "upgrade_flip_gate"
+      ],
+      "title": "M6OfflineDemoScenarioName",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-offline-demo-scenario-result-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "classification": {
+      "const": "SYNTHETIC_PRECOMPUTED_FAKE",
+      "default": "SYNTHETIC_PRECOMPUTED_FAKE",
+      "title": "Classification",
+      "type": "string"
+    },
+    "gpu_used": {
+      "const": false,
+      "default": false,
+      "title": "Gpu Used",
+      "type": "boolean"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "provider_called": {
+      "const": false,
+      "default": false,
+      "title": "Provider Called",
+      "type": "boolean"
+    },
+    "result_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Result Id",
+      "type": "string"
+    },
+    "scenario_name": {
+      "$ref": "#/$defs/M6OfflineDemoScenarioName"
+    },
+    "schema_version": {
+      "const": "m6-offline-demo-scenario-result-authority-v1",
+      "default": "m6-offline-demo-scenario-result-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "PASSED",
+      "default": "PASSED",
+      "title": "Status",
+      "type": "string"
+    },
+    "verification_kind": {
+      "const": "PYTEST_NODE",
+      "default": "PYTEST_NODE",
+      "title": "Verification Kind",
+      "type": "string"
+    },
+    "verification_target": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Verification Target",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scenario_name",
+    "verification_target",
+    "result_id"
+  ],
+  "title": "M6OfflineDemoScenarioResultAuthorityV1",
+  "type": "object"
+}

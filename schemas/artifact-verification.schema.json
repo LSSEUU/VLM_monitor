@@ -1,0 +1,248 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "MediaAvailability": {
+      "enum": [
+        "AVAILABLE",
+        "PURGING",
+        "PURGED_BY_RETENTION"
+      ],
+      "title": "MediaAvailability",
+      "type": "string"
+    },
+    "MediaType": {
+      "enum": [
+        "IMAGE_PNG",
+        "VIDEO"
+      ],
+      "title": "MediaType",
+      "type": "string"
+    },
+    "VerificationStatus": {
+      "enum": [
+        "VERIFIED",
+        "CURRENT_MEDIA_VERIFIED",
+        "MISSING",
+        "SOURCE_HASH_MISMATCH",
+        "MEDIA_HASH_MISMATCH",
+        "SIZE_MISMATCH",
+        "PIXEL_HASH_MISMATCH",
+        "DIMENSION_MISMATCH",
+        "PATH_BOUNDARY_VIOLATION",
+        "UNSAFE_LINK",
+        "NOT_REGULAR_FILE",
+        "INVALID_MEDIA",
+        "PRIVACY_POLICY_VIOLATION",
+        "PURGED_BY_RETENTION"
+      ],
+      "title": "VerificationStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/artifact-verification.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A media-specific verification result with a complete expected/actual matrix.",
+  "properties": {
+    "actual_height": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actual Height"
+    },
+    "actual_media_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actual Media Sha256"
+    },
+    "actual_output_pixel_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actual Output Pixel Sha256"
+    },
+    "actual_size_bytes": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actual Size Bytes"
+    },
+    "actual_source_pixel_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actual Source Pixel Sha256"
+    },
+    "actual_width": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actual Width"
+    },
+    "artifact_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "availability": {
+      "$ref": "#/$defs/MediaAvailability"
+    },
+    "expected_height": {
+      "exclusiveMinimum": 0,
+      "title": "Expected Height",
+      "type": "integer"
+    },
+    "expected_media_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Media Sha256",
+      "type": "string"
+    },
+    "expected_output_pixel_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Output Pixel Sha256",
+      "type": "string"
+    },
+    "expected_size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Expected Size Bytes",
+      "type": "integer"
+    },
+    "expected_source_pixel_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Source Pixel Sha256",
+      "type": "string"
+    },
+    "expected_width": {
+      "exclusiveMinimum": 0,
+      "title": "Expected Width",
+      "type": "integer"
+    },
+    "media_type": {
+      "$ref": "#/$defs/MediaType"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason Code"
+    },
+    "status": {
+      "$ref": "#/$defs/VerificationStatus"
+    }
+  },
+  "required": [
+    "artifact_ref",
+    "status",
+    "availability",
+    "media_type",
+    "expected_source_pixel_sha256",
+    "expected_output_pixel_sha256",
+    "expected_media_sha256",
+    "expected_width",
+    "expected_height",
+    "expected_size_bytes"
+  ],
+  "title": "ArtifactVerification",
+  "type": "object"
+}

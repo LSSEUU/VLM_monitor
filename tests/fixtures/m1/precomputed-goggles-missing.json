@@ -1,0 +1,77 @@
+[
+  {
+    "frame": {
+      "camera_id": "cam-01",
+      "stream_id": "stream-01",
+      "frame_index": 0,
+      "fps_num": 1,
+      "fps_den": 1,
+      "width": 640,
+      "height": 480,
+      "content_sha256": null
+    },
+    "detections": [
+      {
+        "detection_id": "person-0",
+        "frame_id": "cam-01:stream-01:0",
+        "label": "person",
+        "bbox": {"x1": 100, "y1": 40, "x2": 300, "y2": 400},
+        "score": 0.9,
+        "track_ref": "cam-01:epoch-01:person-01",
+        "keypoints": [],
+        "attributes": {},
+        "model_manifest_id": "ea8e4e6b9a8708aa12432ba691de04e4bd3f3de511717b6a6d212bd1e1536783"
+      }
+    ]
+  },
+  {
+    "frame": {
+      "camera_id": "cam-01",
+      "stream_id": "stream-01",
+      "frame_index": 1,
+      "fps_num": 1,
+      "fps_den": 1,
+      "width": 640,
+      "height": 480,
+      "content_sha256": null
+    },
+    "detections": [
+      {
+        "detection_id": "person-1",
+        "frame_id": "cam-01:stream-01:1",
+        "label": "person",
+        "bbox": {"x1": 100, "y1": 40, "x2": 300, "y2": 400},
+        "score": 0.9,
+        "track_ref": "cam-01:epoch-01:person-01",
+        "keypoints": [],
+        "attributes": {},
+        "model_manifest_id": "ea8e4e6b9a8708aa12432ba691de04e4bd3f3de511717b6a6d212bd1e1536783"
+      }
+    ]
+  },
+  {
+    "frame": {
+      "camera_id": "cam-01",
+      "stream_id": "stream-01",
+      "frame_index": 2,
+      "fps_num": 1,
+      "fps_den": 1,
+      "width": 640,
+      "height": 480,
+      "content_sha256": null
+    },
+    "detections": [
+      {
+        "detection_id": "person-2",
+        "frame_id": "cam-01:stream-01:2",
+        "label": "person",
+        "bbox": {"x1": 100, "y1": 40, "x2": 300, "y2": 400},
+        "score": 0.9,
+        "track_ref": "cam-01:epoch-01:person-01",
+        "keypoints": [],
+        "attributes": {},
+        "model_manifest_id": "ea8e4e6b9a8708aa12432ba691de04e4bd3f3de511717b6a6d212bd1e1536783"
+      }
+    ]
+  }
+]

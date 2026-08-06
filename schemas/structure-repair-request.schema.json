@@ -1,0 +1,454 @@
+{
+  "$defs": {
+    "BacklogRetryContext": {
+      "additionalProperties": false,
+      "description": "Request identity input that changes only after a proven parse failure.\n\nThe lease is deliberately absent.  A provider outage, timeout, or unknown\nworker crash may result in another lease, but must keep the same model\nrequest identity so durable claim/journal recovery can prevent a duplicate\nexternal call.",
+      "properties": {
+        "backlog_item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Backlog Item Id",
+          "type": "string"
+        },
+        "context_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Context Id",
+          "type": "string"
+        },
+        "retry_generation": {
+          "minimum": 0,
+          "title": "Retry Generation",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "backlog_item_id",
+        "retry_generation",
+        "context_id"
+      ],
+      "title": "BacklogRetryContext",
+      "type": "object"
+    },
+    "ExecutionLocation": {
+      "enum": [
+        "LOCAL",
+        "EXTERNAL"
+      ],
+      "title": "ExecutionLocation",
+      "type": "string"
+    },
+    "ProceduralDefectCode": {
+      "enum": [
+        "MALFORMED_STRUCTURE",
+        "INVALID_ENUM",
+        "MISSING_REQUIRED_FIELD",
+        "FABRICATED_EVIDENCE_REFERENCE",
+        "INVALID_COORDINATES",
+        "FABRICATED_PRECEDENT_REFERENCE",
+        "PRECEDENT_DIRECTION_MISMATCH",
+        "EMPTY_DISTINGUISHING_REASON",
+        "ESTABLISHED_WITHOUT_EVIDENCE",
+        "UNANSWERED_DEFENSE_POINT",
+        "CONFIDENCE_ALERT_LEVEL_MISMATCH",
+        "OBJECTIVE_ASSERTION_CONTRADICTION",
+        "VIOLATION_TYPE_MISMATCH",
+        "ABSENCE_FROM_INSUFFICIENT_OBSERVATION"
+      ],
+      "title": "ProceduralDefectCode",
+      "type": "string"
+    },
+    "PromptManifest": {
+      "additionalProperties": false,
+      "description": "Immutable prompt-template authority bound to the existing run prompt bundle.",
+      "properties": {
+        "output_schema_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Output Schema Sha256",
+          "type": "string"
+        },
+        "prompt_bundle_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prompt Bundle Sha256",
+          "type": "string"
+        },
+        "prompt_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Prompt Id",
+          "type": "string"
+        },
+        "prompt_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Prompt Manifest Id",
+          "type": "string"
+        },
+        "renderer": {
+          "const": "JINJA2_STRICT",
+          "default": "JINJA2_STRICT",
+          "title": "Renderer",
+          "type": "string"
+        },
+        "renderer_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Renderer Version",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/VlmRole"
+        },
+        "schema_version": {
+          "const": "m3-prompt-v1",
+          "default": "m3-prompt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "template_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Template Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt_id",
+        "role",
+        "template_sha256",
+        "output_schema_sha256",
+        "prompt_bundle_sha256",
+        "renderer_version",
+        "prompt_manifest_id"
+      ],
+      "title": "PromptManifest",
+      "type": "object"
+    },
+    "VlmCallBudget": {
+      "additionalProperties": false,
+      "description": "Hard per-call limits included in request identity and cache binding.",
+      "properties": {
+        "claim_completion_grace_seconds": {
+          "default": 5.0,
+          "exclusiveMinimum": 0,
+          "maximum": 300,
+          "title": "Claim Completion Grace Seconds",
+          "type": "number"
+        },
+        "input_cost_per_million_tokens": {
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Input Cost Per Million Tokens",
+          "type": "number"
+        },
+        "max_estimated_cost": {
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Max Estimated Cost",
+          "type": "number"
+        },
+        "max_images": {
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Max Images",
+          "type": "integer"
+        },
+        "max_input_pixels": {
+          "maximum": 1000000000,
+          "minimum": 0,
+          "title": "Max Input Pixels",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 32768,
+          "exclusiveMinimum": 0,
+          "maximum": 262144,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_json_depth": {
+          "exclusiveMinimum": 0,
+          "maximum": 64,
+          "title": "Max Json Depth",
+          "type": "integer"
+        },
+        "max_json_fields": {
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Max Json Fields",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "max_prompt_bytes": {
+          "default": 524288,
+          "exclusiveMinimum": 0,
+          "maximum": 1048576,
+          "title": "Max Prompt Bytes",
+          "type": "integer"
+        },
+        "max_response_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 16777216,
+          "title": "Max Response Bytes",
+          "type": "integer"
+        },
+        "max_string_chars": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max String Chars",
+          "type": "integer"
+        },
+        "output_cost_per_million_tokens": {
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Output Cost Per Million Tokens",
+          "type": "number"
+        },
+        "pricing_currency": {
+          "const": "USD",
+          "title": "Pricing Currency",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 3600,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_images",
+        "max_input_pixels",
+        "max_output_tokens",
+        "pricing_currency",
+        "input_cost_per_million_tokens",
+        "output_cost_per_million_tokens",
+        "max_estimated_cost",
+        "max_response_bytes",
+        "max_json_depth",
+        "max_json_fields",
+        "max_string_chars",
+        "timeout_seconds"
+      ],
+      "title": "VlmCallBudget",
+      "type": "object"
+    },
+    "VlmRole": {
+      "enum": [
+        "SCREENING",
+        "STRUCTURE_REPAIR",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "VlmRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/structure-repair-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The sole media-free structural repair attempt for one failed response.",
+  "properties": {
+    "backlog_retry_context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BacklogRetryContext"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "budget": {
+      "$ref": "#/$defs/VlmCallBudget"
+    },
+    "cache_key": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Cache Key",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "evidence_pack_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evidence Pack Id",
+      "type": "string"
+    },
+    "evidence_pack_version": {
+      "exclusiveMinimum": 0,
+      "title": "Evidence Pack Version",
+      "type": "integer"
+    },
+    "execution_location": {
+      "$ref": "#/$defs/ExecutionLocation"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "model": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Manifest Id",
+      "type": "string"
+    },
+    "original_backlog_retry_context_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Original Backlog Retry Context Id"
+    },
+    "original_request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Original Request Id",
+      "type": "string"
+    },
+    "original_request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Original Request Sha256",
+      "type": "string"
+    },
+    "original_response_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Original Response Id",
+      "type": "string"
+    },
+    "original_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Original Response Sha256",
+      "type": "string"
+    },
+    "parse_defect_codes": {
+      "items": {
+        "$ref": "#/$defs/ProceduralDefectCode"
+      },
+      "minItems": 1,
+      "title": "Parse Defect Codes",
+      "type": "array"
+    },
+    "prompt_manifest": {
+      "$ref": "#/$defs/PromptManifest"
+    },
+    "provider": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "provider_profile": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Provider Profile",
+      "type": "string"
+    },
+    "purpose": {
+      "const": "STRUCTURE_REPAIR",
+      "default": "STRUCTURE_REPAIR",
+      "title": "Purpose",
+      "type": "string"
+    },
+    "rendered_prompt_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Rendered Prompt Sha256",
+      "type": "string"
+    },
+    "repair_ordinal": {
+      "const": 1,
+      "default": 1,
+      "title": "Repair Ordinal",
+      "type": "integer"
+    },
+    "request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Request Sha256",
+      "type": "string"
+    },
+    "revision": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Revision",
+      "type": "string"
+    },
+    "role": {
+      "const": "STRUCTURE_REPAIR",
+      "default": "STRUCTURE_REPAIR",
+      "title": "Role",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "seed": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seed"
+    },
+    "temperature": {
+      "minimum": 0,
+      "title": "Temperature",
+      "type": "number"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "evidence_pack_id",
+    "evidence_pack_version",
+    "provider_profile",
+    "provider",
+    "model",
+    "revision",
+    "model_manifest_id",
+    "execution_location",
+    "prompt_manifest",
+    "rendered_prompt_sha256",
+    "original_request_id",
+    "original_request_sha256",
+    "original_response_id",
+    "original_response_sha256",
+    "parse_defect_codes",
+    "temperature",
+    "budget",
+    "manifest_id",
+    "request_sha256",
+    "request_id",
+    "cache_key"
+  ],
+  "title": "StructureRepairRequest",
+  "type": "object"
+}

@@ -1,0 +1,40 @@
+{
+  "canonical_input": {
+    "z": "实验室",
+    "a": [3, 1],
+    "enabled": true
+  },
+  "canonical_json": "{\"a\":[3,1],\"enabled\":true,\"z\":\"实验室\"}",
+  "canonical_sha256": "53a108fd9e4c17014466862e39106447bfd4a6fb3f3d58319812b448304edb34",
+  "event": {
+    "camera_id": "cam-01",
+    "stream_id": "demo-ntsc",
+    "violation_type": "REAGENT_CONTAINER_OPEN",
+    "primary_track_ref": "cam-01:epoch-01:bottle-01",
+    "start_frame": 0,
+    "rule_version": "laboratory-v1",
+    "expected_event_id": "64f3bb47-242d-57cf-a4a3-c651b54bb2b5",
+    "expected_case_id": "d5dc6bd1-9bc7-5cc6-a9b1-ecba4cadd617"
+  },
+  "crop": {
+    "frame_id": "cam-01:demo-ntsc:90",
+    "bbox": [500, 300, 620, 650],
+    "output_width": 120,
+    "output_height": 350,
+    "crop_source": "DETECTION_FOCUS",
+    "source_media_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "privacy_policy": "FULL_REDACTION",
+    "privacy_transform_version": "ppe-redaction-v1",
+    "encoding_version": "png-v1",
+    "expected_crop_id": "b6debefc41f3e5da6c37a0492e295c49a75520ccb4ed834e211c286b241ef7c6"
+  },
+  "manifest": {
+    "fixture": "run-manifest-fake.json",
+    "expected_manifest_id": "aa4bdd2f9b995b13889398468bc6ae2cef01f329651b9cdb6ee7d641ff928c1c"
+  },
+  "pack": {
+    "expected_pack_id": "c1f2aea756cdeb9150493ef717bb40bd38fcceda0f0f0f637cef16a4984d8e22",
+    "expected_pack_input_sha256": "34f92fea105bc3fe5824cc68428dfd9d390660c6dd235b2f29bdfc341fc87fde",
+    "expected_closure_input_sha256": "291c1ba16aebc0ffa7b364c2d61d3dbbe04d89110ceccb78d38447e894b7f610"
+  }
+}

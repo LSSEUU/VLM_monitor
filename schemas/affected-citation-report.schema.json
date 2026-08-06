@@ -1,0 +1,79 @@
+{
+  "$defs": {
+    "AffectedPrecedentCitation": {
+      "additionalProperties": false,
+      "description": "One immutable historical citation affected by a precedent revocation.",
+      "properties": {
+        "citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Citation Id",
+          "type": "string"
+        },
+        "citing_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Citing Case Id",
+          "type": "string"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "similarity_score": {
+          "maximum": 10,
+          "minimum": -10,
+          "title": "Similarity Score",
+          "type": "number"
+        },
+        "source_citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Citation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_citation_id",
+        "citing_case_id",
+        "precedent_id",
+        "similarity_score",
+        "citation_id"
+      ],
+      "title": "AffectedPrecedentCitation",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/affected-citation-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "citations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AffectedPrecedentCitation"
+      },
+      "title": "Citations",
+      "type": "array"
+    },
+    "report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Report Sha256",
+      "type": "string"
+    },
+    "revoked_precedent_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "title": "Revoked Precedent Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "report_sha256"
+  ],
+  "title": "AffectedCitationReport",
+  "type": "object"
+}

@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "AssociationMethod": {
+      "enum": [
+        "KEYPOINT",
+        "BODY_FALLBACK"
+      ],
+      "title": "AssociationMethod",
+      "type": "string"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/association-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "anchor_bbox": {
+      "$ref": "#/$defs/BBoxXYXY"
+    },
+    "matched_detection_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Matched Detection Ids",
+      "type": "array"
+    },
+    "method": {
+      "$ref": "#/$defs/AssociationMethod"
+    },
+    "present": {
+      "title": "Present",
+      "type": "boolean"
+    },
+    "quality_flags": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Quality Flags",
+      "type": "array"
+    }
+  },
+  "required": [
+    "present",
+    "anchor_bbox",
+    "method"
+  ],
+  "title": "AssociationResult",
+  "type": "object"
+}

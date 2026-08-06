@@ -1,0 +1,151 @@
+{
+  "$defs": {
+    "M5PrecedentCausalEventKind": {
+      "enum": [
+        "PRECEDENT_AUTHORITY_APPENDED",
+        "PRECEDENT_CITATION_APPENDED",
+        "PRECEDENT_CONFLICT_BATCH_COMMITTED",
+        "PRECEDENT_REVOCATION_COMMITTED",
+        "APPEAL_RESOLUTION_COMMITTED"
+      ],
+      "title": "M5PrecedentCausalEventKind",
+      "type": "string"
+    },
+    "M5PrecedentCausalEventSourceKind": {
+      "description": "The frozen discriminator already persisted by citation roots.",
+      "enum": [
+        "DIRECT",
+        "APPLIED"
+      ],
+      "title": "M5PrecedentCausalEventSourceKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-precedent-causal-event.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One immutable source-to-ledger binding in a per-run hash chain.",
+  "properties": {
+    "citation_kind": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M5PrecedentCausalEventSourceKind"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "event_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_kind": {
+      "$ref": "#/$defs/M5PrecedentCausalEventKind"
+    },
+    "event_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Event Sha256",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "precedent_authority_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Precedent Authority Id"
+    },
+    "precedent_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Precedent Id"
+    },
+    "precedent_revision": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Precedent Revision"
+    },
+    "previous_event_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Event Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-precedent-causal-event-v1",
+      "default": "m5-precedent-causal-event-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence": {
+      "exclusiveMinimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "source_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Document Sha256",
+      "type": "string"
+    },
+    "source_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_identity_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Identity Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "sequence",
+    "event_kind",
+    "source_id",
+    "precedent_id",
+    "precedent_authority_id",
+    "precedent_revision",
+    "citation_kind",
+    "manifest_id",
+    "source_document_sha256",
+    "previous_event_sha256",
+    "source_identity_sha256",
+    "event_id",
+    "event_sha256"
+  ],
+  "title": "M5PrecedentCausalEvent",
+  "type": "object"
+}

@@ -1,0 +1,92 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/coco-dataset-export-command.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "detector_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Detector Manifest Id",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "max_content_bytes": {
+      "default": 67108864,
+      "exclusiveMinimum": 0,
+      "maximum": 67108864,
+      "title": "Max Content Bytes",
+      "type": "integer"
+    },
+    "max_input_labels": {
+      "default": 10000,
+      "exclusiveMinimum": 0,
+      "maximum": 10000,
+      "title": "Max Input Labels",
+      "type": "integer"
+    },
+    "purpose": {
+      "const": "DETECTOR_TRAINING_FROM_REVIEWED_LABELS",
+      "title": "Purpose",
+      "type": "string"
+    },
+    "relative_path": {
+      "minLength": 1,
+      "title": "Relative Path",
+      "type": "string"
+    },
+    "retention_hold_kind": {
+      "const": "GOLD_SET",
+      "title": "Retention Hold Kind",
+      "type": "string"
+    },
+    "retention_period": {
+      "const": "UNTIL_EXPLICIT_RELEASE",
+      "title": "Retention Period",
+      "type": "string"
+    },
+    "retention_policy_version": {
+      "const": "m5-gold-set-retention-v1",
+      "title": "Retention Policy Version",
+      "type": "string"
+    },
+    "rule_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "selection_policy": {
+      "const": "HUMAN_OR_APPEAL_CONFIRMED_V1",
+      "default": "HUMAN_OR_APPEAL_CONFIRMED_V1",
+      "title": "Selection Policy",
+      "type": "string"
+    },
+    "target": {
+      "const": "COCO",
+      "default": "COCO",
+      "title": "Target",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "relative_path",
+    "detector_manifest_id",
+    "manifest_id",
+    "rule_version",
+    "purpose",
+    "retention_hold_kind",
+    "retention_policy_version",
+    "retention_period"
+  ],
+  "title": "CocoDatasetExportCommand",
+  "type": "object"
+}

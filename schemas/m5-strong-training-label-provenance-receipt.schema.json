@@ -1,0 +1,235 @@
+{
+  "$defs": {
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "M5AppealTrainingLabelInput": {
+      "additionalProperties": false,
+      "description": "Reviewer-authored label facts; authority fields are bound by the application.",
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Input Id",
+          "type": "string"
+        },
+        "label_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Label Name",
+          "type": "string"
+        },
+        "label_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Label Value"
+        }
+      },
+      "required": [
+        "crop_id",
+        "bbox",
+        "label_name",
+        "label_value",
+        "input_id"
+      ],
+      "title": "M5AppealTrainingLabelInput",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-strong-training-label-provenance-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Constant-size roots needed to resolve one strong label's appeal provenance.",
+  "properties": {
+    "appeal_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Appeal Id",
+      "type": "string"
+    },
+    "authored_input": {
+      "$ref": "#/$defs/M5AppealTrainingLabelInput"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "crop_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Crop Id",
+      "type": "string"
+    },
+    "detector_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Detector Manifest Id",
+      "type": "string"
+    },
+    "label_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Label Document Sha256",
+      "type": "string"
+    },
+    "label_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Label Id",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "provenance_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Provenance Id",
+      "type": "string"
+    },
+    "quality": {
+      "enum": [
+        "HUMAN_CONFIRMED",
+        "APPEAL_CONFIRMED"
+      ],
+      "title": "Quality",
+      "type": "string"
+    },
+    "resolution_commit_effect_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resolution Commit Effect Root Sha256",
+      "type": "string"
+    },
+    "resolution_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resolution Commit Receipt Id",
+      "type": "string"
+    },
+    "resolution_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resolution Document Sha256",
+      "type": "string"
+    },
+    "resolution_intent_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resolution Intent Id",
+      "type": "string"
+    },
+    "review_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Review Authority Sha256",
+      "type": "string"
+    },
+    "reviewer_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Reviewer Id",
+      "type": "string"
+    },
+    "rule_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-strong-training-label-provenance-receipt-v1",
+      "default": "m5-strong-training-label-provenance-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "terminal_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Terminal Authority Sha256",
+      "type": "string"
+    },
+    "terminal_status": {
+      "enum": [
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "Terminal Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "appeal_id",
+    "label_id",
+    "label_document_sha256",
+    "crop_id",
+    "reviewer_id",
+    "quality",
+    "authored_input",
+    "review_authority_sha256",
+    "terminal_authority_sha256",
+    "terminal_status",
+    "resolution_intent_id",
+    "resolution_document_sha256",
+    "resolution_commit_receipt_id",
+    "resolution_commit_effect_root_sha256",
+    "manifest_id",
+    "rule_version",
+    "detector_manifest_id",
+    "provenance_id"
+  ],
+  "title": "M5StrongTrainingLabelProvenanceReceipt",
+  "type": "object"
+}

@@ -1,0 +1,130 @@
+{
+  "code_commit": "fixture",
+  "schema_version": "2.0.0",
+  "config_sha256": "ec85dd6dc78540056c01589c136d312ca3c12ee78b7a3a69d68f375473a3abe7",
+  "rule_version": "laboratory-v1",
+  "rule_bundle_sha256": "75199dff33f2cb01ec7c82f5c1035e528bb4aa3d6707f468fcf30ab4118be86a",
+  "prompt_bundle_sha256": "b6a7e737fb9942b41e1b5027a694ec3ee9db55a9a6705b5988d5a806b99291d7",
+  "models": {
+    "detector": {
+      "component": "detector",
+      "provider": "precomputed",
+      "model": "precomputed-demo-v1",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "synthetic-fixture",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "ea8e4e6b9a8708aa12432ba691de04e4bd3f3de511717b6a6d212bd1e1536783"
+    },
+    "tracker": {
+      "component": "tracker",
+      "provider": "precomputed",
+      "model": "precomputed-tracker-v1",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "synthetic-fixture",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "d195a40d8d2ac48df9506e9dc11d98175be7d43bdaf99ddffa4f4109af343d1c"
+    },
+    "pose": {
+      "component": "pose",
+      "provider": "precomputed",
+      "model": "precomputed-pose-v1",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "synthetic-fixture",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "350cc309b097b1f3a961f3bab4e425b037bc1f370ad09bead36e7ad63d7ab50d"
+    },
+    "screening": {
+      "component": "screening",
+      "provider": "fake",
+      "model": "deterministic-screening",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "no-weights",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "c4ae82df69dd1283dbeb820ab160a60d6fbc89026116ec6bfc9a65e6ed80c0cf"
+    },
+    "prosecutor": {
+      "component": "prosecutor",
+      "provider": "fake",
+      "model": "deterministic-prosecutor",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "no-weights",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "3ecc7ee0859dab30748804cd682d2dd2b6dc859b7ebf000099e2054d5c179f3d"
+    },
+    "defender": {
+      "component": "defender",
+      "provider": "fake",
+      "model": "deterministic-defender",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "no-weights",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "e4ac5f34838117b3fb1fc3143d8935969fc3c1dd5da4160419eea0f69873e1f8"
+    },
+    "judge": {
+      "component": "judge",
+      "provider": "fake",
+      "model": "deterministic-judge",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "no-weights",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "d65213728ff2e06151153dd98df33884e44c3446c36ae9ebabd874edd9fe2555"
+    },
+    "text_embedding": {
+      "component": "text_embedding",
+      "provider": "fake",
+      "model": "deterministic-text-embedding",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "no-weights",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "e8fed1502ef71a1188ed437577a07978e0d8a49d4ad458d58d230bdf9c8af11b"
+    },
+    "visual_embedding": {
+      "component": "visual_embedding",
+      "provider": "fake",
+      "model": "deterministic-visual-embedding",
+      "revision": "1.0.0",
+      "quantization": null,
+      "weights_sha256": null,
+      "license_id": "no-weights",
+      "provider_revision_guarantee": true,
+      "model_manifest_id": "1bc884cb2e21ec4e594f927ea90ef840b505e1803f281cb19b1be078827b0633"
+    }
+  },
+  "privacy_transform_version": "ppe-redaction-v1",
+  "reproducibility_mode": "REPLAY_LOCKED",
+  "random_seed": 20260725,
+  "decoding_parameters": {
+    "temperature": 0.0,
+    "seed": 20260725,
+    "max_output_tokens": 6000
+  },
+  "platform_summary": {
+    "os_family": "WINDOWS",
+    "architecture": "amd64",
+    "python_version": "3.11.15",
+    "device_class": "CPU_ONLY"
+  },
+  "storage_boundary": "LOCAL_FILESYSTEM",
+  "streams": [],
+  "software_components": {},
+  "pixel_format": "RGB8",
+  "pixel_hash_algorithm": "LCPIX1",
+  "image_encoding_version": "png-v1",
+  "manifest_id": "aa4bdd2f9b995b13889398468bc6ae2cef01f329651b9cdb6ee7d641ff928c1c"
+}

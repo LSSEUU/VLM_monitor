@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "M5EmbeddingChannel": {
+      "enum": [
+        "TEXT",
+        "VISUAL"
+      ],
+      "title": "M5EmbeddingChannel",
+      "type": "string"
+    },
+    "M5EmbeddingRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "FAKE_SHA256_SIGNED_PROJECTION_V1",
+          "default": "FAKE_SHA256_SIGNED_PROJECTION_V1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/$defs/M5EmbeddingChannel"
+        },
+        "dimensions": {
+          "exclusiveMinimum": 0,
+          "maximum": 4096,
+          "title": "Dimensions",
+          "type": "integer"
+        },
+        "input_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Input Ref",
+          "type": "string"
+        },
+        "input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m5-embedding-request-v1",
+          "default": "m5-embedding-request-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "channel",
+        "input_ref",
+        "input_sha256",
+        "model_manifest_id",
+        "dimensions",
+        "request_id"
+      ],
+      "title": "M5EmbeddingRequest",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-embedding-vector.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "embedding_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Embedding Id",
+      "type": "string"
+    },
+    "request": {
+      "$ref": "#/$defs/M5EmbeddingRequest"
+    },
+    "schema_version": {
+      "const": "m5-embedding-vector-v1",
+      "default": "m5-embedding-vector-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "values": {
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 4096,
+      "minItems": 1,
+      "title": "Values",
+      "type": "array"
+    }
+  },
+  "required": [
+    "request",
+    "values",
+    "embedding_id"
+  ],
+  "title": "M5EmbeddingVector",
+  "type": "object"
+}

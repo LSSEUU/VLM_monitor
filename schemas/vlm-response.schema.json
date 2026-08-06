@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "VlmCallPurpose": {
+      "enum": [
+        "SCREENING",
+        "STRUCTURE_REPAIR"
+      ],
+      "title": "VlmCallPurpose",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/vlm-response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Persisted raw-response receipt; provider bytes stay in owner-only storage.",
+  "properties": {
+    "attempt_index": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Attempt Index",
+      "type": "integer"
+    },
+    "cache_key": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Cache Key",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "evidence_pack_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evidence Pack Id",
+      "type": "string"
+    },
+    "evidence_pack_version": {
+      "exclusiveMinimum": 0,
+      "title": "Evidence Pack Version",
+      "type": "integer"
+    },
+    "input_tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Input Tokens",
+      "type": "integer"
+    },
+    "latency_ms": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Manifest Id",
+      "type": "string"
+    },
+    "output_tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Output Tokens",
+      "type": "integer"
+    },
+    "purpose": {
+      "$ref": "#/$defs/VlmCallPurpose"
+    },
+    "raw_response_ref": {
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\<>:\\\"|?*])(?:[^/\\x00-\\x1f]+/)*[^/\\x00-\\x1f]+$",
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Sha256",
+      "type": "string"
+    },
+    "response_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Response Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "size_bytes": {
+      "minimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "evidence_pack_id",
+    "evidence_pack_version",
+    "request_id",
+    "request_sha256",
+    "cache_key",
+    "purpose",
+    "attempt_index",
+    "raw_response_ref",
+    "content_sha256",
+    "size_bytes",
+    "model_manifest_id",
+    "manifest_id",
+    "response_id"
+  ],
+  "title": "VLMResponse",
+  "type": "object"
+}

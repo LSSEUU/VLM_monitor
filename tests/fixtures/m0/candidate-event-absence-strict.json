@@ -1,0 +1,41 @@
+{
+  "event_id": "6b5c5418-2b9e-5b83-aa5e-484192d0cbe3",
+  "camera_id": "cam-01",
+  "stream_id": "demo-absence",
+  "rule_version": "laboratory-v1",
+  "violation_type": "PPE_GOGGLES_MISSING",
+  "evidence_class": "ABSENCE",
+  "zone_id": "hood-01",
+  "start_frame": 0,
+  "end_frame_exclusive": 151,
+  "trigger_frame": 150,
+  "primary_track_ref": "cam-01:epoch-01:person-01",
+  "related_track_refs": [],
+  "hard_rule": false,
+  "l1_score": 0.73,
+  "confirmation": {
+    "policy": "STRICT_CAUSAL",
+    "examined_frame_ids": [
+      "cam-01:demo-absence:0",
+      "cam-01:demo-absence:75",
+      "cam-01:demo-absence:149"
+    ],
+    "counterevidence_frame_ids": [],
+    "post_threshold_recovery_frame_id": "cam-01:demo-absence:151",
+    "suppressed": false,
+    "suppression_reason": null,
+    "resolved_frame": 151,
+    "causal_risk": false
+  },
+  "objective_facts": [
+    {
+      "fact_id": "fact-duration-absence",
+      "kind": "DURATION_FRAMES",
+      "value": 151,
+      "source_ref": "cam-01:demo-absence:150",
+      "source_manifest_id": "ea8e4e6b9a8708aa12432ba691de04e4bd3f3de511717b6a6d212bd1e1536783",
+      "unit": "frames"
+    }
+  ],
+  "manifest_id": "d8727af23c65e0722ac4754b5aafd2408426c03b2028e6947c6ea774f4ac70db"
+}

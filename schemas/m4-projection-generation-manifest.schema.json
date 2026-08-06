@@ -1,0 +1,130 @@
+{
+  "$defs": {
+    "M4ProjectionArtifactKind": {
+      "description": "Every canonical document needed to reconstruct an M4 hearing graph.",
+      "enum": [
+        "HEARING_SESSION",
+        "HEARING_CYCLE",
+        "HEARING_CHECKPOINT",
+        "PRECEDENT_RETRIEVAL",
+        "MODEL_REQUEST",
+        "MODEL_RESPONSE",
+        "MODEL_PARSE_RECEIPT",
+        "ROLE_OUTPUT",
+        "MODEL_CACHE_ENTRY",
+        "USAGE_RECEIPT",
+        "ACQUISITION_REQUEST",
+        "ACQUISITION_EXECUTION_CLAIM",
+        "ACQUISITION_EXECUTION_PUBLICATION",
+        "HEARING_ROUND",
+        "HEARING_RECORD",
+        "TOOL_EXECUTION_MANIFEST",
+        "ACQUIRED_CROP",
+        "TOOL_EXECUTION_RECEIPT",
+        "EVIDENCE_PACK_DERIVATION",
+        "VERDICT_BINDING",
+        "REWORK_RECEIPT",
+        "HEARING_BACKLOG_COMPLETION",
+        "MODEL_CALL_FAILURE_AUTHORITY",
+        "STRICT_PARSE_FAILURE_ATTEMPT",
+        "STRICT_PARSE_FAILURE_PROOF",
+        "BACKLOG_RETRY_OUTCOME",
+        "HUMAN_REVIEW_RECEIPT",
+        "CASE_VERSION",
+        "EVIDENCE_PACK",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "PROCEDURAL_REVIEW",
+        "BACKLOG_ITEM",
+        "BACKLOG_ITEM_VERSION",
+        "FRAME",
+        "DETECTION",
+        "AUDIT_ENTRY"
+      ],
+      "title": "M4ProjectionArtifactKind",
+      "type": "string"
+    },
+    "M4ProjectionGenerationEntry": {
+      "additionalProperties": false,
+      "description": "One exact canonical document in an immutable M4 generation.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,213}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M4ProjectionArtifactKind"
+        },
+        "relative_path": {
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id",
+        "relative_path",
+        "sha256",
+        "size_bytes"
+      ],
+      "title": "M4ProjectionGenerationEntry",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m4-projection-generation-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Complete file inventory for one validated M4 SQLite authority root.",
+  "properties": {
+    "authority_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authority Root Sha256",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/M4ProjectionGenerationEntry"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "generation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m4-projection-generation-v1",
+      "default": "m4-projection-generation-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "authority_root_sha256",
+    "entries",
+    "generation_id"
+  ],
+  "title": "M4ProjectionGenerationManifest",
+  "type": "object"
+}

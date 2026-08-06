@@ -1,0 +1,1417 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/index.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": "2.0.0",
+  "schemas": [
+    {
+      "file": "acquisition-execution-claim-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_acquisition.AcquisitionExecutionClaimAuthority",
+      "name": "acquisition-execution-claim-authority"
+    },
+    {
+      "file": "acquisition-execution-publication.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_acquisition.AcquisitionExecutionPublication",
+      "name": "acquisition-execution-publication"
+    },
+    {
+      "file": "acquisition-request.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_acquisition.AcquisitionRequest",
+      "name": "acquisition-request"
+    },
+    {
+      "file": "acquisition-request-payload.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.hearing_common.AcquisitionRequestPayload",
+      "name": "acquisition-request-payload"
+    },
+    {
+      "file": "affected-citation-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeals.AffectedCitationReport",
+      "name": "affected-citation-report"
+    },
+    {
+      "file": "alert-channel-capability-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.AlertChannelCapabilityAuthority",
+      "name": "alert-channel-capability-authority"
+    },
+    {
+      "file": "alert-cooldown-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.AlertCooldownAuthority",
+      "name": "alert-cooldown-authority"
+    },
+    {
+      "file": "alert-cooldown-key.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.AlertCooldownKey",
+      "name": "alert-cooldown-key"
+    },
+    {
+      "file": "alert-decision.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alerts.AlertDecision",
+      "name": "alert-decision"
+    },
+    {
+      "file": "alert-dispatch-attempt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.AlertDispatchAttempt",
+      "name": "alert-dispatch-attempt"
+    },
+    {
+      "file": "alert-dispatch-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.AlertDispatchReceipt",
+      "name": "alert-dispatch-receipt"
+    },
+    {
+      "file": "alert-outbox-item.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.AlertOutboxItem",
+      "name": "alert-outbox-item"
+    },
+    {
+      "file": "alert-policy-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.AlertPolicyAuthority",
+      "name": "alert-policy-authority"
+    },
+    {
+      "file": "alert-policy-request.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.AlertPolicyRequest",
+      "name": "alert-policy-request"
+    },
+    {
+      "file": "app-config.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.config.AppConfig",
+      "name": "app-config"
+    },
+    {
+      "file": "appeal.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.appeals.Appeal",
+      "name": "appeal"
+    },
+    {
+      "file": "appeal-resolution-command.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m5_appeals.AppealResolutionCommand",
+      "name": "appeal-resolution-command"
+    },
+    {
+      "file": "appeal-resolution-precedent-snapshot.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeals.AppealResolutionPrecedentSnapshot",
+      "name": "appeal-resolution-precedent-snapshot"
+    },
+    {
+      "file": "appeal-resolution-side-effect-intent.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeals.AppealResolutionSideEffectIntent",
+      "name": "appeal-resolution-side-effect-intent"
+    },
+    {
+      "file": "appeal-review-command.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m5_appeals.AppealReviewCommand",
+      "name": "appeal-review-command"
+    },
+    {
+      "file": "appeal-submission-command.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m5_appeals.AppealSubmissionCommand",
+      "name": "appeal-submission-command"
+    },
+    {
+      "file": "appeal-version-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeals.AppealVersionAuthority",
+      "name": "appeal-version-authority"
+    },
+    {
+      "file": "artifact-ref.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.storage.ArtifactRef",
+      "name": "artifact-ref"
+    },
+    {
+      "file": "artifact-validation-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.artifact_validation.ArtifactValidationReport",
+      "name": "artifact-validation-report"
+    },
+    {
+      "file": "artifact-verification.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.storage.ArtifactVerification",
+      "name": "artifact-verification"
+    },
+    {
+      "file": "association-result.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.detections.AssociationResult",
+      "name": "association-result"
+    },
+    {
+      "file": "audit-chain-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.audit.AuditChainReport",
+      "name": "audit-chain-report"
+    },
+    {
+      "file": "audit-entry.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.audit.AuditEntry",
+      "name": "audit-entry"
+    },
+    {
+      "file": "backlog-completion-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.backlog.BacklogCompletionReceipt",
+      "name": "backlog-completion-receipt"
+    },
+    {
+      "file": "backlog-item.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.backlog.BacklogItem",
+      "name": "backlog-item"
+    },
+    {
+      "file": "backlog-lease-identity.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.backlog.BacklogLeaseIdentity",
+      "name": "backlog-lease-identity"
+    },
+    {
+      "file": "backlog-retry-context.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.backlog.BacklogRetryContext",
+      "name": "backlog-retry-context"
+    },
+    {
+      "file": "backlog-retry-failure.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.backlog.BacklogRetryFailure",
+      "name": "backlog-retry-failure"
+    },
+    {
+      "file": "backlog-retry-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.backlog.BacklogRetryReport",
+      "name": "backlog-retry-report"
+    },
+    {
+      "file": "backlog-retry-success.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.backlog.BacklogRetrySuccess",
+      "name": "backlog-retry-success"
+    },
+    {
+      "file": "backlog-strict-parse-failure-proof.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.backlog.BacklogStrictParseFailureProof",
+      "name": "backlog-strict-parse-failure-proof"
+    },
+    {
+      "file": "candidate-event.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.events.CandidateEvent",
+      "name": "candidate-event"
+    },
+    {
+      "file": "case.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.cases.Case",
+      "name": "case"
+    },
+    {
+      "file": "closed-case-appeal-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeals.ClosedCaseAppealAuthority",
+      "name": "closed-case-appeal-authority"
+    },
+    {
+      "file": "closure-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.storage.ClosureReport",
+      "name": "closure-report"
+    },
+    {
+      "file": "coco-dataset-export-command.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m5_training.CocoDatasetExportCommand",
+      "name": "coco-dataset-export-command"
+    },
+    {
+      "file": "crop.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.evidence.Crop",
+      "name": "crop"
+    },
+    {
+      "file": "crop-request.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.evidence.CropRequest",
+      "name": "crop-request"
+    },
+    {
+      "file": "dataset-export-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training.DatasetExportReport",
+      "name": "dataset-export-report"
+    },
+    {
+      "file": "defender-model-payload.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.hearing_common.DefenderModelPayload",
+      "name": "defender-model-payload"
+    },
+    {
+      "file": "emergency-safety-incident.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alerts.EmergencySafetyIncident",
+      "name": "emergency-safety-incident"
+    },
+    {
+      "file": "evidence-citation.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m3_models.EvidenceCitation",
+      "name": "evidence-citation"
+    },
+    {
+      "file": "evidence-pack.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.evidence.EvidencePack",
+      "name": "evidence-pack"
+    },
+    {
+      "file": "evidence-pack-derivation.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_persistence.EvidencePackDerivation",
+      "name": "evidence-pack-derivation"
+    },
+    {
+      "file": "fake-vlm-fixture-bundle.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m3_operations.FakeVLMFixtureBundle",
+      "name": "fake-vlm-fixture-bundle"
+    },
+    {
+      "file": "frame-bundle.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.detections.FrameBundle",
+      "name": "frame-bundle"
+    },
+    {
+      "file": "frame-ref.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.frames.FrameRef",
+      "name": "frame-ref"
+    },
+    {
+      "file": "hearing-backlog-completion-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_backlog.HearingBacklogCompletionReceipt",
+      "name": "hearing-backlog-completion-receipt"
+    },
+    {
+      "file": "hearing-backlog-retry-failure.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_backlog.HearingBacklogRetryFailure",
+      "name": "hearing-backlog-retry-failure"
+    },
+    {
+      "file": "hearing-backlog-retry-success.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_backlog.HearingBacklogRetrySuccess",
+      "name": "hearing-backlog-retry-success"
+    },
+    {
+      "file": "hearing-checkpoint.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_state.HearingCheckpoint",
+      "name": "hearing-checkpoint"
+    },
+    {
+      "file": "hearing-cycle-scope.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_common.HearingCycleScope",
+      "name": "hearing-cycle-scope"
+    },
+    {
+      "file": "hearing-human-review-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_state.HearingHumanReviewReceipt",
+      "name": "hearing-human-review-receipt"
+    },
+    {
+      "file": "hearing-initial-strict-parse-failure-proof.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingInitialStrictParseFailureProof",
+      "name": "hearing-initial-strict-parse-failure-proof"
+    },
+    {
+      "file": "hearing-model-cache-entry.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingModelCacheEntry",
+      "name": "hearing-model-cache-entry"
+    },
+    {
+      "file": "hearing-model-call-failure-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingModelCallFailureAuthority",
+      "name": "hearing-model-call-failure-authority"
+    },
+    {
+      "file": "hearing-model-parse-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingModelParseReceipt",
+      "name": "hearing-model-parse-receipt"
+    },
+    {
+      "file": "hearing-model-request.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingModelRequest",
+      "name": "hearing-model-request"
+    },
+    {
+      "file": "hearing-model-response.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingModelResponse",
+      "name": "hearing-model-response"
+    },
+    {
+      "file": "hearing-model-response-recovery-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_recovery.HearingModelResponseRecoveryReport",
+      "name": "hearing-model-response-recovery-report"
+    },
+    {
+      "file": "hearing-precedent-retrieval-outcome.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_retrieval.HearingPrecedentRetrievalOutcome",
+      "name": "hearing-precedent-retrieval-outcome"
+    },
+    {
+      "file": "hearing-precedent-retrieval-query.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_retrieval.HearingPrecedentRetrievalQuery",
+      "name": "hearing-precedent-retrieval-query"
+    },
+    {
+      "file": "hearing-precedent-retrieval-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_state.HearingPrecedentRetrievalReceipt",
+      "name": "hearing-precedent-retrieval-receipt"
+    },
+    {
+      "file": "hearing-precedent-retrieval-result.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_retrieval.HearingPrecedentRetrievalResult",
+      "name": "hearing-precedent-retrieval-result"
+    },
+    {
+      "file": "hearing-record.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_state.HearingRecord",
+      "name": "hearing-record"
+    },
+    {
+      "file": "hearing-rework-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_persistence.HearingReworkReceipt",
+      "name": "hearing-rework-receipt"
+    },
+    {
+      "file": "hearing-role-output.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingRoleOutput",
+      "name": "hearing-role-output"
+    },
+    {
+      "file": "hearing-round.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_state.HearingRound",
+      "name": "hearing-round"
+    },
+    {
+      "file": "hearing-session.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_state.HearingSession",
+      "name": "hearing-session"
+    },
+    {
+      "file": "hearing-strict-parse-failure-attempt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingStrictParseFailureAttempt",
+      "name": "hearing-strict-parse-failure-attempt"
+    },
+    {
+      "file": "hearing-strict-parse-failure-proof.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingStrictParseFailureProof",
+      "name": "hearing-strict-parse-failure-proof"
+    },
+    {
+      "file": "hearing-unknown-reference-attempt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_common.HearingUnknownReferenceAttempt",
+      "name": "hearing-unknown-reference-attempt"
+    },
+    {
+      "file": "hearing-usage-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_model.HearingUsageReceipt",
+      "name": "hearing-usage-receipt"
+    },
+    {
+      "file": "hearing-verdict-binding.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_state.HearingVerdictBinding",
+      "name": "hearing-verdict-binding"
+    },
+    {
+      "file": "immediate-safety-delivery-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.alert_policy.ImmediateSafetyDeliveryAuthority",
+      "name": "immediate-safety-delivery-authority"
+    },
+    {
+      "file": "judge-model-payload.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.hearing_common.JudgeModelPayload",
+      "name": "judge-model-payload"
+    },
+    {
+      "file": "m3-artifact-validation-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.artifact_validation.M3ArtifactValidationReport",
+      "name": "m3-artifact-validation-report"
+    },
+    {
+      "file": "m3-backlog-retry-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m3_command_reports.M3BacklogRetryCommandReport",
+      "name": "m3-backlog-retry-command-report"
+    },
+    {
+      "file": "m3-process-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m3_command_reports.M3ProcessCommandReport",
+      "name": "m3-process-command-report"
+    },
+    {
+      "file": "m3-process-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m3_operations.M3ProcessReport",
+      "name": "m3-process-report"
+    },
+    {
+      "file": "m4-artifact-validation-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m4_artifact_validation.M4ArtifactValidationReport",
+      "name": "m4-artifact-validation-report"
+    },
+    {
+      "file": "m4-backlog-retry-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m4_operations.M4BacklogRetryCommandReport",
+      "name": "m4-backlog-retry-command-report"
+    },
+    {
+      "file": "m4-backlog-retry-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m4_operations.M4BacklogRetryReport",
+      "name": "m4-backlog-retry-report"
+    },
+    {
+      "file": "m4-fake-vlm-fixture-bundle.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m4_operations.M4FakeVLMFixtureBundle",
+      "name": "m4-fake-vlm-fixture-bundle"
+    },
+    {
+      "file": "m4-process-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m4_operations.M4ProcessCommandReport",
+      "name": "m4-process-command-report"
+    },
+    {
+      "file": "m4-process-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m4_operations.M4ProcessReport",
+      "name": "m4-process-report"
+    },
+    {
+      "file": "m4-projection-current-pointer.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m4_projection.M4ProjectionCurrentPointer",
+      "name": "m4-projection-current-pointer"
+    },
+    {
+      "file": "m4-projection-generation-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m4_projection.M4ProjectionGenerationManifest",
+      "name": "m4-projection-generation-manifest"
+    },
+    {
+      "file": "m5-appeal-resolution-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeal_operations.M5AppealResolutionCommandReport",
+      "name": "m5-appeal-resolution-command-report"
+    },
+    {
+      "file": "m5-appeal-resolution-commit-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeals.M5AppealResolutionCommitReceipt",
+      "name": "m5-appeal-resolution-commit-receipt"
+    },
+    {
+      "file": "m5-appeal-review-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeal_operations.M5AppealReviewCommandReport",
+      "name": "m5-appeal-review-command-report"
+    },
+    {
+      "file": "m5-appeal-submission-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_appeal_operations.M5AppealSubmissionCommandReport",
+      "name": "m5-appeal-submission-command-report"
+    },
+    {
+      "file": "m5-appeal-training-label-input.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m5_human_inputs.M5AppealTrainingLabelInput",
+      "name": "m5-appeal-training-label-input"
+    },
+    {
+      "file": "m5-appeal-window-snapshot.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5AppealWindowSnapshot",
+      "name": "m5-appeal-window-snapshot"
+    },
+    {
+      "file": "m5-artifact-validation-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_artifact_validation.M5ArtifactValidationReport",
+      "name": "m5-artifact-validation-report"
+    },
+    {
+      "file": "m5-close-case-outcome.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_operations.M5CloseCaseOutcome",
+      "name": "m5-close-case-outcome"
+    },
+    {
+      "file": "m5-dataset-crop-snapshot-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training_history.M5DatasetCropSnapshotAuthority",
+      "name": "m5-dataset-crop-snapshot-authority"
+    },
+    {
+      "file": "m5-dataset-label-snapshot-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training_history.M5DatasetLabelSnapshotReceipt",
+      "name": "m5-dataset-label-snapshot-receipt"
+    },
+    {
+      "file": "m5-dataset-registration-snapshot-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training_history.M5DatasetRegistrationSnapshotAuthority",
+      "name": "m5-dataset-registration-snapshot-authority"
+    },
+    {
+      "file": "m5-dispatch-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_operations.M5DispatchCommandReport",
+      "name": "m5-dispatch-command-report"
+    },
+    {
+      "file": "m5-embedding-request.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5EmbeddingRequest",
+      "name": "m5-embedding-request"
+    },
+    {
+      "file": "m5-embedding-vector.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5EmbeddingVector",
+      "name": "m5-embedding-vector"
+    },
+    {
+      "file": "m5-finalize-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_operations.M5FinalizeCommandReport",
+      "name": "m5-finalize-command-report"
+    },
+    {
+      "file": "m5-precedent-activation-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_operations.M5PrecedentActivationCommandReport",
+      "name": "m5-precedent-activation-command-report"
+    },
+    {
+      "file": "m5-precedent-activation-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentActivationReceipt",
+      "name": "m5-precedent-activation-receipt"
+    },
+    {
+      "file": "m5-precedent-activation-result.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentActivationResult",
+      "name": "m5-precedent-activation-result"
+    },
+    {
+      "file": "m5-precedent-application-batch-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedent_usage.M5PrecedentApplicationBatchAuthority",
+      "name": "m5-precedent-application-batch-authority"
+    },
+    {
+      "file": "m5-precedent-application-citation-commit.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedent_usage.M5PrecedentApplicationCitationCommit",
+      "name": "m5-precedent-application-citation-commit"
+    },
+    {
+      "file": "m5-precedent-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentAuthority",
+      "name": "m5-precedent-authority"
+    },
+    {
+      "file": "m5-precedent-candidate-evaluation.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentCandidateEvaluation",
+      "name": "m5-precedent-candidate-evaluation"
+    },
+    {
+      "file": "m5-precedent-causal-event.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedent_causal_ledger.M5PrecedentCausalEvent",
+      "name": "m5-precedent-causal-event"
+    },
+    {
+      "file": "m5-precedent-citation-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentCitationAuthority",
+      "name": "m5-precedent-citation-authority"
+    },
+    {
+      "file": "m5-precedent-citation-commit.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentCitationCommit",
+      "name": "m5-precedent-citation-commit"
+    },
+    {
+      "file": "m5-precedent-citation-snapshot.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentCitationSnapshot",
+      "name": "m5-precedent-citation-snapshot"
+    },
+    {
+      "file": "m5-precedent-conflict-batch-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentConflictBatchAuthority",
+      "name": "m5-precedent-conflict-batch-authority"
+    },
+    {
+      "file": "m5-precedent-conflict-batch-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentConflictBatchReceipt",
+      "name": "m5-precedent-conflict-batch-receipt"
+    },
+    {
+      "file": "m5-precedent-conflict-batch-resolution.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentConflictBatchResolution",
+      "name": "m5-precedent-conflict-batch-resolution"
+    },
+    {
+      "file": "m5-precedent-conflict-causal-cut.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentConflictCausalCut",
+      "name": "m5-precedent-conflict-causal-cut"
+    },
+    {
+      "file": "m5-precedent-conflict-command-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_operations.M5PrecedentConflictCommandReport",
+      "name": "m5-precedent-conflict-command-report"
+    },
+    {
+      "file": "m5-precedent-conflict-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentConflictReceipt",
+      "name": "m5-precedent-conflict-receipt"
+    },
+    {
+      "file": "m5-precedent-conflict-resolution.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentConflictResolution",
+      "name": "m5-precedent-conflict-resolution"
+    },
+    {
+      "file": "m5-precedent-conflict-snapshot.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentConflictSnapshot",
+      "name": "m5-precedent-conflict-snapshot"
+    },
+    {
+      "file": "m5-precedent-exposure-batch-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedent_usage.M5PrecedentExposureBatchAuthority",
+      "name": "m5-precedent-exposure-batch-authority"
+    },
+    {
+      "file": "m5-precedent-import-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_operations.M5PrecedentImportReport",
+      "name": "m5-precedent-import-report"
+    },
+    {
+      "file": "m5-precedent-policy.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentPolicy",
+      "name": "m5-precedent-policy"
+    },
+    {
+      "file": "m5-precedent-retrieval-query.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentRetrievalQuery",
+      "name": "m5-precedent-retrieval-query"
+    },
+    {
+      "file": "m5-precedent-retrieval-result.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentRetrievalResult",
+      "name": "m5-precedent-retrieval-result"
+    },
+    {
+      "file": "m5-precedent-revocation-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentRevocationReceipt",
+      "name": "m5-precedent-revocation-receipt"
+    },
+    {
+      "file": "m5-precedent-revocation-result.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_precedents.M5PrecedentRevocationResult",
+      "name": "m5-precedent-revocation-result"
+    },
+    {
+      "file": "m5-projection-current-pointer.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_projection.M5ProjectionCurrentPointer",
+      "name": "m5-projection-current-pointer"
+    },
+    {
+      "file": "m5-projection-generation-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_projection.M5ProjectionGenerationManifest",
+      "name": "m5-projection-generation-manifest"
+    },
+    {
+      "file": "m5-strong-training-label-provenance-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training_provenance.M5StrongTrainingLabelProvenanceReceipt",
+      "name": "m5-strong-training-label-provenance-receipt"
+    },
+    {
+      "file": "m5-training-causal-event.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training_history.M5TrainingCausalEvent",
+      "name": "m5-training-causal-event"
+    },
+    {
+      "file": "m5-training-causal-watermark.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training_history.M5TrainingCausalWatermark",
+      "name": "m5-training-causal-watermark"
+    },
+    {
+      "file": "m5-training-label-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training_provenance.M5TrainingLabelAuthority",
+      "name": "m5-training-label-authority"
+    },
+    {
+      "file": "m6-appeal-gold-truth-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_gold.M6AppealGoldTruthAuthority",
+      "name": "m6-appeal-gold-truth-authority"
+    },
+    {
+      "file": "m6-case-replay-snapshot.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression.M6CaseReplaySnapshot",
+      "name": "m6-case-replay-snapshot"
+    },
+    {
+      "file": "m6-challenge-designation-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_selection.M6ChallengeDesignationAuthority",
+      "name": "m6-challenge-designation-authority"
+    },
+    {
+      "file": "m6-offline-demo-manifest-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_demo.M6OfflineDemoManifestAuthorityV1",
+      "name": "m6-offline-demo-manifest-authority-v1"
+    },
+    {
+      "file": "m6-offline-demo-publication-seal-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_demo_publication.M6OfflineDemoPublicationSealAuthorityV1",
+      "name": "m6-offline-demo-publication-seal-authority-v1"
+    },
+    {
+      "file": "m6-offline-demo-scenario-artifact-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_demo.M6OfflineDemoScenarioArtifactReceiptV1",
+      "name": "m6-offline-demo-scenario-artifact-receipt-v1"
+    },
+    {
+      "file": "m6-offline-demo-scenario-result-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_demo.M6OfflineDemoScenarioResultAuthorityV1",
+      "name": "m6-offline-demo-scenario-result-authority-v1"
+    },
+    {
+      "file": "m6-privacy-safe-static-report-manifest-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_static_report.M6PrivacySafeStaticReportManifestAuthorityV1",
+      "name": "m6-privacy-safe-static-report-manifest-authority-v1"
+    },
+    {
+      "file": "m6-privacy-safe-static-report-publication-seal-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_static_report_publication.M6PrivacySafeStaticReportPublicationSealAuthorityV1",
+      "name": "m6-privacy-safe-static-report-publication-seal-authority-v1"
+    },
+    {
+      "file": "m6-provider-trap-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked.M6ProviderTrapAuthority",
+      "name": "m6-provider-trap-authority"
+    },
+    {
+      "file": "m6-regression-dataset-snapshot.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression.M6RegressionDatasetSnapshot",
+      "name": "m6-regression-dataset-snapshot"
+    },
+    {
+      "file": "m6-regression-eligibility-policy.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_selection.M6RegressionEligibilityPolicyAuthority",
+      "name": "m6-regression-eligibility-policy"
+    },
+    {
+      "file": "m6-regression-execution-dataset-snapshot.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression.M6RegressionExecutionDatasetSnapshot",
+      "name": "m6-regression-execution-dataset-snapshot"
+    },
+    {
+      "file": "m6-regression-execution-source-catalog.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_dataset.M6RegressionExecutionSourceCatalogAuthority",
+      "name": "m6-regression-execution-source-catalog"
+    },
+    {
+      "file": "m6-regression-publication-seal.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_publication.M6RegressionPublicationSeal",
+      "name": "m6-regression-publication-seal"
+    },
+    {
+      "file": "m6-regression-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression.M6RegressionReport",
+      "name": "m6-regression-report"
+    },
+    {
+      "file": "m6-regression-run-command.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression.M6RegressionRunCommand",
+      "name": "m6-regression-run-command"
+    },
+    {
+      "file": "m6-regression-selection-inventory.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_selection.M6RegressionSelectionInventoryAuthority",
+      "name": "m6-regression-selection-inventory"
+    },
+    {
+      "file": "m6-regression-selection-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_selection.M6RegressionSelectionReceipt",
+      "name": "m6-regression-selection-receipt"
+    },
+    {
+      "file": "m6-regression-source-inventory-cut.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_dataset.M6RegressionSourceInventoryCutAuthority",
+      "name": "m6-regression-source-inventory-cut"
+    },
+    {
+      "file": "m6-replay-input-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_source_authority.M6ReplayInputAuthority",
+      "name": "m6-replay-input-authority"
+    },
+    {
+      "file": "m6-replay-input-closure-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked.M6ReplayInputClosureAuthority",
+      "name": "m6-replay-input-closure-authority"
+    },
+    {
+      "file": "m6-replay-locked-alert-policy-causal-cut.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_policy.M6ReplayLockedAlertPolicyCausalCutAuthority",
+      "name": "m6-replay-locked-alert-policy-causal-cut"
+    },
+    {
+      "file": "m6-replay-locked-candidate-case-binding.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_execution.M6ReplayLockedCandidateCaseBinding",
+      "name": "m6-replay-locked-candidate-case-binding"
+    },
+    {
+      "file": "m6-replay-locked-closed-candidate-binding-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_execution.M6ReplayLockedClosedCandidateBindingAuthority",
+      "name": "m6-replay-locked-closed-candidate-binding-authority"
+    },
+    {
+      "file": "m6-replay-locked-closed-policy-execution-component-authority-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_execution.M6ReplayLockedClosedPolicyExecutionComponentAuthorityV2",
+      "name": "m6-replay-locked-closed-policy-execution-component-authority-v2"
+    },
+    {
+      "file": "m6-replay-locked-closed-policy-execution-scope-authority-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_execution.M6ReplayLockedClosedPolicyExecutionScopeAuthorityV2",
+      "name": "m6-replay-locked-closed-policy-execution-scope-authority-v2"
+    },
+    {
+      "file": "m6-replay-locked-closed-policy-execution-seal-authority-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_execution.M6ReplayLockedClosedPolicyExecutionSealAuthorityV2",
+      "name": "m6-replay-locked-closed-policy-execution-seal-authority-v2"
+    },
+    {
+      "file": "m6-replay-locked-closed-policy-pending-sample-commitment-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_execution.M6ReplayLockedClosedPolicyPendingSampleCommitmentAuthorityV2",
+      "name": "m6-replay-locked-closed-policy-pending-sample-commitment-v2"
+    },
+    {
+      "file": "m6-replay-locked-closed-policy-publication-seal-authority-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_publication.M6ReplayLockedClosedPolicyPublicationSealAuthorityV2",
+      "name": "m6-replay-locked-closed-policy-publication-seal-authority-v2"
+    },
+    {
+      "file": "m6-replay-locked-closed-policy-run-trap-seal-authority-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_execution.M6ReplayLockedClosedPolicyRunTrapSealAuthorityV2",
+      "name": "m6-replay-locked-closed-policy-run-trap-seal-authority-v2"
+    },
+    {
+      "file": "m6-replay-locked-closed-policy-sample-execution-record-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_execution.M6ReplayLockedClosedPolicySampleExecutionRecordV2",
+      "name": "m6-replay-locked-closed-policy-sample-execution-record-v2"
+    },
+    {
+      "file": "m6-replay-locked-closed-policy-source-binding-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_closed_policy_execution.M6ReplayLockedClosedPolicySourceBindingAuthority",
+      "name": "m6-replay-locked-closed-policy-source-binding-authority"
+    },
+    {
+      "file": "m6-replay-locked-execution-component-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_execution.M6ReplayLockedExecutionComponentAuthority",
+      "name": "m6-replay-locked-execution-component-authority"
+    },
+    {
+      "file": "m6-replay-locked-execution-scope-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_execution.M6ReplayLockedExecutionScopeAuthority",
+      "name": "m6-replay-locked-execution-scope-authority"
+    },
+    {
+      "file": "m6-replay-locked-execution-seal-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_execution.M6ReplayLockedExecutionSealAuthority",
+      "name": "m6-replay-locked-execution-seal-authority"
+    },
+    {
+      "file": "m6-replay-locked-pending-sample-commitment.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_execution.M6ReplayLockedPendingSampleCommitmentAuthority",
+      "name": "m6-replay-locked-pending-sample-commitment"
+    },
+    {
+      "file": "m6-replay-locked-run-trap-seal-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_execution.M6ReplayLockedRunTrapSealAuthority",
+      "name": "m6-replay-locked-run-trap-seal-authority"
+    },
+    {
+      "file": "m6-replay-locked-sample-execution-record.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked_execution.M6ReplayLockedSampleExecutionRecord",
+      "name": "m6-replay-locked-sample-execution-record"
+    },
+    {
+      "file": "m6-replay-locked-source-determinism-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_replay_locked.M6ReplayLockedSourceDeterminismAuthority",
+      "name": "m6-replay-locked-source-determinism-authority"
+    },
+    {
+      "file": "m6-source-authority-seal.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_source_authority_store.M6SourceAuthoritySeal",
+      "name": "m6-source-authority-seal"
+    },
+    {
+      "file": "m6-synthetic-challenge-scenario-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_selection.M6SyntheticChallengeScenarioAuthority",
+      "name": "m6-synthetic-challenge-scenario-authority"
+    },
+    {
+      "file": "m6-upgrade-candidate-output-inventory-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_execution.M6UpgradeCandidateOutputInventoryAuthority",
+      "name": "m6-upgrade-candidate-output-inventory-authority"
+    },
+    {
+      "file": "m6-upgrade-candidate-output-inventory-authority-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_execution.M6UpgradeCandidateOutputInventoryAuthorityV2",
+      "name": "m6-upgrade-candidate-output-inventory-authority-v2"
+    },
+    {
+      "file": "m6-upgrade-candidate-output-inventory-authority-v3.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_execution.M6UpgradeCandidateOutputInventoryAuthorityV3",
+      "name": "m6-upgrade-candidate-output-inventory-authority-v3"
+    },
+    {
+      "file": "m6-upgrade-candidate-run-cut-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_execution.M6UpgradeCandidateRunCutAuthority",
+      "name": "m6-upgrade-candidate-run-cut-authority"
+    },
+    {
+      "file": "m6-upgrade-candidate-sample-output-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_regression_execution.M6UpgradeCandidateSampleOutputAuthority",
+      "name": "m6-upgrade-candidate-sample-output-authority"
+    },
+    {
+      "file": "m6-upgrade-execution-component-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_ledger.M6UpgradeExecutionComponentAuthority",
+      "name": "m6-upgrade-execution-component-authority"
+    },
+    {
+      "file": "m6-upgrade-execution-ledger-seal.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_ledger.M6UpgradeExecutionLedgerSeal",
+      "name": "m6-upgrade-execution-ledger-seal"
+    },
+    {
+      "file": "m6-upgrade-execution-ledger-seal-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_ledger.M6UpgradeExecutionLedgerSealV2",
+      "name": "m6-upgrade-execution-ledger-seal-v2"
+    },
+    {
+      "file": "m6-upgrade-execution-scope-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_ledger.M6UpgradeExecutionScopeAuthority",
+      "name": "m6-upgrade-execution-scope-authority"
+    },
+    {
+      "file": "m6-upgrade-pending-sample-commitment-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_pending_sample_commitment.M6UpgradePendingSampleCommitmentAuthority",
+      "name": "m6-upgrade-pending-sample-commitment-authority"
+    },
+    {
+      "file": "m6-upgrade-physical-artifact-ref.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_physical.M6UpgradePhysicalArtifactRef",
+      "name": "m6-upgrade-physical-artifact-ref"
+    },
+    {
+      "file": "m6-upgrade-sample-execution-observation-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_observation.M6UpgradeSampleExecutionObservationAuthority",
+      "name": "m6-upgrade-sample-execution-observation-authority"
+    },
+    {
+      "file": "m6-upgrade-sample-execution-observation-authority-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_observation.M6UpgradeSampleExecutionObservationAuthorityV2",
+      "name": "m6-upgrade-sample-execution-observation-authority-v2"
+    },
+    {
+      "file": "m6-upgrade-sample-execution-record.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_ledger.M6UpgradeSampleExecutionRecord",
+      "name": "m6-upgrade-sample-execution-record"
+    },
+    {
+      "file": "m6-upgrade-sample-execution-record-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_ledger.M6UpgradeSampleExecutionRecordV2",
+      "name": "m6-upgrade-sample-execution-record-v2"
+    },
+    {
+      "file": "m6-upgrade-selected-case-audit-anchor.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m6_upgrade_execution_observation.M6UpgradeSelectedCaseAuditAnchor",
+      "name": "m6-upgrade-selected-case-audit-anchor"
+    },
+    {
+      "file": "maintenance-recovery-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.model_response_recovery.MaintenanceRecoveryReport",
+      "name": "maintenance-recovery-report"
+    },
+    {
+      "file": "model-cache-entry.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.screening.ModelCacheEntry",
+      "name": "model-cache-entry"
+    },
+    {
+      "file": "model-call-failure-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.model_call_failures.ModelCallFailureAuthority",
+      "name": "model-call-failure-authority"
+    },
+    {
+      "file": "model-parse-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.screening.ModelParseReceipt",
+      "name": "model-parse-receipt"
+    },
+    {
+      "file": "model-response-recovery-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.model_response_recovery.ModelResponseRecoveryReport",
+      "name": "model-response-recovery-report"
+    },
+    {
+      "file": "observability-score.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.evidence.ObservabilityScore",
+      "name": "observability-score"
+    },
+    {
+      "file": "parsed-screening-output.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.screening.ParsedScreeningOutput",
+      "name": "parsed-screening-output"
+    },
+    {
+      "file": "precedent.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.precedents.Precedent",
+      "name": "precedent"
+    },
+    {
+      "file": "precedent-lookup-query.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m3_models.PrecedentLookupQuery",
+      "name": "precedent-lookup-query"
+    },
+    {
+      "file": "precedent-resolution.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m3_models.PrecedentResolution",
+      "name": "precedent-resolution"
+    },
+    {
+      "file": "privacy-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.evidence.PrivacyReceipt",
+      "name": "privacy-receipt"
+    },
+    {
+      "file": "procedural-defect.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.verdicts.ProceduralDefect",
+      "name": "procedural-defect"
+    },
+    {
+      "file": "procedural-review.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.verdicts.ProceduralReview",
+      "name": "procedural-review"
+    },
+    {
+      "file": "projection-current-pointer.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.projection_generation.ProjectionCurrentPointer",
+      "name": "projection-current-pointer"
+    },
+    {
+      "file": "projection-generation-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.projection_generation.ProjectionGenerationManifest",
+      "name": "projection-generation-manifest"
+    },
+    {
+      "file": "prompt-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m3_models.PromptManifest",
+      "name": "prompt-manifest"
+    },
+    {
+      "file": "prosecutor-model-payload.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.hearing_common.ProsecutorModelPayload",
+      "name": "prosecutor-model-payload"
+    },
+    {
+      "file": "purge-item-result.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.storage.PurgeItemResult",
+      "name": "purge-item-result"
+    },
+    {
+      "file": "recovery-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.recovery.RecoveryReport",
+      "name": "recovery-report"
+    },
+    {
+      "file": "resolved-app-config.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.config.AppConfig",
+      "name": "resolved-app-config"
+    },
+    {
+      "file": "retention-hold.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.storage.RetentionHold",
+      "name": "retention-hold"
+    },
+    {
+      "file": "run-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.manifests.RunManifest",
+      "name": "run-manifest"
+    },
+    {
+      "file": "safety-signal.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.events.SafetySignal",
+      "name": "safety-signal"
+    },
+    {
+      "file": "screening-model-payload.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.screening.ScreeningModelPayload",
+      "name": "screening-model-payload"
+    },
+    {
+      "file": "screening-result.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.screening.ScreeningResult",
+      "name": "screening-result"
+    },
+    {
+      "file": "soft-reminder.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.reminders.SoftReminder",
+      "name": "soft-reminder"
+    },
+    {
+      "file": "startup-recovery-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.recovery.StartupRecoveryReport",
+      "name": "startup-recovery-report"
+    },
+    {
+      "file": "stream-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.manifests.StreamManifest",
+      "name": "stream-manifest"
+    },
+    {
+      "file": "structure-repair-request.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.screening.StructureRepairRequest",
+      "name": "structure-repair-request"
+    },
+    {
+      "file": "tool-execution-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_acquisition.ToolExecutionManifest",
+      "name": "tool-execution-manifest"
+    },
+    {
+      "file": "tool-execution-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.hearing_acquisition.ToolExecutionReceipt",
+      "name": "tool-execution-receipt"
+    },
+    {
+      "file": "tool-result.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.evidence.ToolResult",
+      "name": "tool-result"
+    },
+    {
+      "file": "training-crop-authority.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m5_training.TrainingCropAuthority",
+      "name": "training-crop-authority"
+    },
+    {
+      "file": "training-label.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.training.TrainingLabel",
+      "name": "training-label"
+    },
+    {
+      "file": "verdict.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.verdicts.Verdict",
+      "name": "verdict"
+    },
+    {
+      "file": "vlm-request.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.screening.VLMRequest",
+      "name": "vlm-request"
+    },
+    {
+      "file": "vlm-response.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.screening.VLMResponse",
+      "name": "vlm-response"
+    }
+  ]
+}

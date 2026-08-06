@@ -1,0 +1,52 @@
+{
+  "$defs": {
+    "HearingUnknownReferenceSource": {
+      "enum": [
+        "ARGUMENT_EVIDENCE_REF",
+        "JUDGE_RESPONSE_EVIDENCE_REF",
+        "JUDGE_CITATION_REF",
+        "OBJECTIVE_CLAIM_EVIDENCE_REF",
+        "OBSERVATION_CROP_ID",
+        "PRECEDENT_APPLICATION_ID",
+        "PRECEDENT_FACT_DIFFERENCE_REF",
+        "ACQUISITION_SUPPORTING_EVIDENCE_REF",
+        "ACQUISITION_PARAMETER_FRAME_ID",
+        "ACQUISITION_PARAMETER_CROP_ID"
+      ],
+      "title": "HearingUnknownReferenceSource",
+      "type": "string"
+    },
+    "UnknownReferenceNamespace": {
+      "enum": [
+        "EVIDENCE",
+        "PRECEDENT"
+      ],
+      "title": "UnknownReferenceNamespace",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/hearing-unknown-reference-attempt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Non-sensitive proof that one M4 role emitted a non-whitelisted reference.",
+  "properties": {
+    "namespace": {
+      "$ref": "#/$defs/UnknownReferenceNamespace"
+    },
+    "source": {
+      "$ref": "#/$defs/HearingUnknownReferenceSource"
+    },
+    "value_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Value Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "namespace",
+    "source",
+    "value_sha256"
+  ],
+  "title": "HearingUnknownReferenceAttempt",
+  "type": "object"
+}

@@ -1,0 +1,199 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/evidence-citation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A typed model citation whose relative geometry is checked later by L5.",
+  "oneOf": [
+    {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "bbox"
+            ]
+          },
+          {
+            "required": [
+              "coordinate_space"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "properties": {
+        "bbox": {
+          "type": "null"
+        },
+        "coordinate_space": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "bbox",
+        "coordinate_space"
+      ]
+    },
+    {
+      "properties": {
+        "bbox": {
+          "not": {
+            "type": "null"
+          }
+        },
+        "coordinate_space": {
+          "const": "CITED_ARTIFACT_PIXELS"
+        },
+        "evidence_ref": {
+          "properties": {
+            "kind": {
+              "enum": [
+                "CROP",
+                "FRAME"
+              ]
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        }
+      },
+      "required": [
+        "bbox",
+        "coordinate_space",
+        "evidence_ref"
+      ]
+    }
+  ],
+  "properties": {
+    "bbox": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "citation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Citation Id",
+      "type": "string"
+    },
+    "coordinate_space": {
+      "anyOf": [
+        {
+          "const": "CITED_ARTIFACT_PIXELS",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Coordinate Space"
+    },
+    "evidence_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    }
+  },
+  "required": [
+    "evidence_ref",
+    "citation_id"
+  ],
+  "title": "EvidenceCitation",
+  "type": "object"
+}

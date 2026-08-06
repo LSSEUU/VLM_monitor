@@ -1,0 +1,163 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/hearing-model-response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Raw M4 provider response receipt; arbitrary bytes remain in private storage.",
+  "properties": {
+    "attempt_index": {
+      "enum": [
+        0,
+        1
+      ],
+      "title": "Attempt Index",
+      "type": "integer"
+    },
+    "cache_key": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Cache Key",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "current_evidence_pack_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Current Evidence Pack Id",
+      "type": "string"
+    },
+    "current_evidence_pack_version": {
+      "exclusiveMinimum": 0,
+      "title": "Current Evidence Pack Version",
+      "type": "integer"
+    },
+    "hearing_session_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Hearing Session Id",
+      "type": "string"
+    },
+    "input_tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Input Tokens",
+      "type": "integer"
+    },
+    "latency_ms": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Manifest Id",
+      "type": "string"
+    },
+    "output_tokens": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Output Tokens",
+      "type": "integer"
+    },
+    "prior_acquisition_rounds": {
+      "maximum": 2,
+      "minimum": 0,
+      "title": "Prior Acquisition Rounds",
+      "type": "integer"
+    },
+    "prior_rework_rounds": {
+      "maximum": 2,
+      "minimum": 0,
+      "title": "Prior Rework Rounds",
+      "type": "integer"
+    },
+    "raw_response_ref": {
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\<>:\\\"|?*])(?:[^/\\x00-\\x1f]+/)*[^/\\x00-\\x1f]+$",
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Sha256",
+      "type": "string"
+    },
+    "response_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Response Id",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "round_index": {
+      "exclusiveMinimum": 0,
+      "maximum": 5,
+      "title": "Round Index",
+      "type": "integer"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m4-hearing-model-response-v1",
+      "default": "m4-hearing-model-response-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "size_bytes": {
+      "maximum": 16777216,
+      "minimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "hearing_session_id",
+    "round_index",
+    "prior_acquisition_rounds",
+    "prior_rework_rounds",
+    "current_evidence_pack_id",
+    "current_evidence_pack_version",
+    "role",
+    "attempt_index",
+    "request_id",
+    "request_sha256",
+    "cache_key",
+    "raw_response_ref",
+    "content_sha256",
+    "size_bytes",
+    "model_manifest_id",
+    "manifest_id",
+    "response_id"
+  ],
+  "title": "HearingModelResponse",
+  "type": "object"
+}

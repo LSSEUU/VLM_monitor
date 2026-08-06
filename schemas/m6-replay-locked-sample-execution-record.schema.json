@@ -1,0 +1,1442 @@
+{
+  "$defs": {
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "M6CaseReplaySnapshot": {
+      "additionalProperties": false,
+      "description": "One replayed Case semantic projection without operational identity noise.",
+      "properties": {
+        "case_status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "final_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "highest_alert_level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "projection_version": {
+          "const": "m6-semantic-case-v1",
+          "default": "m6-semantic-case-v1",
+          "title": "Projection Version",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-case-replay-snapshot-v1",
+          "default": "m6-case-replay-snapshot-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "semantic_case_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Semantic Case Hash",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Document Sha256",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Revision",
+          "type": "integer"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "stage_roots": {
+          "items": {
+            "$ref": "#/$defs/M6SemanticStageRoot"
+          },
+          "maxItems": 6,
+          "minItems": 6,
+          "title": "Stage Roots",
+          "type": "array"
+        },
+        "terminal_appeal_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppealStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_case_id",
+        "source_case_revision",
+        "source_case_document_sha256",
+        "manifest_id",
+        "stage_roots",
+        "case_status",
+        "semantic_case_hash",
+        "snapshot_id"
+      ],
+      "title": "M6CaseReplaySnapshot",
+      "type": "object"
+    },
+    "M6HistoricalCausalCut": {
+      "additionalProperties": false,
+      "properties": {
+        "causal_cut_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Causal Cut Id",
+          "type": "string"
+        },
+        "degraded_retrieval_count": {
+          "readOnly": true,
+          "title": "Degraded Retrieval Count",
+          "type": "integer"
+        },
+        "retrieval_cycle_count": {
+          "readOnly": true,
+          "title": "Retrieval Cycle Count",
+          "type": "integer"
+        },
+        "retrieval_cycles": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedRetrievalCycleInput"
+          },
+          "maxItems": 64,
+          "title": "Retrieval Cycles",
+          "type": "array"
+        },
+        "successful_exposure_count": {
+          "readOnly": true,
+          "title": "Successful Exposure Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "retrieval_cycle_count",
+        "successful_exposure_count",
+        "degraded_retrieval_count",
+        "causal_cut_id"
+      ],
+      "title": "M6HistoricalCausalCut",
+      "type": "object"
+    },
+    "M6LockedDetectionInput": {
+      "additionalProperties": false,
+      "properties": {
+        "detection_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Detection Id",
+          "type": "string"
+        },
+        "detection_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Detection Input Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "detection_id",
+        "frame_id",
+        "document_sha256",
+        "model_manifest_id",
+        "detection_input_id"
+      ],
+      "title": "M6LockedDetectionInput",
+      "type": "object"
+    },
+    "M6LockedEmbeddingChannel": {
+      "enum": [
+        "TEXT",
+        "VISUAL"
+      ],
+      "title": "M6LockedEmbeddingChannel",
+      "type": "string"
+    },
+    "M6LockedEmbeddingInput": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "$ref": "#/$defs/M6LockedEmbeddingChannel"
+        },
+        "embedding_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Embedding Input Id",
+          "type": "string"
+        },
+        "embedding_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/M6LockedEmbeddingScope"
+        }
+      },
+      "required": [
+        "scope",
+        "channel",
+        "embedding_ref",
+        "request_id",
+        "model_manifest_id",
+        "embedding_input_id"
+      ],
+      "title": "M6LockedEmbeddingInput",
+      "type": "object"
+    },
+    "M6LockedEmbeddingScope": {
+      "enum": [
+        "QUERY",
+        "PRECEDENT"
+      ],
+      "title": "M6LockedEmbeddingScope",
+      "type": "string"
+    },
+    "M6LockedFrameInput": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "frame_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Frame Input Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame_id",
+        "document_sha256",
+        "content_sha256",
+        "frame_input_id"
+      ],
+      "title": "M6LockedFrameInput",
+      "type": "object"
+    },
+    "M6LockedModelCallInput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_index": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Attempt Index",
+          "type": "integer"
+        },
+        "cache_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "failure_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "$ref": "#/$defs/M6LockedModelCallLayer"
+        },
+        "model_call_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Call Input Id",
+          "type": "string"
+        },
+        "parse_receipt_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parsed_output_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "raw_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Content Sha256"
+        },
+        "raw_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Size Bytes"
+        },
+        "request_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "response_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "result_kind": {
+          "$ref": "#/$defs/M6LockedModelCallResultKind"
+        },
+        "role": {
+          "$ref": "#/$defs/M6LockedModelRole"
+        }
+      },
+      "required": [
+        "layer",
+        "role",
+        "attempt_index",
+        "request_ref",
+        "result_kind",
+        "model_call_input_id"
+      ],
+      "title": "M6LockedModelCallInput",
+      "type": "object"
+    },
+    "M6LockedModelCallLayer": {
+      "enum": [
+        "SCREENING",
+        "HEARING"
+      ],
+      "title": "M6LockedModelCallLayer",
+      "type": "string"
+    },
+    "M6LockedModelCallResultKind": {
+      "enum": [
+        "RESPONSE",
+        "FAILURE"
+      ],
+      "title": "M6LockedModelCallResultKind",
+      "type": "string"
+    },
+    "M6LockedModelRole": {
+      "enum": [
+        "SCREENING",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "M6LockedModelRole",
+      "type": "string"
+    },
+    "M6LockedRetrievalCycleInput": {
+      "additionalProperties": false,
+      "description": "One exact historical retrieval authority for one hearing cycle.\n\nSuccessful cycles bind the M5 prompt-visible exposure.  Degraded cycles have\nno exposure and bind the exact M4 durable retrieval receipt preserving the\ntyped degraded reason.  Source applications, alerts, appeals, and every\ntraining-label authority remain evaluator-side outputs.",
+      "properties": {
+        "authority_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "cycle_index": {
+          "exclusiveMinimum": 0,
+          "title": "Cycle Index",
+          "type": "integer"
+        },
+        "cycle_scope_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cycle Scope Id",
+          "type": "string"
+        },
+        "hearing_session_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Hearing Session Id",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/M6LockedRetrievalOutcomeKind"
+        },
+        "retrieval_cycle_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Retrieval Cycle Input Id",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_run_id",
+        "source_case_id",
+        "hearing_session_id",
+        "cycle_index",
+        "cycle_scope_id",
+        "outcome",
+        "authority_ref",
+        "retrieval_cycle_input_id"
+      ],
+      "title": "M6LockedRetrievalCycleInput",
+      "type": "object"
+    },
+    "M6LockedRetrievalOutcomeKind": {
+      "enum": [
+        "SUCCESS",
+        "DEGRADED"
+      ],
+      "title": "M6LockedRetrievalOutcomeKind",
+      "type": "string"
+    },
+    "M6LockedToolResultInput": {
+      "additionalProperties": false,
+      "properties": {
+        "acquisition_request_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "evidence_pack_derivation_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "execution_manifest_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "execution_publication_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "resulting_evidence_pack_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "tool_receipt_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "tool_result_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tool Result Document Sha256",
+          "type": "string"
+        },
+        "tool_result_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tool Result Id",
+          "type": "string"
+        },
+        "tool_result_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Tool Result Input Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_result_id",
+        "tool_result_document_sha256",
+        "acquisition_request_ref",
+        "execution_manifest_ref",
+        "execution_publication_ref",
+        "tool_receipt_ref",
+        "evidence_pack_derivation_ref",
+        "resulting_evidence_pack_ref",
+        "tool_result_input_id"
+      ],
+      "title": "M6LockedToolResultInput",
+      "type": "object"
+    },
+    "M6RegressionExecutionEntry": {
+      "additionalProperties": false,
+      "description": "Blinded candidate input; it contains no membership or expected decision.",
+      "properties": {
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "execution_entry_id"
+      ],
+      "title": "M6RegressionExecutionEntry",
+      "type": "object"
+    },
+    "M6RegressionStage": {
+      "enum": [
+        "PERCEPTION",
+        "SCREENING",
+        "RETRIEVAL",
+        "HEARING",
+        "GATE",
+        "POLICY"
+      ],
+      "title": "M6RegressionStage",
+      "type": "string"
+    },
+    "M6ReplayAuthorityKind": {
+      "enum": [
+        "RUN_MANIFEST",
+        "CASE_VERSION",
+        "EVIDENCE_PACK",
+        "FRAME",
+        "DETECTION",
+        "M3_MODEL_REQUEST",
+        "M3_MODEL_RESPONSE",
+        "M3_MODEL_CACHE",
+        "M3_PARSE_RECEIPT",
+        "M3_PARSED_OUTPUT",
+        "M3_MODEL_CALL_FAILURE",
+        "M4_MODEL_REQUEST",
+        "M4_MODEL_RESPONSE",
+        "M4_MODEL_CACHE",
+        "M4_PARSE_RECEIPT",
+        "M4_ROLE_OUTPUT",
+        "M4_PRECEDENT_RETRIEVAL_RECEIPT",
+        "M4_MODEL_CALL_FAILURE",
+        "M4_ACQUISITION_REQUEST",
+        "M4_TOOL_EXECUTION_MANIFEST",
+        "M4_ACQUISITION_PUBLICATION",
+        "M4_TOOL_EXECUTION_RECEIPT",
+        "M4_EVIDENCE_PACK_DERIVATION",
+        "M5_EMBEDDING",
+        "M5_PRECEDENT_EXPOSURE"
+      ],
+      "title": "M6ReplayAuthorityKind",
+      "type": "string"
+    },
+    "M6ReplayAuthorityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "authority_ref_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Ref Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M6ReplayAuthorityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id",
+        "document_sha256",
+        "authority_ref_id"
+      ],
+      "title": "M6ReplayAuthorityRef",
+      "type": "object"
+    },
+    "M6ReplayInputClosureAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "detection_count": {
+          "readOnly": true,
+          "title": "Detection Count",
+          "type": "integer"
+        },
+        "detection_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Detection Inventory Root Sha256",
+          "type": "string"
+        },
+        "detections": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedDetectionInput"
+          },
+          "maxItems": 250000,
+          "title": "Detections",
+          "type": "array"
+        },
+        "embedding_count": {
+          "readOnly": true,
+          "title": "Embedding Count",
+          "type": "integer"
+        },
+        "embedding_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Embedding Inventory Root Sha256",
+          "type": "string"
+        },
+        "embeddings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedEmbeddingInput"
+          },
+          "maxItems": 4096,
+          "title": "Embeddings",
+          "type": "array"
+        },
+        "frame_count": {
+          "readOnly": true,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "frame_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Frame Inventory Root Sha256",
+          "type": "string"
+        },
+        "frames": {
+          "items": {
+            "$ref": "#/$defs/M6LockedFrameInput"
+          },
+          "maxItems": 100000,
+          "minItems": 1,
+          "title": "Frames",
+          "type": "array"
+        },
+        "historical_cut": {
+          "$ref": "#/$defs/M6HistoricalCausalCut"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "model_call_count": {
+          "readOnly": true,
+          "title": "Model Call Count",
+          "type": "integer"
+        },
+        "model_call_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Call Inventory Root Sha256",
+          "type": "string"
+        },
+        "model_calls": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedModelCallInput"
+          },
+          "maxItems": 256,
+          "title": "Model Calls",
+          "type": "array"
+        },
+        "model_response_count": {
+          "readOnly": true,
+          "title": "Model Response Count",
+          "type": "integer"
+        },
+        "model_response_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Response Inventory Root Sha256",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-input-closure-authority-v1",
+          "default": "m6-replay-input-closure-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Document Sha256"
+        },
+        "source_case_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Id"
+        },
+        "source_case_revision": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Revision"
+        },
+        "source_manifest_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Document Sha256",
+          "type": "string"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "source_validation_report_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Validation Report Document Sha256",
+          "type": "string"
+        },
+        "source_validation_report_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Validation Report Id",
+          "type": "string"
+        },
+        "tool_result_count": {
+          "readOnly": true,
+          "title": "Tool Result Count",
+          "type": "integer"
+        },
+        "tool_result_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Tool Result Inventory Root Sha256",
+          "type": "string"
+        },
+        "tool_results": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedToolResultInput"
+          },
+          "maxItems": 64,
+          "title": "Tool Results",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_manifest_id",
+        "source_manifest_document_sha256",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "source_validation_report_id",
+        "source_validation_report_document_sha256",
+        "frames",
+        "frame_count",
+        "frame_inventory_root_sha256",
+        "detection_count",
+        "detection_inventory_root_sha256",
+        "model_call_count",
+        "model_call_inventory_root_sha256",
+        "model_response_count",
+        "model_response_inventory_root_sha256",
+        "embedding_count",
+        "embedding_inventory_root_sha256",
+        "tool_result_count",
+        "tool_result_inventory_root_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256"
+      ],
+      "title": "M6ReplayInputClosureAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedCandidateCaseBinding": {
+      "additionalProperties": false,
+      "description": "Physical identity and audit anchor of one independently persisted Case.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "case_audit_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Audit Entry Hash",
+          "type": "string"
+        },
+        "case_audit_sequence": {
+          "minimum": 0,
+          "title": "Case Audit Sequence",
+          "type": "integer"
+        },
+        "case_binding_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Case Binding Id",
+          "type": "string"
+        },
+        "case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Document Sha256",
+          "type": "string"
+        },
+        "case_document_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Case Document Size Bytes",
+          "type": "integer"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Case Revision",
+          "type": "integer"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-candidate-case-binding-v1",
+          "default": "m6-replay-locked-candidate-case-binding-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_run_id",
+        "sample_id",
+        "case_id",
+        "case_revision",
+        "case_document_sha256",
+        "case_document_size_bytes",
+        "case_audit_sequence",
+        "case_audit_entry_hash",
+        "case_binding_id"
+      ],
+      "title": "M6ReplayLockedCandidateCaseBinding",
+      "type": "object"
+    },
+    "M6ReplayLockedExecutionRoute": {
+      "enum": [
+        "M3_FAST_TERMINAL_POST_PARSE",
+        "M4_HEARING_GATE_TERMINAL_POST_PARSE"
+      ],
+      "title": "M6ReplayLockedExecutionRoute",
+      "type": "string"
+    },
+    "M6ReplayLockedPendingSampleCommitmentAuthority": {
+      "additionalProperties": false,
+      "description": "Durable intent fixed before one locked candidate sample is materialized.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "execution_component_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Component Authority Id",
+          "type": "string"
+        },
+        "execution_dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Dataset Snapshot Id",
+          "type": "string"
+        },
+        "execution_entry": {
+          "$ref": "#/$defs/M6RegressionExecutionEntry"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "execution_scope_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Scope Authority Id",
+          "type": "string"
+        },
+        "ledger_sequence": {
+          "minimum": 0,
+          "title": "Ledger Sequence",
+          "type": "integer"
+        },
+        "pending_commitment_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Pending Commitment Authority Id",
+          "type": "string"
+        },
+        "previous_ledger_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Ledger Entry Hash",
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-pending-sample-commitment-v1",
+          "default": "m6-replay-locked-pending-sample-commitment-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_catalog_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Entry Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_scope_authority_id",
+        "candidate_run_id",
+        "command_id",
+        "execution_dataset_snapshot_id",
+        "execution_component_authority_id",
+        "source_catalog_entry_id",
+        "route",
+        "execution_entry",
+        "ledger_sequence",
+        "previous_ledger_entry_hash",
+        "sample_id",
+        "execution_entry_id",
+        "pending_commitment_authority_id"
+      ],
+      "title": "M6ReplayLockedPendingSampleCommitmentAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedSourceDeterminismAuthority": {
+      "additionalProperties": false,
+      "description": "Two-read source projection proof, deliberately not a replay receipt.\n\nThis authority binds a future, distinct candidate run while proving only\nthat one immutable source closure produced the same source projection on\ntwo fresh reads.  It contains no candidate snapshot or provider-trap claim.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "execution_component_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Component Manifest Id",
+          "type": "string"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "first_semantic_case_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "First Semantic Case Hash",
+          "type": "string"
+        },
+        "first_source_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "First Source Snapshot Id",
+          "type": "string"
+        },
+        "projection_read_count": {
+          "const": 2,
+          "default": 2,
+          "title": "Projection Read Count",
+          "type": "integer"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-source-determinism-authority-v1",
+          "default": "m6-replay-locked-source-determinism-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "second_semantic_case_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Second Semantic Case Hash",
+          "type": "string"
+        },
+        "second_source_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Second Source Snapshot Id",
+          "type": "string"
+        },
+        "source_determinism_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Determinism Authority Id",
+          "type": "string"
+        },
+        "source_determinism_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Determinism Document Sha256",
+          "type": "string"
+        },
+        "source_identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Identity Sha256",
+          "type": "string"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "execution_entry_id",
+        "sample_id",
+        "source_run_id",
+        "candidate_run_id",
+        "source_manifest_id",
+        "execution_component_manifest_id",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "source_identity_sha256",
+        "first_source_snapshot_id",
+        "second_source_snapshot_id",
+        "first_semantic_case_hash",
+        "second_semantic_case_hash",
+        "source_determinism_authority_id",
+        "source_determinism_document_sha256"
+      ],
+      "title": "M6ReplayLockedSourceDeterminismAuthority",
+      "type": "object"
+    },
+    "M6SemanticStageRoot": {
+      "additionalProperties": false,
+      "properties": {
+        "projection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Projection Sha256",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/M6RegressionStage"
+        }
+      },
+      "required": [
+        "stage",
+        "projection_sha256"
+      ],
+      "title": "M6SemanticStageRoot",
+      "type": "object"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-sample-execution-record.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One chained locked execution output, before the run-wide trap is sealed.",
+  "properties": {
+    "candidate_case": {
+      "$ref": "#/$defs/M6ReplayLockedCandidateCaseBinding"
+    },
+    "candidate_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Manifest Id",
+      "type": "string"
+    },
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "candidate_semantic_case_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Candidate Semantic Case Hash",
+      "type": "string"
+    },
+    "candidate_snapshot": {
+      "$ref": "#/$defs/M6CaseReplaySnapshot"
+    },
+    "candidate_snapshot_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Candidate Snapshot Content Sha256",
+      "type": "string"
+    },
+    "candidate_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Candidate Snapshot Id",
+      "type": "string"
+    },
+    "candidate_snapshot_size_bytes": {
+      "readOnly": true,
+      "title": "Candidate Snapshot Size Bytes",
+      "type": "integer"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "execution_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Dataset Snapshot Id",
+      "type": "string"
+    },
+    "execution_entry": {
+      "$ref": "#/$defs/M6RegressionExecutionEntry"
+    },
+    "execution_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Entry Id",
+      "type": "string"
+    },
+    "execution_scope_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Scope Authority Id",
+      "type": "string"
+    },
+    "ledger_sequence": {
+      "minimum": 0,
+      "title": "Ledger Sequence",
+      "type": "integer"
+    },
+    "outcome": {
+      "const": "CASE_REPLAYED",
+      "default": "CASE_REPLAYED",
+      "title": "Outcome",
+      "type": "string"
+    },
+    "pending_commitment": {
+      "$ref": "#/$defs/M6ReplayLockedPendingSampleCommitmentAuthority"
+    },
+    "pending_commitment_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pending Commitment Authority Id",
+      "type": "string"
+    },
+    "previous_ledger_entry_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Ledger Entry Hash",
+      "type": "string"
+    },
+    "replay_input_closure": {
+      "$ref": "#/$defs/M6ReplayInputClosureAuthority"
+    },
+    "route": {
+      "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+    },
+    "sample_execution_record_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Sample Execution Record Id",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-sample-execution-record-v1",
+      "default": "m6-replay-locked-sample-execution-record-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_determinism": {
+      "$ref": "#/$defs/M6ReplayLockedSourceDeterminismAuthority"
+    },
+    "source_semantic_case_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Semantic Case Hash",
+      "type": "string"
+    },
+    "source_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Snapshot Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_scope_authority_id",
+    "candidate_run_id",
+    "command_id",
+    "execution_dataset_snapshot_id",
+    "candidate_manifest_id",
+    "route",
+    "execution_entry",
+    "pending_commitment",
+    "replay_input_closure",
+    "source_determinism",
+    "candidate_case",
+    "candidate_snapshot",
+    "ledger_sequence",
+    "previous_ledger_entry_hash",
+    "sample_id",
+    "execution_entry_id",
+    "pending_commitment_authority_id",
+    "source_snapshot_id",
+    "source_semantic_case_hash",
+    "candidate_snapshot_id",
+    "candidate_semantic_case_hash",
+    "candidate_snapshot_content_sha256",
+    "candidate_snapshot_size_bytes",
+    "sample_execution_record_id"
+  ],
+  "title": "M6ReplayLockedSampleExecutionRecord",
+  "type": "object"
+}

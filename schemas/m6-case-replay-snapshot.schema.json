@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "M6RegressionStage": {
+      "enum": [
+        "PERCEPTION",
+        "SCREENING",
+        "RETRIEVAL",
+        "HEARING",
+        "GATE",
+        "POLICY"
+      ],
+      "title": "M6RegressionStage",
+      "type": "string"
+    },
+    "M6SemanticStageRoot": {
+      "additionalProperties": false,
+      "properties": {
+        "projection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Projection Sha256",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/M6RegressionStage"
+        }
+      },
+      "required": [
+        "stage",
+        "projection_sha256"
+      ],
+      "title": "M6SemanticStageRoot",
+      "type": "object"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-case-replay-snapshot.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One replayed Case semantic projection without operational identity noise.",
+  "properties": {
+    "case_status": {
+      "$ref": "#/$defs/CaseStatus"
+    },
+    "final_decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "highest_alert_level": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "projection_version": {
+      "const": "m6-semantic-case-v1",
+      "default": "m6-semantic-case-v1",
+      "title": "Projection Version",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-case-replay-snapshot-v1",
+      "default": "m6-case-replay-snapshot-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "semantic_case_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Semantic Case Hash",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "source_case_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Case Document Sha256",
+      "type": "string"
+    },
+    "source_case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Source Case Id",
+      "type": "string"
+    },
+    "source_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Revision",
+      "type": "integer"
+    },
+    "source_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Source Run Id",
+      "type": "string"
+    },
+    "stage_roots": {
+      "items": {
+        "$ref": "#/$defs/M6SemanticStageRoot"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "title": "Stage Roots",
+      "type": "array"
+    },
+    "terminal_appeal_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AppealStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "sample_id",
+    "source_run_id",
+    "source_case_id",
+    "source_case_revision",
+    "source_case_document_sha256",
+    "manifest_id",
+    "stage_roots",
+    "case_status",
+    "semantic_case_hash",
+    "snapshot_id"
+  ],
+  "title": "M6CaseReplaySnapshot",
+  "type": "object"
+}

@@ -1,0 +1,220 @@
+{
+  "$defs": {
+    "M6SourceAuthorityDocumentEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "declared_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Declared Document Sha256",
+          "type": "string"
+        },
+        "entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Entry Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M6SourceAuthorityDocumentKind"
+        },
+        "relative_path": {
+          "readOnly": true,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id",
+        "declared_document_sha256",
+        "content_sha256",
+        "size_bytes",
+        "relative_path",
+        "entry_id"
+      ],
+      "title": "M6SourceAuthorityDocumentEntry",
+      "type": "object"
+    },
+    "M6SourceAuthorityDocumentKind": {
+      "enum": [
+        "REPLAY_INPUT_CLOSURE",
+        "REPLAY_INPUT_AUTHORITY",
+        "SOURCE_VALIDATION_REPORT",
+        "SOURCE_CASE",
+        "SOURCE_MANIFEST"
+      ],
+      "title": "M6SourceAuthorityDocumentKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-source-authority-seal.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The final immutable commit root for five exact source documents.",
+  "properties": {
+    "audit_head_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Head Hash",
+      "type": "string"
+    },
+    "audit_head_sequence": {
+      "minimum": -1,
+      "title": "Audit Head Sequence",
+      "type": "integer"
+    },
+    "document_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Document Inventory Root Sha256",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/M6SourceAuthorityDocumentEntry"
+      },
+      "maxItems": 5,
+      "minItems": 5,
+      "title": "Entries",
+      "type": "array"
+    },
+    "replay_input_authority_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Replay Input Authority Document Sha256",
+      "type": "string"
+    },
+    "replay_input_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Replay Input Authority Id",
+      "type": "string"
+    },
+    "replay_input_closure_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Replay Input Closure Authority Id",
+      "type": "string"
+    },
+    "replay_input_closure_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Replay Input Closure Document Sha256",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-source-authority-seal-v1",
+      "default": "m6-source-authority-seal-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seal_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Seal Id",
+      "type": "string"
+    },
+    "seal_relative_path": {
+      "readOnly": true,
+      "title": "Seal Relative Path",
+      "type": "string"
+    },
+    "source_case_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Case Document Sha256",
+      "type": "string"
+    },
+    "source_case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Source Case Id",
+      "type": "string"
+    },
+    "source_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Revision",
+      "type": "integer"
+    },
+    "source_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Config Sha256",
+      "type": "string"
+    },
+    "source_m4_authority_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source M4 Authority Root Sha256",
+      "type": "string"
+    },
+    "source_m5_authority_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source M5 Authority Root Sha256",
+      "type": "string"
+    },
+    "source_manifest_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Manifest Document Sha256",
+      "type": "string"
+    },
+    "source_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Manifest Id",
+      "type": "string"
+    },
+    "source_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Source Run Id",
+      "type": "string"
+    },
+    "source_validation_report_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Validation Report Document Sha256",
+      "type": "string"
+    },
+    "source_validation_report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Validation Report Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "sample_id",
+    "source_run_id",
+    "source_case_id",
+    "source_case_revision",
+    "source_case_document_sha256",
+    "source_manifest_id",
+    "source_manifest_document_sha256",
+    "source_config_sha256",
+    "source_m4_authority_root_sha256",
+    "source_m5_authority_root_sha256",
+    "audit_head_sequence",
+    "audit_head_hash",
+    "replay_input_authority_id",
+    "replay_input_authority_document_sha256",
+    "replay_input_closure_authority_id",
+    "replay_input_closure_document_sha256",
+    "source_validation_report_id",
+    "source_validation_report_document_sha256",
+    "entries",
+    "document_inventory_root_sha256",
+    "seal_id",
+    "seal_relative_path"
+  ],
+  "title": "M6SourceAuthoritySeal",
+  "type": "object"
+}
