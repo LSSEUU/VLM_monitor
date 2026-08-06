@@ -1,0 +1,47 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/appeal-review-command.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "appeal_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Appeal Id",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "expected_appeal_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Appeal Authority Sha256",
+      "type": "string"
+    },
+    "expected_appeal_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Expected Appeal Version",
+      "type": "integer"
+    },
+    "reviewer_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Reviewer Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "appeal_id",
+    "expected_appeal_authority_sha256",
+    "reviewer_id"
+  ],
+  "title": "AppealReviewCommand",
+  "type": "object"
+}

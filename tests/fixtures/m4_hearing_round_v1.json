@@ -1,0 +1,270 @@
+{
+  "schema_version": "m4-hearing-round-v1",
+  "run_id": "run-01",
+  "case_id": "case-01",
+  "hearing_session_id": "19f6616b230d431e828a81844411d951edcbbfd9c66bfa9bbfe83b4018539308",
+  "round_index": 1,
+  "prior_acquisition_rounds": 0,
+  "prior_rework_rounds": 0,
+  "current_evidence_pack_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "current_evidence_pack_version": 1,
+  "precedent_retrieval_degraded": false,
+  "precedent_retrieval_receipt": {
+    "schema_version": "m4-hearing-precedent-retrieval-v1",
+    "run_id": "run-01",
+    "case_id": "case-01",
+    "hearing_session_id": "19f6616b230d431e828a81844411d951edcbbfd9c66bfa9bbfe83b4018539308",
+    "round_index": 1,
+    "prior_acquisition_rounds": 0,
+    "prior_rework_rounds": 0,
+    "current_evidence_pack_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "current_evidence_pack_version": 1,
+    "evidence_class": "PRESENCE",
+    "violation_type": "REAGENT_CONTAINER_OPEN",
+    "rule_version": "laboratory-v1",
+    "top_k": 4,
+    "query_sha256": "000000000000000000000000000000000000000000000000000000000000019a",
+    "initial_trigger_review_ref": null,
+    "initial_defect_codes": [],
+    "rework_review_ref": null,
+    "rework_defect_codes": [],
+    "candidate_precedent_refs": [],
+    "candidate_snapshot_sha256": "000000000000000000000000000000000000000000000000000000000000019d",
+    "visible_precedent_refs": [],
+    "visible_snapshot_sha256": "000000000000000000000000000000000000000000000000000000000000019e",
+    "scored_precedents": [],
+    "status": "SUCCESS",
+    "degraded_reason": null,
+    "retriever_version": "fake-retriever-v1",
+    "retriever_manifest_id": "000000000000000000000000000000000000000000000000000000000000019b",
+    "embedding_model_manifest_id": "000000000000000000000000000000000000000000000000000000000000019c",
+    "manifest_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "cycle_scope_id": "58de55e40960d0b281c72a4c7a62fd84b45bca39b779b5bf836ce7f330c61ba3",
+    "cycle_scope_sha256": "2980d0a56149fe426587a4a6644e2d6ba516bb84343ed46aa8e72054f5cc9299",
+    "receipt_id": "03c2bf2073b6b6b2051261d48886757a48b86939bb95c75104ac07829bb98c87",
+    "receipt_sha256": "c28c078a30ec003676f06b666a72b3da263ae665706729eb77767db7cfd8c5d4"
+  },
+  "initial_trigger_review_ref": null,
+  "initial_defect_codes": [],
+  "rework_review_ref": null,
+  "rework_defect_codes": [],
+  "prosecutor_output": {
+    "schema_version": "m4-hearing-role-output-v1",
+    "run_id": "run-01",
+    "case_id": "case-01",
+    "hearing_session_id": "19f6616b230d431e828a81844411d951edcbbfd9c66bfa9bbfe83b4018539308",
+    "round_index": 1,
+    "prior_acquisition_rounds": 0,
+    "prior_rework_rounds": 0,
+    "current_evidence_pack_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "current_evidence_pack_version": 1,
+    "prompt_manifest": {
+      "schema_version": "m3-prompt-v1",
+      "prompt_id": "hearing-prosecutor-v1",
+      "role": "PROSECUTOR",
+      "template_sha256": "0000000000000000000000000000000000000000000000000000000000000066",
+      "output_schema_sha256": "00000000000000000000000000000000000000000000000000000000000000ca",
+      "prompt_bundle_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "renderer": "JINJA2_STRICT",
+      "renderer_version": "jinja-3-1",
+      "prompt_manifest_id": "525fffb62a1f9d9a4030443e60f65ba52f2675d1887306dc65cf339b0c47705d"
+    },
+    "model_manifest_id": "000000000000000000000000000000000000000000000000000000000000012d",
+    "request_ref": {
+      "kind": "MODEL_REQUEST",
+      "artifact_id": "000000000000000000000000000000000000000000000000000000000000000b"
+    },
+    "response_ref": {
+      "kind": "MODEL_RESPONSE",
+      "artifact_id": "0000000000000000000000000000000000000000000000000000000000000015"
+    },
+    "parse_receipt_ref": {
+      "kind": "MODEL_PARSE_RECEIPT",
+      "artifact_id": "000000000000000000000000000000000000000000000000000000000000001f"
+    },
+    "prosecutor_output_id": null,
+    "defender_output_id": null,
+    "precedent_retrieval_degraded": false,
+    "precedent_retrieval_receipt_id": "03c2bf2073b6b6b2051261d48886757a48b86939bb95c75104ac07829bb98c87",
+    "precedent_retrieval_receipt_sha256": "c28c078a30ec003676f06b666a72b3da263ae665706729eb77767db7cfd8c5d4",
+    "initial_trigger_review_ref": null,
+    "initial_defect_codes": [],
+    "rework_review_ref": null,
+    "rework_defect_codes": [],
+    "payload": {
+      "role": "PROSECUTOR",
+      "schema_version": "m4-prosecutor-payload-v1",
+      "arguments": [
+        {
+          "stance": "PROSECUTION",
+          "claim": "The cited crop supports the alleged laboratory rule violation.",
+          "evidence_refs": [
+            {
+              "kind": "CROP",
+              "artifact_id": "0000000000000000000000000000000000000000000000000000000000000001"
+            }
+          ],
+          "uncertainty": 0.1,
+          "argument_id": "8719a7fd39d469efdfed8e2bd2bede92d0663f18fd0dab2e625fd15fb30837e3"
+        }
+      ],
+      "case_summary": "The prosecution relies only on typed evidence references.",
+      "payload_sha256": "a3dc9d7b79ffac7fb15e36cf171d3be00d57ab78b177a8ac6aca623fe736f3be"
+    },
+    "manifest_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "role": "PROSECUTOR",
+    "output_id": "c78577aaef15420992955b4b9c6dcc7dba7ccb811fa985e4679a237dc0901369"
+  },
+  "defender_output": {
+    "schema_version": "m4-hearing-role-output-v1",
+    "run_id": "run-01",
+    "case_id": "case-01",
+    "hearing_session_id": "19f6616b230d431e828a81844411d951edcbbfd9c66bfa9bbfe83b4018539308",
+    "round_index": 1,
+    "prior_acquisition_rounds": 0,
+    "prior_rework_rounds": 0,
+    "current_evidence_pack_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "current_evidence_pack_version": 1,
+    "prompt_manifest": {
+      "schema_version": "m3-prompt-v1",
+      "prompt_id": "hearing-defender-v1",
+      "role": "DEFENDER",
+      "template_sha256": "0000000000000000000000000000000000000000000000000000000000000067",
+      "output_schema_sha256": "00000000000000000000000000000000000000000000000000000000000000cb",
+      "prompt_bundle_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "renderer": "JINJA2_STRICT",
+      "renderer_version": "jinja-3-1",
+      "prompt_manifest_id": "b8eb35fc39f6e3ec47c9bc6ec515635aa19c6d88265bc381061ee17010625c84"
+    },
+    "model_manifest_id": "000000000000000000000000000000000000000000000000000000000000012e",
+    "request_ref": {
+      "kind": "MODEL_REQUEST",
+      "artifact_id": "000000000000000000000000000000000000000000000000000000000000000c"
+    },
+    "response_ref": {
+      "kind": "MODEL_RESPONSE",
+      "artifact_id": "0000000000000000000000000000000000000000000000000000000000000016"
+    },
+    "parse_receipt_ref": {
+      "kind": "MODEL_PARSE_RECEIPT",
+      "artifact_id": "0000000000000000000000000000000000000000000000000000000000000020"
+    },
+    "prosecutor_output_id": "c78577aaef15420992955b4b9c6dcc7dba7ccb811fa985e4679a237dc0901369",
+    "defender_output_id": null,
+    "precedent_retrieval_degraded": false,
+    "precedent_retrieval_receipt_id": "03c2bf2073b6b6b2051261d48886757a48b86939bb95c75104ac07829bb98c87",
+    "precedent_retrieval_receipt_sha256": "c28c078a30ec003676f06b666a72b3da263ae665706729eb77767db7cfd8c5d4",
+    "initial_trigger_review_ref": null,
+    "initial_defect_codes": [],
+    "rework_review_ref": null,
+    "rework_defect_codes": [],
+    "payload": {
+      "role": "DEFENDER",
+      "schema_version": "m4-defender-payload-v1",
+      "arguments": [
+        {
+          "stance": "DEFENSE",
+          "claim": "Reflection and occlusion remain plausible counter-explanations.",
+          "evidence_refs": [
+            {
+              "kind": "CROP",
+              "artifact_id": "0000000000000000000000000000000000000000000000000000000000000002"
+            }
+          ],
+          "uncertainty": 0.4,
+          "argument_id": "201eca1552545e8d846ce204263121867f0eff7339eb649ecd878719da1590ec"
+        }
+      ],
+      "case_summary": "The defense preserves uncertainty and possible counter-evidence.",
+      "payload_sha256": "3e1d45fb1ee8554896ece5e108570e841eda16b37ce8293ec5864d4e85ed0d92"
+    },
+    "manifest_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "role": "DEFENDER",
+    "output_id": "df1cbadc1ee228bb3e33914e9f0dc16d9c6d6c67066811166edb8c26945e95fb"
+  },
+  "judge_output": {
+    "schema_version": "m4-hearing-role-output-v1",
+    "run_id": "run-01",
+    "case_id": "case-01",
+    "hearing_session_id": "19f6616b230d431e828a81844411d951edcbbfd9c66bfa9bbfe83b4018539308",
+    "round_index": 1,
+    "prior_acquisition_rounds": 0,
+    "prior_rework_rounds": 0,
+    "current_evidence_pack_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "current_evidence_pack_version": 1,
+    "prompt_manifest": {
+      "schema_version": "m3-prompt-v1",
+      "prompt_id": "hearing-judge-v1",
+      "role": "JUDGE",
+      "template_sha256": "0000000000000000000000000000000000000000000000000000000000000068",
+      "output_schema_sha256": "00000000000000000000000000000000000000000000000000000000000000cc",
+      "prompt_bundle_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "renderer": "JINJA2_STRICT",
+      "renderer_version": "jinja-3-1",
+      "prompt_manifest_id": "ac26589b2dfe5107857416ca6eaf10f5f9cee749b0c9b95829abc3061c01dabf"
+    },
+    "model_manifest_id": "000000000000000000000000000000000000000000000000000000000000012f",
+    "request_ref": {
+      "kind": "MODEL_REQUEST",
+      "artifact_id": "000000000000000000000000000000000000000000000000000000000000000d"
+    },
+    "response_ref": {
+      "kind": "MODEL_RESPONSE",
+      "artifact_id": "0000000000000000000000000000000000000000000000000000000000000017"
+    },
+    "parse_receipt_ref": {
+      "kind": "MODEL_PARSE_RECEIPT",
+      "artifact_id": "0000000000000000000000000000000000000000000000000000000000000021"
+    },
+    "prosecutor_output_id": "c78577aaef15420992955b4b9c6dcc7dba7ccb811fa985e4679a237dc0901369",
+    "defender_output_id": "df1cbadc1ee228bb3e33914e9f0dc16d9c6d6c67066811166edb8c26945e95fb",
+    "precedent_retrieval_degraded": false,
+    "precedent_retrieval_receipt_id": "03c2bf2073b6b6b2051261d48886757a48b86939bb95c75104ac07829bb98c87",
+    "precedent_retrieval_receipt_sha256": "c28c078a30ec003676f06b666a72b3da263ae665706729eb77767db7cfd8c5d4",
+    "initial_trigger_review_ref": null,
+    "initial_defect_codes": [],
+    "rework_review_ref": null,
+    "rework_defect_codes": [],
+    "payload": {
+      "role": "JUDGE",
+      "schema_version": "m4-judge-payload-v1",
+      "judge_responses": [
+        {
+          "defense_argument_id": "201eca1552545e8d846ce204263121867f0eff7339eb649ecd878719da1590ec",
+          "disposition": "PARTIALLY_ACCEPTED",
+          "response_summary": "The concern lowers confidence but does not erase cited observations.",
+          "evidence_refs": [
+            {
+              "kind": "CROP",
+              "artifact_id": "0000000000000000000000000000000000000000000000000000000000000002"
+            }
+          ],
+          "response_id": "a61cd7b5c5cd6b714cbcf4752f7b5c4790258844f9908e86c4136916601ae399"
+        }
+      ],
+      "precedent_applications": [],
+      "outcome": {
+        "outcome_type": "FINAL",
+        "decision": "ESTABLISHED",
+        "confidence": 0.82,
+        "recommended_alert_level": "CONFIRMED",
+        "rationale_summary": "The structured record supports a reviewable final proposal.",
+        "evidence_citations": [],
+        "objective_claims": [],
+        "observation_sufficiency": null
+      },
+      "payload_sha256": "9175ed83ae7e2f6c305eebdb3874eaee5387151fcb9a0531f71eb752a526c3be"
+    },
+    "manifest_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "role": "JUDGE",
+    "output_id": "ab8515cc0edf3bf757235f2786af3209b230d0f818fb04c7ada8ddaadcf7fbb5"
+  },
+  "acquisition_request": null,
+  "tool_execution_receipt": null,
+  "manifest_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "cycle_scope_id": "58de55e40960d0b281c72a4c7a62fd84b45bca39b779b5bf836ce7f330c61ba3",
+  "cycle_scope_sha256": "2980d0a56149fe426587a4a6644e2d6ba516bb84343ed46aa8e72054f5cc9299",
+  "resulting_evidence_pack_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "resulting_evidence_pack_version": 1,
+  "round_id": "d54621b8b6dd783ec7d2792ce8505f2435a4a694a4e46ec981a43c07e1eb92f9"
+}

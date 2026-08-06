@@ -1,0 +1,565 @@
+{
+  "$defs": {
+    "AnchorType": {
+      "enum": [
+        "HEAD",
+        "HANDS",
+        "TORSO"
+      ],
+      "title": "AnchorType",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AssociationMethod": {
+      "enum": [
+        "KEYPOINT",
+        "BODY_FALLBACK"
+      ],
+      "title": "AssociationMethod",
+      "type": "string"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "CropSource": {
+      "enum": [
+        "PANORAMA",
+        "SUBJECT",
+        "DETECTION_FOCUS",
+        "ANCHOR_FOCUS",
+        "RECROP"
+      ],
+      "title": "CropSource",
+      "type": "string"
+    },
+    "Keypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "x",
+        "y",
+        "score"
+      ],
+      "title": "Keypoint",
+      "type": "object"
+    },
+    "MediaAccess": {
+      "enum": [
+        "LOCAL_ONLY",
+        "CLOUD_ALLOWED"
+      ],
+      "title": "MediaAccess",
+      "type": "string"
+    },
+    "MediaAvailability": {
+      "enum": [
+        "AVAILABLE",
+        "PURGING",
+        "PURGED_BY_RETENTION"
+      ],
+      "title": "MediaAvailability",
+      "type": "string"
+    },
+    "ObservabilityComponents": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "frontality": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Frontality",
+          "type": "number"
+        },
+        "keypoint_visibility": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Visibility",
+          "type": "number"
+        },
+        "non_occlusion": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Non Occlusion",
+          "type": "number"
+        },
+        "person_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Person Confidence",
+          "type": "number"
+        },
+        "sharpness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sharpness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "person_confidence",
+        "keypoint_visibility",
+        "frontality",
+        "sharpness",
+        "exposure",
+        "non_occlusion"
+      ],
+      "title": "ObservabilityComponents",
+      "type": "object"
+    },
+    "ObservabilityScore": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "$ref": "#/$defs/ObservabilityComponents"
+        },
+        "source": {
+          "$ref": "#/$defs/ObservationSource"
+        },
+        "total": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Total",
+          "type": "number"
+        }
+      },
+      "required": [
+        "total",
+        "components",
+        "source"
+      ],
+      "title": "ObservabilityScore",
+      "type": "object"
+    },
+    "ObservationSource": {
+      "enum": [
+        "PIXEL_COMPUTED",
+        "PRECOMPUTED_FIXTURE"
+      ],
+      "title": "ObservationSource",
+      "type": "string"
+    },
+    "PpeType": {
+      "enum": [
+        "GOGGLES",
+        "GLOVES",
+        "LAB_COAT"
+      ],
+      "title": "PpeType",
+      "type": "string"
+    },
+    "PrivacyPolicy": {
+      "enum": [
+        "EPHEMERAL_RAW",
+        "PPE_PRESERVING_REDACTION",
+        "FULL_REDACTION"
+      ],
+      "title": "PrivacyPolicy",
+      "type": "string"
+    },
+    "PrivacyReasonCode": {
+      "enum": [
+        "PPE_REGION_PRESERVED",
+        "KEYPOINTS_INSUFFICIENT_LOCAL_ONLY",
+        "PANORAMA_FULL_REDACTION",
+        "SUBJECT_FULL_REDACTION",
+        "POLICY_LOCAL_ONLY"
+      ],
+      "title": "PrivacyReasonCode",
+      "type": "string"
+    },
+    "PrivacyReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBoxXYXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "anchor_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnchorType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "association_method": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssociationMethod"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallback_used": {
+          "default": false,
+          "title": "Fallback Used",
+          "type": "boolean"
+        },
+        "fill_rgb": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            }
+          ],
+          "title": "Fill Rgb",
+          "type": "array"
+        },
+        "input_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "keypoints": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Keypoint"
+          },
+          "title": "Keypoints",
+          "type": "array"
+        },
+        "media_access": {
+          "$ref": "#/$defs/MediaAccess"
+        },
+        "policy": {
+          "$ref": "#/$defs/PrivacyPolicy"
+        },
+        "ppe_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PpeType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "preserved_regions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BBoxXYXY"
+          },
+          "title": "Preserved Regions",
+          "type": "array"
+        },
+        "reason_code": {
+          "$ref": "#/$defs/PrivacyReasonCode"
+        },
+        "transform_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Transform Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy",
+        "transform_version",
+        "media_access",
+        "reason_code",
+        "input_refs",
+        "fill_rgb"
+      ],
+      "title": "PrivacyReceipt",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/crop.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "availability": {
+      "$ref": "#/$defs/MediaAvailability"
+    },
+    "bbox": {
+      "$ref": "#/$defs/BBoxXYXY"
+    },
+    "crop_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Crop Id",
+      "type": "string"
+    },
+    "encoding_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Encoding Version",
+      "type": "string"
+    },
+    "frame_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+      "title": "Frame Id",
+      "type": "string"
+    },
+    "local_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\<>:\\\"|?*])(?:[^/\\x00-\\x1f]+/)*[^/\\x00-\\x1f]+$",
+      "title": "Local Path"
+    },
+    "media_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Media Sha256",
+      "type": "string"
+    },
+    "media_type": {
+      "const": "IMAGE_PNG",
+      "title": "Media Type",
+      "type": "string"
+    },
+    "observability": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObservabilityScore"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "output_height": {
+      "exclusiveMinimum": 0,
+      "maximum": 4294967295,
+      "title": "Output Height",
+      "type": "integer"
+    },
+    "output_width": {
+      "exclusiveMinimum": 0,
+      "maximum": 4294967295,
+      "title": "Output Width",
+      "type": "integer"
+    },
+    "panorama_long_edge_limit": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967295,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Panorama Long Edge Limit"
+    },
+    "pixel_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Pixel Sha256",
+      "type": "string"
+    },
+    "primary_track_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Primary Track Ref"
+    },
+    "privacy_receipt": {
+      "$ref": "#/$defs/PrivacyReceipt"
+    },
+    "size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    },
+    "source": {
+      "$ref": "#/$defs/CropSource"
+    },
+    "source_media_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Media Sha256",
+      "type": "string"
+    },
+    "source_refs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "minItems": 1,
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "tags": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "object"
+    }
+  },
+  "required": [
+    "frame_id",
+    "source",
+    "bbox",
+    "source_refs",
+    "availability",
+    "source_media_sha256",
+    "pixel_sha256",
+    "media_sha256",
+    "output_width",
+    "output_height",
+    "size_bytes",
+    "media_type",
+    "encoding_version",
+    "privacy_receipt",
+    "crop_id"
+  ],
+  "title": "Crop",
+  "type": "object"
+}

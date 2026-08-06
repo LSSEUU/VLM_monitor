@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "M6RegressionPolicyAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "gold_set_max_accuracy_drop": {
+          "maximum": 0,
+          "minimum": 0,
+          "title": "Gold Set Max Accuracy Drop",
+          "type": "number"
+        },
+        "maximum_machine_flip_rate": {
+          "maximum": 0.05,
+          "minimum": 0,
+          "title": "Maximum Machine Flip Rate",
+          "type": "number"
+        },
+        "policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Policy Authority Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-regression-policy-authority-v1",
+          "default": "m6-regression-policy-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "config_sha256",
+        "policy_version",
+        "maximum_machine_flip_rate",
+        "gold_set_max_accuracy_drop",
+        "policy_authority_id"
+      ],
+      "title": "M6RegressionPolicyAuthority",
+      "type": "object"
+    },
+    "ReproducibilityMode": {
+      "enum": [
+        "REPLAY_LOCKED",
+        "REINFER_PINNED",
+        "UPGRADE_REGRESSION"
+      ],
+      "title": "ReproducibilityMode",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-regression-run-command.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "baseline_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Baseline Manifest Id",
+      "type": "string"
+    },
+    "candidate_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Manifest Id",
+      "type": "string"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Command Id",
+      "type": "string"
+    },
+    "execution_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Dataset Snapshot Id",
+      "type": "string"
+    },
+    "mode": {
+      "$ref": "#/$defs/ReproducibilityMode"
+    },
+    "policy_authority": {
+      "$ref": "#/$defs/M6RegressionPolicyAuthority"
+    },
+    "schema_version": {
+      "const": "m6-regression-run-command-v1",
+      "default": "m6-regression-run-command-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "mode",
+    "execution_dataset_snapshot_id",
+    "baseline_manifest_id",
+    "candidate_manifest_id",
+    "policy_authority",
+    "command_id"
+  ],
+  "title": "M6RegressionRunCommand",
+  "type": "object"
+}

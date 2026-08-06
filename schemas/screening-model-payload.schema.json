@@ -1,0 +1,507 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "EvidenceCitation": {
+      "additionalProperties": false,
+      "description": "A typed model citation whose relative geometry is checked later by L5.",
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "bbox"
+                ]
+              },
+              {
+                "required": [
+                  "coordinate_space"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "bbox": {
+              "type": "null"
+            },
+            "coordinate_space": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "bbox",
+            "coordinate_space"
+          ]
+        },
+        {
+          "properties": {
+            "bbox": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "coordinate_space": {
+              "const": "CITED_ARTIFACT_PIXELS"
+            },
+            "evidence_ref": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "CROP",
+                    "FRAME"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "bbox",
+            "coordinate_space",
+            "evidence_ref"
+          ]
+        }
+      ],
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBoxXYXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "coordinate_space": {
+          "anyOf": [
+            {
+              "const": "CITED_ARTIFACT_PIXELS",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coordinate Space"
+        },
+        "evidence_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "evidence_ref"
+      ],
+      "title": "EvidenceCitation",
+      "type": "object"
+    },
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "FrameObservation": {
+      "additionalProperties": false,
+      "description": "A model-authored label; clarity remains authoritative in EvidencePack.",
+      "properties": {
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "reason_summary": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Reason Summary",
+          "type": "string"
+        },
+        "wear_status": {
+          "$ref": "#/$defs/WearStatus"
+        }
+      },
+      "required": [
+        "crop_id",
+        "wear_status",
+        "reason_summary"
+      ],
+      "title": "FrameObservation",
+      "type": "object"
+    },
+    "ObjectiveClaim": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "DURATION_FRAMES",
+                  "PERSON_COUNT"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "FRAME_INTERVAL",
+                  "TRACK_PRESENCE_INTERVAL"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "ZONE_ID"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "minLength": 1,
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "RISK_LEVEL"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH"
+                ],
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "DETECTION_SCORE",
+                  "OBSERVABILITY"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "evidence_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "kind": {
+          "$ref": "#/$defs/ObjectiveFactKind"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "value",
+        "evidence_ref"
+      ],
+      "title": "ObjectiveClaim",
+      "type": "object"
+    },
+    "ObjectiveFactKind": {
+      "enum": [
+        "DURATION_FRAMES",
+        "PERSON_COUNT",
+        "ZONE_ID",
+        "RISK_LEVEL",
+        "FRAME_INTERVAL",
+        "TRACK_PRESENCE_INTERVAL",
+        "DETECTION_SCORE",
+        "OBSERVABILITY"
+      ],
+      "title": "ObjectiveFactKind",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    },
+    "WearStatus": {
+      "enum": [
+        "WORN",
+        "NOT_WORN",
+        "UNCLEAR"
+      ],
+      "title": "WearStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/screening-model-payload.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Exact provider-authored JSON object, without injected system authority.",
+  "properties": {
+    "evidence_citations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EvidenceCitation"
+      },
+      "title": "Evidence Citations",
+      "type": "array"
+    },
+    "evidence_class": {
+      "$ref": "#/$defs/EvidenceClass"
+    },
+    "frame_observations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FrameObservation"
+      },
+      "title": "Frame Observations",
+      "type": "array"
+    },
+    "objective_claims": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ObjectiveClaim"
+      },
+      "title": "Objective Claims",
+      "type": "array"
+    },
+    "prosecution_summary": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Prosecution Summary",
+      "type": "string"
+    },
+    "rationale_summary": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Rationale Summary",
+      "type": "string"
+    },
+    "violation_probability": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Violation Probability",
+      "type": "number"
+    },
+    "violation_type": {
+      "$ref": "#/$defs/ViolationType"
+    }
+  },
+  "required": [
+    "violation_type",
+    "evidence_class",
+    "violation_probability",
+    "prosecution_summary",
+    "rationale_summary"
+  ],
+  "title": "ScreeningModelPayload",
+  "type": "object"
+}

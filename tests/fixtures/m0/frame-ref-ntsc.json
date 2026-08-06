@@ -1,0 +1,11 @@
+{
+  "camera_id": "cam-01",
+  "stream_id": "demo-ntsc",
+  "frame_index": 1798,
+  "fps_num": 30000,
+  "fps_den": 1001,
+  "width": 1280,
+  "height": 720,
+  "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+

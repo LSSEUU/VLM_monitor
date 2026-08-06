@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "AlertChannelCapabilityAuthority": {
+      "additionalProperties": false,
+      "description": "Durable channel claim governing retries after an unknown delivery.",
+      "properties": {
+        "capability_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "capability_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Capability Revision",
+          "type": "string"
+        },
+        "channel": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Channel",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "idempotency_guarantee": {
+          "$ref": "#/$defs/AlertChannelIdempotencyGuarantee"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "provider_idempotency_key": {
+          "anyOf": [
+            {
+              "const": "alert_id",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Idempotency Key"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "manifest_id",
+        "config_sha256",
+        "channel",
+        "capability_revision",
+        "idempotency_guarantee",
+        "capability_id"
+      ],
+      "title": "AlertChannelCapabilityAuthority",
+      "type": "object"
+    },
+    "AlertChannelIdempotencyGuarantee": {
+      "enum": [
+        "NONE",
+        "EXACT_ALERT_ID"
+      ],
+      "title": "AlertChannelIdempotencyGuarantee",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/alert-dispatch-attempt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "alert_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Alert Id",
+      "type": "string"
+    },
+    "attempt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "attempt_number": {
+      "exclusiveMinimum": 0,
+      "title": "Attempt Number",
+      "type": "integer"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "channel_capability": {
+      "$ref": "#/$defs/AlertChannelCapabilityAuthority"
+    },
+    "fence": {
+      "exclusiveMinimum": 0,
+      "title": "Fence",
+      "type": "integer"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "lease_expires_at": {
+      "format": "date-time",
+      "title": "Lease Expires At",
+      "type": "string"
+    },
+    "lease_owner_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Lease Owner Sha256",
+      "type": "string"
+    },
+    "outbox_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Outbox Id",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "outbox_id",
+    "alert_id",
+    "case_id",
+    "attempt_number",
+    "fence",
+    "lease_owner_sha256",
+    "started_at",
+    "lease_expires_at",
+    "channel_capability",
+    "idempotency_key",
+    "attempt_id"
+  ],
+  "title": "AlertDispatchAttempt",
+  "type": "object"
+}

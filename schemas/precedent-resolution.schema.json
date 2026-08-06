@@ -1,0 +1,287 @@
+{
+  "$defs": {
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "Precedent": {
+      "additionalProperties": false,
+      "properties": {
+        "activation_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activation At"
+        },
+        "citation_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Citation Count",
+          "type": "integer"
+        },
+        "decision_direction": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "invalidated_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Invalidated By"
+        },
+        "precedent_id": {
+          "minLength": 1,
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "situation_text": {
+          "minLength": 1,
+          "title": "Situation Text",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/PrecedentSource"
+        },
+        "source_case_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Id"
+        },
+        "status": {
+          "$ref": "#/$defs/PrecedentStatus"
+        },
+        "text_embedding_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Embedding Ref"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "visual_embedding_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Visual Embedding Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "situation_text",
+        "decision_direction",
+        "source",
+        "status",
+        "evidence_class",
+        "violation_type",
+        "rule_version"
+      ],
+      "title": "Precedent",
+      "type": "object"
+    },
+    "PrecedentLookupQuery": {
+      "additionalProperties": false,
+      "description": "One case-scoped, exact precedent resolution request for the M3 gate.",
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "query_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Query Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "precedent_id",
+        "rule_version",
+        "evidence_class",
+        "violation_type",
+        "manifest_id",
+        "query_id"
+      ],
+      "title": "PrecedentLookupQuery",
+      "type": "object"
+    },
+    "PrecedentLookupStatus": {
+      "enum": [
+        "FOUND",
+        "NOT_FOUND",
+        "NOT_VISIBLE"
+      ],
+      "title": "PrecedentLookupStatus",
+      "type": "string"
+    },
+    "PrecedentSource": {
+      "enum": [
+        "PRESET",
+        "AUTOMATIC",
+        "HUMAN_REVIEW",
+        "APPEAL_OVERTURN"
+      ],
+      "title": "PrecedentSource",
+      "type": "string"
+    },
+    "PrecedentStatus": {
+      "enum": [
+        "PROVISIONAL",
+        "ACTIVE",
+        "CONFLICT",
+        "INVALIDATED",
+        "REVOKED"
+      ],
+      "title": "PrecedentStatus",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/precedent-resolution.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Controlled lookup result that distinguishes absence from invisibility.",
+  "properties": {
+    "authoritative_similarity": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": -1,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Authoritative Similarity"
+    },
+    "lookup_version": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Lookup Version",
+      "type": "string"
+    },
+    "query": {
+      "$ref": "#/$defs/PrecedentLookupQuery"
+    },
+    "receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "snapshot": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Precedent"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "status": {
+      "$ref": "#/$defs/PrecedentLookupStatus"
+    }
+  },
+  "required": [
+    "query",
+    "status",
+    "lookup_version",
+    "receipt_id"
+  ],
+  "title": "PrecedentResolution",
+  "type": "object"
+}

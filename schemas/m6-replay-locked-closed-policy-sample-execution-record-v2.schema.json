@@ -1,0 +1,6331 @@
+{
+  "$defs": {
+    "AcquisitionAction": {
+      "enum": [
+        "REQUEST_MORE_FRAMES",
+        "RECROP",
+        "OTHER_CAMERA_SAME_TIME",
+        "TRACK_CONFIDENCE_CURVE",
+        "REDETECT_HIGH_RES"
+      ],
+      "title": "AcquisitionAction",
+      "type": "string"
+    },
+    "AcquisitionLogEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/AcquisitionAction"
+        },
+        "outcome_summary": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Outcome Summary",
+          "type": "string"
+        },
+        "request_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "round_index": {
+          "exclusiveMinimum": 0,
+          "title": "Round Index",
+          "type": "integer"
+        },
+        "tool_result_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "round_index",
+        "action",
+        "request_ref",
+        "outcome_summary"
+      ],
+      "title": "AcquisitionLogEntry",
+      "type": "object"
+    },
+    "AlertCooldownAuthority": {
+      "additionalProperties": false,
+      "description": "The last emitted alert and its exclusive frame-space cooldown bound.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "cooldown_frames": {
+          "minimum": 0,
+          "title": "Cooldown Frames",
+          "type": "integer"
+        },
+        "cooldown_until_frame_exclusive": {
+          "minimum": 0,
+          "title": "Cooldown Until Frame Exclusive",
+          "type": "integer"
+        },
+        "key": {
+          "$ref": "#/$defs/AlertCooldownKey"
+        },
+        "source_alert_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Alert Id",
+          "type": "string"
+        },
+        "source_trigger_frame": {
+          "minimum": 0,
+          "title": "Source Trigger Frame",
+          "type": "integer"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "stream_id",
+        "source_alert_id",
+        "source_trigger_frame",
+        "cooldown_frames",
+        "cooldown_until_frame_exclusive",
+        "authority_id"
+      ],
+      "title": "AlertCooldownAuthority",
+      "type": "object"
+    },
+    "AlertCooldownKey": {
+      "additionalProperties": false,
+      "description": "Frame-space deduplication key scoped by the complete anonymous track ref.",
+      "properties": {
+        "key_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Key Id",
+          "type": "string"
+        },
+        "track_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Track Ref",
+          "type": "string"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "zone_id",
+        "violation_type",
+        "track_ref",
+        "key_id"
+      ],
+      "title": "AlertCooldownKey",
+      "type": "object"
+    },
+    "AlertDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "minLength": 1,
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "human_review_required": {
+          "default": false,
+          "title": "Human Review Required",
+          "type": "boolean"
+        },
+        "level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "merged_into_alert_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Merged Into Alert Id"
+        },
+        "policy_rule_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Policy Rule Ids",
+          "type": "array"
+        },
+        "recipients": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Recipients",
+          "type": "array"
+        },
+        "rescinded": {
+          "default": false,
+          "title": "Rescinded",
+          "type": "boolean"
+        },
+        "suppressed_by_cooldown": {
+          "default": false,
+          "title": "Suppressed By Cooldown",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alert_id",
+        "case_id",
+        "level",
+        "recipients",
+        "policy_rule_ids"
+      ],
+      "title": "AlertDecision",
+      "type": "object"
+    },
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AlertOutboxItem": {
+      "additionalProperties": false,
+      "description": "Deliverable alert payload created in the same transaction as Case closure.",
+      "properties": {
+        "alert": {
+          "$ref": "#/$defs/AlertDecision"
+        },
+        "case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Authority Sha256",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "outbox_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Outbox Id",
+          "type": "string"
+        },
+        "policy_request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Request Id",
+          "type": "string"
+        },
+        "priority": {
+          "$ref": "#/$defs/AlertOutboxPriority"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "case_authority_sha256",
+        "policy_request_id",
+        "manifest_id",
+        "alert",
+        "priority",
+        "idempotency_key",
+        "outbox_id"
+      ],
+      "title": "AlertOutboxItem",
+      "type": "object"
+    },
+    "AlertOutboxPriority": {
+      "enum": [
+        "NORMAL",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "AlertOutboxPriority",
+      "type": "string"
+    },
+    "AlertPolicyAuthority": {
+      "additionalProperties": false,
+      "description": "Pure close-and-enqueue intent for one current READY Case snapshot.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "cooldown_write": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertCooldownAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "disposition": {
+          "$ref": "#/$defs/AlertPolicyDisposition"
+        },
+        "final_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "outbox_item": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertOutboxItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "policy_rule_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Policy Rule Ids",
+          "type": "array"
+        },
+        "request": {
+          "$ref": "#/$defs/AlertPolicyRequest"
+        },
+        "target_case_status": {
+          "const": "CLOSED",
+          "default": "CLOSED",
+          "title": "Target Case Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request",
+        "disposition",
+        "policy_rule_ids",
+        "final_decision",
+        "authority_id"
+      ],
+      "title": "AlertPolicyAuthority",
+      "type": "object"
+    },
+    "AlertPolicyDisposition": {
+      "enum": [
+        "ENQUEUE",
+        "SUPPRESSED_MERGED",
+        "CLOSE_NO_ALERT"
+      ],
+      "title": "AlertPolicyDisposition",
+      "type": "string"
+    },
+    "AlertPolicyRequest": {
+      "additionalProperties": false,
+      "description": "Exact immutable roots consumed by the deterministic case alert policy.",
+      "properties": {
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Authority Sha256",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "confirmed_min_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confirmed Min Confidence",
+          "type": "number"
+        },
+        "cooldown_frames": {
+          "minimum": 0,
+          "title": "Cooldown Frames",
+          "type": "integer"
+        },
+        "cooldown_seconds": {
+          "minimum": 0,
+          "title": "Cooldown Seconds",
+          "type": "number"
+        },
+        "cross_day_repeat_count": {
+          "const": 0,
+          "default": 0,
+          "title": "Cross Day Repeat Count",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "hard_rule": {
+          "title": "Hard Rule",
+          "type": "boolean"
+        },
+        "insufficient_evidence_max_level": {
+          "const": "ADVISORY",
+          "title": "Insufficient Evidence Max Level",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "observation_sufficiency_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observation Sufficiency Sha256"
+        },
+        "policy_version": {
+          "const": "alert-policy-v1",
+          "default": "alert-policy-v1",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "primary_track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Track Ref"
+        },
+        "prior_cooldown": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertCooldownAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "prior_emergency_delivery": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImmediateSafetyDeliveryAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "procedural_review_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Procedural Review Id",
+          "type": "string"
+        },
+        "procedural_review_passed": {
+          "const": true,
+          "title": "Procedural Review Passed",
+          "type": "boolean"
+        },
+        "procedural_review_version": {
+          "exclusiveMinimum": 0,
+          "title": "Procedural Review Version",
+          "type": "integer"
+        },
+        "recommended_alert_level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "repeat_history_mode": {
+          "const": "DISABLED_UNTRUSTED_DEMO",
+          "default": "DISABLED_UNTRUSTED_DEMO",
+          "title": "Repeat History Mode",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_case_status": {
+          "const": "READY_FOR_ALERT_POLICY",
+          "title": "Source Case Status",
+          "type": "string"
+        },
+        "stream_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Stream Authority Sha256",
+          "type": "string"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        },
+        "trigger_frame": {
+          "minimum": 0,
+          "title": "Trigger Frame",
+          "type": "integer"
+        },
+        "verdict_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Verdict Confidence",
+          "type": "number"
+        },
+        "verdict_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Id",
+          "type": "string"
+        },
+        "verdict_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Sha256",
+          "type": "string"
+        },
+        "verdict_version": {
+          "exclusiveMinimum": 0,
+          "title": "Verdict Version",
+          "type": "integer"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        },
+        "zone_risk": {
+          "$ref": "#/$defs/RiskLevel"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "case_authority_sha256",
+        "source_case_status",
+        "config_sha256",
+        "manifest_id",
+        "camera_id",
+        "stream_id",
+        "stream_authority_sha256",
+        "fps_num",
+        "fps_den",
+        "zone_id",
+        "zone_risk",
+        "violation_type",
+        "trigger_frame",
+        "hard_rule",
+        "verdict_id",
+        "verdict_version",
+        "verdict_sha256",
+        "verdict_decision",
+        "verdict_confidence",
+        "recommended_alert_level",
+        "procedural_review_id",
+        "procedural_review_version",
+        "procedural_review_passed",
+        "cooldown_seconds",
+        "cooldown_frames",
+        "confirmed_min_confidence",
+        "insufficient_evidence_max_level",
+        "request_id"
+      ],
+      "title": "AlertPolicyRequest",
+      "type": "object"
+    },
+    "AnchorType": {
+      "enum": [
+        "HEAD",
+        "HANDS",
+        "TORSO"
+      ],
+      "title": "AnchorType",
+      "type": "string"
+    },
+    "Appeal": {
+      "additionalProperties": false,
+      "properties": {
+        "appeal_id": {
+          "minLength": 1,
+          "title": "Appeal Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "resolution_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution Summary"
+        },
+        "resolved_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reviewer_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewer Id"
+        },
+        "status": {
+          "$ref": "#/$defs/AppealStatus"
+        },
+        "submitted_by": {
+          "minLength": 1,
+          "title": "Submitted By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "appeal_id",
+        "case_id",
+        "status",
+        "reason",
+        "submitted_by"
+      ],
+      "title": "Appeal",
+      "type": "object"
+    },
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "Argument": {
+      "additionalProperties": false,
+      "properties": {
+        "argument_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Argument Id",
+          "type": "string"
+        },
+        "claim": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "stance": {
+          "$ref": "#/$defs/ArgumentStance"
+        },
+        "uncertainty": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Uncertainty",
+          "type": "number"
+        }
+      },
+      "required": [
+        "stance",
+        "claim",
+        "uncertainty",
+        "argument_id"
+      ],
+      "title": "Argument",
+      "type": "object"
+    },
+    "ArgumentStance": {
+      "enum": [
+        "PROSECUTION",
+        "DEFENSE"
+      ],
+      "title": "ArgumentStance",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AssociationMethod": {
+      "enum": [
+        "KEYPOINT",
+        "BODY_FALLBACK"
+      ],
+      "title": "AssociationMethod",
+      "type": "string"
+    },
+    "AuditAction": {
+      "enum": [
+        "CASE_CREATED",
+        "CASE_STATE_CHANGED",
+        "CASE_CLOSED",
+        "EVIDENCE_PACK_PUBLISHED",
+        "MEDIA_PURGE_REQUESTED",
+        "PURGED_BY_RETENTION",
+        "RETENTION_HOLD_CREATED",
+        "RETENTION_HOLD_RELEASED"
+      ],
+      "title": "AuditAction",
+      "type": "string"
+    },
+    "AuditEntry": {
+      "additionalProperties": false,
+      "description": "Stored audit entry; entry_hash is mandatory and verified on every parse.",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/AuditAction"
+        },
+        "actor": {
+          "maxLength": 69,
+          "minLength": 1,
+          "title": "Actor",
+          "type": "string"
+        },
+        "after_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "After Sha256"
+        },
+        "before_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Before Sha256"
+        },
+        "entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Entry Hash",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "object_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "prev_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prev Entry Hash",
+          "type": "string"
+        },
+        "recorded_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "run_id",
+        "sequence",
+        "actor",
+        "action",
+        "object_ref",
+        "manifest_id",
+        "recorded_at",
+        "prev_entry_hash",
+        "entry_hash"
+      ],
+      "title": "AuditEntry",
+      "type": "object"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "CandidateEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "confirmation": {
+          "$ref": "#/$defs/ConfirmationRecord"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "event_id": {
+          "readOnly": true,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "hard_rule": {
+          "default": false,
+          "title": "Hard Rule",
+          "type": "boolean"
+        },
+        "l1_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "L1 Score",
+          "type": "number"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "objective_facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ObjectiveFact"
+          },
+          "title": "Objective Facts",
+          "type": "array"
+        },
+        "primary_track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Track Ref"
+        },
+        "related_track_refs": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "title": "Related Track Refs",
+          "type": "array"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        },
+        "trigger_frame": {
+          "minimum": 0,
+          "title": "Trigger Frame",
+          "type": "integer"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "camera_id",
+        "stream_id",
+        "rule_version",
+        "violation_type",
+        "evidence_class",
+        "zone_id",
+        "start_frame",
+        "end_frame_exclusive",
+        "trigger_frame",
+        "l1_score",
+        "confirmation",
+        "manifest_id",
+        "event_id"
+      ],
+      "title": "CandidateEvent",
+      "type": "object"
+    },
+    "Case": {
+      "additionalProperties": false,
+      "properties": {
+        "alerts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AlertDecision"
+          },
+          "title": "Alerts",
+          "type": "array"
+        },
+        "appeals": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Appeal"
+          },
+          "title": "Appeals",
+          "type": "array"
+        },
+        "case_id": {
+          "readOnly": true,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "current_backlog_item_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Backlog Item Id"
+        },
+        "event": {
+          "$ref": "#/$defs/CandidateEvent"
+        },
+        "evidence_packs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidencePack"
+          },
+          "title": "Evidence Packs",
+          "type": "array"
+        },
+        "final_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "procedural_reviews": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProceduralReview"
+          },
+          "title": "Procedural Reviews",
+          "type": "array"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "screening_results": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ScreeningResult"
+          },
+          "title": "Screening Results",
+          "type": "array"
+        },
+        "semantic_case_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Semantic Case Hash"
+        },
+        "status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "timeline": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TimelineEntry"
+          },
+          "title": "Timeline",
+          "type": "array"
+        },
+        "usage": {
+          "$ref": "#/$defs/UsageSummary"
+        },
+        "verdicts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Verdict"
+          },
+          "title": "Verdicts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "run_id",
+        "status",
+        "event",
+        "manifest_id",
+        "case_id"
+      ],
+      "title": "Case",
+      "type": "object"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "ClosureDefect": {
+      "additionalProperties": false,
+      "description": "A typed closure failure; diagnostic context is explicit, never an open map.",
+      "properties": {
+        "actual_height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Height"
+        },
+        "actual_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Sha256"
+        },
+        "actual_size_bytes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Size Bytes"
+        },
+        "actual_width": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Width"
+        },
+        "artifact_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "code": {
+          "$ref": "#/$defs/ClosureDefectCode"
+        },
+        "end_frame_exclusive": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Frame Exclusive"
+        },
+        "expected_height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Height"
+        },
+        "expected_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Sha256"
+        },
+        "expected_size_bytes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Size Bytes"
+        },
+        "expected_width": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Width"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        },
+        "frame_index": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frame Index"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        },
+        "related_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "role": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "start_frame": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Frame"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "ClosureDefect",
+      "type": "object"
+    },
+    "ClosureDefectCode": {
+      "enum": [
+        "MISSING_REFERENCE",
+        "CROSS_RUN_REFERENCE",
+        "CROSS_CASE_REFERENCE",
+        "CROSS_STREAM_FRAME",
+        "FRAME_OUTSIDE_WINDOW",
+        "MISSING_TRIGGER_FRAME",
+        "BBOX_OUT_OF_BOUNDS",
+        "CROP_ROLE_MISMATCH",
+        "TRACK_MISMATCH",
+        "OBJECTIVE_SOURCE_MISSING",
+        "TOOL_INPUT_MISSING",
+        "TOOL_OUTPUT_MISSING",
+        "PATH_BOUNDARY_VIOLATION",
+        "UNSAFE_LINK",
+        "NOT_REGULAR_FILE",
+        "MEDIA_MISSING",
+        "MEDIA_PURGED_BY_RETENTION",
+        "SOURCE_HASH_MISMATCH",
+        "MEDIA_HASH_MISMATCH",
+        "MEDIA_SIZE_MISMATCH",
+        "PIXEL_HASH_MISMATCH",
+        "MEDIA_DIMENSION_MISMATCH",
+        "PRIVACY_POLICY_VIOLATION",
+        "MANIFEST_MISMATCH",
+        "IDENTITY_MISMATCH"
+      ],
+      "title": "ClosureDefectCode",
+      "type": "string"
+    },
+    "ClosureReport": {
+      "additionalProperties": false,
+      "properties": {
+        "checked_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Checked Refs",
+          "type": "array"
+        },
+        "defects": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ClosureDefect"
+          },
+          "title": "Defects",
+          "type": "array"
+        },
+        "input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "passed": {
+          "readOnly": true,
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "root_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "validator_version": {
+          "const": "m2-closure-v1",
+          "default": "m2-closure-v1",
+          "title": "Validator Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "root_ref",
+        "manifest_id",
+        "input_sha256",
+        "checked_refs",
+        "passed"
+      ],
+      "title": "ClosureReport",
+      "type": "object"
+    },
+    "ConfirmationPolicy": {
+      "enum": [
+        "STRICT_CAUSAL",
+        "SOURCE_COMPAT",
+        "NONE"
+      ],
+      "title": "ConfirmationPolicy",
+      "type": "string"
+    },
+    "ConfirmationRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "causal_risk": {
+          "default": false,
+          "title": "Causal Risk",
+          "type": "boolean"
+        },
+        "counterevidence_frame_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+            "type": "string"
+          },
+          "title": "Counterevidence Frame Ids",
+          "type": "array"
+        },
+        "examined_frame_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+            "type": "string"
+          },
+          "title": "Examined Frame Ids",
+          "type": "array"
+        },
+        "policy": {
+          "$ref": "#/$defs/ConfirmationPolicy"
+        },
+        "post_threshold_recovery_frame_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Post Threshold Recovery Frame Id"
+        },
+        "resolved_frame": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolved Frame"
+        },
+        "suppressed": {
+          "default": false,
+          "title": "Suppressed",
+          "type": "boolean"
+        },
+        "suppression_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suppression Reason"
+        }
+      },
+      "required": [
+        "policy"
+      ],
+      "title": "ConfirmationRecord",
+      "type": "object"
+    },
+    "Crop": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/MediaAvailability"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "encoding_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Encoding Version",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "local_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\<>:\\\"|?*])(?:[^/\\x00-\\x1f]+/)*[^/\\x00-\\x1f]+$",
+          "title": "Local Path"
+        },
+        "media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Sha256",
+          "type": "string"
+        },
+        "media_type": {
+          "const": "IMAGE_PNG",
+          "title": "Media Type",
+          "type": "string"
+        },
+        "observability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservabilityScore"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "output_height": {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967295,
+          "title": "Output Height",
+          "type": "integer"
+        },
+        "output_width": {
+          "exclusiveMinimum": 0,
+          "maximum": 4294967295,
+          "title": "Output Width",
+          "type": "integer"
+        },
+        "panorama_long_edge_limit": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 4294967295,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Panorama Long Edge Limit"
+        },
+        "pixel_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pixel Sha256",
+          "type": "string"
+        },
+        "primary_track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Track Ref"
+        },
+        "privacy_receipt": {
+          "$ref": "#/$defs/PrivacyReceipt"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/CropSource"
+        },
+        "source_media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Media Sha256",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "tags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "object"
+        }
+      },
+      "required": [
+        "frame_id",
+        "source",
+        "bbox",
+        "source_refs",
+        "availability",
+        "source_media_sha256",
+        "pixel_sha256",
+        "media_sha256",
+        "output_width",
+        "output_height",
+        "size_bytes",
+        "media_type",
+        "encoding_version",
+        "privacy_receipt",
+        "crop_id"
+      ],
+      "title": "Crop",
+      "type": "object"
+    },
+    "CropSource": {
+      "enum": [
+        "PANORAMA",
+        "SUBJECT",
+        "DETECTION_FOCUS",
+        "ANCHOR_FOCUS",
+        "RECROP"
+      ],
+      "title": "CropSource",
+      "type": "string"
+    },
+    "DeliveryReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "alert_id": {
+          "minLength": 1,
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "channel": {
+          "minLength": 1,
+          "title": "Channel",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "provider_receipt_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Receipt Ref"
+        }
+      },
+      "required": [
+        "alert_id",
+        "channel",
+        "idempotency_key",
+        "accepted"
+      ],
+      "title": "DeliveryReceipt",
+      "type": "object"
+    },
+    "EmergencySafetyIncident": {
+      "additionalProperties": false,
+      "properties": {
+        "adjudicated": {
+          "const": false,
+          "default": false,
+          "title": "Adjudicated",
+          "type": "boolean"
+        },
+        "certification_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Certification Id"
+        },
+        "delivery_idempotency_key": {
+          "minLength": 1,
+          "title": "Delivery Idempotency Key",
+          "type": "string"
+        },
+        "incident_id": {
+          "minLength": 1,
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "level": {
+          "const": "EMERGENCY",
+          "default": "EMERGENCY",
+          "title": "Level",
+          "type": "string"
+        },
+        "signal_id": {
+          "minLength": 1,
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_type": {
+          "$ref": "#/$defs/SafetySignalType"
+        },
+        "zone_id": {
+          "minLength": 1,
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "incident_id",
+        "signal_id",
+        "signal_type",
+        "zone_id",
+        "delivery_idempotency_key"
+      ],
+      "title": "EmergencySafetyIncident",
+      "type": "object"
+    },
+    "EvidenceCitation": {
+      "additionalProperties": false,
+      "description": "A typed model citation whose relative geometry is checked later by L5.",
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "bbox"
+                ]
+              },
+              {
+                "required": [
+                  "coordinate_space"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "bbox": {
+              "type": "null"
+            },
+            "coordinate_space": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "bbox",
+            "coordinate_space"
+          ]
+        },
+        {
+          "properties": {
+            "bbox": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "coordinate_space": {
+              "const": "CITED_ARTIFACT_PIXELS"
+            },
+            "evidence_ref": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "CROP",
+                    "FRAME"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "bbox",
+            "coordinate_space",
+            "evidence_ref"
+          ]
+        }
+      ],
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBoxXYXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Citation Id",
+          "type": "string"
+        },
+        "coordinate_space": {
+          "anyOf": [
+            {
+              "const": "CITED_ARTIFACT_PIXELS",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coordinate Space"
+        },
+        "evidence_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "evidence_ref",
+        "citation_id"
+      ],
+      "title": "EvidenceCitation",
+      "type": "object"
+    },
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "EvidencePack": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "closure_report": {
+          "$ref": "#/$defs/ClosureReport"
+        },
+        "complete": {
+          "default": true,
+          "title": "Complete",
+          "type": "boolean"
+        },
+        "confirmation_record": {
+          "$ref": "#/$defs/ConfirmationRecord"
+        },
+        "event": {
+          "$ref": "#/$defs/CandidateEvent"
+        },
+        "focus_crops": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Crop"
+          },
+          "title": "Focus Crops",
+          "type": "array"
+        },
+        "key_frame_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+            "type": "string"
+          },
+          "title": "Key Frame Ids",
+          "type": "array"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "objective_facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ObjectiveFact"
+          },
+          "title": "Objective Facts",
+          "type": "array"
+        },
+        "observation_sufficiency_input": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservationSufficiencyInput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pack_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Pack Id",
+          "type": "string"
+        },
+        "panorama_crops": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Crop"
+          },
+          "title": "Panorama Crops",
+          "type": "array"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "subject_crops": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Crop"
+          },
+          "title": "Subject Crops",
+          "type": "array"
+        },
+        "temporal_crops": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Crop"
+          },
+          "title": "Temporal Crops",
+          "type": "array"
+        },
+        "tool_results": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ToolResult"
+          },
+          "title": "Tool Results",
+          "type": "array"
+        },
+        "track_summary": {
+          "$ref": "#/$defs/TrackSummary"
+        },
+        "version": {
+          "exclusiveMinimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "version",
+        "event",
+        "key_frame_ids",
+        "track_summary",
+        "confirmation_record",
+        "manifest_id",
+        "closure_report",
+        "pack_id"
+      ],
+      "title": "EvidencePack",
+      "type": "object"
+    },
+    "FrameObservation": {
+      "additionalProperties": false,
+      "description": "A model-authored label; clarity remains authoritative in EvidencePack.",
+      "properties": {
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "reason_summary": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Reason Summary",
+          "type": "string"
+        },
+        "wear_status": {
+          "$ref": "#/$defs/WearStatus"
+        }
+      },
+      "required": [
+        "crop_id",
+        "wear_status",
+        "reason_summary"
+      ],
+      "title": "FrameObservation",
+      "type": "object"
+    },
+    "ImmediateSafetyDeliveryAuthority": {
+      "additionalProperties": false,
+      "description": "Proof that a certified case-external hard signal was already accepted.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "delivery_receipt": {
+          "$ref": "#/$defs/DeliveryReceipt"
+        },
+        "incident": {
+          "$ref": "#/$defs/EmergencySafetyIncident"
+        }
+      },
+      "required": [
+        "incident",
+        "delivery_receipt",
+        "authority_id"
+      ],
+      "title": "ImmediateSafetyDeliveryAuthority",
+      "type": "object"
+    },
+    "JudgeDisposition": {
+      "enum": [
+        "ACCEPTED",
+        "REJECTED",
+        "PARTIALLY_ACCEPTED"
+      ],
+      "title": "JudgeDisposition",
+      "type": "string"
+    },
+    "JudgeResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "defense_argument_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Defense Argument Id",
+          "type": "string"
+        },
+        "disposition": {
+          "$ref": "#/$defs/JudgeDisposition"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "response_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Response Id",
+          "type": "string"
+        },
+        "response_summary": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Response Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "defense_argument_id",
+        "disposition",
+        "response_summary",
+        "response_id"
+      ],
+      "title": "JudgeResponse",
+      "type": "object"
+    },
+    "Keypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "x",
+        "y",
+        "score"
+      ],
+      "title": "Keypoint",
+      "type": "object"
+    },
+    "M6CaseReplaySnapshot": {
+      "additionalProperties": false,
+      "description": "One replayed Case semantic projection without operational identity noise.",
+      "properties": {
+        "case_status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "final_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "highest_alert_level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "projection_version": {
+          "const": "m6-semantic-case-v1",
+          "default": "m6-semantic-case-v1",
+          "title": "Projection Version",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-case-replay-snapshot-v1",
+          "default": "m6-case-replay-snapshot-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "semantic_case_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Semantic Case Hash",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Document Sha256",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Revision",
+          "type": "integer"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "stage_roots": {
+          "items": {
+            "$ref": "#/$defs/M6SemanticStageRoot"
+          },
+          "maxItems": 6,
+          "minItems": 6,
+          "title": "Stage Roots",
+          "type": "array"
+        },
+        "terminal_appeal_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppealStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_case_id",
+        "source_case_revision",
+        "source_case_document_sha256",
+        "manifest_id",
+        "stage_roots",
+        "case_status",
+        "semantic_case_hash",
+        "snapshot_id"
+      ],
+      "title": "M6CaseReplaySnapshot",
+      "type": "object"
+    },
+    "M6HistoricalCausalCut": {
+      "additionalProperties": false,
+      "properties": {
+        "causal_cut_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Causal Cut Id",
+          "type": "string"
+        },
+        "degraded_retrieval_count": {
+          "readOnly": true,
+          "title": "Degraded Retrieval Count",
+          "type": "integer"
+        },
+        "retrieval_cycle_count": {
+          "readOnly": true,
+          "title": "Retrieval Cycle Count",
+          "type": "integer"
+        },
+        "retrieval_cycles": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedRetrievalCycleInput"
+          },
+          "maxItems": 64,
+          "title": "Retrieval Cycles",
+          "type": "array"
+        },
+        "successful_exposure_count": {
+          "readOnly": true,
+          "title": "Successful Exposure Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "retrieval_cycle_count",
+        "successful_exposure_count",
+        "degraded_retrieval_count",
+        "causal_cut_id"
+      ],
+      "title": "M6HistoricalCausalCut",
+      "type": "object"
+    },
+    "M6LockedDetectionInput": {
+      "additionalProperties": false,
+      "properties": {
+        "detection_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Detection Id",
+          "type": "string"
+        },
+        "detection_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Detection Input Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "detection_id",
+        "frame_id",
+        "document_sha256",
+        "model_manifest_id",
+        "detection_input_id"
+      ],
+      "title": "M6LockedDetectionInput",
+      "type": "object"
+    },
+    "M6LockedEmbeddingChannel": {
+      "enum": [
+        "TEXT",
+        "VISUAL"
+      ],
+      "title": "M6LockedEmbeddingChannel",
+      "type": "string"
+    },
+    "M6LockedEmbeddingInput": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "$ref": "#/$defs/M6LockedEmbeddingChannel"
+        },
+        "embedding_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Embedding Input Id",
+          "type": "string"
+        },
+        "embedding_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/M6LockedEmbeddingScope"
+        }
+      },
+      "required": [
+        "scope",
+        "channel",
+        "embedding_ref",
+        "request_id",
+        "model_manifest_id",
+        "embedding_input_id"
+      ],
+      "title": "M6LockedEmbeddingInput",
+      "type": "object"
+    },
+    "M6LockedEmbeddingScope": {
+      "enum": [
+        "QUERY",
+        "PRECEDENT"
+      ],
+      "title": "M6LockedEmbeddingScope",
+      "type": "string"
+    },
+    "M6LockedFrameInput": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "frame_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Frame Input Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame_id",
+        "document_sha256",
+        "content_sha256",
+        "frame_input_id"
+      ],
+      "title": "M6LockedFrameInput",
+      "type": "object"
+    },
+    "M6LockedModelCallInput": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_index": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Attempt Index",
+          "type": "integer"
+        },
+        "cache_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "failure_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "$ref": "#/$defs/M6LockedModelCallLayer"
+        },
+        "model_call_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Call Input Id",
+          "type": "string"
+        },
+        "parse_receipt_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parsed_output_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "raw_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Content Sha256"
+        },
+        "raw_size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Size Bytes"
+        },
+        "request_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "response_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ReplayAuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "result_kind": {
+          "$ref": "#/$defs/M6LockedModelCallResultKind"
+        },
+        "role": {
+          "$ref": "#/$defs/M6LockedModelRole"
+        }
+      },
+      "required": [
+        "layer",
+        "role",
+        "attempt_index",
+        "request_ref",
+        "result_kind",
+        "model_call_input_id"
+      ],
+      "title": "M6LockedModelCallInput",
+      "type": "object"
+    },
+    "M6LockedModelCallLayer": {
+      "enum": [
+        "SCREENING",
+        "HEARING"
+      ],
+      "title": "M6LockedModelCallLayer",
+      "type": "string"
+    },
+    "M6LockedModelCallResultKind": {
+      "enum": [
+        "RESPONSE",
+        "FAILURE"
+      ],
+      "title": "M6LockedModelCallResultKind",
+      "type": "string"
+    },
+    "M6LockedModelRole": {
+      "enum": [
+        "SCREENING",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "M6LockedModelRole",
+      "type": "string"
+    },
+    "M6LockedRetrievalCycleInput": {
+      "additionalProperties": false,
+      "description": "One exact historical retrieval authority for one hearing cycle.\n\nSuccessful cycles bind the M5 prompt-visible exposure.  Degraded cycles have\nno exposure and bind the exact M4 durable retrieval receipt preserving the\ntyped degraded reason.  Source applications, alerts, appeals, and every\ntraining-label authority remain evaluator-side outputs.",
+      "properties": {
+        "authority_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "cycle_index": {
+          "exclusiveMinimum": 0,
+          "title": "Cycle Index",
+          "type": "integer"
+        },
+        "cycle_scope_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cycle Scope Id",
+          "type": "string"
+        },
+        "hearing_session_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Hearing Session Id",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/M6LockedRetrievalOutcomeKind"
+        },
+        "retrieval_cycle_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Retrieval Cycle Input Id",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_run_id",
+        "source_case_id",
+        "hearing_session_id",
+        "cycle_index",
+        "cycle_scope_id",
+        "outcome",
+        "authority_ref",
+        "retrieval_cycle_input_id"
+      ],
+      "title": "M6LockedRetrievalCycleInput",
+      "type": "object"
+    },
+    "M6LockedRetrievalOutcomeKind": {
+      "enum": [
+        "SUCCESS",
+        "DEGRADED"
+      ],
+      "title": "M6LockedRetrievalOutcomeKind",
+      "type": "string"
+    },
+    "M6LockedToolResultInput": {
+      "additionalProperties": false,
+      "properties": {
+        "acquisition_request_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "evidence_pack_derivation_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "execution_manifest_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "execution_publication_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "resulting_evidence_pack_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "tool_receipt_ref": {
+          "$ref": "#/$defs/M6ReplayAuthorityRef"
+        },
+        "tool_result_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tool Result Document Sha256",
+          "type": "string"
+        },
+        "tool_result_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tool Result Id",
+          "type": "string"
+        },
+        "tool_result_input_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Tool Result Input Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_result_id",
+        "tool_result_document_sha256",
+        "acquisition_request_ref",
+        "execution_manifest_ref",
+        "execution_publication_ref",
+        "tool_receipt_ref",
+        "evidence_pack_derivation_ref",
+        "resulting_evidence_pack_ref",
+        "tool_result_input_id"
+      ],
+      "title": "M6LockedToolResultInput",
+      "type": "object"
+    },
+    "M6RegressionExecutionEntry": {
+      "additionalProperties": false,
+      "description": "Blinded candidate input; it contains no membership or expected decision.",
+      "properties": {
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "execution_entry_id"
+      ],
+      "title": "M6RegressionExecutionEntry",
+      "type": "object"
+    },
+    "M6RegressionStage": {
+      "enum": [
+        "PERCEPTION",
+        "SCREENING",
+        "RETRIEVAL",
+        "HEARING",
+        "GATE",
+        "POLICY"
+      ],
+      "title": "M6RegressionStage",
+      "type": "string"
+    },
+    "M6ReplayAuthorityKind": {
+      "enum": [
+        "RUN_MANIFEST",
+        "CASE_VERSION",
+        "EVIDENCE_PACK",
+        "FRAME",
+        "DETECTION",
+        "M3_MODEL_REQUEST",
+        "M3_MODEL_RESPONSE",
+        "M3_MODEL_CACHE",
+        "M3_PARSE_RECEIPT",
+        "M3_PARSED_OUTPUT",
+        "M3_MODEL_CALL_FAILURE",
+        "M4_MODEL_REQUEST",
+        "M4_MODEL_RESPONSE",
+        "M4_MODEL_CACHE",
+        "M4_PARSE_RECEIPT",
+        "M4_ROLE_OUTPUT",
+        "M4_PRECEDENT_RETRIEVAL_RECEIPT",
+        "M4_MODEL_CALL_FAILURE",
+        "M4_ACQUISITION_REQUEST",
+        "M4_TOOL_EXECUTION_MANIFEST",
+        "M4_ACQUISITION_PUBLICATION",
+        "M4_TOOL_EXECUTION_RECEIPT",
+        "M4_EVIDENCE_PACK_DERIVATION",
+        "M5_EMBEDDING",
+        "M5_PRECEDENT_EXPOSURE"
+      ],
+      "title": "M6ReplayAuthorityKind",
+      "type": "string"
+    },
+    "M6ReplayAuthorityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "authority_ref_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Ref Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M6ReplayAuthorityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id",
+        "document_sha256",
+        "authority_ref_id"
+      ],
+      "title": "M6ReplayAuthorityRef",
+      "type": "object"
+    },
+    "M6ReplayInputClosureAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "detection_count": {
+          "readOnly": true,
+          "title": "Detection Count",
+          "type": "integer"
+        },
+        "detection_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Detection Inventory Root Sha256",
+          "type": "string"
+        },
+        "detections": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedDetectionInput"
+          },
+          "maxItems": 250000,
+          "title": "Detections",
+          "type": "array"
+        },
+        "embedding_count": {
+          "readOnly": true,
+          "title": "Embedding Count",
+          "type": "integer"
+        },
+        "embedding_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Embedding Inventory Root Sha256",
+          "type": "string"
+        },
+        "embeddings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedEmbeddingInput"
+          },
+          "maxItems": 4096,
+          "title": "Embeddings",
+          "type": "array"
+        },
+        "frame_count": {
+          "readOnly": true,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "frame_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Frame Inventory Root Sha256",
+          "type": "string"
+        },
+        "frames": {
+          "items": {
+            "$ref": "#/$defs/M6LockedFrameInput"
+          },
+          "maxItems": 100000,
+          "minItems": 1,
+          "title": "Frames",
+          "type": "array"
+        },
+        "historical_cut": {
+          "$ref": "#/$defs/M6HistoricalCausalCut"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "model_call_count": {
+          "readOnly": true,
+          "title": "Model Call Count",
+          "type": "integer"
+        },
+        "model_call_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Call Inventory Root Sha256",
+          "type": "string"
+        },
+        "model_calls": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedModelCallInput"
+          },
+          "maxItems": 256,
+          "title": "Model Calls",
+          "type": "array"
+        },
+        "model_response_count": {
+          "readOnly": true,
+          "title": "Model Response Count",
+          "type": "integer"
+        },
+        "model_response_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Response Inventory Root Sha256",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-input-closure-authority-v1",
+          "default": "m6-replay-input-closure-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Document Sha256"
+        },
+        "source_case_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Id"
+        },
+        "source_case_revision": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Revision"
+        },
+        "source_manifest_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Document Sha256",
+          "type": "string"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "source_validation_report_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Validation Report Document Sha256",
+          "type": "string"
+        },
+        "source_validation_report_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Validation Report Id",
+          "type": "string"
+        },
+        "tool_result_count": {
+          "readOnly": true,
+          "title": "Tool Result Count",
+          "type": "integer"
+        },
+        "tool_result_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Tool Result Inventory Root Sha256",
+          "type": "string"
+        },
+        "tool_results": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6LockedToolResultInput"
+          },
+          "maxItems": 64,
+          "title": "Tool Results",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_manifest_id",
+        "source_manifest_document_sha256",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "source_validation_report_id",
+        "source_validation_report_document_sha256",
+        "frames",
+        "frame_count",
+        "frame_inventory_root_sha256",
+        "detection_count",
+        "detection_inventory_root_sha256",
+        "model_call_count",
+        "model_call_inventory_root_sha256",
+        "model_response_count",
+        "model_response_inventory_root_sha256",
+        "embedding_count",
+        "embedding_inventory_root_sha256",
+        "tool_result_count",
+        "tool_result_inventory_root_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256"
+      ],
+      "title": "M6ReplayInputClosureAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedAlertPolicyCausalCutAuthority": {
+      "additionalProperties": false,
+      "description": "Complete M5 alert-policy source cut for one locked CLOSED replay.",
+      "properties": {
+        "closing_audit_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Closing Audit Content Sha256",
+          "type": "string"
+        },
+        "closing_audit_entry": {
+          "$ref": "#/$defs/AuditEntry"
+        },
+        "cooldown_causal_head": {
+          "$ref": "#/$defs/M6ReplayLockedCooldownCausalHead"
+        },
+        "emergency_causal_basis": {
+          "const": "DISABLED_MISSING_CERTIFIED_SIGNAL_AUTHORITY",
+          "default": "DISABLED_MISSING_CERTIFIED_SIGNAL_AUTHORITY",
+          "title": "Emergency Causal Basis",
+          "type": "string"
+        },
+        "policy_causal_cut_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Policy Causal Cut Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-alert-policy-causal-cut-v1",
+          "default": "m6-replay-locked-alert-policy-causal-cut-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_alert_policy": {
+          "$ref": "#/$defs/AlertPolicyAuthority"
+        },
+        "source_alert_policy_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Alert Policy Content Sha256",
+          "type": "string"
+        },
+        "source_closed_case": {
+          "$ref": "#/$defs/Case"
+        },
+        "source_closed_case_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Closed Case Content Sha256",
+          "type": "string"
+        },
+        "source_closed_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Closed Case Revision",
+          "type": "integer"
+        },
+        "source_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Config Sha256",
+          "type": "string"
+        },
+        "source_identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Identity Sha256",
+          "type": "string"
+        },
+        "source_m5_authority_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source M5 Authority Root Sha256",
+          "type": "string"
+        },
+        "source_ready_case": {
+          "$ref": "#/$defs/Case"
+        },
+        "source_ready_case_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Ready Case Content Sha256",
+          "type": "string"
+        },
+        "source_ready_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Ready Case Revision",
+          "type": "integer"
+        },
+        "source_validation_report_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Validation Report Document Sha256",
+          "type": "string"
+        },
+        "source_validation_report_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Validation Report Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_identity_sha256",
+        "sample_id",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "source_validation_report_id",
+        "source_validation_report_document_sha256",
+        "source_m5_authority_root_sha256",
+        "source_config_sha256",
+        "source_ready_case_revision",
+        "source_ready_case",
+        "source_closed_case_revision",
+        "source_closed_case",
+        "source_alert_policy",
+        "closing_audit_entry",
+        "cooldown_causal_head",
+        "source_ready_case_content_sha256",
+        "source_closed_case_content_sha256",
+        "source_alert_policy_content_sha256",
+        "closing_audit_content_sha256",
+        "policy_causal_cut_authority_id"
+      ],
+      "title": "M6ReplayLockedAlertPolicyCausalCutAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedCandidateCaseBinding": {
+      "additionalProperties": false,
+      "description": "Physical identity and audit anchor of one independently persisted Case.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "case_audit_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Audit Entry Hash",
+          "type": "string"
+        },
+        "case_audit_sequence": {
+          "minimum": 0,
+          "title": "Case Audit Sequence",
+          "type": "integer"
+        },
+        "case_binding_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Case Binding Id",
+          "type": "string"
+        },
+        "case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Document Sha256",
+          "type": "string"
+        },
+        "case_document_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Case Document Size Bytes",
+          "type": "integer"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Case Revision",
+          "type": "integer"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-candidate-case-binding-v1",
+          "default": "m6-replay-locked-candidate-case-binding-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_run_id",
+        "sample_id",
+        "case_id",
+        "case_revision",
+        "case_document_sha256",
+        "case_document_size_bytes",
+        "case_audit_sequence",
+        "case_audit_entry_hash",
+        "case_binding_id"
+      ],
+      "title": "M6ReplayLockedCandidateCaseBinding",
+      "type": "object"
+    },
+    "M6ReplayLockedClosedCandidateBindingAuthority": {
+      "additionalProperties": false,
+      "description": "Transient READY witness, pure policy intent, and sole persisted CLOSED Case.",
+      "properties": {
+        "candidate_alert_policy": {
+          "$ref": "#/$defs/AlertPolicyAuthority"
+        },
+        "candidate_alert_policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Candidate Alert Policy Authority Id",
+          "type": "string"
+        },
+        "candidate_alert_policy_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Candidate Alert Policy Content Sha256",
+          "type": "string"
+        },
+        "candidate_alert_policy_size_bytes": {
+          "readOnly": true,
+          "title": "Candidate Alert Policy Size Bytes",
+          "type": "integer"
+        },
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "closed_candidate_binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Closed Candidate Binding Authority Id",
+          "type": "string"
+        },
+        "closed_candidate_case": {
+          "$ref": "#/$defs/Case"
+        },
+        "closed_candidate_case_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Closed Candidate Case Content Sha256",
+          "type": "string"
+        },
+        "closed_candidate_case_size_bytes": {
+          "readOnly": true,
+          "title": "Closed Candidate Case Size Bytes",
+          "type": "integer"
+        },
+        "execution_scope_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Scope Authority Id",
+          "type": "string"
+        },
+        "locked_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Locked Config Sha256",
+          "type": "string"
+        },
+        "pending_commitment_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pending Commitment Authority Id",
+          "type": "string"
+        },
+        "persisted_candidate_case": {
+          "$ref": "#/$defs/M6ReplayLockedCandidateCaseBinding"
+        },
+        "policy_causal_cut_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Causal Cut Authority Id",
+          "type": "string"
+        },
+        "pre_policy_route": {
+          "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-closed-candidate-binding-authority-v1",
+          "default": "m6-replay-locked-closed-candidate-binding-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Binding Authority Id",
+          "type": "string"
+        },
+        "transient_ready_case": {
+          "$ref": "#/$defs/Case"
+        },
+        "transient_ready_case_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Transient Ready Case Content Sha256",
+          "type": "string"
+        },
+        "transient_ready_case_size_bytes": {
+          "readOnly": true,
+          "title": "Transient Ready Case Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "execution_scope_authority_id",
+        "pending_commitment_authority_id",
+        "source_binding_authority_id",
+        "policy_causal_cut_authority_id",
+        "pre_policy_route",
+        "locked_config_sha256",
+        "transient_ready_case",
+        "candidate_alert_policy",
+        "closed_candidate_case",
+        "persisted_candidate_case",
+        "candidate_run_id",
+        "sample_id",
+        "case_id",
+        "transient_ready_case_content_sha256",
+        "transient_ready_case_size_bytes",
+        "candidate_alert_policy_authority_id",
+        "candidate_alert_policy_content_sha256",
+        "candidate_alert_policy_size_bytes",
+        "closed_candidate_case_content_sha256",
+        "closed_candidate_case_size_bytes",
+        "closed_candidate_binding_authority_id"
+      ],
+      "title": "M6ReplayLockedClosedCandidateBindingAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedClosedPolicyPendingSampleCommitmentAuthorityV2": {
+      "additionalProperties": false,
+      "description": "Durable intent that freezes the exact policy cut before materialization.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Command Id",
+          "type": "string"
+        },
+        "execution_component_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Component Authority Id",
+          "type": "string"
+        },
+        "execution_dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Dataset Snapshot Id",
+          "type": "string"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "execution_scope_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Scope Authority Id",
+          "type": "string"
+        },
+        "ledger_sequence": {
+          "readOnly": true,
+          "title": "Ledger Sequence",
+          "type": "integer"
+        },
+        "locked_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Locked Config Sha256",
+          "type": "string"
+        },
+        "pending_commitment_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Pending Commitment Authority Id",
+          "type": "string"
+        },
+        "policy_causal_cut_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Policy Causal Cut Authority Id",
+          "type": "string"
+        },
+        "pre_policy_execution_component_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Pre Policy Execution Component Authority Id",
+          "type": "string"
+        },
+        "pre_policy_execution_scope_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Pre Policy Execution Scope Authority Id",
+          "type": "string"
+        },
+        "pre_policy_pending_commitment": {
+          "$ref": "#/$defs/M6ReplayLockedPendingSampleCommitmentAuthority"
+        },
+        "pre_policy_route": {
+          "$ref": "#/$defs/M6ReplayLockedExecutionRoute",
+          "readOnly": true
+        },
+        "previous_ledger_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Previous Ledger Entry Hash",
+          "type": "string"
+        },
+        "route": {
+          "const": "ALERT_POLICY_CLOSED",
+          "default": "ALERT_POLICY_CLOSED",
+          "title": "Route",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-closed-policy-pending-sample-commitment-v2",
+          "default": "m6-replay-locked-closed-policy-pending-sample-commitment-v2",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_binding": {
+          "$ref": "#/$defs/M6ReplayLockedClosedPolicySourceBindingAuthority"
+        },
+        "source_binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Binding Authority Id",
+          "type": "string"
+        },
+        "source_catalog_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Catalog Entry Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_scope_authority_id",
+        "execution_component_authority_id",
+        "locked_config_sha256",
+        "pre_policy_pending_commitment",
+        "source_binding",
+        "pre_policy_execution_scope_authority_id",
+        "pre_policy_execution_component_authority_id",
+        "candidate_run_id",
+        "command_id",
+        "execution_dataset_snapshot_id",
+        "source_catalog_entry_id",
+        "pre_policy_route",
+        "sample_id",
+        "execution_entry_id",
+        "ledger_sequence",
+        "previous_ledger_entry_hash",
+        "source_binding_authority_id",
+        "policy_causal_cut_authority_id",
+        "pending_commitment_authority_id"
+      ],
+      "title": "M6ReplayLockedClosedPolicyPendingSampleCommitmentAuthorityV2",
+      "type": "object"
+    },
+    "M6ReplayLockedClosedPolicySourceBindingAuthority": {
+      "additionalProperties": false,
+      "description": "Candidate-safe projection that pre-binds one independently held policy cut.\n\nThe complete causal cut includes evaluator-only source policy outputs and is\nintentionally absent.  A trusted record builder later joins it by the\nauthority and physical identities fixed here.",
+      "properties": {
+        "cooldown_causal_head": {
+          "$ref": "#/$defs/M6ReplayLockedCooldownCausalHead"
+        },
+        "cooldown_causal_head_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Cooldown Causal Head Id",
+          "type": "string"
+        },
+        "emergency_causal_basis": {
+          "const": "DISABLED_MISSING_CERTIFIED_SIGNAL_AUTHORITY",
+          "default": "DISABLED_MISSING_CERTIFIED_SIGNAL_AUTHORITY",
+          "title": "Emergency Causal Basis",
+          "type": "string"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "policy_causal_cut_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Causal Cut Authority Id",
+          "type": "string"
+        },
+        "policy_causal_cut_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Causal Cut Content Sha256",
+          "type": "string"
+        },
+        "policy_causal_cut_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Policy Causal Cut Size Bytes",
+          "type": "integer"
+        },
+        "pre_policy_route": {
+          "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-closed-policy-source-binding-authority-v1",
+          "default": "m6-replay-locked-closed-policy-source-binding-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Binding Authority Id",
+          "type": "string"
+        },
+        "source_catalog_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Entry Id",
+          "type": "string"
+        },
+        "source_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Config Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_catalog_entry_id",
+        "sample_id",
+        "execution_entry_id",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "pre_policy_route",
+        "source_config_sha256",
+        "policy_causal_cut_authority_id",
+        "policy_causal_cut_content_sha256",
+        "policy_causal_cut_size_bytes",
+        "cooldown_causal_head",
+        "cooldown_causal_head_id",
+        "source_binding_authority_id"
+      ],
+      "title": "M6ReplayLockedClosedPolicySourceBindingAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedCooldownCausalBasis": {
+      "description": "Why the source policy received this exact prior cooldown value.",
+      "enum": [
+        "UNTRACKED",
+        "EMPTY_HISTORY",
+        "EXACT_PRIOR"
+      ],
+      "title": "M6ReplayLockedCooldownCausalBasis",
+      "type": "string"
+    },
+    "M6ReplayLockedCooldownCausalHead": {
+      "additionalProperties": false,
+      "description": "Snapshot-scoped cooldown head immediately before one Case close.",
+      "properties": {
+        "basis": {
+          "$ref": "#/$defs/M6ReplayLockedCooldownCausalBasis"
+        },
+        "causal_head_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Causal Head Id",
+          "type": "string"
+        },
+        "eligible_count": {
+          "readOnly": true,
+          "title": "Eligible Count",
+          "type": "integer"
+        },
+        "eligible_history": {
+          "items": {
+            "$ref": "#/$defs/M6ReplayLockedCooldownHistoryEntry"
+          },
+          "maxItems": 10000,
+          "title": "Eligible History",
+          "type": "array"
+        },
+        "eligible_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Eligible Inventory Root Sha256",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertCooldownKey"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "prior_authority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertCooldownAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "prior_revision": {
+          "minimum": 0,
+          "title": "Prior Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-cooldown-causal-head-v1",
+          "default": "m6-replay-locked-cooldown-causal-head-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_close_audit_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Close Audit Entry Hash",
+          "type": "string"
+        },
+        "source_close_audit_sequence": {
+          "minimum": 0,
+          "title": "Source Close Audit Sequence",
+          "type": "integer"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_run_id",
+        "basis",
+        "source_close_audit_sequence",
+        "source_close_audit_entry_hash",
+        "prior_revision",
+        "eligible_history",
+        "eligible_count",
+        "eligible_inventory_root_sha256",
+        "causal_head_id"
+      ],
+      "title": "M6ReplayLockedCooldownCausalHead",
+      "type": "object"
+    },
+    "M6ReplayLockedCooldownHistoryEntry": {
+      "additionalProperties": false,
+      "description": "One prior cooldown row and the exact earlier close that wrote it.",
+      "properties": {
+        "authority": {
+          "$ref": "#/$defs/AlertCooldownAuthority"
+        },
+        "authority_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Content Sha256",
+          "type": "string"
+        },
+        "history_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "History Entry Id",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-cooldown-history-entry-v1",
+          "default": "m6-replay-locked-cooldown-history-entry-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "writer_alert_policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Writer Alert Policy Authority Id",
+          "type": "string"
+        },
+        "writer_close_audit_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Writer Close Audit Entry Hash",
+          "type": "string"
+        },
+        "writer_close_audit_sequence": {
+          "minimum": 0,
+          "title": "Writer Close Audit Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision",
+        "writer_close_audit_sequence",
+        "writer_close_audit_entry_hash",
+        "writer_alert_policy_authority_id",
+        "authority",
+        "authority_content_sha256",
+        "history_entry_id"
+      ],
+      "title": "M6ReplayLockedCooldownHistoryEntry",
+      "type": "object"
+    },
+    "M6ReplayLockedExecutionRoute": {
+      "enum": [
+        "M3_FAST_TERMINAL_POST_PARSE",
+        "M4_HEARING_GATE_TERMINAL_POST_PARSE"
+      ],
+      "title": "M6ReplayLockedExecutionRoute",
+      "type": "string"
+    },
+    "M6ReplayLockedPendingSampleCommitmentAuthority": {
+      "additionalProperties": false,
+      "description": "Durable intent fixed before one locked candidate sample is materialized.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "execution_component_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Component Authority Id",
+          "type": "string"
+        },
+        "execution_dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Dataset Snapshot Id",
+          "type": "string"
+        },
+        "execution_entry": {
+          "$ref": "#/$defs/M6RegressionExecutionEntry"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "execution_scope_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Scope Authority Id",
+          "type": "string"
+        },
+        "ledger_sequence": {
+          "minimum": 0,
+          "title": "Ledger Sequence",
+          "type": "integer"
+        },
+        "pending_commitment_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Pending Commitment Authority Id",
+          "type": "string"
+        },
+        "previous_ledger_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Ledger Entry Hash",
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-pending-sample-commitment-v1",
+          "default": "m6-replay-locked-pending-sample-commitment-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_catalog_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Entry Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_scope_authority_id",
+        "candidate_run_id",
+        "command_id",
+        "execution_dataset_snapshot_id",
+        "execution_component_authority_id",
+        "source_catalog_entry_id",
+        "route",
+        "execution_entry",
+        "ledger_sequence",
+        "previous_ledger_entry_hash",
+        "sample_id",
+        "execution_entry_id",
+        "pending_commitment_authority_id"
+      ],
+      "title": "M6ReplayLockedPendingSampleCommitmentAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedSourceDeterminismAuthority": {
+      "additionalProperties": false,
+      "description": "Two-read source projection proof, deliberately not a replay receipt.\n\nThis authority binds a future, distinct candidate run while proving only\nthat one immutable source closure produced the same source projection on\ntwo fresh reads.  It contains no candidate snapshot or provider-trap claim.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "execution_component_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Component Manifest Id",
+          "type": "string"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "first_semantic_case_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "First Semantic Case Hash",
+          "type": "string"
+        },
+        "first_source_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "First Source Snapshot Id",
+          "type": "string"
+        },
+        "projection_read_count": {
+          "const": 2,
+          "default": 2,
+          "title": "Projection Read Count",
+          "type": "integer"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-source-determinism-authority-v1",
+          "default": "m6-replay-locked-source-determinism-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "second_semantic_case_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Second Semantic Case Hash",
+          "type": "string"
+        },
+        "second_source_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Second Source Snapshot Id",
+          "type": "string"
+        },
+        "source_determinism_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Determinism Authority Id",
+          "type": "string"
+        },
+        "source_determinism_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Determinism Document Sha256",
+          "type": "string"
+        },
+        "source_identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Identity Sha256",
+          "type": "string"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "execution_entry_id",
+        "sample_id",
+        "source_run_id",
+        "candidate_run_id",
+        "source_manifest_id",
+        "execution_component_manifest_id",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "source_identity_sha256",
+        "first_source_snapshot_id",
+        "second_source_snapshot_id",
+        "first_semantic_case_hash",
+        "second_semantic_case_hash",
+        "source_determinism_authority_id",
+        "source_determinism_document_sha256"
+      ],
+      "title": "M6ReplayLockedSourceDeterminismAuthority",
+      "type": "object"
+    },
+    "M6SemanticStageRoot": {
+      "additionalProperties": false,
+      "properties": {
+        "projection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Projection Sha256",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/M6RegressionStage"
+        }
+      },
+      "required": [
+        "stage",
+        "projection_sha256"
+      ],
+      "title": "M6SemanticStageRoot",
+      "type": "object"
+    },
+    "MediaAccess": {
+      "enum": [
+        "LOCAL_ONLY",
+        "CLOUD_ALLOWED"
+      ],
+      "title": "MediaAccess",
+      "type": "string"
+    },
+    "MediaAvailability": {
+      "enum": [
+        "AVAILABLE",
+        "PURGING",
+        "PURGED_BY_RETENTION"
+      ],
+      "title": "MediaAvailability",
+      "type": "string"
+    },
+    "ObjectiveClaim": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "DURATION_FRAMES",
+                  "PERSON_COUNT"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "FRAME_INTERVAL",
+                  "TRACK_PRESENCE_INTERVAL"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "ZONE_ID"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "minLength": 1,
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "RISK_LEVEL"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH"
+                ],
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "DETECTION_SCORE",
+                  "OBSERVABILITY"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "claim_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "evidence_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "kind": {
+          "$ref": "#/$defs/ObjectiveFactKind"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "value",
+        "evidence_ref",
+        "claim_id"
+      ],
+      "title": "ObjectiveClaim",
+      "type": "object"
+    },
+    "ObjectiveFact": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "DURATION_FRAMES",
+                  "PERSON_COUNT"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "FRAME_INTERVAL",
+                  "TRACK_PRESENCE_INTERVAL"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "ZONE_ID"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "minLength": 1,
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "RISK_LEVEL"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH"
+                ],
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "DETECTION_SCORE",
+                  "OBSERVABILITY"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "fact_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ObjectiveFactKind"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "fact_id",
+        "kind",
+        "value",
+        "source_ref",
+        "source_manifest_id"
+      ],
+      "title": "ObjectiveFact",
+      "type": "object"
+    },
+    "ObjectiveFactKind": {
+      "enum": [
+        "DURATION_FRAMES",
+        "PERSON_COUNT",
+        "ZONE_ID",
+        "RISK_LEVEL",
+        "FRAME_INTERVAL",
+        "TRACK_PRESENCE_INTERVAL",
+        "DETECTION_SCORE",
+        "OBSERVABILITY"
+      ],
+      "title": "ObjectiveFactKind",
+      "type": "string"
+    },
+    "ObservabilityComponents": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "frontality": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Frontality",
+          "type": "number"
+        },
+        "keypoint_visibility": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Visibility",
+          "type": "number"
+        },
+        "non_occlusion": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Non Occlusion",
+          "type": "number"
+        },
+        "person_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Person Confidence",
+          "type": "number"
+        },
+        "sharpness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sharpness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "person_confidence",
+        "keypoint_visibility",
+        "frontality",
+        "sharpness",
+        "exposure",
+        "non_occlusion"
+      ],
+      "title": "ObservabilityComponents",
+      "type": "object"
+    },
+    "ObservabilityScore": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "$ref": "#/$defs/ObservabilityComponents"
+        },
+        "source": {
+          "$ref": "#/$defs/ObservationSource"
+        },
+        "total": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Total",
+          "type": "number"
+        }
+      },
+      "required": [
+        "total",
+        "components",
+        "source"
+      ],
+      "title": "ObservabilityScore",
+      "type": "object"
+    },
+    "ObservationLabel": {
+      "additionalProperties": false,
+      "properties": {
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "wear_status": {
+          "$ref": "#/$defs/WearStatus"
+        }
+      },
+      "required": [
+        "crop_id",
+        "wear_status"
+      ],
+      "title": "ObservationLabel",
+      "type": "object"
+    },
+    "ObservationSource": {
+      "enum": [
+        "PIXEL_COMPUTED",
+        "PRECOMPUTED_FIXTURE"
+      ],
+      "title": "ObservationSource",
+      "type": "string"
+    },
+    "ObservationSufficiency": {
+      "additionalProperties": false,
+      "properties": {
+        "clear_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Clear Threshold",
+          "type": "number"
+        },
+        "observations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ObservationLabel"
+          },
+          "title": "Observations",
+          "type": "array"
+        },
+        "required_clear_count": {
+          "exclusiveMinimum": 0,
+          "title": "Required Clear Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "clear_threshold",
+        "required_clear_count"
+      ],
+      "title": "ObservationSufficiency",
+      "type": "object"
+    },
+    "ObservationSufficiencyInput": {
+      "additionalProperties": false,
+      "properties": {
+        "clear_crop_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Clear Crop Ids",
+          "type": "array"
+        },
+        "clear_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Clear Threshold",
+          "type": "number"
+        },
+        "consistency_status": {
+          "const": "NOT_EVALUATED",
+          "default": "NOT_EVALUATED",
+          "title": "Consistency Status",
+          "type": "string"
+        },
+        "required_clear_count": {
+          "exclusiveMinimum": 0,
+          "title": "Required Clear Count",
+          "type": "integer"
+        },
+        "selected_by_observability": {
+          "title": "Selected By Observability",
+          "type": "boolean"
+        },
+        "unclear_crop_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Unclear Crop Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "clear_threshold",
+        "required_clear_count",
+        "selected_by_observability"
+      ],
+      "title": "ObservationSufficiencyInput",
+      "type": "object"
+    },
+    "OtherCameraSameTimeParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "OTHER_CAMERA_SAME_TIME",
+          "title": "Action",
+          "type": "string"
+        },
+        "source_frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Source Frame Id",
+          "type": "string"
+        },
+        "target_camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Target Camera Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "source_frame_id",
+        "target_camera_id"
+      ],
+      "title": "OtherCameraSameTimeParameters",
+      "type": "object"
+    },
+    "ParsedScreeningOutput": {
+      "additionalProperties": false,
+      "description": "System envelope around one strictly validated model payload.",
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evidence_pack_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Pack Id",
+          "type": "string"
+        },
+        "evidence_pack_version": {
+          "exclusiveMinimum": 0,
+          "title": "Evidence Pack Version",
+          "type": "integer"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "model_payload_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Payload Sha256",
+          "type": "string"
+        },
+        "output_schema_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Output Schema Sha256",
+          "type": "string"
+        },
+        "parsed_output_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Parsed Output Id",
+          "type": "string"
+        },
+        "parsed_output_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Parsed Output Sha256",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/ScreeningModelPayload"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "response_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Response Content Sha256",
+          "type": "string"
+        },
+        "response_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Response Id",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "evidence_pack_id",
+        "evidence_pack_version",
+        "request_id",
+        "response_id",
+        "response_content_sha256",
+        "output_schema_sha256",
+        "payload",
+        "manifest_id",
+        "model_payload_sha256",
+        "parsed_output_sha256",
+        "parsed_output_id"
+      ],
+      "title": "ParsedScreeningOutput",
+      "type": "object"
+    },
+    "PpeType": {
+      "enum": [
+        "GOGGLES",
+        "GLOVES",
+        "LAB_COAT"
+      ],
+      "title": "PpeType",
+      "type": "string"
+    },
+    "PrecedentApplication": {
+      "additionalProperties": false,
+      "properties": {
+        "application_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Application Id",
+          "type": "string"
+        },
+        "distinguishing_reason": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Distinguishing Reason"
+        },
+        "fact_difference_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Fact Difference Refs",
+          "type": "array"
+        },
+        "mode": {
+          "$ref": "#/$defs/PrecedentApplicationMode"
+        },
+        "precedent_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "similarity_score": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Similarity Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "precedent_ref",
+        "mode",
+        "similarity_score",
+        "application_id"
+      ],
+      "title": "PrecedentApplication",
+      "type": "object"
+    },
+    "PrecedentApplicationMode": {
+      "enum": [
+        "FOLLOWED",
+        "DISTINGUISHED"
+      ],
+      "title": "PrecedentApplicationMode",
+      "type": "string"
+    },
+    "PrivacyPolicy": {
+      "enum": [
+        "EPHEMERAL_RAW",
+        "PPE_PRESERVING_REDACTION",
+        "FULL_REDACTION"
+      ],
+      "title": "PrivacyPolicy",
+      "type": "string"
+    },
+    "PrivacyReasonCode": {
+      "enum": [
+        "PPE_REGION_PRESERVED",
+        "KEYPOINTS_INSUFFICIENT_LOCAL_ONLY",
+        "PANORAMA_FULL_REDACTION",
+        "SUBJECT_FULL_REDACTION",
+        "POLICY_LOCAL_ONLY"
+      ],
+      "title": "PrivacyReasonCode",
+      "type": "string"
+    },
+    "PrivacyReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBoxXYXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "anchor_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnchorType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "association_method": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssociationMethod"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallback_used": {
+          "default": false,
+          "title": "Fallback Used",
+          "type": "boolean"
+        },
+        "fill_rgb": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            }
+          ],
+          "title": "Fill Rgb",
+          "type": "array"
+        },
+        "input_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "keypoints": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Keypoint"
+          },
+          "title": "Keypoints",
+          "type": "array"
+        },
+        "media_access": {
+          "$ref": "#/$defs/MediaAccess"
+        },
+        "policy": {
+          "$ref": "#/$defs/PrivacyPolicy"
+        },
+        "ppe_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PpeType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "preserved_regions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BBoxXYXY"
+          },
+          "title": "Preserved Regions",
+          "type": "array"
+        },
+        "reason_code": {
+          "$ref": "#/$defs/PrivacyReasonCode"
+        },
+        "transform_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Transform Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy",
+        "transform_version",
+        "media_access",
+        "reason_code",
+        "input_refs",
+        "fill_rgb"
+      ],
+      "title": "PrivacyReceipt",
+      "type": "object"
+    },
+    "ProceduralDefect": {
+      "additionalProperties": false,
+      "description": "One code-specific, non-sensitive parser or gate defect.",
+      "properties": {
+        "artifact_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "code": {
+          "$ref": "#/$defs/ProceduralDefectCode"
+        },
+        "defect_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Defect Id",
+          "type": "string"
+        },
+        "field": {
+          "$ref": "#/$defs/ProceduralField"
+        },
+        "origin": {
+          "$ref": "#/$defs/ProceduralDefectOrigin"
+        },
+        "reason_code": {
+          "$ref": "#/$defs/ProceduralReasonCode"
+        },
+        "related_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Related Refs",
+          "type": "array"
+        },
+        "value_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value Sha256"
+        }
+      },
+      "required": [
+        "code",
+        "origin",
+        "reason_code",
+        "artifact_ref",
+        "field",
+        "defect_id"
+      ],
+      "title": "ProceduralDefect",
+      "type": "object"
+    },
+    "ProceduralDefectCode": {
+      "enum": [
+        "MALFORMED_STRUCTURE",
+        "INVALID_ENUM",
+        "MISSING_REQUIRED_FIELD",
+        "FABRICATED_EVIDENCE_REFERENCE",
+        "INVALID_COORDINATES",
+        "FABRICATED_PRECEDENT_REFERENCE",
+        "PRECEDENT_DIRECTION_MISMATCH",
+        "EMPTY_DISTINGUISHING_REASON",
+        "ESTABLISHED_WITHOUT_EVIDENCE",
+        "UNANSWERED_DEFENSE_POINT",
+        "CONFIDENCE_ALERT_LEVEL_MISMATCH",
+        "OBJECTIVE_ASSERTION_CONTRADICTION",
+        "VIOLATION_TYPE_MISMATCH",
+        "ABSENCE_FROM_INSUFFICIENT_OBSERVATION"
+      ],
+      "title": "ProceduralDefectCode",
+      "type": "string"
+    },
+    "ProceduralDefectOrigin": {
+      "enum": [
+        "PARSER",
+        "PROCEDURAL_GATE"
+      ],
+      "title": "ProceduralDefectOrigin",
+      "type": "string"
+    },
+    "ProceduralField": {
+      "enum": [
+        "JSON_ROOT",
+        "ENUM_VALUE",
+        "REQUIRED_FIELD",
+        "EVIDENCE_REFERENCE",
+        "EVIDENCE_COORDINATES",
+        "PRECEDENT_REFERENCE",
+        "PRECEDENT_MODE",
+        "DISTINGUISHING_REASON",
+        "EVIDENCE_REFS",
+        "DEFENSE_ARGUMENTS",
+        "RECOMMENDED_ALERT_LEVEL",
+        "OBJECTIVE_CLAIMS",
+        "VIOLATION_TYPE",
+        "OBSERVATION_SUFFICIENCY"
+      ],
+      "title": "ProceduralField",
+      "type": "string"
+    },
+    "ProceduralReasonCode": {
+      "enum": [
+        "MALFORMED_JSON",
+        "ROOT_NOT_OBJECT",
+        "RESPONSE_LIMIT_EXCEEDED",
+        "UNKNOWN_ENUM_VALUE",
+        "REQUIRED_FIELD_ABSENT",
+        "REFERENCE_NOT_ALLOWED",
+        "COORDINATE_OUTSIDE_EVIDENCE",
+        "PRECEDENT_NOT_VISIBLE",
+        "PRECEDENT_DIRECTION_CONFLICT",
+        "DISTINGUISHING_REASON_ABSENT",
+        "ESTABLISHED_REQUIRES_SUPPORT",
+        "DEFENSE_RESPONSE_CARDINALITY",
+        "ALERT_POLICY_CONFLICT",
+        "OBJECTIVE_VALUE_CONFLICT",
+        "CASE_VIOLATION_CONFLICT",
+        "ABSENCE_OBSERVATION_INSUFFICIENT"
+      ],
+      "title": "ProceduralReasonCode",
+      "type": "string"
+    },
+    "ProceduralReview": {
+      "additionalProperties": false,
+      "description": "Independent deterministic review whose passed state cannot be forged.",
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "defects": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProceduralDefect"
+          },
+          "title": "Defects",
+          "type": "array"
+        },
+        "evidence_pack_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Pack Id",
+          "type": "string"
+        },
+        "evidence_pack_version": {
+          "exclusiveMinimum": 0,
+          "title": "Evidence Pack Version",
+          "type": "integer"
+        },
+        "gate_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Gate Version",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "passed": {
+          "readOnly": true,
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "review_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Review Id",
+          "type": "string"
+        },
+        "reviewed_verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Reviewed Verdict Id",
+          "type": "string"
+        },
+        "reviewed_verdict_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Reviewed Verdict Sha256",
+          "type": "string"
+        },
+        "reviewed_verdict_version": {
+          "exclusiveMinimum": 0,
+          "title": "Reviewed Verdict Version",
+          "type": "integer"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "version": {
+          "exclusiveMinimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "version",
+        "evidence_pack_id",
+        "evidence_pack_version",
+        "reviewed_verdict_id",
+        "reviewed_verdict_version",
+        "reviewed_verdict_sha256",
+        "gate_version",
+        "manifest_id",
+        "review_id",
+        "passed"
+      ],
+      "title": "ProceduralReview",
+      "type": "object"
+    },
+    "RecropParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "RECROP",
+          "title": "Action",
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "frame_id",
+        "bbox"
+      ],
+      "title": "RecropParameters",
+      "type": "object"
+    },
+    "RedetectHighResolutionParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "REDETECT_HIGH_RES",
+          "title": "Action",
+          "type": "string"
+        },
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "prompts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Prompts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "action",
+        "crop_id",
+        "prompts"
+      ],
+      "title": "RedetectHighResolutionParameters",
+      "type": "object"
+    },
+    "RequestMoreFramesParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "REQUEST_MORE_FRAMES",
+          "title": "Action",
+          "type": "string"
+        },
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "step": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Step",
+          "type": "integer"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "camera_id",
+        "stream_id",
+        "start_frame",
+        "end_frame_exclusive"
+      ],
+      "title": "RequestMoreFramesParameters",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "SafetySignalType": {
+      "enum": [
+        "OPEN_FLAME",
+        "SMOKE",
+        "HEAT_ACTIVITY",
+        "OCCUPANCY",
+        "MANUAL_EMERGENCY"
+      ],
+      "title": "SafetySignalType",
+      "type": "string"
+    },
+    "ScreeningConflictCode": {
+      "enum": [
+        "STRONG_SIGNAL_CONFLICT",
+        "MODEL_EVIDENCE_CLASS_MISMATCH"
+      ],
+      "title": "ScreeningConflictCode",
+      "type": "string"
+    },
+    "ScreeningDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "ESCALATE"
+      ],
+      "title": "ScreeningDecision",
+      "type": "string"
+    },
+    "ScreeningModelPayload": {
+      "additionalProperties": false,
+      "description": "Exact provider-authored JSON object, without injected system authority.",
+      "properties": {
+        "evidence_citations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceCitation"
+          },
+          "title": "Evidence Citations",
+          "type": "array"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "frame_observations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FrameObservation"
+          },
+          "title": "Frame Observations",
+          "type": "array"
+        },
+        "objective_claims": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ObjectiveClaim"
+          },
+          "title": "Objective Claims",
+          "type": "array"
+        },
+        "prosecution_summary": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Prosecution Summary",
+          "type": "string"
+        },
+        "rationale_summary": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Rationale Summary",
+          "type": "string"
+        },
+        "violation_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Violation Probability",
+          "type": "number"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        }
+      },
+      "required": [
+        "violation_type",
+        "evidence_class",
+        "violation_probability",
+        "prosecution_summary",
+        "rationale_summary"
+      ],
+      "title": "ScreeningModelPayload",
+      "type": "object"
+    },
+    "ScreeningResult": {
+      "additionalProperties": false,
+      "description": "Deterministic route over a parsed model output and pack-authoritative clarity.",
+      "properties": {
+        "alleged_interval_crop_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Alleged Interval Crop Ids",
+          "type": "array"
+        },
+        "authoritative_clear_crop_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Authoritative Clear Crop Ids",
+          "type": "array"
+        },
+        "authoritative_evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "authoritative_l1_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Authoritative L1 Score",
+          "type": "number"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "conflict_codes": {
+          "items": {
+            "$ref": "#/$defs/ScreeningConflictCode"
+          },
+          "readOnly": true,
+          "title": "Conflict Codes",
+          "type": "array"
+        },
+        "conflict_policy_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Conflict Policy Version",
+          "type": "string"
+        },
+        "correction_frame_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+            "type": "string"
+          },
+          "title": "Correction Frame Ids",
+          "type": "array"
+        },
+        "decision": {
+          "$ref": "#/$defs/ScreeningDecision",
+          "readOnly": true
+        },
+        "evidence_pack_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Pack Id",
+          "type": "string"
+        },
+        "evidence_pack_version": {
+          "exclusiveMinimum": 0,
+          "title": "Evidence Pack Version",
+          "type": "integer"
+        },
+        "high_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "High Probability",
+          "type": "number"
+        },
+        "low_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Low Probability",
+          "type": "number"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "parsed_output": {
+          "$ref": "#/$defs/ParsedScreeningOutput"
+        },
+        "required_clear_count": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Required Clear Count"
+        },
+        "router_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Router Version",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "screening_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Screening Id",
+          "type": "string"
+        },
+        "strong_signal_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Strong Signal Threshold",
+          "type": "number"
+        },
+        "version": {
+          "exclusiveMinimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "version",
+        "evidence_pack_id",
+        "evidence_pack_version",
+        "parsed_output",
+        "low_probability",
+        "high_probability",
+        "authoritative_evidence_class",
+        "authoritative_l1_score",
+        "strong_signal_threshold",
+        "conflict_policy_version",
+        "router_version",
+        "manifest_id",
+        "conflict_codes",
+        "decision",
+        "screening_id"
+      ],
+      "title": "ScreeningResult",
+      "type": "object"
+    },
+    "TimelineEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "details": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Details",
+          "type": "object"
+        },
+        "object_ref": {
+          "minLength": 1,
+          "title": "Object Ref",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "stage": {
+          "minLength": 1,
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sequence",
+        "action",
+        "stage",
+        "object_ref"
+      ],
+      "title": "TimelineEntry",
+      "type": "object"
+    },
+    "ToolResult": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/AcquisitionAction"
+        },
+        "execution_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Manifest Id",
+          "type": "string"
+        },
+        "input_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "output_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "title": "Output Refs",
+          "type": "array"
+        },
+        "tool_result_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Tool Result Id",
+          "type": "string"
+        },
+        "validated_parameters": {
+          "discriminator": {
+            "mapping": {
+              "OTHER_CAMERA_SAME_TIME": "#/$defs/OtherCameraSameTimeParameters",
+              "RECROP": "#/$defs/RecropParameters",
+              "REDETECT_HIGH_RES": "#/$defs/RedetectHighResolutionParameters",
+              "REQUEST_MORE_FRAMES": "#/$defs/RequestMoreFramesParameters",
+              "TRACK_CONFIDENCE_CURVE": "#/$defs/TrackConfidenceCurveParameters"
+            },
+            "propertyName": "action"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/RequestMoreFramesParameters"
+            },
+            {
+              "$ref": "#/$defs/RecropParameters"
+            },
+            {
+              "$ref": "#/$defs/OtherCameraSameTimeParameters"
+            },
+            {
+              "$ref": "#/$defs/TrackConfidenceCurveParameters"
+            },
+            {
+              "$ref": "#/$defs/RedetectHighResolutionParameters"
+            }
+          ],
+          "title": "Validated Parameters"
+        }
+      },
+      "required": [
+        "tool_result_id",
+        "action",
+        "input_refs",
+        "output_refs",
+        "validated_parameters",
+        "execution_manifest_id"
+      ],
+      "title": "ToolResult",
+      "type": "object"
+    },
+    "TrackConfidenceCurveParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "TRACK_CONFIDENCE_CURVE",
+          "title": "Action",
+          "type": "string"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "track_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Track Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "track_ref",
+        "start_frame",
+        "end_frame_exclusive"
+      ],
+      "title": "TrackConfidenceCurveParameters",
+      "type": "object"
+    },
+    "TrackSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "observed_frame_count": {
+          "minimum": 0,
+          "title": "Observed Frame Count",
+          "type": "integer"
+        },
+        "primary_track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Track Ref"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_frame",
+        "end_frame_exclusive",
+        "observed_frame_count"
+      ],
+      "title": "TrackSummary",
+      "type": "object"
+    },
+    "UsageSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "estimated_cost": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Estimated Cost",
+          "type": "number"
+        },
+        "input_images": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Input Images",
+          "type": "integer"
+        },
+        "input_pixels": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Input Pixels",
+          "type": "integer"
+        },
+        "input_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        },
+        "provider_latency_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Provider Latency Ms",
+          "type": "integer"
+        },
+        "retries": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Retries",
+          "type": "integer"
+        }
+      },
+      "title": "UsageSummary",
+      "type": "object"
+    },
+    "Verdict": {
+      "additionalProperties": false,
+      "properties": {
+        "acquisition_log": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AcquisitionLogEntry"
+          },
+          "title": "Acquisition Log",
+          "type": "array"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "defense_arguments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Argument"
+          },
+          "title": "Defense Arguments",
+          "type": "array"
+        },
+        "evidence_citations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceCitation"
+          },
+          "title": "Evidence Citations",
+          "type": "array"
+        },
+        "evidence_pack_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Pack Id",
+          "type": "string"
+        },
+        "evidence_pack_version": {
+          "exclusiveMinimum": 0,
+          "title": "Evidence Pack Version",
+          "type": "integer"
+        },
+        "judge_responses": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JudgeResponse"
+          },
+          "title": "Judge Responses",
+          "type": "array"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "model_response_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 1,
+          "title": "Model Response Refs",
+          "type": "array"
+        },
+        "objective_claims": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ObjectiveClaim"
+          },
+          "title": "Objective Claims",
+          "type": "array"
+        },
+        "observation_sufficiency": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObservationSufficiency"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "precedent_applications": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PrecedentApplication"
+          },
+          "title": "Precedent Applications",
+          "type": "array"
+        },
+        "prosecution_arguments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Argument"
+          },
+          "title": "Prosecution Arguments",
+          "type": "array"
+        },
+        "rationale_summary": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Rationale Summary",
+          "type": "string"
+        },
+        "recommended_alert_level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "screening_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Screening Id",
+          "type": "string"
+        },
+        "verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Verdict Id",
+          "type": "string"
+        },
+        "verdict_input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Verdict Input Sha256",
+          "type": "string"
+        },
+        "verdict_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Verdict Sha256",
+          "type": "string"
+        },
+        "version": {
+          "exclusiveMinimum": 0,
+          "title": "Version",
+          "type": "integer"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "version",
+        "screening_id",
+        "violation_type",
+        "evidence_pack_id",
+        "evidence_pack_version",
+        "decision",
+        "confidence",
+        "recommended_alert_level",
+        "rationale_summary",
+        "model_response_refs",
+        "manifest_id",
+        "verdict_input_sha256",
+        "verdict_id",
+        "verdict_sha256"
+      ],
+      "title": "Verdict",
+      "type": "object"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    },
+    "WearStatus": {
+      "enum": [
+        "WORN",
+        "NOT_WORN",
+        "UNCLEAR"
+      ],
+      "title": "WearStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-closed-policy-sample-execution-record-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Trusted join of source policy truth and one independently persisted close.",
+  "properties": {
+    "candidate_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Manifest Id",
+      "type": "string"
+    },
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "candidate_semantic_case_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Candidate Semantic Case Hash",
+      "type": "string"
+    },
+    "candidate_snapshot": {
+      "$ref": "#/$defs/M6CaseReplaySnapshot"
+    },
+    "candidate_snapshot_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Candidate Snapshot Content Sha256",
+      "type": "string"
+    },
+    "candidate_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Candidate Snapshot Id",
+      "type": "string"
+    },
+    "candidate_snapshot_size_bytes": {
+      "readOnly": true,
+      "title": "Candidate Snapshot Size Bytes",
+      "type": "integer"
+    },
+    "closed_candidate_binding": {
+      "$ref": "#/$defs/M6ReplayLockedClosedCandidateBindingAuthority"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "execution_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Dataset Snapshot Id",
+      "type": "string"
+    },
+    "execution_entry": {
+      "$ref": "#/$defs/M6RegressionExecutionEntry"
+    },
+    "execution_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Entry Id",
+      "type": "string"
+    },
+    "execution_scope_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Scope Authority Id",
+      "type": "string"
+    },
+    "ledger_sequence": {
+      "minimum": 0,
+      "title": "Ledger Sequence",
+      "type": "integer"
+    },
+    "outcome": {
+      "const": "CASE_REPLAYED",
+      "default": "CASE_REPLAYED",
+      "title": "Outcome",
+      "type": "string"
+    },
+    "pending_commitment": {
+      "$ref": "#/$defs/M6ReplayLockedClosedPolicyPendingSampleCommitmentAuthorityV2"
+    },
+    "pending_commitment_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pending Commitment Authority Id",
+      "type": "string"
+    },
+    "policy_causal_cut": {
+      "$ref": "#/$defs/M6ReplayLockedAlertPolicyCausalCutAuthority"
+    },
+    "previous_ledger_entry_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Ledger Entry Hash",
+      "type": "string"
+    },
+    "replay_input_closure": {
+      "$ref": "#/$defs/M6ReplayInputClosureAuthority"
+    },
+    "route": {
+      "const": "ALERT_POLICY_CLOSED",
+      "default": "ALERT_POLICY_CLOSED",
+      "title": "Route",
+      "type": "string"
+    },
+    "sample_execution_record_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Sample Execution Record Id",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-closed-policy-sample-execution-record-v2",
+      "default": "m6-replay-locked-closed-policy-sample-execution-record-v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_determinism": {
+      "$ref": "#/$defs/M6ReplayLockedSourceDeterminismAuthority"
+    },
+    "source_semantic_case_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Semantic Case Hash",
+      "type": "string"
+    },
+    "source_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Snapshot Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_scope_authority_id",
+    "candidate_run_id",
+    "command_id",
+    "execution_dataset_snapshot_id",
+    "candidate_manifest_id",
+    "execution_entry",
+    "pending_commitment",
+    "replay_input_closure",
+    "source_determinism",
+    "policy_causal_cut",
+    "closed_candidate_binding",
+    "candidate_snapshot",
+    "ledger_sequence",
+    "previous_ledger_entry_hash",
+    "sample_id",
+    "execution_entry_id",
+    "pending_commitment_authority_id",
+    "source_snapshot_id",
+    "source_semantic_case_hash",
+    "candidate_snapshot_id",
+    "candidate_semantic_case_hash",
+    "candidate_snapshot_content_sha256",
+    "candidate_snapshot_size_bytes",
+    "sample_execution_record_id"
+  ],
+  "title": "M6ReplayLockedClosedPolicySampleExecutionRecordV2",
+  "type": "object"
+}

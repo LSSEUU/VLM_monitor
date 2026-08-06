@@ -1,0 +1,66 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/projection-current-pointer.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Atomically replaced pointer that makes one complete generation current.",
+  "properties": {
+    "audit_head_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Head Hash",
+      "type": "string"
+    },
+    "audit_head_sequence": {
+      "minimum": -1,
+      "title": "Audit Head Sequence",
+      "type": "integer"
+    },
+    "generation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "manifest_relative_path": {
+      "title": "Manifest Relative Path",
+      "type": "string"
+    },
+    "manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "manifest_size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Manifest Size Bytes",
+      "type": "integer"
+    },
+    "pointer_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pointer Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "projection-current-v1",
+      "default": "projection-current-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "audit_head_sequence",
+    "audit_head_hash",
+    "generation_id",
+    "manifest_relative_path",
+    "manifest_sha256",
+    "manifest_size_bytes",
+    "pointer_id"
+  ],
+  "title": "ProjectionCurrentPointer",
+  "type": "object"
+}

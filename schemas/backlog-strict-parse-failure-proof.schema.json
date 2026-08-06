@@ -1,0 +1,158 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "BacklogParseFailureEvidence": {
+      "additionalProperties": false,
+      "description": "Typed references for one persisted strict-parser failure.",
+      "properties": {
+        "attempt_index": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Attempt Index",
+          "type": "integer"
+        },
+        "parse_receipt_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "request_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "response_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "role": {
+          "enum": [
+            "SCREENING",
+            "STRUCTURE_REPAIR"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attempt_index",
+        "role",
+        "request_ref",
+        "response_ref",
+        "parse_receipt_ref"
+      ],
+      "title": "BacklogParseFailureEvidence",
+      "type": "object"
+    },
+    "BacklogRetryContext": {
+      "additionalProperties": false,
+      "description": "Request identity input that changes only after a proven parse failure.\n\nThe lease is deliberately absent.  A provider outage, timeout, or unknown\nworker crash may result in another lease, but must keep the same model\nrequest identity so durable claim/journal recovery can prevent a duplicate\nexternal call.",
+      "properties": {
+        "backlog_item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Backlog Item Id",
+          "type": "string"
+        },
+        "context_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Context Id",
+          "type": "string"
+        },
+        "retry_generation": {
+          "minimum": 0,
+          "title": "Retry Generation",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "backlog_item_id",
+        "retry_generation",
+        "context_id"
+      ],
+      "title": "BacklogRetryContext",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/backlog-strict-parse-failure-proof.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Two persisted, billable strict failures authorizing one new generation.\n\nIDs are public references only.  The repository remains responsible for\nloading both receipts, proving their request/response/generation bindings,\nrevalidating raw responses, and atomically accounting their usage.",
+  "properties": {
+    "attempts": {
+      "items": {
+        "$ref": "#/$defs/BacklogParseFailureEvidence"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Attempts",
+      "type": "array"
+    },
+    "proof_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Proof Id",
+      "type": "string"
+    },
+    "retry_context": {
+      "$ref": "#/$defs/BacklogRetryContext"
+    }
+  },
+  "required": [
+    "retry_context",
+    "attempts",
+    "proof_id"
+  ],
+  "title": "BacklogStrictParseFailureProof",
+  "type": "object"
+}

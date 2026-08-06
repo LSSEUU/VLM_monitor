@@ -1,0 +1,305 @@
+{
+  "$defs": {
+    "M6RegressionSourceInventoryItem": {
+      "additionalProperties": false,
+      "description": "One exact historical Case and its already-committed replay source seal.",
+      "properties": {
+        "input_authority_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Content Sha256",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "input_authority_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Input Authority Size Bytes",
+          "type": "integer"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Content Sha256",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "replay_input_closure_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Replay Input Closure Size Bytes",
+          "type": "integer"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "sealed_audit_head_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sealed Audit Head Hash",
+          "type": "string"
+        },
+        "sealed_audit_head_sequence": {
+          "minimum": -1,
+          "title": "Sealed Audit Head Sequence",
+          "type": "integer"
+        },
+        "sealed_source_m5_authority_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sealed Source M5 Authority Root Sha256",
+          "type": "string"
+        },
+        "sealed_source_validation_report_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sealed Source Validation Report Document Sha256",
+          "type": "string"
+        },
+        "sealed_source_validation_report_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sealed Source Validation Report Id",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Document Sha256",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Revision",
+          "type": "integer"
+        },
+        "source_item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Item Id",
+          "type": "string"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "source_seal_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Seal Content Sha256",
+          "type": "string"
+        },
+        "source_seal_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Seal Id",
+          "type": "string"
+        },
+        "source_seal_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Source Seal Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_case_id",
+        "source_case_revision",
+        "source_case_document_sha256",
+        "source_manifest_id",
+        "sealed_source_validation_report_id",
+        "sealed_source_validation_report_document_sha256",
+        "sealed_source_m5_authority_root_sha256",
+        "sealed_audit_head_sequence",
+        "sealed_audit_head_hash",
+        "source_seal_id",
+        "source_seal_content_sha256",
+        "source_seal_size_bytes",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "input_authority_content_sha256",
+        "input_authority_size_bytes",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "replay_input_closure_content_sha256",
+        "replay_input_closure_size_bytes",
+        "source_item_id"
+      ],
+      "title": "M6RegressionSourceInventoryItem",
+      "type": "object"
+    },
+    "M6RegressionSourceRunCut": {
+      "additionalProperties": false,
+      "description": "One validated run scope from the immutable evaluator snapshot.",
+      "properties": {
+        "audit_head_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Audit Head Hash",
+          "type": "string"
+        },
+        "audit_head_sequence": {
+          "minimum": -1,
+          "title": "Audit Head Sequence",
+          "type": "integer"
+        },
+        "baseline_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Manifest Id",
+          "type": "string"
+        },
+        "m5_authority_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "M5 Authority Root Sha256",
+          "type": "string"
+        },
+        "m5_validation_report_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "M5 Validation Report Content Sha256",
+          "type": "string"
+        },
+        "m5_validation_report_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "M5 Validation Report Id",
+          "type": "string"
+        },
+        "run_cut_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Run Cut Id",
+          "type": "string"
+        },
+        "source_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Config Sha256",
+          "type": "string"
+        },
+        "source_item_count": {
+          "exclusiveMinimum": 0,
+          "maximum": 100000,
+          "title": "Source Item Count",
+          "type": "integer"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "source_scope_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Scope Root Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_run_id",
+        "baseline_manifest_id",
+        "source_config_sha256",
+        "audit_head_sequence",
+        "audit_head_hash",
+        "m5_validation_report_id",
+        "m5_validation_report_content_sha256",
+        "m5_authority_root_sha256",
+        "source_item_count",
+        "source_scope_root_sha256",
+        "run_cut_id"
+      ],
+      "title": "M6RegressionSourceRunCut",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-regression-source-inventory-cut.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Complete bounded source universe before any candidate execution exists.",
+  "properties": {
+    "baseline_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Baseline Manifest Id",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/M6RegressionSourceInventoryItem"
+      },
+      "maxItems": 100000,
+      "minItems": 1,
+      "title": "Items",
+      "type": "array"
+    },
+    "run_cuts": {
+      "items": {
+        "$ref": "#/$defs/M6RegressionSourceRunCut"
+      },
+      "maxItems": 100000,
+      "minItems": 1,
+      "title": "Run Cuts",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m6-regression-source-inventory-cut-v1",
+      "default": "m6-regression-source-inventory-cut-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_inventory_cut_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Inventory Cut Authority Id",
+      "type": "string"
+    },
+    "source_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Inventory Root Sha256",
+      "type": "string"
+    },
+    "source_item_count": {
+      "readOnly": true,
+      "title": "Source Item Count",
+      "type": "integer"
+    },
+    "source_run_ids": {
+      "items": {
+        "type": "string"
+      },
+      "readOnly": true,
+      "title": "Source Run Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "baseline_manifest_id",
+    "run_cuts",
+    "items",
+    "source_run_ids",
+    "source_item_count",
+    "source_inventory_root_sha256",
+    "source_inventory_cut_authority_id"
+  ],
+  "title": "M6RegressionSourceInventoryCutAuthority",
+  "type": "object"
+}

@@ -1,0 +1,71 @@
+{
+  "$defs": {
+    "M6OfflineDemoScenarioName": {
+      "enum": [
+        "presence_true_positive",
+        "presence_false_positive",
+        "absence_true_violation",
+        "absence_detector_miss_but_worn",
+        "absence_all_unclear",
+        "absence_don_after_threshold",
+        "late_result_inside_interval",
+        "fabricated_crop_reference",
+        "objective_person_count_conflict",
+        "unanswered_defense",
+        "precedent_direction_mismatch",
+        "provider_outage",
+        "hard_signal_uncertified",
+        "appeal_overturn",
+        "replay_locked_identical",
+        "upgrade_flip_gate"
+      ],
+      "title": "M6OfflineDemoScenarioName",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-offline-demo-scenario-artifact-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Artifact Content Sha256",
+      "type": "string"
+    },
+    "artifact_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Artifact Receipt Id",
+      "type": "string"
+    },
+    "artifact_relative_path": {
+      "readOnly": true,
+      "title": "Artifact Relative Path",
+      "type": "string"
+    },
+    "artifact_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 16777216,
+      "title": "Artifact Size Bytes",
+      "type": "integer"
+    },
+    "scenario_name": {
+      "$ref": "#/$defs/M6OfflineDemoScenarioName"
+    },
+    "schema_version": {
+      "const": "m6-offline-demo-scenario-artifact-receipt-v1",
+      "default": "m6-offline-demo-scenario-artifact-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scenario_name",
+    "artifact_content_sha256",
+    "artifact_size_bytes",
+    "artifact_relative_path",
+    "artifact_receipt_id"
+  ],
+  "title": "M6OfflineDemoScenarioArtifactReceiptV1",
+  "type": "object"
+}

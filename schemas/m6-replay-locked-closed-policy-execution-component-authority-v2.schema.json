@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "M6ReplayLockedExecutionRoute": {
+      "enum": [
+        "M3_FAST_TERMINAL_POST_PARSE",
+        "M4_HEARING_GATE_TERMINAL_POST_PARSE"
+      ],
+      "title": "M6ReplayLockedExecutionRoute",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-closed-policy-execution-component-authority-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Offline component that adds deterministic alert-policy closure to V1.",
+  "properties": {
+    "alert_channel_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Alert Channel Ports Exposed",
+      "type": "boolean"
+    },
+    "cache_write_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Cache Write Ports Exposed",
+      "type": "boolean"
+    },
+    "code_commit": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Code Commit",
+      "type": "string"
+    },
+    "component": {
+      "const": "labcourt-m6-replay-locked-closed-policy-executor",
+      "default": "labcourt-m6-replay-locked-closed-policy-executor",
+      "title": "Component",
+      "type": "string"
+    },
+    "component_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Component Authority Id",
+      "type": "string"
+    },
+    "cooldown_write_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Cooldown Write Ports Exposed",
+      "type": "boolean"
+    },
+    "evaluator_fields_accessible": {
+      "const": false,
+      "default": false,
+      "title": "Evaluator Fields Accessible",
+      "type": "boolean"
+    },
+    "execution_mode": {
+      "const": "OFFLINE_LOCKED",
+      "default": "OFFLINE_LOCKED",
+      "title": "Execution Mode",
+      "type": "string"
+    },
+    "gpu_required": {
+      "const": false,
+      "default": false,
+      "title": "Gpu Required",
+      "type": "boolean"
+    },
+    "input_contract": {
+      "const": "SEALED_SAVED_AUTHORITIES_WITH_POLICY_CAUSAL_HEAD_BINDING",
+      "default": "SEALED_SAVED_AUTHORITIES_WITH_POLICY_CAUSAL_HEAD_BINDING",
+      "title": "Input Contract",
+      "type": "string"
+    },
+    "live_tail_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Live Tail Ports Exposed",
+      "type": "boolean"
+    },
+    "network_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Network Allowed",
+      "type": "boolean"
+    },
+    "outbox_write_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Outbox Write Ports Exposed",
+      "type": "boolean"
+    },
+    "output_contract": {
+      "const": "APPEND_ONLY_CLOSED_LOCKED_INVENTORY",
+      "default": "APPEND_ONLY_CLOSED_LOCKED_INVENTORY",
+      "title": "Output Contract",
+      "type": "string"
+    },
+    "package": {
+      "const": "labcourt",
+      "default": "labcourt",
+      "title": "Package",
+      "type": "string"
+    },
+    "pre_policy_component_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Pre Policy Component Authority Id",
+      "type": "string"
+    },
+    "provider_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Provider Ports Exposed",
+      "type": "boolean"
+    },
+    "raw_model_response_accessible": {
+      "const": false,
+      "default": false,
+      "title": "Raw Model Response Accessible",
+      "type": "boolean"
+    },
+    "recovery_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Recovery Ports Exposed",
+      "type": "boolean"
+    },
+    "route": {
+      "const": "ALERT_POLICY_CLOSED",
+      "default": "ALERT_POLICY_CLOSED",
+      "title": "Route",
+      "type": "string"
+    },
+    "safety_signal_accessible": {
+      "const": false,
+      "default": false,
+      "title": "Safety Signal Accessible",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-closed-policy-execution-component-authority-v2",
+      "default": "m6-replay-locked-closed-policy-execution-component-authority-v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "supported_pre_policy_routes": {
+      "items": {
+        "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+      },
+      "title": "Supported Pre Policy Routes",
+      "type": "array"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "code_commit",
+    "pre_policy_component_authority_id",
+    "supported_pre_policy_routes",
+    "component_authority_id"
+  ],
+  "title": "M6ReplayLockedClosedPolicyExecutionComponentAuthorityV2",
+  "type": "object"
+}

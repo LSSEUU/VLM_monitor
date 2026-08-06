@@ -1,0 +1,1470 @@
+{
+  "$defs": {
+    "AbsenceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmation_policy": {
+          "$ref": "#/$defs/ConfirmationPolicy"
+        },
+        "context_lookahead_seconds": {
+          "minimum": 0,
+          "title": "Context Lookahead Seconds",
+          "type": "number"
+        },
+        "dwell_seconds_by_risk": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/RiskLevel"
+          },
+          "title": "Dwell Seconds By Risk",
+          "type": "object"
+        },
+        "minimum_consistent_clear_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Minimum Consistent Clear Frames",
+          "type": "integer"
+        },
+        "source_compat_enabled_for_offline_experiments": {
+          "default": false,
+          "title": "Source Compat Enabled For Offline Experiments",
+          "type": "boolean"
+        },
+        "temporal_crop_count": {
+          "exclusiveMinimum": 0,
+          "title": "Temporal Crop Count",
+          "type": "integer"
+        },
+        "track_grace_seconds": {
+          "minimum": 0,
+          "title": "Track Grace Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dwell_seconds_by_risk",
+        "confirmation_policy",
+        "context_lookahead_seconds",
+        "track_grace_seconds",
+        "temporal_crop_count",
+        "minimum_consistent_clear_frames"
+      ],
+      "title": "AbsenceConfig",
+      "type": "object"
+    },
+    "AlertConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmed_min_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confirmed Min Confidence",
+          "type": "number"
+        },
+        "cooldown_seconds": {
+          "minimum": 0,
+          "title": "Cooldown Seconds",
+          "type": "number"
+        },
+        "insufficient_evidence_max_level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "repeat_window_days": {
+          "minimum": 0,
+          "title": "Repeat Window Days",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cooldown_seconds",
+        "repeat_window_days",
+        "confirmed_min_confidence",
+        "insufficient_evidence_max_level"
+      ],
+      "title": "AlertConfig",
+      "type": "object"
+    },
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AssociationConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "iou_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Iou Threshold",
+          "type": "number"
+        },
+        "keypoint_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "iou_threshold",
+        "keypoint_threshold"
+      ],
+      "title": "AssociationConfig",
+      "type": "object"
+    },
+    "ConfirmationPolicy": {
+      "enum": [
+        "STRICT_CAUSAL",
+        "SOURCE_COMPAT",
+        "NONE"
+      ],
+      "title": "ConfirmationPolicy",
+      "type": "string"
+    },
+    "DetectorConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "high_confidence_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "High Confidence Threshold",
+          "type": "number"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "prompts": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Prompts",
+          "type": "object"
+        },
+        "score_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "model_id",
+        "score_threshold",
+        "high_confidence_threshold",
+        "prompts"
+      ],
+      "title": "DetectorConfig",
+      "type": "object"
+    },
+    "DirectSafetySourceClass": {
+      "enum": [
+        "PHYSICAL_SENSOR",
+        "VALIDATED_DETERMINISTIC",
+        "MANUAL"
+      ],
+      "title": "DirectSafetySourceClass",
+      "type": "string"
+    },
+    "EvidenceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "encoding_version": {
+          "minLength": 1,
+          "title": "Encoding Version",
+          "type": "string"
+        },
+        "panorama_long_edge": {
+          "exclusiveMinimum": 0,
+          "title": "Panorama Long Edge",
+          "type": "integer"
+        },
+        "persist_raw_full_frames": {
+          "default": false,
+          "title": "Persist Raw Full Frames",
+          "type": "boolean"
+        },
+        "post_seconds": {
+          "minimum": 0,
+          "title": "Post Seconds",
+          "type": "number"
+        },
+        "pre_seconds": {
+          "minimum": 0,
+          "title": "Pre Seconds",
+          "type": "number"
+        },
+        "privacy_policy": {
+          "$ref": "#/$defs/PrivacyPolicy"
+        },
+        "privacy_transform_version": {
+          "minLength": 1,
+          "title": "Privacy Transform Version",
+          "type": "string"
+        },
+        "subject_expand_ratio": {
+          "minimum": 0,
+          "title": "Subject Expand Ratio",
+          "type": "number"
+        }
+      },
+      "required": [
+        "pre_seconds",
+        "post_seconds",
+        "panorama_long_edge",
+        "subject_expand_ratio",
+        "privacy_policy",
+        "privacy_transform_version",
+        "encoding_version"
+      ],
+      "title": "EvidenceConfig",
+      "type": "object"
+    },
+    "ExecutionLocation": {
+      "enum": [
+        "LOCAL",
+        "EXTERNAL"
+      ],
+      "title": "ExecutionLocation",
+      "type": "string"
+    },
+    "HearingConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "defender_profile": {
+          "minLength": 1,
+          "title": "Defender Profile",
+          "type": "string"
+        },
+        "judge_profile": {
+          "minLength": 1,
+          "title": "Judge Profile",
+          "type": "string"
+        },
+        "max_acquisition_rounds": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Max Acquisition Rounds",
+          "type": "integer"
+        },
+        "max_rework_rounds": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Max Rework Rounds",
+          "type": "integer"
+        },
+        "max_total_images": {
+          "exclusiveMinimum": 0,
+          "title": "Max Total Images",
+          "type": "integer"
+        },
+        "max_total_output_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Max Total Output Tokens",
+          "type": "integer"
+        },
+        "precedent_top_k": {
+          "exclusiveMinimum": 0,
+          "title": "Precedent Top K",
+          "type": "integer"
+        },
+        "prosecutor_profile": {
+          "minLength": 1,
+          "title": "Prosecutor Profile",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prosecutor_profile",
+        "defender_profile",
+        "judge_profile",
+        "precedent_top_k",
+        "max_acquisition_rounds",
+        "max_rework_rounds",
+        "max_total_images",
+        "max_total_output_tokens"
+      ],
+      "title": "HearingConfig",
+      "type": "object"
+    },
+    "L0Config": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "persist_events": {
+          "const": false,
+          "default": false,
+          "title": "Persist Events",
+          "type": "boolean"
+        },
+        "reminder_cooldown_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Reminder Cooldown Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "reminder_cooldown_seconds"
+      ],
+      "title": "L0Config",
+      "type": "object"
+    },
+    "NumericToleranceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "detection_score": {
+          "default": 0.01,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Detection Score",
+          "type": "number"
+        },
+        "duration_frames": {
+          "minimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "frame_interval_frames": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Frame Interval Frames",
+          "type": "integer"
+        },
+        "observability": {
+          "default": 0.01,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Observability",
+          "type": "number"
+        },
+        "person_count": {
+          "minimum": 0,
+          "title": "Person Count",
+          "type": "integer"
+        },
+        "track_presence_interval_frames": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Track Presence Interval Frames",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "duration_frames",
+        "person_count"
+      ],
+      "title": "NumericToleranceConfig",
+      "type": "object"
+    },
+    "ObservabilityConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "clear_frame_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Clear Frame Threshold",
+          "type": "number"
+        },
+        "weights": {
+          "$ref": "#/$defs/ObservabilityWeights"
+        }
+      },
+      "required": [
+        "weights",
+        "clear_frame_threshold"
+      ],
+      "title": "ObservabilityConfig",
+      "type": "object"
+    },
+    "ObservabilityWeights": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "frontality": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Frontality",
+          "type": "number"
+        },
+        "keypoint_visibility": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Visibility",
+          "type": "number"
+        },
+        "non_occlusion": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Non Occlusion",
+          "type": "number"
+        },
+        "person_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Person Confidence",
+          "type": "number"
+        },
+        "sharpness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sharpness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "person_confidence",
+        "keypoint_visibility",
+        "frontality",
+        "sharpness",
+        "exposure",
+        "non_occlusion"
+      ],
+      "title": "ObservabilityWeights",
+      "type": "object"
+    },
+    "PerceptionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "association": {
+          "$ref": "#/$defs/AssociationConfig"
+        },
+        "detector": {
+          "$ref": "#/$defs/DetectorConfig"
+        },
+        "observability": {
+          "$ref": "#/$defs/ObservabilityConfig"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "detector",
+        "association",
+        "observability"
+      ],
+      "title": "PerceptionConfig",
+      "type": "object"
+    },
+    "PointXY": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "PointXY",
+      "type": "object"
+    },
+    "Polygon": {
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PointXY"
+              },
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              }
+            ]
+          },
+          "minItems": 3,
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "Polygon",
+      "type": "object"
+    },
+    "PpeType": {
+      "enum": [
+        "GOGGLES",
+        "GLOVES",
+        "LAB_COAT"
+      ],
+      "title": "PpeType",
+      "type": "string"
+    },
+    "PrecedentConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "automatic_activation_delay_days": {
+          "minimum": 0,
+          "title": "Automatic Activation Delay Days",
+          "type": "integer"
+        },
+        "conflict_similarity": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Conflict Similarity",
+          "type": "number"
+        },
+        "source_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/PrecedentSource"
+          },
+          "title": "Source Weights",
+          "type": "object"
+        },
+        "text_weight": {
+          "minimum": 0,
+          "title": "Text Weight",
+          "type": "number"
+        },
+        "visual_weight": {
+          "minimum": 0,
+          "title": "Visual Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "text_weight",
+        "visual_weight",
+        "source_weights",
+        "conflict_similarity",
+        "automatic_activation_delay_days"
+      ],
+      "title": "PrecedentConfig",
+      "type": "object"
+    },
+    "PrecedentSource": {
+      "enum": [
+        "PRESET",
+        "AUTOMATIC",
+        "HUMAN_REVIEW",
+        "APPEAL_OVERTURN"
+      ],
+      "title": "PrecedentSource",
+      "type": "string"
+    },
+    "PresenceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "default_cooldown_seconds": {
+          "minimum": 0,
+          "title": "Default Cooldown Seconds",
+          "type": "number"
+        },
+        "default_dwell_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Default Dwell Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "default_dwell_seconds",
+        "default_cooldown_seconds"
+      ],
+      "title": "PresenceConfig",
+      "type": "object"
+    },
+    "PrivacyPolicy": {
+      "enum": [
+        "EPHEMERAL_RAW",
+        "PPE_PRESERVING_REDACTION",
+        "FULL_REDACTION"
+      ],
+      "title": "PrivacyPolicy",
+      "type": "string"
+    },
+    "ProceduralGateConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "absence_clear_frame_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Absence Clear Frame Threshold",
+          "type": "number"
+        },
+        "gate_version": {
+          "default": "procedural-gate-v1",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Gate Version",
+          "type": "string"
+        },
+        "minimum_absence_clear_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Minimum Absence Clear Frames",
+          "type": "integer"
+        },
+        "objective_numeric_tolerance": {
+          "$ref": "#/$defs/NumericToleranceConfig"
+        },
+        "precedent_similarity_min": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Precedent Similarity Min",
+          "type": "number"
+        }
+      },
+      "required": [
+        "objective_numeric_tolerance",
+        "precedent_similarity_min",
+        "absence_clear_frame_threshold",
+        "minimum_absence_clear_frames"
+      ],
+      "title": "ProceduralGateConfig",
+      "type": "object"
+    },
+    "ProviderTransport": {
+      "enum": [
+        "IN_PROCESS",
+        "HTTP"
+      ],
+      "title": "ProviderTransport",
+      "type": "string"
+    },
+    "RegressionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "gold_set_max_accuracy_drop": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Gold Set Max Accuracy Drop",
+          "type": "number"
+        },
+        "maximum_machine_flip_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Maximum Machine Flip Rate",
+          "type": "number"
+        }
+      },
+      "required": [
+        "maximum_machine_flip_rate",
+        "gold_set_max_accuracy_drop"
+      ],
+      "title": "RegressionConfig",
+      "type": "object"
+    },
+    "ReproducibilityMode": {
+      "enum": [
+        "REPLAY_LOCKED",
+        "REINFER_PINNED",
+        "UPGRADE_REGRESSION"
+      ],
+      "title": "ReproducibilityMode",
+      "type": "string"
+    },
+    "RetentionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "case_metadata_days": {
+          "minimum": 0,
+          "title": "Case Metadata Days",
+          "type": "integer"
+        },
+        "preserve_appeals_and_gold_sets": {
+          "const": true,
+          "default": true,
+          "title": "Preserve Appeals And Gold Sets",
+          "type": "boolean"
+        },
+        "raw_frame_cache_minutes": {
+          "minimum": 0,
+          "title": "Raw Frame Cache Minutes",
+          "type": "integer"
+        },
+        "redacted_crop_days": {
+          "minimum": 0,
+          "title": "Redacted Crop Days",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "raw_frame_cache_minutes",
+        "redacted_crop_days",
+        "case_metadata_days"
+      ],
+      "title": "RetentionConfig",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "RunConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/RunMode",
+          "default": "STANDARD"
+        },
+        "random_seed": {
+          "title": "Random Seed",
+          "type": "integer"
+        },
+        "reproducibility_mode": {
+          "$ref": "#/$defs/ReproducibilityMode"
+        },
+        "storage_boundary": {
+          "const": "LOCAL_FILESYSTEM",
+          "default": "LOCAL_FILESYSTEM",
+          "title": "Storage Boundary",
+          "type": "string"
+        },
+        "workspace": {
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\<>:\\\"|?*])(?:[^/\\x00-\\x1f]+/)*[^/\\x00-\\x1f]+$",
+          "title": "Workspace",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reproducibility_mode",
+        "random_seed",
+        "workspace"
+      ],
+      "title": "RunConfig",
+      "type": "object"
+    },
+    "RunMode": {
+      "enum": [
+        "STANDARD",
+        "OFFLINE_EXPERIMENT"
+      ],
+      "title": "RunMode",
+      "type": "string"
+    },
+    "SafetyConfig": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "hard_alerts_enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "hard_alerts_enabled"
+            ]
+          },
+          "then": {
+            "properties": {
+              "allowed_signal_types": {
+                "minItems": 1
+              },
+              "certification_ids": {
+                "minItems": 1
+              },
+              "provider": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "provider",
+              "allowed_signal_types",
+              "certification_ids"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "allowed_direct_sources": {
+          "default": [
+            "PHYSICAL_SENSOR",
+            "VALIDATED_DETERMINISTIC",
+            "MANUAL"
+          ],
+          "items": {
+            "$ref": "#/$defs/DirectSafetySourceClass"
+          },
+          "title": "Allowed Direct Sources",
+          "type": "array"
+        },
+        "allowed_signal_types": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SafetySignalType"
+          },
+          "title": "Allowed Signal Types",
+          "type": "array"
+        },
+        "certification_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Certification Ids",
+          "type": "array"
+        },
+        "hard_alerts_enabled": {
+          "default": false,
+          "title": "Hard Alerts Enabled",
+          "type": "boolean"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        }
+      },
+      "title": "SafetyConfig",
+      "type": "object"
+    },
+    "SafetySignalType": {
+      "enum": [
+        "OPEN_FLAME",
+        "SMOKE",
+        "HEAT_ACTIVITY",
+        "OCCUPANCY",
+        "MANUAL_EMERGENCY"
+      ],
+      "title": "SafetySignalType",
+      "type": "string"
+    },
+    "ScreeningConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "backlog_max_attempts": {
+          "default": 3,
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Backlog Max Attempts",
+          "type": "integer"
+        },
+        "conflict_policy_version": {
+          "default": "strong-signal-v1",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Conflict Policy Version",
+          "type": "string"
+        },
+        "high_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "High Probability",
+          "type": "number"
+        },
+        "low_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Low Probability",
+          "type": "number"
+        },
+        "max_estimated_cost": {
+          "default": 1.0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Max Estimated Cost",
+          "type": "number"
+        },
+        "max_images": {
+          "exclusiveMinimum": 0,
+          "maximum": 64,
+          "title": "Max Images",
+          "type": "integer"
+        },
+        "max_input_pixels": {
+          "default": 16777216,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000000,
+          "title": "Max Input Pixels",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 32768,
+          "exclusiveMinimum": 0,
+          "maximum": 262144,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_json_depth": {
+          "default": 16,
+          "exclusiveMinimum": 0,
+          "maximum": 64,
+          "title": "Max Json Depth",
+          "type": "integer"
+        },
+        "max_json_fields": {
+          "default": 512,
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Max Json Fields",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 2048,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "max_prompt_bytes": {
+          "default": 524288,
+          "exclusiveMinimum": 0,
+          "maximum": 1048576,
+          "title": "Max Prompt Bytes",
+          "type": "integer"
+        },
+        "max_response_bytes": {
+          "default": 262144,
+          "exclusiveMinimum": 0,
+          "maximum": 262144,
+          "title": "Max Response Bytes",
+          "type": "integer"
+        },
+        "max_string_chars": {
+          "default": 8192,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max String Chars",
+          "type": "integer"
+        },
+        "provider_profile": {
+          "minLength": 1,
+          "title": "Provider Profile",
+          "type": "string"
+        },
+        "router_version": {
+          "default": "screening-router-v1",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Router Version",
+          "type": "string"
+        },
+        "strong_signal_threshold": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Strong Signal Threshold",
+          "type": "number"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 3600,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "provider_profile",
+        "low_probability",
+        "high_probability",
+        "timeout_seconds",
+        "max_images"
+      ],
+      "title": "ScreeningConfig",
+      "type": "object"
+    },
+    "StorageConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "busy_timeout_ms": {
+          "exclusiveMinimum": 0,
+          "maximum": 60000,
+          "title": "Busy Timeout Ms",
+          "type": "integer"
+        },
+        "database_filename": {
+          "const": "labcourt.sqlite3",
+          "default": "labcourt.sqlite3",
+          "title": "Database Filename",
+          "type": "string"
+        },
+        "max_image_pixels": {
+          "exclusiveMinimum": 0,
+          "title": "Max Image Pixels",
+          "type": "integer"
+        },
+        "max_media_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Max Media Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "busy_timeout_ms",
+        "max_media_bytes",
+        "max_image_pixels"
+      ],
+      "title": "StorageConfig",
+      "type": "object"
+    },
+    "TrainingConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "export_minimum_quality": {
+          "$ref": "#/$defs/TrainingLabelQuality"
+        },
+        "include_weak_labels": {
+          "default": false,
+          "title": "Include Weak Labels",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "export_minimum_quality"
+      ],
+      "title": "TrainingConfig",
+      "type": "object"
+    },
+    "TrainingLabelQuality": {
+      "enum": [
+        "WEAK_AUTO",
+        "CONSENSUS_REVIEWED",
+        "HUMAN_CONFIRMED",
+        "APPEAL_CONFIRMED"
+      ],
+      "title": "TrainingLabelQuality",
+      "type": "string"
+    },
+    "VlmProviderProfile": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "execution_location": {
+                "const": "EXTERNAL"
+              }
+            },
+            "required": [
+              "execution_location"
+            ]
+          },
+          "then": {
+            "properties": {
+              "allow_full_frame": {
+                "const": false
+              },
+              "api_key_env": {
+                "pattern": "^[A-Z_][A-Z0-9_]*$",
+                "type": "string"
+              },
+              "endpoint_env": {
+                "pattern": "^[A-Z_][A-Z0-9_]*$",
+                "type": "string"
+              },
+              "transport": {
+                "const": "HTTP"
+              }
+            },
+            "required": [
+              "endpoint_env",
+              "api_key_env",
+              "transport",
+              "pricing_currency",
+              "input_cost_per_million_tokens",
+              "output_cost_per_million_tokens"
+            ]
+          }
+        },
+        {
+          "else": {
+            "properties": {
+              "endpoint_env": {
+                "pattern": "^[A-Z_][A-Z0-9_]*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "endpoint_env",
+              "pricing_currency",
+              "input_cost_per_million_tokens",
+              "output_cost_per_million_tokens"
+            ]
+          },
+          "if": {
+            "properties": {
+              "transport": {
+                "const": "IN_PROCESS"
+              }
+            },
+            "required": [
+              "transport"
+            ]
+          },
+          "then": {
+            "properties": {
+              "api_key_env": {
+                "type": "null"
+              },
+              "endpoint_env": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "allow_full_frame": {
+          "default": false,
+          "title": "Allow Full Frame",
+          "type": "boolean"
+        },
+        "api_key_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key Env"
+        },
+        "cache_enabled": {
+          "const": true,
+          "default": true,
+          "title": "Cache Enabled",
+          "type": "boolean"
+        },
+        "endpoint_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endpoint Env"
+        },
+        "execution_location": {
+          "$ref": "#/$defs/ExecutionLocation"
+        },
+        "input_cost_per_million_tokens": {
+          "default": 0.0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Input Cost Per Million Tokens",
+          "type": "number"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "output_cost_per_million_tokens": {
+          "default": 0.0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Output Cost Per Million Tokens",
+          "type": "number"
+        },
+        "pricing_currency": {
+          "const": "USD",
+          "default": "USD",
+          "title": "Pricing Currency",
+          "type": "string"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "quantization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantization"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 3600,
+          "title": "Timeout Seconds",
+          "type": "number"
+        },
+        "transport": {
+          "$ref": "#/$defs/ProviderTransport"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "revision",
+        "execution_location",
+        "transport",
+        "timeout_seconds"
+      ],
+      "title": "VlmProviderProfile",
+      "type": "object"
+    },
+    "ZoneConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "polygon": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Polygon"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            }
+          ]
+        },
+        "reminder_channel": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Reminder Channel",
+          "type": "string"
+        },
+        "required_ppe": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PpeType"
+          },
+          "title": "Required Ppe",
+          "type": "array"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "zone_id",
+        "camera_id",
+        "polygon",
+        "risk_level",
+        "reminder_channel"
+      ],
+      "title": "ZoneConfig",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/app-config.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "absence": {
+            "properties": {
+              "confirmation_policy": {
+                "const": "SOURCE_COMPAT"
+              }
+            },
+            "required": [
+              "confirmation_policy"
+            ]
+          }
+        },
+        "required": [
+          "absence"
+        ]
+      },
+      "then": {
+        "properties": {
+          "absence": {
+            "properties": {
+              "source_compat_enabled_for_offline_experiments": {
+                "const": true
+              }
+            },
+            "required": [
+              "source_compat_enabled_for_offline_experiments"
+            ]
+          },
+          "run": {
+            "properties": {
+              "mode": {
+                "const": "OFFLINE_EXPERIMENT"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "absence": {
+      "$ref": "#/$defs/AbsenceConfig"
+    },
+    "alerts": {
+      "$ref": "#/$defs/AlertConfig"
+    },
+    "evidence": {
+      "$ref": "#/$defs/EvidenceConfig"
+    },
+    "hearing": {
+      "$ref": "#/$defs/HearingConfig"
+    },
+    "l0": {
+      "$ref": "#/$defs/L0Config"
+    },
+    "perception": {
+      "$ref": "#/$defs/PerceptionConfig"
+    },
+    "precedents": {
+      "$ref": "#/$defs/PrecedentConfig"
+    },
+    "presence": {
+      "$ref": "#/$defs/PresenceConfig"
+    },
+    "procedural_gate": {
+      "$ref": "#/$defs/ProceduralGateConfig"
+    },
+    "providers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/VlmProviderProfile"
+      },
+      "title": "Providers",
+      "type": "object"
+    },
+    "regression": {
+      "$ref": "#/$defs/RegressionConfig"
+    },
+    "retention": {
+      "$ref": "#/$defs/RetentionConfig"
+    },
+    "rule_version": {
+      "const": "laboratory-v1",
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "run": {
+      "$ref": "#/$defs/RunConfig"
+    },
+    "safety": {
+      "$ref": "#/$defs/SafetyConfig"
+    },
+    "schema_version": {
+      "const": "2.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "screening": {
+      "$ref": "#/$defs/ScreeningConfig"
+    },
+    "storage": {
+      "$ref": "#/$defs/StorageConfig"
+    },
+    "training": {
+      "$ref": "#/$defs/TrainingConfig"
+    },
+    "zones": {
+      "items": {
+        "$ref": "#/$defs/ZoneConfig"
+      },
+      "minItems": 1,
+      "title": "Zones",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "rule_version",
+    "run",
+    "storage",
+    "zones",
+    "l0",
+    "perception",
+    "absence",
+    "presence",
+    "evidence",
+    "providers",
+    "screening",
+    "hearing",
+    "procedural_gate",
+    "precedents",
+    "alerts",
+    "regression",
+    "training",
+    "retention",
+    "safety"
+  ],
+  "title": "AppConfig",
+  "type": "object"
+}

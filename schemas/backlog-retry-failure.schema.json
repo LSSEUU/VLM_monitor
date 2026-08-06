@@ -1,0 +1,312 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "BacklogLeaseIdentity": {
+      "additionalProperties": false,
+      "description": "Non-secret CAS identity for one exact leased backlog generation.",
+      "properties": {
+        "attempt_count": {
+          "exclusiveMinimum": 0,
+          "title": "Attempt Count",
+          "type": "integer"
+        },
+        "item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Item Id",
+          "type": "string"
+        },
+        "lease_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Lease Id",
+          "type": "string"
+        },
+        "lease_identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Lease Identity Sha256",
+          "type": "string"
+        },
+        "retry_generation": {
+          "minimum": 0,
+          "title": "Retry Generation",
+          "type": "integer"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "item_id",
+        "lease_id",
+        "attempt_count",
+        "retry_generation",
+        "lease_identity_sha256"
+      ],
+      "title": "BacklogLeaseIdentity",
+      "type": "object"
+    },
+    "BacklogParseFailureEvidence": {
+      "additionalProperties": false,
+      "description": "Typed references for one persisted strict-parser failure.",
+      "properties": {
+        "attempt_index": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Attempt Index",
+          "type": "integer"
+        },
+        "parse_receipt_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "request_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "response_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "role": {
+          "enum": [
+            "SCREENING",
+            "STRUCTURE_REPAIR"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attempt_index",
+        "role",
+        "request_ref",
+        "response_ref",
+        "parse_receipt_ref"
+      ],
+      "title": "BacklogParseFailureEvidence",
+      "type": "object"
+    },
+    "BacklogReasonCode": {
+      "enum": [
+        "PROVIDER_UNAVAILABLE",
+        "MODEL_OUTPUT_INVALID",
+        "BUDGET_EXCEEDED",
+        "RESPONSE_INTEGRITY_FAILURE",
+        "CURRENT_PACK_CHANGED",
+        "WORKER_LEASE_EXPIRED"
+      ],
+      "title": "BacklogReasonCode",
+      "type": "string"
+    },
+    "BacklogRetryContext": {
+      "additionalProperties": false,
+      "description": "Request identity input that changes only after a proven parse failure.\n\nThe lease is deliberately absent.  A provider outage, timeout, or unknown\nworker crash may result in another lease, but must keep the same model\nrequest identity so durable claim/journal recovery can prevent a duplicate\nexternal call.",
+      "properties": {
+        "backlog_item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Backlog Item Id",
+          "type": "string"
+        },
+        "context_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Context Id",
+          "type": "string"
+        },
+        "retry_generation": {
+          "minimum": 0,
+          "title": "Retry Generation",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "backlog_item_id",
+        "retry_generation",
+        "context_id"
+      ],
+      "title": "BacklogRetryContext",
+      "type": "object"
+    },
+    "BacklogStrictParseFailureProof": {
+      "additionalProperties": false,
+      "description": "Two persisted, billable strict failures authorizing one new generation.\n\nIDs are public references only.  The repository remains responsible for\nloading both receipts, proving their request/response/generation bindings,\nrevalidating raw responses, and atomically accounting their usage.",
+      "properties": {
+        "attempts": {
+          "items": {
+            "$ref": "#/$defs/BacklogParseFailureEvidence"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Attempts",
+          "type": "array"
+        },
+        "proof_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Proof Id",
+          "type": "string"
+        },
+        "retry_context": {
+          "$ref": "#/$defs/BacklogRetryContext"
+        }
+      },
+      "required": [
+        "retry_context",
+        "attempts",
+        "proof_id"
+      ],
+      "title": "BacklogStrictParseFailureProof",
+      "type": "object"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/backlog-retry-failure.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One atomic retry failure, including any controlled generation advance.",
+  "properties": {
+    "completion_case_status": {
+      "$ref": "#/$defs/CaseStatus",
+      "readOnly": true
+    },
+    "lease": {
+      "$ref": "#/$defs/BacklogLeaseIdentity"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "next_retry_generation": {
+      "readOnly": true,
+      "title": "Next Retry Generation",
+      "type": "integer"
+    },
+    "next_status": {
+      "enum": [
+        "PENDING",
+        "EXHAUSTED"
+      ],
+      "title": "Next Status",
+      "type": "string"
+    },
+    "outcome_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Outcome Id",
+      "type": "string"
+    },
+    "outcome_kind": {
+      "const": "FAILURE",
+      "default": "FAILURE",
+      "title": "Outcome Kind",
+      "type": "string"
+    },
+    "reason_code": {
+      "$ref": "#/$defs/BacklogReasonCode"
+    },
+    "response_refs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Response Refs",
+      "type": "array"
+    },
+    "strict_parse_failure": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BacklogStrictParseFailureProof"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "lease",
+    "reason_code",
+    "next_status",
+    "manifest_id",
+    "next_retry_generation",
+    "completion_case_status",
+    "outcome_id"
+  ],
+  "title": "BacklogRetryFailure",
+  "type": "object"
+}

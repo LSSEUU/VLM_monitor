@@ -1,0 +1,155 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/stream-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "backend": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Backend",
+      "type": "string"
+    },
+    "camera_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Camera Id",
+      "type": "string"
+    },
+    "codec": {
+      "pattern": "^[\\x20-\\x7e]{4}$",
+      "title": "Codec",
+      "type": "string"
+    },
+    "color_conversion": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Color Conversion",
+      "type": "string"
+    },
+    "decoder": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Decoder",
+      "type": "string"
+    },
+    "decoder_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Decoder Version",
+      "type": "string"
+    },
+    "fps_den": {
+      "exclusiveMinimum": 0,
+      "title": "Fps Den",
+      "type": "integer"
+    },
+    "fps_num": {
+      "exclusiveMinimum": 0,
+      "title": "Fps Num",
+      "type": "integer"
+    },
+    "frame_count": {
+      "exclusiveMinimum": 0,
+      "title": "Frame Count",
+      "type": "integer"
+    },
+    "height": {
+      "exclusiveMinimum": 0,
+      "title": "Height",
+      "type": "integer"
+    },
+    "input_file_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input File Sha256",
+      "type": "string"
+    },
+    "library": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Library",
+      "type": "string"
+    },
+    "library_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Library Version",
+      "type": "string"
+    },
+    "pixel_format": {
+      "const": "RGB8",
+      "title": "Pixel Format",
+      "type": "string"
+    },
+    "pixel_hash_algorithm": {
+      "const": "LCPIX1",
+      "title": "Pixel Hash Algorithm",
+      "type": "string"
+    },
+    "software_component": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Software Component",
+      "type": "string"
+    },
+    "stream_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Stream Id",
+      "type": "string"
+    },
+    "timing_authority": {
+      "enum": [
+        "CALLER_ATTESTED",
+        "TRUSTED_SIDECAR"
+      ],
+      "title": "Timing Authority",
+      "type": "string"
+    },
+    "timing_evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Timing Evidence Sha256",
+      "type": "string"
+    },
+    "timing_evidence_type": {
+      "enum": [
+        "CALLER_DECLARATION",
+        "TRUSTED_SIDECAR_JSON"
+      ],
+      "title": "Timing Evidence Type",
+      "type": "string"
+    },
+    "timing_mode": {
+      "const": "CFR",
+      "title": "Timing Mode",
+      "type": "string"
+    },
+    "width": {
+      "exclusiveMinimum": 0,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "camera_id",
+    "stream_id",
+    "input_file_sha256",
+    "fps_num",
+    "fps_den",
+    "timing_mode",
+    "timing_authority",
+    "timing_evidence_type",
+    "timing_evidence_sha256",
+    "width",
+    "height",
+    "frame_count",
+    "decoder",
+    "decoder_version",
+    "backend",
+    "software_component",
+    "library",
+    "library_version",
+    "codec",
+    "color_conversion",
+    "pixel_format",
+    "pixel_hash_algorithm"
+  ],
+  "title": "StreamManifest",
+  "type": "object"
+}

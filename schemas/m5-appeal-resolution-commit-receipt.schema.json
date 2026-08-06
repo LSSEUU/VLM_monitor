@@ -1,0 +1,151 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m5-appeal-resolution-commit-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Final durable root proving that every appeal side effect committed atomically.",
+  "properties": {
+    "affected_citation_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Affected Citation Report Sha256",
+      "type": "string"
+    },
+    "alert_rescission_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Alert Rescission Ids",
+      "type": "array"
+    },
+    "appeal_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Appeal Authority Sha256",
+      "type": "string"
+    },
+    "appeal_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Appeal Id",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "effect_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Effect Root Sha256",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "precedent_revocation_receipt_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Precedent Revocation Receipt Ids",
+      "type": "array"
+    },
+    "receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "replacement_precedent_authority_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Replacement Precedent Authority Id"
+    },
+    "resolution_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resolution Document Sha256",
+      "type": "string"
+    },
+    "resolution_intent_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resolution Intent Id",
+      "type": "string"
+    },
+    "resulting_case_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resulting Case Document Sha256",
+      "type": "string"
+    },
+    "resulting_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Resulting Case Revision",
+      "type": "integer"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-appeal-resolution-commit-receipt-v1",
+      "default": "m5-appeal-resolution-commit-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Revision",
+      "type": "integer"
+    },
+    "training_label_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Training Label Ids",
+      "type": "array"
+    },
+    "verdict_rescission_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 1,
+      "title": "Verdict Rescission Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "resolution_intent_id",
+    "resolution_document_sha256",
+    "appeal_id",
+    "appeal_authority_sha256",
+    "case_id",
+    "source_case_revision",
+    "resulting_case_revision",
+    "resulting_case_document_sha256",
+    "affected_citation_report_sha256",
+    "manifest_id",
+    "effect_root_sha256",
+    "receipt_id"
+  ],
+  "title": "M5AppealResolutionCommitReceipt",
+  "type": "object"
+}

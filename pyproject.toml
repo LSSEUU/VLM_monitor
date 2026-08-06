@@ -1,0 +1,77 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "labcourt"
+version = "0.1.0"
+description = "Contract-driven, auditable laboratory safety adjudication pipeline"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "Proprietary" }
+authors = [{ name = "LabCourt Contributors" }]
+dependencies = [
+  "jinja2==3.1.6",
+  "pillow==12.3.0",
+  "pydantic>=2.12,<3",
+  "pyyaml>=6.0.2,<7",
+  "typer>=0.20,<1",
+]
+
+[project.optional-dependencies]
+video = [
+  "opencv-python-headless==5.0.0.93",
+]
+
+[project.scripts]
+labcourt = "labcourt.cli:app"
+
+[dependency-groups]
+dev = [
+  "hypothesis>=6.150,<7",
+  "jsonschema>=4.25,<5",
+  "mypy>=2,<3",
+  "pytest>=9,<10",
+  "pytest-cov>=7,<8",
+  "pytest-socket>=0.7,<1",
+  "ruff>=0.15,<1",
+  "types-pyyaml>=6.0.12,<7",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/labcourt"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"prompts" = "labcourt/prompts"
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers --disable-socket"
+testpaths = ["tests"]
+markers = [
+  "video: optional smoke tests requiring the pinned labcourt[video] dependency",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["labcourt"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src", "scripts"]

@@ -1,0 +1,86 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m6-upgrade-execution-component-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "code_commit": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Code Commit",
+      "type": "string"
+    },
+    "component": {
+      "const": "labcourt-m6-upgrade-executor",
+      "default": "labcourt-m6-upgrade-executor",
+      "title": "Component",
+      "type": "string"
+    },
+    "component_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Component Authority Id",
+      "type": "string"
+    },
+    "evaluator_fields_accessible": {
+      "const": false,
+      "default": false,
+      "title": "Evaluator Fields Accessible",
+      "type": "boolean"
+    },
+    "execution_mode": {
+      "const": "OFFLINE_FAKE",
+      "default": "OFFLINE_FAKE",
+      "title": "Execution Mode",
+      "type": "string"
+    },
+    "gpu_required": {
+      "const": false,
+      "default": false,
+      "title": "Gpu Required",
+      "type": "boolean"
+    },
+    "input_contract": {
+      "const": "BLINDED_EXECUTION_DATASET",
+      "default": "BLINDED_EXECUTION_DATASET",
+      "title": "Input Contract",
+      "type": "string"
+    },
+    "network_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Network Allowed",
+      "type": "boolean"
+    },
+    "output_contract": {
+      "const": "APPEND_ONLY_SAMPLE_LEDGER",
+      "default": "APPEND_ONLY_SAMPLE_LEDGER",
+      "title": "Output Contract",
+      "type": "string"
+    },
+    "package": {
+      "const": "labcourt",
+      "default": "labcourt",
+      "title": "Package",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-upgrade-execution-component-authority-v1",
+      "default": "m6-upgrade-execution-component-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "code_commit",
+    "component_authority_id"
+  ],
+  "title": "M6UpgradeExecutionComponentAuthority",
+  "type": "object"
+}

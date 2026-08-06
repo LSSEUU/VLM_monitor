@@ -1,0 +1,161 @@
+{
+  "$defs": {
+    "AffectedPrecedentCitation": {
+      "additionalProperties": false,
+      "description": "One immutable historical citation affected by a precedent revocation.",
+      "properties": {
+        "citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Citation Id",
+          "type": "string"
+        },
+        "citing_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Citing Case Id",
+          "type": "string"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "similarity_score": {
+          "maximum": 10,
+          "minimum": -10,
+          "title": "Similarity Score",
+          "type": "number"
+        },
+        "source_citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Citation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_citation_id",
+        "citing_case_id",
+        "precedent_id",
+        "similarity_score",
+        "citation_id"
+      ],
+      "title": "AffectedPrecedentCitation",
+      "type": "object"
+    },
+    "AutomaticPrecedentAppealAuthority": {
+      "additionalProperties": false,
+      "description": "The exact automatic precedent state visible before appeal resolution.",
+      "properties": {
+        "citations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AffectedPrecedentCitation"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "decision_direction": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "precedent_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Precedent Authority Id",
+          "type": "string"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "precedent_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Precedent Revision",
+          "type": "integer"
+        },
+        "source": {
+          "const": "AUTOMATIC",
+          "default": "AUTOMATIC",
+          "title": "Source",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROVISIONAL",
+            "ACTIVE",
+            "CONFLICT",
+            "INVALIDATED"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "precedent_authority_id",
+        "precedent_revision",
+        "status",
+        "decision_direction",
+        "source_case_id"
+      ],
+      "title": "AutomaticPrecedentAppealAuthority",
+      "type": "object"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/appeal-resolution-precedent-snapshot.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Complete current automatic-precedent view captured for terminal CAS.",
+  "properties": {
+    "automatic_precedents": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AutomaticPrecedentAppealAuthority"
+      },
+      "title": "Automatic Precedents",
+      "type": "array"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "complete": {
+      "const": true,
+      "default": true,
+      "title": "Complete",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Snapshot Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "snapshot_sha256"
+  ],
+  "title": "AppealResolutionPrecedentSnapshot",
+  "type": "object"
+}

@@ -1,0 +1,76 @@
+{
+  "$defs": {
+    "SafetySignalType": {
+      "enum": [
+        "OPEN_FLAME",
+        "SMOKE",
+        "HEAT_ACTIVITY",
+        "OCCUPANCY",
+        "MANUAL_EMERGENCY"
+      ],
+      "title": "SafetySignalType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/emergency-safety-incident.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adjudicated": {
+      "const": false,
+      "default": false,
+      "title": "Adjudicated",
+      "type": "boolean"
+    },
+    "certification_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Certification Id"
+    },
+    "delivery_idempotency_key": {
+      "minLength": 1,
+      "title": "Delivery Idempotency Key",
+      "type": "string"
+    },
+    "incident_id": {
+      "minLength": 1,
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "level": {
+      "const": "EMERGENCY",
+      "default": "EMERGENCY",
+      "title": "Level",
+      "type": "string"
+    },
+    "signal_id": {
+      "minLength": 1,
+      "title": "Signal Id",
+      "type": "string"
+    },
+    "signal_type": {
+      "$ref": "#/$defs/SafetySignalType"
+    },
+    "zone_id": {
+      "minLength": 1,
+      "title": "Zone Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "incident_id",
+    "signal_id",
+    "signal_type",
+    "zone_id",
+    "delivery_idempotency_key"
+  ],
+  "title": "EmergencySafetyIncident",
+  "type": "object"
+}

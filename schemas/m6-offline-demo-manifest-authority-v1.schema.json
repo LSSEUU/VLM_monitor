@@ -1,0 +1,170 @@
+{
+  "$defs": {
+    "M6OfflineDemoScenarioArtifactReceiptV1": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Content Sha256",
+          "type": "string"
+        },
+        "artifact_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Artifact Receipt Id",
+          "type": "string"
+        },
+        "artifact_relative_path": {
+          "readOnly": true,
+          "title": "Artifact Relative Path",
+          "type": "string"
+        },
+        "artifact_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 16777216,
+          "title": "Artifact Size Bytes",
+          "type": "integer"
+        },
+        "scenario_name": {
+          "$ref": "#/$defs/M6OfflineDemoScenarioName"
+        },
+        "schema_version": {
+          "const": "m6-offline-demo-scenario-artifact-receipt-v1",
+          "default": "m6-offline-demo-scenario-artifact-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scenario_name",
+        "artifact_content_sha256",
+        "artifact_size_bytes",
+        "artifact_relative_path",
+        "artifact_receipt_id"
+      ],
+      "title": "M6OfflineDemoScenarioArtifactReceiptV1",
+      "type": "object"
+    },
+    "M6OfflineDemoScenarioName": {
+      "enum": [
+        "presence_true_positive",
+        "presence_false_positive",
+        "absence_true_violation",
+        "absence_detector_miss_but_worn",
+        "absence_all_unclear",
+        "absence_don_after_threshold",
+        "late_result_inside_interval",
+        "fabricated_crop_reference",
+        "objective_person_count_conflict",
+        "unanswered_defense",
+        "precedent_direction_mismatch",
+        "provider_outage",
+        "hard_signal_uncertified",
+        "appeal_overturn",
+        "replay_locked_identical",
+        "upgrade_flip_gate"
+      ],
+      "title": "M6OfflineDemoScenarioName",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-offline-demo-manifest-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "classification": {
+      "const": "SYNTHETIC_PRECOMPUTED_FAKE",
+      "default": "SYNTHETIC_PRECOMPUTED_FAKE",
+      "title": "Classification",
+      "type": "string"
+    },
+    "closed_regression_publication_seal_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Closed Regression Publication Seal Id",
+      "type": "string"
+    },
+    "closed_regression_report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Closed Regression Report Id",
+      "type": "string"
+    },
+    "demo_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Demo Manifest Id",
+      "type": "string"
+    },
+    "gpu_used": {
+      "const": false,
+      "default": false,
+      "title": "Gpu Used",
+      "type": "boolean"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "provider_called": {
+      "const": false,
+      "default": false,
+      "title": "Provider Called",
+      "type": "boolean"
+    },
+    "scenario_count": {
+      "readOnly": true,
+      "title": "Scenario Count",
+      "type": "integer"
+    },
+    "scenario_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Scenario Inventory Root Sha256",
+      "type": "string"
+    },
+    "scenario_receipts": {
+      "items": {
+        "$ref": "#/$defs/M6OfflineDemoScenarioArtifactReceiptV1"
+      },
+      "maxItems": 16,
+      "minItems": 16,
+      "title": "Scenario Receipts",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m6-offline-demo-manifest-authority-v1",
+      "default": "m6-offline-demo-manifest-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "static_report_index_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Static Report Index Content Sha256",
+      "type": "string"
+    },
+    "static_report_publication_seal_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Static Report Publication Seal Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_run_id",
+    "closed_regression_report_id",
+    "closed_regression_publication_seal_id",
+    "static_report_publication_seal_id",
+    "static_report_index_content_sha256",
+    "scenario_receipts",
+    "scenario_count",
+    "scenario_inventory_root_sha256",
+    "demo_manifest_id"
+  ],
+  "title": "M6OfflineDemoManifestAuthorityV1",
+  "type": "object"
+}

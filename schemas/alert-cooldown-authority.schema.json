@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "AlertCooldownKey": {
+      "additionalProperties": false,
+      "description": "Frame-space deduplication key scoped by the complete anonymous track ref.",
+      "properties": {
+        "key_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Key Id",
+          "type": "string"
+        },
+        "track_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Track Ref",
+          "type": "string"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "zone_id",
+        "violation_type",
+        "track_ref",
+        "key_id"
+      ],
+      "title": "AlertCooldownKey",
+      "type": "object"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/alert-cooldown-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The last emitted alert and its exclusive frame-space cooldown bound.",
+  "properties": {
+    "authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Authority Id",
+      "type": "string"
+    },
+    "cooldown_frames": {
+      "minimum": 0,
+      "title": "Cooldown Frames",
+      "type": "integer"
+    },
+    "cooldown_until_frame_exclusive": {
+      "minimum": 0,
+      "title": "Cooldown Until Frame Exclusive",
+      "type": "integer"
+    },
+    "key": {
+      "$ref": "#/$defs/AlertCooldownKey"
+    },
+    "source_alert_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Source Alert Id",
+      "type": "string"
+    },
+    "source_trigger_frame": {
+      "minimum": 0,
+      "title": "Source Trigger Frame",
+      "type": "integer"
+    },
+    "stream_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Stream Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "key",
+    "stream_id",
+    "source_alert_id",
+    "source_trigger_frame",
+    "cooldown_frames",
+    "cooldown_until_frame_exclusive",
+    "authority_id"
+  ],
+  "title": "AlertCooldownAuthority",
+  "type": "object"
+}

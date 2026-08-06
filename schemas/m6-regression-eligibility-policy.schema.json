@@ -1,0 +1,67 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m6-regression-eligibility-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The fixed first M6 policy; unsupported truth sources cannot be enabled.",
+  "properties": {
+    "challenge_policy": {
+      "const": "EXPLICIT_AUTHORITY_ONLY",
+      "default": "EXPLICIT_AUTHORITY_ONLY",
+      "title": "Challenge Policy",
+      "type": "string"
+    },
+    "closed_unappealed_policy": {
+      "const": "SELECT_STABILITY",
+      "default": "SELECT_STABILITY",
+      "title": "Closed Unappealed Policy",
+      "type": "string"
+    },
+    "eligibility_policy_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Eligibility Policy Authority Id",
+      "type": "string"
+    },
+    "gold_authority_policy": {
+      "const": "APPEAL_RESOLUTION_ONLY",
+      "default": "APPEAL_RESOLUTION_ONLY",
+      "title": "Gold Authority Policy",
+      "type": "string"
+    },
+    "pending_appeal_policy": {
+      "const": "BLOCK_DATASET",
+      "default": "BLOCK_DATASET",
+      "title": "Pending Appeal Policy",
+      "type": "string"
+    },
+    "sample_identity_policy": {
+      "const": "REUSE_SOURCE_CUT_OPAQUE_ID",
+      "default": "REUSE_SOURCE_CUT_OPAQUE_ID",
+      "title": "Sample Identity Policy",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-regression-eligibility-policy-v1",
+      "default": "m6-regression-eligibility-policy-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selection_scope": {
+      "const": "INCLUDE_ALL_SOURCE_ITEMS",
+      "default": "INCLUDE_ALL_SOURCE_ITEMS",
+      "title": "Selection Scope",
+      "type": "string"
+    },
+    "terminal_appeal_policy": {
+      "const": "SELECT_APPEAL_GOLD",
+      "default": "SELECT_APPEAL_GOLD",
+      "title": "Terminal Appeal Policy",
+      "type": "string"
+    }
+  },
+  "required": [
+    "eligibility_policy_authority_id"
+  ],
+  "title": "M6RegressionEligibilityPolicyAuthority",
+  "type": "object"
+}

@@ -1,0 +1,57 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m5-training-causal-watermark.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The exact training-ledger head observed before dataset registration.",
+  "properties": {
+    "event_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Event Id"
+    },
+    "event_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Event Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-training-causal-watermark-v1",
+      "default": "m5-training-causal-watermark-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence": {
+      "maximum": 100000,
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "watermark_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Watermark Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "sequence",
+    "event_sha256",
+    "watermark_id"
+  ],
+  "title": "M5TrainingCausalWatermark",
+  "type": "object"
+}

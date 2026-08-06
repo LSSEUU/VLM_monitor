@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "DeliveryReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "alert_id": {
+          "minLength": 1,
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "channel": {
+          "minLength": 1,
+          "title": "Channel",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "provider_receipt_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Receipt Ref"
+        }
+      },
+      "required": [
+        "alert_id",
+        "channel",
+        "idempotency_key",
+        "accepted"
+      ],
+      "title": "DeliveryReceipt",
+      "type": "object"
+    },
+    "EmergencySafetyIncident": {
+      "additionalProperties": false,
+      "properties": {
+        "adjudicated": {
+          "const": false,
+          "default": false,
+          "title": "Adjudicated",
+          "type": "boolean"
+        },
+        "certification_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Certification Id"
+        },
+        "delivery_idempotency_key": {
+          "minLength": 1,
+          "title": "Delivery Idempotency Key",
+          "type": "string"
+        },
+        "incident_id": {
+          "minLength": 1,
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "level": {
+          "const": "EMERGENCY",
+          "default": "EMERGENCY",
+          "title": "Level",
+          "type": "string"
+        },
+        "signal_id": {
+          "minLength": 1,
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_type": {
+          "$ref": "#/$defs/SafetySignalType"
+        },
+        "zone_id": {
+          "minLength": 1,
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "incident_id",
+        "signal_id",
+        "signal_type",
+        "zone_id",
+        "delivery_idempotency_key"
+      ],
+      "title": "EmergencySafetyIncident",
+      "type": "object"
+    },
+    "SafetySignalType": {
+      "enum": [
+        "OPEN_FLAME",
+        "SMOKE",
+        "HEAT_ACTIVITY",
+        "OCCUPANCY",
+        "MANUAL_EMERGENCY"
+      ],
+      "title": "SafetySignalType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/immediate-safety-delivery-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Proof that a certified case-external hard signal was already accepted.",
+  "properties": {
+    "authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Authority Id",
+      "type": "string"
+    },
+    "delivery_receipt": {
+      "$ref": "#/$defs/DeliveryReceipt"
+    },
+    "incident": {
+      "$ref": "#/$defs/EmergencySafetyIncident"
+    }
+  },
+  "required": [
+    "incident",
+    "delivery_receipt",
+    "authority_id"
+  ],
+  "title": "ImmediateSafetyDeliveryAuthority",
+  "type": "object"
+}

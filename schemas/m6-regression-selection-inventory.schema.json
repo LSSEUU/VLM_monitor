@@ -1,0 +1,2394 @@
+{
+  "$defs": {
+    "AffectedCitationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "citations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AffectedPrecedentCitation"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "report_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Report Sha256",
+          "type": "string"
+        },
+        "revoked_precedent_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "title": "Revoked Precedent Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "report_sha256"
+      ],
+      "title": "AffectedCitationReport",
+      "type": "object"
+    },
+    "AffectedPrecedentCitation": {
+      "additionalProperties": false,
+      "description": "One immutable historical citation affected by a precedent revocation.",
+      "properties": {
+        "citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Citation Id",
+          "type": "string"
+        },
+        "citing_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Citing Case Id",
+          "type": "string"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "similarity_score": {
+          "maximum": 10,
+          "minimum": -10,
+          "title": "Similarity Score",
+          "type": "number"
+        },
+        "source_citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Citation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_citation_id",
+        "citing_case_id",
+        "precedent_id",
+        "similarity_score",
+        "citation_id"
+      ],
+      "title": "AffectedPrecedentCitation",
+      "type": "object"
+    },
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AlertRescissionIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "rescinded": {
+          "const": true,
+          "default": true,
+          "title": "Rescinded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alert_id"
+      ],
+      "title": "AlertRescissionIntent",
+      "type": "object"
+    },
+    "Appeal": {
+      "additionalProperties": false,
+      "properties": {
+        "appeal_id": {
+          "minLength": 1,
+          "title": "Appeal Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "resolution_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution Summary"
+        },
+        "resolved_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reviewer_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewer Id"
+        },
+        "status": {
+          "$ref": "#/$defs/AppealStatus"
+        },
+        "submitted_by": {
+          "minLength": 1,
+          "title": "Submitted By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "appeal_id",
+        "case_id",
+        "status",
+        "reason",
+        "submitted_by"
+      ],
+      "title": "Appeal",
+      "type": "object"
+    },
+    "AppealResolutionPrecedentSnapshot": {
+      "additionalProperties": false,
+      "description": "Complete current automatic-precedent view captured for terminal CAS.",
+      "properties": {
+        "automatic_precedents": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AutomaticPrecedentAppealAuthority"
+          },
+          "title": "Automatic Precedents",
+          "type": "array"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "complete": {
+          "const": true,
+          "default": true,
+          "title": "Complete",
+          "type": "boolean"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "snapshot_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Snapshot Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "snapshot_sha256"
+      ],
+      "title": "AppealResolutionPrecedentSnapshot",
+      "type": "object"
+    },
+    "AppealResolutionSideEffectIntent": {
+      "additionalProperties": false,
+      "description": "Atomic effects required by one terminal human appeal decision.",
+      "properties": {
+        "affected_citations": {
+          "$ref": "#/$defs/AffectedCitationReport"
+        },
+        "alert_rescissions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AlertRescissionIntent"
+          },
+          "title": "Alert Rescissions",
+          "type": "array"
+        },
+        "appeal_authority": {
+          "$ref": "#/$defs/AppealVersionAuthority"
+        },
+        "appeal_precedent_authority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M5PrecedentAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "expected_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Expected Case Revision",
+          "type": "integer"
+        },
+        "final_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "final_decision_changed": {
+          "readOnly": true,
+          "title": "Final Decision Changed",
+          "type": "boolean"
+        },
+        "intent_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Intent Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "precedent_revocations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PrecedentRevocationIntent"
+          },
+          "title": "Precedent Revocations",
+          "type": "array"
+        },
+        "precedent_snapshot": {
+          "$ref": "#/$defs/AppealResolutionPrecedentSnapshot"
+        },
+        "rule_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "source_verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Verdict Id",
+          "type": "string"
+        },
+        "text_embedding_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Text Embedding Manifest Id",
+          "type": "string"
+        },
+        "training_labels": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TrainingLabel"
+          },
+          "maxItems": 10000,
+          "title": "Training Labels",
+          "type": "array"
+        },
+        "verdict_rescission": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictRescissionIntent"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "visual_embedding_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Visual Embedding Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "expected_case_revision",
+        "appeal_authority",
+        "source_verdict_id",
+        "source_decision",
+        "precedent_snapshot",
+        "final_decision",
+        "affected_citations",
+        "text_embedding_manifest_id",
+        "visual_embedding_manifest_id",
+        "manifest_id",
+        "rule_version",
+        "final_decision_changed",
+        "intent_id"
+      ],
+      "title": "AppealResolutionSideEffectIntent",
+      "type": "object"
+    },
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "AppealVersionAuthority": {
+      "additionalProperties": false,
+      "description": "One append-only version in the fixed three-step appeal state machine.",
+      "properties": {
+        "appeal": {
+          "$ref": "#/$defs/Appeal"
+        },
+        "assigned_reviewer_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assigned Reviewer Id"
+        },
+        "authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Sha256",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "previous_authority_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Authority Sha256"
+        },
+        "rule_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_case_authority": {
+          "$ref": "#/$defs/ClosedCaseAppealAuthority"
+        },
+        "source_case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Authority Sha256",
+          "type": "string"
+        },
+        "source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Revision",
+          "type": "integer"
+        },
+        "source_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "source_verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Verdict Id",
+          "type": "string"
+        },
+        "source_verdict_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Verdict Sha256",
+          "type": "string"
+        },
+        "source_verdict_version": {
+          "exclusiveMinimum": 0,
+          "title": "Source Verdict Version",
+          "type": "integer"
+        },
+        "text_embedding_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Text Embedding Manifest Id",
+          "type": "string"
+        },
+        "version": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "visual_embedding_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Visual Embedding Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "appeal",
+        "version",
+        "source_case_authority",
+        "source_case_revision",
+        "source_case_authority_sha256",
+        "source_verdict_id",
+        "source_verdict_version",
+        "source_verdict_sha256",
+        "source_decision",
+        "text_embedding_manifest_id",
+        "visual_embedding_manifest_id",
+        "manifest_id",
+        "rule_version",
+        "authority_sha256"
+      ],
+      "title": "AppealVersionAuthority",
+      "type": "object"
+    },
+    "AppealableAlertAuthority": {
+      "additionalProperties": false,
+      "description": "An original adjudicated alert that has not yet been rescinded.",
+      "properties": {
+        "alert_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "rescinded": {
+          "const": false,
+          "default": false,
+          "title": "Rescinded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alert_id"
+      ],
+      "title": "AppealableAlertAuthority",
+      "type": "object"
+    },
+    "AutomaticPrecedentAppealAuthority": {
+      "additionalProperties": false,
+      "description": "The exact automatic precedent state visible before appeal resolution.",
+      "properties": {
+        "citations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AffectedPrecedentCitation"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "decision_direction": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "precedent_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Precedent Authority Id",
+          "type": "string"
+        },
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "precedent_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Precedent Revision",
+          "type": "integer"
+        },
+        "source": {
+          "const": "AUTOMATIC",
+          "default": "AUTOMATIC",
+          "title": "Source",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROVISIONAL",
+            "ACTIVE",
+            "CONFLICT",
+            "INVALIDATED"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "precedent_authority_id",
+        "precedent_revision",
+        "status",
+        "decision_direction",
+        "source_case_id"
+      ],
+      "title": "AutomaticPrecedentAppealAuthority",
+      "type": "object"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "ClosedCaseAppealAuthority": {
+      "additionalProperties": false,
+      "description": "Minimal immutable Case projection authorized to accept one appeal.",
+      "properties": {
+        "alerts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AppealableAlertAuthority"
+          },
+          "title": "Alerts",
+          "type": "array"
+        },
+        "authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Sha256",
+          "type": "string"
+        },
+        "automatic_precedents": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AutomaticPrecedentAppealAuthority"
+          },
+          "title": "Automatic Precedents",
+          "type": "array"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Case Revision",
+          "type": "integer"
+        },
+        "case_status": {
+          "const": "CLOSED",
+          "default": "CLOSED",
+          "title": "Case Status",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "detector_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Detector Manifest Id",
+          "type": "string"
+        },
+        "effective_appeal_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "title": "Effective Appeal Ids",
+          "type": "array"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "final_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "text_embedding_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Text Embedding Manifest Id",
+          "type": "string"
+        },
+        "verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Id",
+          "type": "string"
+        },
+        "verdict_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Sha256",
+          "type": "string"
+        },
+        "verdict_version": {
+          "exclusiveMinimum": 0,
+          "title": "Verdict Version",
+          "type": "integer"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "visual_embedding_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Visual Embedding Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "case_revision",
+        "verdict_id",
+        "verdict_version",
+        "verdict_sha256",
+        "final_decision",
+        "evidence_class",
+        "violation_type",
+        "detector_manifest_id",
+        "text_embedding_manifest_id",
+        "visual_embedding_manifest_id",
+        "manifest_id",
+        "config_sha256",
+        "rule_version",
+        "authority_sha256"
+      ],
+      "title": "ClosedCaseAppealAuthority",
+      "type": "object"
+    },
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "M5AppealResolutionCommitReceipt": {
+      "additionalProperties": false,
+      "description": "Final durable root proving that every appeal side effect committed atomically.",
+      "properties": {
+        "affected_citation_report_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Affected Citation Report Sha256",
+          "type": "string"
+        },
+        "alert_rescission_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "title": "Alert Rescission Ids",
+          "type": "array"
+        },
+        "appeal_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Appeal Authority Sha256",
+          "type": "string"
+        },
+        "appeal_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Appeal Id",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "effect_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Effect Root Sha256",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "precedent_revocation_receipt_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "title": "Precedent Revocation Receipt Ids",
+          "type": "array"
+        },
+        "receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Receipt Id",
+          "type": "string"
+        },
+        "replacement_precedent_authority_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Replacement Precedent Authority Id"
+        },
+        "resolution_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Resolution Document Sha256",
+          "type": "string"
+        },
+        "resolution_intent_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Resolution Intent Id",
+          "type": "string"
+        },
+        "resulting_case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Resulting Case Document Sha256",
+          "type": "string"
+        },
+        "resulting_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Resulting Case Revision",
+          "type": "integer"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m5-appeal-resolution-commit-receipt-v1",
+          "default": "m5-appeal-resolution-commit-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Revision",
+          "type": "integer"
+        },
+        "training_label_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "title": "Training Label Ids",
+          "type": "array"
+        },
+        "verdict_rescission_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "title": "Verdict Rescission Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "run_id",
+        "resolution_intent_id",
+        "resolution_document_sha256",
+        "appeal_id",
+        "appeal_authority_sha256",
+        "case_id",
+        "source_case_revision",
+        "resulting_case_revision",
+        "resulting_case_document_sha256",
+        "affected_citation_report_sha256",
+        "manifest_id",
+        "effect_root_sha256",
+        "receipt_id"
+      ],
+      "title": "M5AppealResolutionCommitReceipt",
+      "type": "object"
+    },
+    "M5EmbeddingChannel": {
+      "enum": [
+        "TEXT",
+        "VISUAL"
+      ],
+      "title": "M5EmbeddingChannel",
+      "type": "string"
+    },
+    "M5EmbeddingRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "FAKE_SHA256_SIGNED_PROJECTION_V1",
+          "default": "FAKE_SHA256_SIGNED_PROJECTION_V1",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/$defs/M5EmbeddingChannel"
+        },
+        "dimensions": {
+          "exclusiveMinimum": 0,
+          "maximum": 4096,
+          "title": "Dimensions",
+          "type": "integer"
+        },
+        "input_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Input Ref",
+          "type": "string"
+        },
+        "input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m5-embedding-request-v1",
+          "default": "m5-embedding-request-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "channel",
+        "input_ref",
+        "input_sha256",
+        "model_manifest_id",
+        "dimensions",
+        "request_id"
+      ],
+      "title": "M5EmbeddingRequest",
+      "type": "object"
+    },
+    "M5EmbeddingVector": {
+      "additionalProperties": false,
+      "properties": {
+        "embedding_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Embedding Id",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/M5EmbeddingRequest"
+        },
+        "schema_version": {
+          "const": "m5-embedding-vector-v1",
+          "default": "m5-embedding-vector-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "request",
+        "values",
+        "embedding_id"
+      ],
+      "title": "M5EmbeddingVector",
+      "type": "object"
+    },
+    "M5PrecedentAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "activated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activated At"
+        },
+        "activation_not_before": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activation Not Before"
+        },
+        "authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "precedent": {
+          "$ref": "#/$defs/Precedent"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m5-precedent-authority-v1",
+          "default": "m5-precedent-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "text_embedding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M5EmbeddingVector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "visual_embeddings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M5EmbeddingVector"
+          },
+          "maxItems": 32,
+          "title": "Visual Embeddings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "run_id",
+        "config_sha256",
+        "revision",
+        "precedent",
+        "created_at",
+        "authority_id"
+      ],
+      "title": "M5PrecedentAuthority",
+      "type": "object"
+    },
+    "M6AppealGoldTruthAuthority": {
+      "additionalProperties": false,
+      "description": "Full pre-appeal baseline -> terminal human decision -> commit chain.",
+      "properties": {
+        "appeal_gold_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Appeal Gold Authority Id",
+          "type": "string"
+        },
+        "baseline_snapshot": {
+          "$ref": "#/$defs/M6CaseReplaySnapshot"
+        },
+        "gold_truth": {
+          "$ref": "#/$defs/M6GoldTruthAuthority"
+        },
+        "resolution_commit": {
+          "$ref": "#/$defs/M5AppealResolutionCommitReceipt"
+        },
+        "resolution_commit_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Resolution Commit Content Sha256",
+          "type": "string"
+        },
+        "resolution_intent": {
+          "$ref": "#/$defs/AppealResolutionSideEffectIntent"
+        },
+        "resolution_intent_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Resolution Intent Content Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-appeal-gold-truth-authority-v1",
+          "default": "m6-appeal-gold-truth-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_item": {
+          "$ref": "#/$defs/M6RegressionSourceInventoryItem"
+        },
+        "terminal_appeal_authority": {
+          "$ref": "#/$defs/AppealVersionAuthority"
+        },
+        "terminal_appeal_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Terminal Appeal Content Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_item",
+        "baseline_snapshot",
+        "terminal_appeal_authority",
+        "resolution_intent",
+        "resolution_commit",
+        "gold_truth",
+        "terminal_appeal_content_sha256",
+        "resolution_intent_content_sha256",
+        "resolution_commit_content_sha256",
+        "appeal_gold_authority_id"
+      ],
+      "title": "M6AppealGoldTruthAuthority",
+      "type": "object"
+    },
+    "M6CaseReplaySnapshot": {
+      "additionalProperties": false,
+      "description": "One replayed Case semantic projection without operational identity noise.",
+      "properties": {
+        "case_status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "final_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "highest_alert_level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "projection_version": {
+          "const": "m6-semantic-case-v1",
+          "default": "m6-semantic-case-v1",
+          "title": "Projection Version",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-case-replay-snapshot-v1",
+          "default": "m6-case-replay-snapshot-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "semantic_case_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Semantic Case Hash",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Document Sha256",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Revision",
+          "type": "integer"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "stage_roots": {
+          "items": {
+            "$ref": "#/$defs/M6SemanticStageRoot"
+          },
+          "maxItems": 6,
+          "minItems": 6,
+          "title": "Stage Roots",
+          "type": "array"
+        },
+        "terminal_appeal_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppealStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_case_id",
+        "source_case_revision",
+        "source_case_document_sha256",
+        "manifest_id",
+        "stage_roots",
+        "case_status",
+        "semantic_case_hash",
+        "snapshot_id"
+      ],
+      "title": "M6CaseReplaySnapshot",
+      "type": "object"
+    },
+    "M6ChallengeDesignationAuthority": {
+      "additionalProperties": false,
+      "description": "Explicit evaluator authority overlaying a selected source with challenge kinds.",
+      "properties": {
+        "authority_kind": {
+          "const": "SYNTHETIC_SCENARIO",
+          "default": "SYNTHETIC_SCENARIO",
+          "title": "Authority Kind",
+          "type": "string"
+        },
+        "challenge_designation_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Challenge Designation Authority Id",
+          "type": "string"
+        },
+        "challenge_kinds": {
+          "items": {
+            "$ref": "#/$defs/M6ChallengeKind"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "title": "Challenge Kinds",
+          "type": "array"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-challenge-designation-authority-v1",
+          "default": "m6-challenge-designation-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Authority Document Sha256",
+          "type": "string"
+        },
+        "source_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Authority Id",
+          "type": "string"
+        },
+        "source_item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Item Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_item_id",
+        "sample_id",
+        "source_authority_id",
+        "source_authority_document_sha256",
+        "challenge_kinds",
+        "challenge_designation_authority_id"
+      ],
+      "title": "M6ChallengeDesignationAuthority",
+      "type": "object"
+    },
+    "M6ChallengeKind": {
+      "enum": [
+        "DIFFICULT_NEGATIVE",
+        "INSUFFICIENT_OBSERVATION",
+        "DON_AFTER_THRESHOLD",
+        "OCCLUSION",
+        "DETECTOR_MISS",
+        "FABRICATED_REFERENCE",
+        "OBJECTIVE_CONFLICT",
+        "PROVIDER_OUTAGE",
+        "PRECEDENT_MISMATCH",
+        "HARD_SIGNAL_UNCERTIFIED"
+      ],
+      "title": "M6ChallengeKind",
+      "type": "string"
+    },
+    "M6GoldTruthAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_kind": {
+          "$ref": "#/$defs/M6GoldTruthAuthorityKind"
+        },
+        "baseline_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Snapshot Id",
+          "type": "string"
+        },
+        "baseline_source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Baseline Source Case Id",
+          "type": "string"
+        },
+        "baseline_source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Baseline Source Case Revision",
+          "type": "integer"
+        },
+        "baseline_source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Baseline Source Run Id",
+          "type": "string"
+        },
+        "decision_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Decision Authority Document Sha256",
+          "type": "string"
+        },
+        "decision_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Decision Authority Id",
+          "type": "string"
+        },
+        "expected_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "resolution_commit_document_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution Commit Document Sha256"
+        },
+        "resolution_commit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution Commit Id"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "truth_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Truth Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "baseline_snapshot_id",
+        "baseline_source_run_id",
+        "baseline_source_case_id",
+        "baseline_source_case_revision",
+        "authority_kind",
+        "decision_authority_id",
+        "decision_authority_document_sha256",
+        "expected_decision",
+        "truth_id"
+      ],
+      "title": "M6GoldTruthAuthority",
+      "type": "object"
+    },
+    "M6GoldTruthAuthorityKind": {
+      "enum": [
+        "APPEAL_RESOLUTION",
+        "HUMAN_REVIEW",
+        "PRESET_GOLD"
+      ],
+      "title": "M6GoldTruthAuthorityKind",
+      "type": "string"
+    },
+    "M6RegressionDatasetKind": {
+      "enum": [
+        "STABILITY",
+        "GOLD",
+        "CHALLENGE"
+      ],
+      "title": "M6RegressionDatasetKind",
+      "type": "string"
+    },
+    "M6RegressionEligibilityPolicyAuthority": {
+      "additionalProperties": false,
+      "description": "The fixed first M6 policy; unsupported truth sources cannot be enabled.",
+      "properties": {
+        "challenge_policy": {
+          "const": "EXPLICIT_AUTHORITY_ONLY",
+          "default": "EXPLICIT_AUTHORITY_ONLY",
+          "title": "Challenge Policy",
+          "type": "string"
+        },
+        "closed_unappealed_policy": {
+          "const": "SELECT_STABILITY",
+          "default": "SELECT_STABILITY",
+          "title": "Closed Unappealed Policy",
+          "type": "string"
+        },
+        "eligibility_policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Eligibility Policy Authority Id",
+          "type": "string"
+        },
+        "gold_authority_policy": {
+          "const": "APPEAL_RESOLUTION_ONLY",
+          "default": "APPEAL_RESOLUTION_ONLY",
+          "title": "Gold Authority Policy",
+          "type": "string"
+        },
+        "pending_appeal_policy": {
+          "const": "BLOCK_DATASET",
+          "default": "BLOCK_DATASET",
+          "title": "Pending Appeal Policy",
+          "type": "string"
+        },
+        "sample_identity_policy": {
+          "const": "REUSE_SOURCE_CUT_OPAQUE_ID",
+          "default": "REUSE_SOURCE_CUT_OPAQUE_ID",
+          "title": "Sample Identity Policy",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-regression-eligibility-policy-v1",
+          "default": "m6-regression-eligibility-policy-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selection_scope": {
+          "const": "INCLUDE_ALL_SOURCE_ITEMS",
+          "default": "INCLUDE_ALL_SOURCE_ITEMS",
+          "title": "Selection Scope",
+          "type": "string"
+        },
+        "terminal_appeal_policy": {
+          "const": "SELECT_APPEAL_GOLD",
+          "default": "SELECT_APPEAL_GOLD",
+          "title": "Terminal Appeal Policy",
+          "type": "string"
+        }
+      },
+      "required": [
+        "eligibility_policy_authority_id"
+      ],
+      "title": "M6RegressionEligibilityPolicyAuthority",
+      "type": "object"
+    },
+    "M6RegressionSelectionDisposition": {
+      "enum": [
+        "SELECTED_STABILITY",
+        "SELECTED_APPEAL_GOLD",
+        "BLOCKED_PENDING_APPEAL"
+      ],
+      "title": "M6RegressionSelectionDisposition",
+      "type": "string"
+    },
+    "M6RegressionSelectionReceipt": {
+      "additionalProperties": false,
+      "description": "One derived receipt for every source item, including blocked pending appeals.",
+      "properties": {
+        "appeal_gold_authority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6AppealGoldTruthAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "appeal_gold_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "readOnly": true,
+          "title": "Appeal Gold Content Sha256"
+        },
+        "baseline_snapshot": {
+          "$ref": "#/$defs/M6CaseReplaySnapshot"
+        },
+        "baseline_snapshot_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Baseline Snapshot Content Sha256",
+          "type": "string"
+        },
+        "challenge_designation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6ChallengeDesignationAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "challenge_designation_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "readOnly": true,
+          "title": "Challenge Designation Content Sha256"
+        },
+        "challenge_kinds": {
+          "items": {
+            "$ref": "#/$defs/M6ChallengeKind"
+          },
+          "readOnly": true,
+          "title": "Challenge Kinds",
+          "type": "array"
+        },
+        "current_appeal_authority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppealVersionAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "current_appeal_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "readOnly": true,
+          "title": "Current Appeal Content Sha256"
+        },
+        "current_case_authority_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Current Case Authority Root Sha256",
+          "type": "string"
+        },
+        "current_case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Current Case Document Sha256",
+          "type": "string"
+        },
+        "current_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Current Case Revision",
+          "type": "integer"
+        },
+        "current_case_status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "eligibility_policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Eligibility Policy Authority Id",
+          "type": "string"
+        },
+        "memberships": {
+          "items": {
+            "$ref": "#/$defs/M6RegressionDatasetKind"
+          },
+          "readOnly": true,
+          "title": "Memberships",
+          "type": "array"
+        },
+        "selection_disposition": {
+          "$ref": "#/$defs/M6RegressionSelectionDisposition",
+          "readOnly": true
+        },
+        "selection_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Selection Receipt Id",
+          "type": "string"
+        },
+        "source_inventory_cut_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Inventory Cut Authority Id",
+          "type": "string"
+        },
+        "source_item": {
+          "$ref": "#/$defs/M6RegressionSourceInventoryItem"
+        },
+        "source_m5_authority_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source M5 Authority Root Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_inventory_cut_authority_id",
+        "eligibility_policy_authority_id",
+        "source_item",
+        "baseline_snapshot",
+        "source_m5_authority_root_sha256",
+        "current_case_authority_root_sha256",
+        "current_case_revision",
+        "current_case_document_sha256",
+        "current_case_status",
+        "baseline_snapshot_content_sha256",
+        "current_appeal_content_sha256",
+        "appeal_gold_content_sha256",
+        "challenge_designation_content_sha256",
+        "selection_disposition",
+        "memberships",
+        "challenge_kinds",
+        "selection_receipt_id"
+      ],
+      "title": "M6RegressionSelectionReceipt",
+      "type": "object"
+    },
+    "M6RegressionSourceInventoryItem": {
+      "additionalProperties": false,
+      "description": "One exact historical Case and its already-committed replay source seal.",
+      "properties": {
+        "input_authority_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Content Sha256",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "input_authority_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Input Authority Size Bytes",
+          "type": "integer"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Content Sha256",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "replay_input_closure_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Replay Input Closure Size Bytes",
+          "type": "integer"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "sealed_audit_head_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sealed Audit Head Hash",
+          "type": "string"
+        },
+        "sealed_audit_head_sequence": {
+          "minimum": -1,
+          "title": "Sealed Audit Head Sequence",
+          "type": "integer"
+        },
+        "sealed_source_m5_authority_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sealed Source M5 Authority Root Sha256",
+          "type": "string"
+        },
+        "sealed_source_validation_report_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sealed Source Validation Report Document Sha256",
+          "type": "string"
+        },
+        "sealed_source_validation_report_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sealed Source Validation Report Id",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Document Sha256",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Revision",
+          "type": "integer"
+        },
+        "source_item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Item Id",
+          "type": "string"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "source_seal_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Seal Content Sha256",
+          "type": "string"
+        },
+        "source_seal_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Seal Id",
+          "type": "string"
+        },
+        "source_seal_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Source Seal Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_case_id",
+        "source_case_revision",
+        "source_case_document_sha256",
+        "source_manifest_id",
+        "sealed_source_validation_report_id",
+        "sealed_source_validation_report_document_sha256",
+        "sealed_source_m5_authority_root_sha256",
+        "sealed_audit_head_sequence",
+        "sealed_audit_head_hash",
+        "source_seal_id",
+        "source_seal_content_sha256",
+        "source_seal_size_bytes",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "input_authority_content_sha256",
+        "input_authority_size_bytes",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "replay_input_closure_content_sha256",
+        "replay_input_closure_size_bytes",
+        "source_item_id"
+      ],
+      "title": "M6RegressionSourceInventoryItem",
+      "type": "object"
+    },
+    "M6RegressionStage": {
+      "enum": [
+        "PERCEPTION",
+        "SCREENING",
+        "RETRIEVAL",
+        "HEARING",
+        "GATE",
+        "POLICY"
+      ],
+      "title": "M6RegressionStage",
+      "type": "string"
+    },
+    "M6SemanticStageRoot": {
+      "additionalProperties": false,
+      "properties": {
+        "projection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Projection Sha256",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/M6RegressionStage"
+        }
+      },
+      "required": [
+        "stage",
+        "projection_sha256"
+      ],
+      "title": "M6SemanticStageRoot",
+      "type": "object"
+    },
+    "Precedent": {
+      "additionalProperties": false,
+      "properties": {
+        "activation_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activation At"
+        },
+        "citation_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Citation Count",
+          "type": "integer"
+        },
+        "decision_direction": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "invalidated_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Invalidated By"
+        },
+        "precedent_id": {
+          "minLength": 1,
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "situation_text": {
+          "minLength": 1,
+          "title": "Situation Text",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/PrecedentSource"
+        },
+        "source_case_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Case Id"
+        },
+        "status": {
+          "$ref": "#/$defs/PrecedentStatus"
+        },
+        "text_embedding_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Embedding Ref"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "visual_embedding_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Visual Embedding Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "situation_text",
+        "decision_direction",
+        "source",
+        "status",
+        "evidence_class",
+        "violation_type",
+        "rule_version"
+      ],
+      "title": "Precedent",
+      "type": "object"
+    },
+    "PrecedentRevocationIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "precedent_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "previous_status": {
+          "enum": [
+            "PROVISIONAL",
+            "ACTIVE",
+            "CONFLICT",
+            "INVALIDATED"
+          ],
+          "title": "Previous Status",
+          "type": "string"
+        },
+        "prior_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prior Authority Id",
+          "type": "string"
+        },
+        "prior_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Prior Revision",
+          "type": "integer"
+        },
+        "source": {
+          "const": "AUTOMATIC",
+          "default": "AUTOMATIC",
+          "title": "Source",
+          "type": "string"
+        },
+        "status": {
+          "const": "REVOKED",
+          "default": "REVOKED",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "prior_authority_id",
+        "prior_revision",
+        "previous_status"
+      ],
+      "title": "PrecedentRevocationIntent",
+      "type": "object"
+    },
+    "PrecedentSource": {
+      "enum": [
+        "PRESET",
+        "AUTOMATIC",
+        "HUMAN_REVIEW",
+        "APPEAL_OVERTURN"
+      ],
+      "title": "PrecedentSource",
+      "type": "string"
+    },
+    "PrecedentStatus": {
+      "enum": [
+        "PROVISIONAL",
+        "ACTIVE",
+        "CONFLICT",
+        "INVALIDATED",
+        "REVOKED"
+      ],
+      "title": "PrecedentStatus",
+      "type": "string"
+    },
+    "TrainingLabel": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "detector_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Detector Manifest Id",
+          "type": "string"
+        },
+        "excluded_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Excluded Reason"
+        },
+        "label_id": {
+          "minLength": 1,
+          "title": "Label Id",
+          "type": "string"
+        },
+        "label_name": {
+          "minLength": 1,
+          "title": "Label Name",
+          "type": "string"
+        },
+        "label_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Label Value"
+        },
+        "quality": {
+          "$ref": "#/$defs/TrainingLabelQuality"
+        },
+        "reviewer_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewer Id"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label_id",
+        "case_id",
+        "crop_id",
+        "bbox",
+        "label_name",
+        "label_value",
+        "quality",
+        "source",
+        "rule_version",
+        "detector_manifest_id"
+      ],
+      "title": "TrainingLabel",
+      "type": "object"
+    },
+    "TrainingLabelQuality": {
+      "enum": [
+        "WEAK_AUTO",
+        "CONSENSUS_REVIEWED",
+        "HUMAN_CONFIRMED",
+        "APPEAL_CONFIRMED"
+      ],
+      "title": "TrainingLabelQuality",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "VerdictRescissionIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "rescinded": {
+          "const": true,
+          "default": true,
+          "title": "Rescinded",
+          "type": "boolean"
+        },
+        "verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Id",
+          "type": "string"
+        },
+        "verdict_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Sha256",
+          "type": "string"
+        },
+        "verdict_version": {
+          "exclusiveMinimum": 0,
+          "title": "Verdict Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "verdict_id",
+        "verdict_version",
+        "verdict_sha256"
+      ],
+      "title": "VerdictRescissionIntent",
+      "type": "object"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-regression-selection-inventory.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One complete selection receipt per source-cut item, including blockers.",
+  "properties": {
+    "baseline_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Baseline Manifest Id",
+      "type": "string"
+    },
+    "blocked_count": {
+      "readOnly": true,
+      "title": "Blocked Count",
+      "type": "integer"
+    },
+    "challenge_count": {
+      "readOnly": true,
+      "title": "Challenge Count",
+      "type": "integer"
+    },
+    "eligibility_policy": {
+      "$ref": "#/$defs/M6RegressionEligibilityPolicyAuthority"
+    },
+    "eligibility_policy_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Eligibility Policy Content Sha256",
+      "type": "string"
+    },
+    "gold_count": {
+      "readOnly": true,
+      "title": "Gold Count",
+      "type": "integer"
+    },
+    "receipt_count": {
+      "readOnly": true,
+      "title": "Receipt Count",
+      "type": "integer"
+    },
+    "receipts": {
+      "items": {
+        "$ref": "#/$defs/M6RegressionSelectionReceipt"
+      },
+      "maxItems": 100000,
+      "minItems": 1,
+      "title": "Receipts",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m6-regression-selection-inventory-v1",
+      "default": "m6-regression-selection-inventory-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_count": {
+      "readOnly": true,
+      "title": "Selected Count",
+      "type": "integer"
+    },
+    "selection_inventory_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Selection Inventory Authority Id",
+      "type": "string"
+    },
+    "selection_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Selection Inventory Root Sha256",
+      "type": "string"
+    },
+    "source_inventory_cut_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Inventory Cut Authority Id",
+      "type": "string"
+    },
+    "source_inventory_cut_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Inventory Cut Content Sha256",
+      "type": "string"
+    },
+    "source_inventory_item_count": {
+      "exclusiveMinimum": 0,
+      "maximum": 100000,
+      "title": "Source Inventory Item Count",
+      "type": "integer"
+    },
+    "source_inventory_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Inventory Root Sha256",
+      "type": "string"
+    },
+    "stability_count": {
+      "readOnly": true,
+      "title": "Stability Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "baseline_manifest_id",
+    "source_inventory_cut_authority_id",
+    "source_inventory_cut_content_sha256",
+    "source_inventory_item_count",
+    "source_inventory_root_sha256",
+    "eligibility_policy",
+    "receipts",
+    "eligibility_policy_content_sha256",
+    "receipt_count",
+    "selected_count",
+    "blocked_count",
+    "stability_count",
+    "gold_count",
+    "challenge_count",
+    "selection_inventory_root_sha256",
+    "selection_inventory_authority_id"
+  ],
+  "title": "M6RegressionSelectionInventoryAuthority",
+  "type": "object"
+}

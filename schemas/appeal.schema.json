@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/appeal.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "appeal_id": {
+      "minLength": 1,
+      "title": "Appeal Id",
+      "type": "string"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "resolution_summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resolution Summary"
+    },
+    "resolved_decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "reviewer_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reviewer Id"
+    },
+    "status": {
+      "$ref": "#/$defs/AppealStatus"
+    },
+    "submitted_by": {
+      "minLength": 1,
+      "title": "Submitted By",
+      "type": "string"
+    }
+  },
+  "required": [
+    "appeal_id",
+    "case_id",
+    "status",
+    "reason",
+    "submitted_by"
+  ],
+  "title": "Appeal",
+  "type": "object"
+}

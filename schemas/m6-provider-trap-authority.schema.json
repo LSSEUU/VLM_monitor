@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "M6ProviderCapabilityCounters": {
+      "additionalProperties": false,
+      "properties": {
+        "acquisition_provider_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Acquisition Provider Calls",
+          "type": "integer"
+        },
+        "alert_channel_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Alert Channel Calls",
+          "type": "integer"
+        },
+        "cache_write_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Cache Write Calls",
+          "type": "integer"
+        },
+        "embedding_provider_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Embedding Provider Calls",
+          "type": "integer"
+        },
+        "hearing_vlm_provider_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Hearing Vlm Provider Calls",
+          "type": "integer"
+        },
+        "live_precedent_tail_query_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Live Precedent Tail Query Calls",
+          "type": "integer"
+        },
+        "live_training_label_tail_query_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Live Training Label Tail Query Calls",
+          "type": "integer"
+        },
+        "perception_provider_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Perception Provider Calls",
+          "type": "integer"
+        },
+        "response_recovery_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Response Recovery Calls",
+          "type": "integer"
+        },
+        "safety_signal_provider_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Safety Signal Provider Calls",
+          "type": "integer"
+        },
+        "screening_vlm_provider_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Screening Vlm Provider Calls",
+          "type": "integer"
+        }
+      },
+      "title": "M6ProviderCapabilityCounters",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-provider-trap-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "clean": {
+      "readOnly": true,
+      "title": "Clean",
+      "type": "boolean"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "counters": {
+      "$ref": "#/$defs/M6ProviderCapabilityCounters"
+    },
+    "execution_component_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Component Manifest Id",
+      "type": "string"
+    },
+    "external_capability_call_count": {
+      "readOnly": true,
+      "title": "External Capability Call Count",
+      "type": "integer"
+    },
+    "provider_trap_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Provider Trap Authority Id",
+      "type": "string"
+    },
+    "provider_trap_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Provider Trap Document Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-provider-trap-authority-v1",
+      "default": "m6-provider-trap-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "command_id",
+    "candidate_run_id",
+    "execution_component_manifest_id",
+    "counters",
+    "external_capability_call_count",
+    "clean",
+    "provider_trap_authority_id",
+    "provider_trap_document_sha256"
+  ],
+  "title": "M6ProviderTrapAuthority",
+  "type": "object"
+}

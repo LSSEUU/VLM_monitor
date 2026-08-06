@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "M5DatasetLabelSnapshotRole": {
+      "enum": [
+        "EXPORTED",
+        "QUARANTINED"
+      ],
+      "title": "M5DatasetLabelSnapshotRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-dataset-label-snapshot-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One exact label authority and its append-event proof inside a dataset cut.",
+  "properties": {
+    "authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authority Sha256",
+      "type": "string"
+    },
+    "causal_event_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Causal Event Id",
+      "type": "string"
+    },
+    "causal_event_sequence": {
+      "exclusiveMinimum": 0,
+      "maximum": 100000,
+      "title": "Causal Event Sequence",
+      "type": "integer"
+    },
+    "causal_event_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Causal Event Sha256",
+      "type": "string"
+    },
+    "label_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Label Id",
+      "type": "string"
+    },
+    "receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/M5DatasetLabelSnapshotRole"
+    },
+    "schema_version": {
+      "const": "m5-dataset-label-snapshot-receipt-v1",
+      "default": "m5-dataset-label-snapshot-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "label_id",
+    "role",
+    "authority_sha256",
+    "causal_event_id",
+    "causal_event_sequence",
+    "causal_event_sha256",
+    "receipt_id"
+  ],
+  "title": "M5DatasetLabelSnapshotReceipt",
+  "type": "object"
+}

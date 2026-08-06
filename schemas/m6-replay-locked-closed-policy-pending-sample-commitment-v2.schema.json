@@ -1,0 +1,658 @@
+{
+  "$defs": {
+    "AlertCooldownAuthority": {
+      "additionalProperties": false,
+      "description": "The last emitted alert and its exclusive frame-space cooldown bound.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "cooldown_frames": {
+          "minimum": 0,
+          "title": "Cooldown Frames",
+          "type": "integer"
+        },
+        "cooldown_until_frame_exclusive": {
+          "minimum": 0,
+          "title": "Cooldown Until Frame Exclusive",
+          "type": "integer"
+        },
+        "key": {
+          "$ref": "#/$defs/AlertCooldownKey"
+        },
+        "source_alert_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Alert Id",
+          "type": "string"
+        },
+        "source_trigger_frame": {
+          "minimum": 0,
+          "title": "Source Trigger Frame",
+          "type": "integer"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "stream_id",
+        "source_alert_id",
+        "source_trigger_frame",
+        "cooldown_frames",
+        "cooldown_until_frame_exclusive",
+        "authority_id"
+      ],
+      "title": "AlertCooldownAuthority",
+      "type": "object"
+    },
+    "AlertCooldownKey": {
+      "additionalProperties": false,
+      "description": "Frame-space deduplication key scoped by the complete anonymous track ref.",
+      "properties": {
+        "key_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Key Id",
+          "type": "string"
+        },
+        "track_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Track Ref",
+          "type": "string"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "zone_id",
+        "violation_type",
+        "track_ref",
+        "key_id"
+      ],
+      "title": "AlertCooldownKey",
+      "type": "object"
+    },
+    "M6RegressionExecutionEntry": {
+      "additionalProperties": false,
+      "description": "Blinded candidate input; it contains no membership or expected decision.",
+      "properties": {
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "execution_entry_id"
+      ],
+      "title": "M6RegressionExecutionEntry",
+      "type": "object"
+    },
+    "M6ReplayLockedClosedPolicySourceBindingAuthority": {
+      "additionalProperties": false,
+      "description": "Candidate-safe projection that pre-binds one independently held policy cut.\n\nThe complete causal cut includes evaluator-only source policy outputs and is\nintentionally absent.  A trusted record builder later joins it by the\nauthority and physical identities fixed here.",
+      "properties": {
+        "cooldown_causal_head": {
+          "$ref": "#/$defs/M6ReplayLockedCooldownCausalHead"
+        },
+        "cooldown_causal_head_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Cooldown Causal Head Id",
+          "type": "string"
+        },
+        "emergency_causal_basis": {
+          "const": "DISABLED_MISSING_CERTIFIED_SIGNAL_AUTHORITY",
+          "default": "DISABLED_MISSING_CERTIFIED_SIGNAL_AUTHORITY",
+          "title": "Emergency Causal Basis",
+          "type": "string"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "policy_causal_cut_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Causal Cut Authority Id",
+          "type": "string"
+        },
+        "policy_causal_cut_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Causal Cut Content Sha256",
+          "type": "string"
+        },
+        "policy_causal_cut_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Policy Causal Cut Size Bytes",
+          "type": "integer"
+        },
+        "pre_policy_route": {
+          "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-closed-policy-source-binding-authority-v1",
+          "default": "m6-replay-locked-closed-policy-source-binding-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Binding Authority Id",
+          "type": "string"
+        },
+        "source_catalog_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Entry Id",
+          "type": "string"
+        },
+        "source_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Config Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_catalog_entry_id",
+        "sample_id",
+        "execution_entry_id",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "pre_policy_route",
+        "source_config_sha256",
+        "policy_causal_cut_authority_id",
+        "policy_causal_cut_content_sha256",
+        "policy_causal_cut_size_bytes",
+        "cooldown_causal_head",
+        "cooldown_causal_head_id",
+        "source_binding_authority_id"
+      ],
+      "title": "M6ReplayLockedClosedPolicySourceBindingAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedCooldownCausalBasis": {
+      "description": "Why the source policy received this exact prior cooldown value.",
+      "enum": [
+        "UNTRACKED",
+        "EMPTY_HISTORY",
+        "EXACT_PRIOR"
+      ],
+      "title": "M6ReplayLockedCooldownCausalBasis",
+      "type": "string"
+    },
+    "M6ReplayLockedCooldownCausalHead": {
+      "additionalProperties": false,
+      "description": "Snapshot-scoped cooldown head immediately before one Case close.",
+      "properties": {
+        "basis": {
+          "$ref": "#/$defs/M6ReplayLockedCooldownCausalBasis"
+        },
+        "causal_head_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Causal Head Id",
+          "type": "string"
+        },
+        "eligible_count": {
+          "readOnly": true,
+          "title": "Eligible Count",
+          "type": "integer"
+        },
+        "eligible_history": {
+          "items": {
+            "$ref": "#/$defs/M6ReplayLockedCooldownHistoryEntry"
+          },
+          "maxItems": 10000,
+          "title": "Eligible History",
+          "type": "array"
+        },
+        "eligible_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Eligible Inventory Root Sha256",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertCooldownKey"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "prior_authority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertCooldownAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "prior_revision": {
+          "minimum": 0,
+          "title": "Prior Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-cooldown-causal-head-v1",
+          "default": "m6-replay-locked-cooldown-causal-head-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_close_audit_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Close Audit Entry Hash",
+          "type": "string"
+        },
+        "source_close_audit_sequence": {
+          "minimum": 0,
+          "title": "Source Close Audit Sequence",
+          "type": "integer"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_run_id",
+        "basis",
+        "source_close_audit_sequence",
+        "source_close_audit_entry_hash",
+        "prior_revision",
+        "eligible_history",
+        "eligible_count",
+        "eligible_inventory_root_sha256",
+        "causal_head_id"
+      ],
+      "title": "M6ReplayLockedCooldownCausalHead",
+      "type": "object"
+    },
+    "M6ReplayLockedCooldownHistoryEntry": {
+      "additionalProperties": false,
+      "description": "One prior cooldown row and the exact earlier close that wrote it.",
+      "properties": {
+        "authority": {
+          "$ref": "#/$defs/AlertCooldownAuthority"
+        },
+        "authority_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Content Sha256",
+          "type": "string"
+        },
+        "history_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "History Entry Id",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-cooldown-history-entry-v1",
+          "default": "m6-replay-locked-cooldown-history-entry-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "writer_alert_policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Writer Alert Policy Authority Id",
+          "type": "string"
+        },
+        "writer_close_audit_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Writer Close Audit Entry Hash",
+          "type": "string"
+        },
+        "writer_close_audit_sequence": {
+          "minimum": 0,
+          "title": "Writer Close Audit Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision",
+        "writer_close_audit_sequence",
+        "writer_close_audit_entry_hash",
+        "writer_alert_policy_authority_id",
+        "authority",
+        "authority_content_sha256",
+        "history_entry_id"
+      ],
+      "title": "M6ReplayLockedCooldownHistoryEntry",
+      "type": "object"
+    },
+    "M6ReplayLockedExecutionRoute": {
+      "enum": [
+        "M3_FAST_TERMINAL_POST_PARSE",
+        "M4_HEARING_GATE_TERMINAL_POST_PARSE"
+      ],
+      "title": "M6ReplayLockedExecutionRoute",
+      "type": "string"
+    },
+    "M6ReplayLockedPendingSampleCommitmentAuthority": {
+      "additionalProperties": false,
+      "description": "Durable intent fixed before one locked candidate sample is materialized.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "execution_component_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Component Authority Id",
+          "type": "string"
+        },
+        "execution_dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Dataset Snapshot Id",
+          "type": "string"
+        },
+        "execution_entry": {
+          "$ref": "#/$defs/M6RegressionExecutionEntry"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "execution_scope_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Scope Authority Id",
+          "type": "string"
+        },
+        "ledger_sequence": {
+          "minimum": 0,
+          "title": "Ledger Sequence",
+          "type": "integer"
+        },
+        "pending_commitment_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Pending Commitment Authority Id",
+          "type": "string"
+        },
+        "previous_ledger_entry_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Ledger Entry Hash",
+          "type": "string"
+        },
+        "route": {
+          "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-pending-sample-commitment-v1",
+          "default": "m6-replay-locked-pending-sample-commitment-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_catalog_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Entry Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "execution_scope_authority_id",
+        "candidate_run_id",
+        "command_id",
+        "execution_dataset_snapshot_id",
+        "execution_component_authority_id",
+        "source_catalog_entry_id",
+        "route",
+        "execution_entry",
+        "ledger_sequence",
+        "previous_ledger_entry_hash",
+        "sample_id",
+        "execution_entry_id",
+        "pending_commitment_authority_id"
+      ],
+      "title": "M6ReplayLockedPendingSampleCommitmentAuthority",
+      "type": "object"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-closed-policy-pending-sample-commitment-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Durable intent that freezes the exact policy cut before materialization.",
+  "properties": {
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Command Id",
+      "type": "string"
+    },
+    "execution_component_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Component Authority Id",
+      "type": "string"
+    },
+    "execution_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Dataset Snapshot Id",
+      "type": "string"
+    },
+    "execution_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Entry Id",
+      "type": "string"
+    },
+    "execution_scope_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Scope Authority Id",
+      "type": "string"
+    },
+    "ledger_sequence": {
+      "readOnly": true,
+      "title": "Ledger Sequence",
+      "type": "integer"
+    },
+    "locked_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Locked Config Sha256",
+      "type": "string"
+    },
+    "pending_commitment_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pending Commitment Authority Id",
+      "type": "string"
+    },
+    "policy_causal_cut_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Policy Causal Cut Authority Id",
+      "type": "string"
+    },
+    "pre_policy_execution_component_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pre Policy Execution Component Authority Id",
+      "type": "string"
+    },
+    "pre_policy_execution_scope_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pre Policy Execution Scope Authority Id",
+      "type": "string"
+    },
+    "pre_policy_pending_commitment": {
+      "$ref": "#/$defs/M6ReplayLockedPendingSampleCommitmentAuthority"
+    },
+    "pre_policy_route": {
+      "$ref": "#/$defs/M6ReplayLockedExecutionRoute",
+      "readOnly": true
+    },
+    "previous_ledger_entry_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Previous Ledger Entry Hash",
+      "type": "string"
+    },
+    "route": {
+      "const": "ALERT_POLICY_CLOSED",
+      "default": "ALERT_POLICY_CLOSED",
+      "title": "Route",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-closed-policy-pending-sample-commitment-v2",
+      "default": "m6-replay-locked-closed-policy-pending-sample-commitment-v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_binding": {
+      "$ref": "#/$defs/M6ReplayLockedClosedPolicySourceBindingAuthority"
+    },
+    "source_binding_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Binding Authority Id",
+      "type": "string"
+    },
+    "source_catalog_entry_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Source Catalog Entry Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "execution_scope_authority_id",
+    "execution_component_authority_id",
+    "locked_config_sha256",
+    "pre_policy_pending_commitment",
+    "source_binding",
+    "pre_policy_execution_scope_authority_id",
+    "pre_policy_execution_component_authority_id",
+    "candidate_run_id",
+    "command_id",
+    "execution_dataset_snapshot_id",
+    "source_catalog_entry_id",
+    "pre_policy_route",
+    "sample_id",
+    "execution_entry_id",
+    "ledger_sequence",
+    "previous_ledger_entry_hash",
+    "source_binding_authority_id",
+    "policy_causal_cut_authority_id",
+    "pending_commitment_authority_id"
+  ],
+  "title": "M6ReplayLockedClosedPolicyPendingSampleCommitmentAuthorityV2",
+  "type": "object"
+}

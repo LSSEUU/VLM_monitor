@@ -1,0 +1,283 @@
+{
+  "$defs": {
+    "ModelResponseArtifactPhase": {
+      "enum": [
+        "COMPLETED",
+        "DEFERRED_ACTIVE_CLAIM",
+        "SUPPRESSED_CLAIM_SCAN_INCOMPLETE",
+        "SUPPRESSED_INTEGRITY_FAILURE",
+        "BUDGET_EXHAUSTED"
+      ],
+      "title": "ModelResponseArtifactPhase",
+      "type": "string"
+    },
+    "ModelResponseRecoveryArea": {
+      "enum": [
+        "MODEL_CALL",
+        "STAGED_RESPONSE",
+        "FINAL_RESPONSE",
+        "JOURNAL"
+      ],
+      "title": "ModelResponseRecoveryArea",
+      "type": "string"
+    },
+    "ModelResponseRecoveryDisposition": {
+      "enum": [
+        "VERIFIED",
+        "ACKNOWLEDGED",
+        "DEFERRED",
+        "RETAINED",
+        "QUARANTINED",
+        "CLEANED",
+        "ANOMALY"
+      ],
+      "title": "ModelResponseRecoveryDisposition",
+      "type": "string"
+    },
+    "ModelResponseRecoveryItem": {
+      "additionalProperties": false,
+      "description": "One stable outcome without owner tokens, host paths, or response bytes.",
+      "properties": {
+        "area": {
+          "$ref": "#/$defs/ModelResponseRecoveryArea"
+        },
+        "content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Sha256"
+        },
+        "disposition": {
+          "$ref": "#/$defs/ModelResponseRecoveryDisposition"
+        },
+        "quarantine_relative_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quarantine Relative Path"
+        },
+        "reason_code": {
+          "$ref": "#/$defs/ModelResponseRecoveryReason"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Request Id"
+        },
+        "response_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Content Sha256"
+        },
+        "response_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Id"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_token": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Token"
+        }
+      },
+      "required": [
+        "run_id",
+        "area",
+        "disposition",
+        "reason_code"
+      ],
+      "title": "ModelResponseRecoveryItem",
+      "type": "object"
+    },
+    "ModelResponseRecoveryReason": {
+      "enum": [
+        "ACTIVE_LEASE_UNEXPIRED",
+        "ACTIVE_EXPIRED_NO_JOURNAL",
+        "CLAIM_RACE_LOST",
+        "CLAIM_SCAN_INCOMPLETE",
+        "CLAIM_RECOVERY_SUPPRESSED",
+        "JOURNAL_ACKNOWLEDGED",
+        "JOURNAL_ALREADY_ABSENT",
+        "ORPHAN_STAGE_QUARANTINED",
+        "ORPHAN_FINAL_QUARANTINED",
+        "ORPHAN_JOURNAL_QUARANTINED",
+        "EMPTY_OPERATION_CLEANED",
+        "MINIMUM_AGE_NOT_MET",
+        "DATABASE_REFERENCED_ARTIFACT",
+        "ARTIFACT_SCAN_INCOMPLETE",
+        "ARTIFACT_FILE_BYTES_EXCEEDED",
+        "ARTIFACT_TOTAL_BYTES_EXHAUSTED",
+        "CLAIM_AUTHORITY_INVALID",
+        "JOURNAL_INTEGRITY_FAILURE",
+        "RESPONSE_INTEGRITY_FAILURE",
+        "RESPONSE_CONFLICT",
+        "DATABASE_OBSERVATION_CONFLICT",
+        "CONTENT_IDENTITY_MISMATCH",
+        "ENTRY_CHANGED_DURING_RECOVERY",
+        "UNSAFE_FILESYSTEM_ENTRY",
+        "UNKNOWN_ENTRY_SHAPE",
+        "ORPHAN_MUTATION_SUPPRESSED"
+      ],
+      "title": "ModelResponseRecoveryReason",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/model-response-recovery-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bounded claim and artifact recovery with explicit incomplete phases.",
+  "properties": {
+    "artifact_bytes_scanned": {
+      "minimum": 0,
+      "title": "Artifact Bytes Scanned",
+      "type": "integer"
+    },
+    "artifact_file_bytes_limit": {
+      "exclusiveMinimum": 0,
+      "maximum": 262144,
+      "title": "Artifact File Bytes Limit",
+      "type": "integer"
+    },
+    "artifact_limit": {
+      "exclusiveMinimum": 0,
+      "maximum": 1000,
+      "title": "Artifact Limit",
+      "type": "integer"
+    },
+    "artifact_not_modified_after": {
+      "format": "date-time",
+      "title": "Artifact Not Modified After",
+      "type": "string"
+    },
+    "artifact_phase": {
+      "$ref": "#/$defs/ModelResponseArtifactPhase"
+    },
+    "artifact_scan_complete": {
+      "title": "Artifact Scan Complete",
+      "type": "boolean"
+    },
+    "artifact_total_bytes_limit": {
+      "exclusiveMinimum": 0,
+      "maximum": 262144000,
+      "title": "Artifact Total Bytes Limit",
+      "type": "integer"
+    },
+    "artifacts_scanned": {
+      "minimum": 0,
+      "title": "Artifacts Scanned",
+      "type": "integer"
+    },
+    "claim_limit": {
+      "exclusiveMinimum": 0,
+      "maximum": 10000,
+      "title": "Claim Limit",
+      "type": "integer"
+    },
+    "claim_scan_complete": {
+      "title": "Claim Scan Complete",
+      "type": "boolean"
+    },
+    "claims_scanned": {
+      "minimum": 0,
+      "title": "Claims Scanned",
+      "type": "integer"
+    },
+    "items": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ModelResponseRecoveryItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "passed": {
+      "readOnly": true,
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "requires_attention": {
+      "readOnly": true,
+      "title": "Requires Attention",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "started_at",
+    "artifact_not_modified_after",
+    "claim_limit",
+    "claims_scanned",
+    "claim_scan_complete",
+    "artifact_limit",
+    "artifacts_scanned",
+    "artifact_file_bytes_limit",
+    "artifact_total_bytes_limit",
+    "artifact_bytes_scanned",
+    "artifact_scan_complete",
+    "artifact_phase",
+    "requires_attention",
+    "passed"
+  ],
+  "title": "ModelResponseRecoveryReport",
+  "type": "object"
+}

@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "M6ChallengeKind": {
+      "enum": [
+        "DIFFICULT_NEGATIVE",
+        "INSUFFICIENT_OBSERVATION",
+        "DON_AFTER_THRESHOLD",
+        "OCCLUSION",
+        "DETECTOR_MISS",
+        "FABRICATED_REFERENCE",
+        "OBJECTIVE_CONFLICT",
+        "PROVIDER_OUTAGE",
+        "PRECEDENT_MISMATCH",
+        "HARD_SIGNAL_UNCERTIFIED"
+      ],
+      "title": "M6ChallengeKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-synthetic-challenge-scenario-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Physical evaluator annotation for one synthetic/precomputed challenge.",
+  "properties": {
+    "challenge_kinds": {
+      "items": {
+        "$ref": "#/$defs/M6ChallengeKind"
+      },
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "Challenge Kinds",
+      "type": "array"
+    },
+    "input_authority_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Authority Document Sha256",
+      "type": "string"
+    },
+    "input_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Authority Id",
+      "type": "string"
+    },
+    "replay_input_closure_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Replay Input Closure Authority Id",
+      "type": "string"
+    },
+    "replay_input_closure_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Replay Input Closure Document Sha256",
+      "type": "string"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "scenario_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Scenario Authority Id",
+      "type": "string"
+    },
+    "scenario_name": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Scenario Name",
+      "type": "string"
+    },
+    "scenario_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Scenario Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m6-synthetic-challenge-scenario-authority-v1",
+      "default": "m6-synthetic-challenge-scenario-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_item_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Item Id",
+      "type": "string"
+    },
+    "source_mode": {
+      "const": "SYNTHETIC_PRECOMPUTED",
+      "default": "SYNTHETIC_PRECOMPUTED",
+      "title": "Source Mode",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scenario_name",
+    "scenario_revision",
+    "source_item_id",
+    "sample_id",
+    "input_authority_id",
+    "input_authority_document_sha256",
+    "replay_input_closure_authority_id",
+    "replay_input_closure_document_sha256",
+    "challenge_kinds",
+    "scenario_authority_id"
+  ],
+  "title": "M6SyntheticChallengeScenarioAuthority",
+  "type": "object"
+}

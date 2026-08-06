@@ -1,0 +1,361 @@
+{
+  "$defs": {
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "HearingHumanReviewReason": {
+      "enum": [
+        "ACQUISITION_LIMIT_EXHAUSTED",
+        "REWORK_LIMIT_EXHAUSTED",
+        "HEARING_BUDGET_EXHAUSTED",
+        "EVIDENCE_UNAVAILABLE",
+        "ACQUISITION_UNRECOVERABLE",
+        "HEARING_BACKLOG_EXHAUSTED"
+      ],
+      "title": "HearingHumanReviewReason",
+      "type": "string"
+    },
+    "M4ProcessCaseOutcome": {
+      "additionalProperties": false,
+      "description": "One case result without prompts, raw responses, paths, or secrets.",
+      "properties": {
+        "backlog_item_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Backlog Item Id"
+        },
+        "cache_hit_count": {
+          "minimum": 0,
+          "title": "Cache Hit Count",
+          "type": "integer"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "checkpoint_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checkpoint Id"
+        },
+        "disposition": {
+          "$ref": "#/$defs/M4ProcessDisposition"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "hearing_session_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hearing Session Id"
+        },
+        "human_review_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HearingHumanReviewReason"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "initial_status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "pipeline_invoked": {
+          "title": "Pipeline Invoked",
+          "type": "boolean"
+        },
+        "procedural_review_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Procedural Review Id"
+        },
+        "recovered_response_count": {
+          "minimum": 0,
+          "title": "Recovered Response Count",
+          "type": "integer"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "verdict_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verdict Id"
+        }
+      },
+      "required": [
+        "event_id",
+        "case_id",
+        "initial_status",
+        "status",
+        "revision",
+        "disposition",
+        "pipeline_invoked",
+        "cache_hit_count",
+        "recovered_response_count"
+      ],
+      "title": "M4ProcessCaseOutcome",
+      "type": "object"
+    },
+    "M4ProcessCounts": {
+      "additionalProperties": false,
+      "description": "Bounded case and model-call counters for one operation.",
+      "properties": {
+        "cache_hits": {
+          "minimum": 0,
+          "title": "Cache Hits",
+          "type": "integer"
+        },
+        "deferred_to_backlog_cases": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Deferred To Backlog Cases",
+          "type": "integer"
+        },
+        "observed_existing_cases": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Observed Existing Cases",
+          "type": "integer"
+        },
+        "pipeline_invocations": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Pipeline Invocations",
+          "type": "integer"
+        },
+        "processed_cases": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Processed Cases",
+          "type": "integer"
+        },
+        "recovered_responses": {
+          "minimum": 0,
+          "title": "Recovered Responses",
+          "type": "integer"
+        },
+        "selected_cases": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Selected Cases",
+          "type": "integer"
+        },
+        "skipped_not_hearing_ready_cases": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Skipped Not Hearing Ready Cases",
+          "type": "integer"
+        },
+        "transferred_to_human_cases": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Transferred To Human Cases",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "selected_cases",
+        "pipeline_invocations",
+        "processed_cases",
+        "deferred_to_backlog_cases",
+        "transferred_to_human_cases",
+        "observed_existing_cases",
+        "skipped_not_hearing_ready_cases",
+        "cache_hits",
+        "recovered_responses"
+      ],
+      "title": "M4ProcessCounts",
+      "type": "object"
+    },
+    "M4ProcessDisposition": {
+      "description": "Stable distinction between advancement, deferral, transfer, and observation.",
+      "enum": [
+        "PROCESSED",
+        "DEFERRED_TO_BACKLOG",
+        "TRANSFERRED_TO_HUMAN",
+        "OBSERVED_EXISTING",
+        "SKIPPED_NOT_HEARING_READY"
+      ],
+      "title": "M4ProcessDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m4-process-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bounded run report prominently identifying simulated M4 authority.",
+  "properties": {
+    "acquisition_fixture_count": {
+      "default": 0,
+      "maximum": 64,
+      "minimum": 0,
+      "title": "Acquisition Fixture Count",
+      "type": "integer"
+    },
+    "available_case_count": {
+      "minimum": 0,
+      "title": "Available Case Count",
+      "type": "integer"
+    },
+    "counts": {
+      "$ref": "#/$defs/M4ProcessCounts"
+    },
+    "fixture_bundle_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Fixture Bundle Id",
+      "type": "string"
+    },
+    "fixture_entry_count": {
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Fixture Entry Count",
+      "type": "integer"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "model_mode": {
+      "const": "FAKE VLM",
+      "title": "Model Mode",
+      "type": "string"
+    },
+    "outcomes": {
+      "items": {
+        "$ref": "#/$defs/M4ProcessCaseOutcome"
+      },
+      "maxItems": 1000,
+      "title": "Outcomes",
+      "type": "array"
+    },
+    "perception_mode": {
+      "const": "SIMULATED PERCEPTION",
+      "title": "Perception Mode",
+      "type": "string"
+    },
+    "precedent_mode": {
+      "const": "CONTROLLED FAKE",
+      "title": "Precedent Mode",
+      "type": "string"
+    },
+    "requested_case_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Requested Case Id"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m4-process-report-v1",
+      "default": "m4-process-report-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selection_limit": {
+      "exclusiveMinimum": 0,
+      "maximum": 1000,
+      "title": "Selection Limit",
+      "type": "integer"
+    },
+    "selection_truncated": {
+      "title": "Selection Truncated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "run_id",
+    "manifest_id",
+    "perception_mode",
+    "model_mode",
+    "precedent_mode",
+    "fixture_bundle_id",
+    "fixture_entry_count",
+    "requested_case_id",
+    "selection_limit",
+    "available_case_count",
+    "selection_truncated",
+    "outcomes",
+    "counts"
+  ],
+  "title": "M4ProcessReport",
+  "type": "object"
+}

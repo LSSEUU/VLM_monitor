@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "M6ChallengeKind": {
+      "enum": [
+        "DIFFICULT_NEGATIVE",
+        "INSUFFICIENT_OBSERVATION",
+        "DON_AFTER_THRESHOLD",
+        "OCCLUSION",
+        "DETECTOR_MISS",
+        "FABRICATED_REFERENCE",
+        "OBJECTIVE_CONFLICT",
+        "PROVIDER_OUTAGE",
+        "PRECEDENT_MISMATCH",
+        "HARD_SIGNAL_UNCERTIFIED"
+      ],
+      "title": "M6ChallengeKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-challenge-designation-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Explicit evaluator authority overlaying a selected source with challenge kinds.",
+  "properties": {
+    "authority_kind": {
+      "const": "SYNTHETIC_SCENARIO",
+      "default": "SYNTHETIC_SCENARIO",
+      "title": "Authority Kind",
+      "type": "string"
+    },
+    "challenge_designation_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Challenge Designation Authority Id",
+      "type": "string"
+    },
+    "challenge_kinds": {
+      "items": {
+        "$ref": "#/$defs/M6ChallengeKind"
+      },
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "Challenge Kinds",
+      "type": "array"
+    },
+    "sample_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-challenge-designation-authority-v1",
+      "default": "m6-challenge-designation-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_authority_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Authority Document Sha256",
+      "type": "string"
+    },
+    "source_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Authority Id",
+      "type": "string"
+    },
+    "source_item_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Item Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_item_id",
+    "sample_id",
+    "source_authority_id",
+    "source_authority_document_sha256",
+    "challenge_kinds",
+    "challenge_designation_authority_id"
+  ],
+  "title": "M6ChallengeDesignationAuthority",
+  "type": "object"
+}

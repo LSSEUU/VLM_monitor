@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/alert-decision.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "alert_id": {
+      "minLength": 1,
+      "title": "Alert Id",
+      "type": "string"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "human_review_required": {
+      "default": false,
+      "title": "Human Review Required",
+      "type": "boolean"
+    },
+    "level": {
+      "$ref": "#/$defs/AlertLevel"
+    },
+    "merged_into_alert_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Merged Into Alert Id"
+    },
+    "policy_rule_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Policy Rule Ids",
+      "type": "array"
+    },
+    "recipients": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Recipients",
+      "type": "array"
+    },
+    "rescinded": {
+      "default": false,
+      "title": "Rescinded",
+      "type": "boolean"
+    },
+    "suppressed_by_cooldown": {
+      "default": false,
+      "title": "Suppressed By Cooldown",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "alert_id",
+    "case_id",
+    "level",
+    "recipients",
+    "policy_rule_ids"
+  ],
+  "title": "AlertDecision",
+  "type": "object"
+}

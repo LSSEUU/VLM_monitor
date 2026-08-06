@@ -1,0 +1,2701 @@
+{
+  "$defs": {
+    "AbsenceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmation_policy": {
+          "$ref": "#/$defs/ConfirmationPolicy"
+        },
+        "context_lookahead_seconds": {
+          "minimum": 0,
+          "title": "Context Lookahead Seconds",
+          "type": "number"
+        },
+        "dwell_seconds_by_risk": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/RiskLevel"
+          },
+          "title": "Dwell Seconds By Risk",
+          "type": "object"
+        },
+        "minimum_consistent_clear_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Minimum Consistent Clear Frames",
+          "type": "integer"
+        },
+        "source_compat_enabled_for_offline_experiments": {
+          "default": false,
+          "title": "Source Compat Enabled For Offline Experiments",
+          "type": "boolean"
+        },
+        "temporal_crop_count": {
+          "exclusiveMinimum": 0,
+          "title": "Temporal Crop Count",
+          "type": "integer"
+        },
+        "track_grace_seconds": {
+          "minimum": 0,
+          "title": "Track Grace Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dwell_seconds_by_risk",
+        "confirmation_policy",
+        "context_lookahead_seconds",
+        "track_grace_seconds",
+        "temporal_crop_count",
+        "minimum_consistent_clear_frames"
+      ],
+      "title": "AbsenceConfig",
+      "type": "object"
+    },
+    "AlertConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmed_min_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confirmed Min Confidence",
+          "type": "number"
+        },
+        "cooldown_seconds": {
+          "minimum": 0,
+          "title": "Cooldown Seconds",
+          "type": "number"
+        },
+        "insufficient_evidence_max_level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "repeat_window_days": {
+          "minimum": 0,
+          "title": "Repeat Window Days",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cooldown_seconds",
+        "repeat_window_days",
+        "confirmed_min_confidence",
+        "insufficient_evidence_max_level"
+      ],
+      "title": "AlertConfig",
+      "type": "object"
+    },
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AppConfig": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "absence": {
+                "properties": {
+                  "confirmation_policy": {
+                    "const": "SOURCE_COMPAT"
+                  }
+                },
+                "required": [
+                  "confirmation_policy"
+                ]
+              }
+            },
+            "required": [
+              "absence"
+            ]
+          },
+          "then": {
+            "properties": {
+              "absence": {
+                "properties": {
+                  "source_compat_enabled_for_offline_experiments": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "source_compat_enabled_for_offline_experiments"
+                ]
+              },
+              "run": {
+                "properties": {
+                  "mode": {
+                    "const": "OFFLINE_EXPERIMENT"
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "absence": {
+          "$ref": "#/$defs/AbsenceConfig"
+        },
+        "alerts": {
+          "$ref": "#/$defs/AlertConfig"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceConfig"
+        },
+        "hearing": {
+          "$ref": "#/$defs/HearingConfig"
+        },
+        "l0": {
+          "$ref": "#/$defs/L0Config"
+        },
+        "perception": {
+          "$ref": "#/$defs/PerceptionConfig"
+        },
+        "precedents": {
+          "$ref": "#/$defs/PrecedentConfig"
+        },
+        "presence": {
+          "$ref": "#/$defs/PresenceConfig"
+        },
+        "procedural_gate": {
+          "$ref": "#/$defs/ProceduralGateConfig"
+        },
+        "providers": {
+          "additionalProperties": {
+            "$ref": "#/$defs/VlmProviderProfile"
+          },
+          "title": "Providers",
+          "type": "object"
+        },
+        "regression": {
+          "$ref": "#/$defs/RegressionConfig"
+        },
+        "retention": {
+          "$ref": "#/$defs/RetentionConfig"
+        },
+        "rule_version": {
+          "const": "laboratory-v1",
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "run": {
+          "$ref": "#/$defs/RunConfig"
+        },
+        "safety": {
+          "$ref": "#/$defs/SafetyConfig"
+        },
+        "schema_version": {
+          "const": "2.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "screening": {
+          "$ref": "#/$defs/ScreeningConfig"
+        },
+        "storage": {
+          "$ref": "#/$defs/StorageConfig"
+        },
+        "training": {
+          "$ref": "#/$defs/TrainingConfig"
+        },
+        "zones": {
+          "items": {
+            "$ref": "#/$defs/ZoneConfig"
+          },
+          "minItems": 1,
+          "title": "Zones",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "rule_version",
+        "run",
+        "storage",
+        "zones",
+        "l0",
+        "perception",
+        "absence",
+        "presence",
+        "evidence",
+        "providers",
+        "screening",
+        "hearing",
+        "procedural_gate",
+        "precedents",
+        "alerts",
+        "regression",
+        "training",
+        "retention",
+        "safety",
+        "config_sha256"
+      ],
+      "title": "AppConfig",
+      "type": "object"
+    },
+    "AssociationConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "iou_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Iou Threshold",
+          "type": "number"
+        },
+        "keypoint_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "iou_threshold",
+        "keypoint_threshold"
+      ],
+      "title": "AssociationConfig",
+      "type": "object"
+    },
+    "ConfirmationPolicy": {
+      "enum": [
+        "STRICT_CAUSAL",
+        "SOURCE_COMPAT",
+        "NONE"
+      ],
+      "title": "ConfirmationPolicy",
+      "type": "string"
+    },
+    "DecodingParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "temperature": {
+          "minimum": 0,
+          "title": "Temperature",
+          "type": "number"
+        }
+      },
+      "required": [
+        "temperature"
+      ],
+      "title": "DecodingParameters",
+      "type": "object"
+    },
+    "DetectorConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "high_confidence_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "High Confidence Threshold",
+          "type": "number"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "prompts": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Prompts",
+          "type": "object"
+        },
+        "score_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "model_id",
+        "score_threshold",
+        "high_confidence_threshold",
+        "prompts"
+      ],
+      "title": "DetectorConfig",
+      "type": "object"
+    },
+    "DeviceClass": {
+      "enum": [
+        "CPU_ONLY",
+        "GPU_AVAILABLE"
+      ],
+      "title": "DeviceClass",
+      "type": "string"
+    },
+    "DirectSafetySourceClass": {
+      "enum": [
+        "PHYSICAL_SENSOR",
+        "VALIDATED_DETERMINISTIC",
+        "MANUAL"
+      ],
+      "title": "DirectSafetySourceClass",
+      "type": "string"
+    },
+    "EvidenceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "encoding_version": {
+          "minLength": 1,
+          "title": "Encoding Version",
+          "type": "string"
+        },
+        "panorama_long_edge": {
+          "exclusiveMinimum": 0,
+          "title": "Panorama Long Edge",
+          "type": "integer"
+        },
+        "persist_raw_full_frames": {
+          "default": false,
+          "title": "Persist Raw Full Frames",
+          "type": "boolean"
+        },
+        "post_seconds": {
+          "minimum": 0,
+          "title": "Post Seconds",
+          "type": "number"
+        },
+        "pre_seconds": {
+          "minimum": 0,
+          "title": "Pre Seconds",
+          "type": "number"
+        },
+        "privacy_policy": {
+          "$ref": "#/$defs/PrivacyPolicy"
+        },
+        "privacy_transform_version": {
+          "minLength": 1,
+          "title": "Privacy Transform Version",
+          "type": "string"
+        },
+        "subject_expand_ratio": {
+          "minimum": 0,
+          "title": "Subject Expand Ratio",
+          "type": "number"
+        }
+      },
+      "required": [
+        "pre_seconds",
+        "post_seconds",
+        "panorama_long_edge",
+        "subject_expand_ratio",
+        "privacy_policy",
+        "privacy_transform_version",
+        "encoding_version"
+      ],
+      "title": "EvidenceConfig",
+      "type": "object"
+    },
+    "ExecutionLocation": {
+      "enum": [
+        "LOCAL",
+        "EXTERNAL"
+      ],
+      "title": "ExecutionLocation",
+      "type": "string"
+    },
+    "HearingConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "defender_profile": {
+          "minLength": 1,
+          "title": "Defender Profile",
+          "type": "string"
+        },
+        "judge_profile": {
+          "minLength": 1,
+          "title": "Judge Profile",
+          "type": "string"
+        },
+        "max_acquisition_rounds": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Max Acquisition Rounds",
+          "type": "integer"
+        },
+        "max_rework_rounds": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Max Rework Rounds",
+          "type": "integer"
+        },
+        "max_total_images": {
+          "exclusiveMinimum": 0,
+          "title": "Max Total Images",
+          "type": "integer"
+        },
+        "max_total_output_tokens": {
+          "exclusiveMinimum": 0,
+          "title": "Max Total Output Tokens",
+          "type": "integer"
+        },
+        "precedent_top_k": {
+          "exclusiveMinimum": 0,
+          "title": "Precedent Top K",
+          "type": "integer"
+        },
+        "prosecutor_profile": {
+          "minLength": 1,
+          "title": "Prosecutor Profile",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prosecutor_profile",
+        "defender_profile",
+        "judge_profile",
+        "precedent_top_k",
+        "max_acquisition_rounds",
+        "max_rework_rounds",
+        "max_total_images",
+        "max_total_output_tokens"
+      ],
+      "title": "HearingConfig",
+      "type": "object"
+    },
+    "L0Config": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "persist_events": {
+          "const": false,
+          "default": false,
+          "title": "Persist Events",
+          "type": "boolean"
+        },
+        "reminder_cooldown_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Reminder Cooldown Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "reminder_cooldown_seconds"
+      ],
+      "title": "L0Config",
+      "type": "object"
+    },
+    "M6RegressionExecutionDatasetSnapshot": {
+      "additionalProperties": false,
+      "description": "Candidate-facing dataset projection with evaluator truth intentionally absent.",
+      "properties": {
+        "baseline_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Manifest Id",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/M6RegressionExecutionEntry"
+          },
+          "maxItems": 100000,
+          "minItems": 1,
+          "title": "Entries",
+          "type": "array"
+        },
+        "entry_count": {
+          "readOnly": true,
+          "title": "Entry Count",
+          "type": "integer"
+        },
+        "execution_dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Dataset Snapshot Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-regression-execution-dataset-v1",
+          "default": "m6-regression-execution-dataset-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_catalog_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Authority Id",
+          "type": "string"
+        },
+        "source_catalog_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Document Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "baseline_manifest_id",
+        "source_catalog_authority_id",
+        "source_catalog_document_sha256",
+        "entries",
+        "entry_count",
+        "execution_dataset_snapshot_id"
+      ],
+      "title": "M6RegressionExecutionDatasetSnapshot",
+      "type": "object"
+    },
+    "M6RegressionExecutionEntry": {
+      "additionalProperties": false,
+      "description": "Blinded candidate input; it contains no membership or expected decision.",
+      "properties": {
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "execution_entry_id"
+      ],
+      "title": "M6RegressionExecutionEntry",
+      "type": "object"
+    },
+    "M6RegressionPolicyAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "gold_set_max_accuracy_drop": {
+          "maximum": 0,
+          "minimum": 0,
+          "title": "Gold Set Max Accuracy Drop",
+          "type": "number"
+        },
+        "maximum_machine_flip_rate": {
+          "maximum": 0.05,
+          "minimum": 0,
+          "title": "Maximum Machine Flip Rate",
+          "type": "number"
+        },
+        "policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Policy Authority Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-regression-policy-authority-v1",
+          "default": "m6-regression-policy-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "config_sha256",
+        "policy_version",
+        "maximum_machine_flip_rate",
+        "gold_set_max_accuracy_drop",
+        "policy_authority_id"
+      ],
+      "title": "M6RegressionPolicyAuthority",
+      "type": "object"
+    },
+    "M6RegressionRunCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Manifest Id",
+          "type": "string"
+        },
+        "candidate_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Candidate Manifest Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Command Id",
+          "type": "string"
+        },
+        "execution_dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Dataset Snapshot Id",
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/ReproducibilityMode"
+        },
+        "policy_authority": {
+          "$ref": "#/$defs/M6RegressionPolicyAuthority"
+        },
+        "schema_version": {
+          "const": "m6-regression-run-command-v1",
+          "default": "m6-regression-run-command-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "execution_dataset_snapshot_id",
+        "baseline_manifest_id",
+        "candidate_manifest_id",
+        "policy_authority",
+        "command_id"
+      ],
+      "title": "M6RegressionRunCommand",
+      "type": "object"
+    },
+    "M6ReplayLockedClosedPolicyExecutionComponentAuthorityV2": {
+      "additionalProperties": false,
+      "description": "Offline component that adds deterministic alert-policy closure to V1.",
+      "properties": {
+        "alert_channel_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Alert Channel Ports Exposed",
+          "type": "boolean"
+        },
+        "cache_write_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Cache Write Ports Exposed",
+          "type": "boolean"
+        },
+        "code_commit": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Code Commit",
+          "type": "string"
+        },
+        "component": {
+          "const": "labcourt-m6-replay-locked-closed-policy-executor",
+          "default": "labcourt-m6-replay-locked-closed-policy-executor",
+          "title": "Component",
+          "type": "string"
+        },
+        "component_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Component Authority Id",
+          "type": "string"
+        },
+        "cooldown_write_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Cooldown Write Ports Exposed",
+          "type": "boolean"
+        },
+        "evaluator_fields_accessible": {
+          "const": false,
+          "default": false,
+          "title": "Evaluator Fields Accessible",
+          "type": "boolean"
+        },
+        "execution_mode": {
+          "const": "OFFLINE_LOCKED",
+          "default": "OFFLINE_LOCKED",
+          "title": "Execution Mode",
+          "type": "string"
+        },
+        "gpu_required": {
+          "const": false,
+          "default": false,
+          "title": "Gpu Required",
+          "type": "boolean"
+        },
+        "input_contract": {
+          "const": "SEALED_SAVED_AUTHORITIES_WITH_POLICY_CAUSAL_HEAD_BINDING",
+          "default": "SEALED_SAVED_AUTHORITIES_WITH_POLICY_CAUSAL_HEAD_BINDING",
+          "title": "Input Contract",
+          "type": "string"
+        },
+        "live_tail_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Live Tail Ports Exposed",
+          "type": "boolean"
+        },
+        "network_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Network Allowed",
+          "type": "boolean"
+        },
+        "outbox_write_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Outbox Write Ports Exposed",
+          "type": "boolean"
+        },
+        "output_contract": {
+          "const": "APPEND_ONLY_CLOSED_LOCKED_INVENTORY",
+          "default": "APPEND_ONLY_CLOSED_LOCKED_INVENTORY",
+          "title": "Output Contract",
+          "type": "string"
+        },
+        "package": {
+          "const": "labcourt",
+          "default": "labcourt",
+          "title": "Package",
+          "type": "string"
+        },
+        "pre_policy_component_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pre Policy Component Authority Id",
+          "type": "string"
+        },
+        "provider_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Provider Ports Exposed",
+          "type": "boolean"
+        },
+        "raw_model_response_accessible": {
+          "const": false,
+          "default": false,
+          "title": "Raw Model Response Accessible",
+          "type": "boolean"
+        },
+        "recovery_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Recovery Ports Exposed",
+          "type": "boolean"
+        },
+        "route": {
+          "const": "ALERT_POLICY_CLOSED",
+          "default": "ALERT_POLICY_CLOSED",
+          "title": "Route",
+          "type": "string"
+        },
+        "safety_signal_accessible": {
+          "const": false,
+          "default": false,
+          "title": "Safety Signal Accessible",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-closed-policy-execution-component-authority-v2",
+          "default": "m6-replay-locked-closed-policy-execution-component-authority-v2",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "supported_pre_policy_routes": {
+          "items": {
+            "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+          },
+          "title": "Supported Pre Policy Routes",
+          "type": "array"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "code_commit",
+        "pre_policy_component_authority_id",
+        "supported_pre_policy_routes",
+        "component_authority_id"
+      ],
+      "title": "M6ReplayLockedClosedPolicyExecutionComponentAuthorityV2",
+      "type": "object"
+    },
+    "M6ReplayLockedExecutionComponentAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "cache_write_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Cache Write Ports Exposed",
+          "type": "boolean"
+        },
+        "code_commit": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Code Commit",
+          "type": "string"
+        },
+        "component": {
+          "const": "labcourt-m6-replay-locked-executor",
+          "default": "labcourt-m6-replay-locked-executor",
+          "title": "Component",
+          "type": "string"
+        },
+        "component_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Component Authority Id",
+          "type": "string"
+        },
+        "evaluator_fields_accessible": {
+          "const": false,
+          "default": false,
+          "title": "Evaluator Fields Accessible",
+          "type": "boolean"
+        },
+        "execution_mode": {
+          "const": "OFFLINE_LOCKED",
+          "default": "OFFLINE_LOCKED",
+          "title": "Execution Mode",
+          "type": "string"
+        },
+        "gpu_required": {
+          "const": false,
+          "default": false,
+          "title": "Gpu Required",
+          "type": "boolean"
+        },
+        "input_contract": {
+          "const": "SEALED_SAVED_AUTHORITIES",
+          "default": "SEALED_SAVED_AUTHORITIES",
+          "title": "Input Contract",
+          "type": "string"
+        },
+        "live_tail_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Live Tail Ports Exposed",
+          "type": "boolean"
+        },
+        "network_allowed": {
+          "const": false,
+          "default": false,
+          "title": "Network Allowed",
+          "type": "boolean"
+        },
+        "output_contract": {
+          "const": "APPEND_ONLY_LOCKED_INVENTORY",
+          "default": "APPEND_ONLY_LOCKED_INVENTORY",
+          "title": "Output Contract",
+          "type": "string"
+        },
+        "package": {
+          "const": "labcourt",
+          "default": "labcourt",
+          "title": "Package",
+          "type": "string"
+        },
+        "provider_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Provider Ports Exposed",
+          "type": "boolean"
+        },
+        "raw_model_response_accessible": {
+          "const": false,
+          "default": false,
+          "title": "Raw Model Response Accessible",
+          "type": "boolean"
+        },
+        "recovery_ports_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Recovery Ports Exposed",
+          "type": "boolean"
+        },
+        "safety_signal_accessible": {
+          "const": false,
+          "default": false,
+          "title": "Safety Signal Accessible",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-execution-component-authority-v1",
+          "default": "m6-replay-locked-execution-component-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "supported_routes": {
+          "default": [
+            "M3_FAST_TERMINAL_POST_PARSE"
+          ],
+          "items": {
+            "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+          },
+          "title": "Supported Routes",
+          "type": "array"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "code_commit",
+        "component_authority_id"
+      ],
+      "title": "M6ReplayLockedExecutionComponentAuthority",
+      "type": "object"
+    },
+    "M6ReplayLockedExecutionRoute": {
+      "enum": [
+        "M3_FAST_TERMINAL_POST_PARSE",
+        "M4_HEARING_GATE_TERMINAL_POST_PARSE"
+      ],
+      "title": "M6ReplayLockedExecutionRoute",
+      "type": "string"
+    },
+    "M6ReplayLockedExecutionScopeAuthority": {
+      "additionalProperties": false,
+      "description": "Candidate-blind locked execution cut persisted before any sample runs.",
+      "properties": {
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "command": {
+          "$ref": "#/$defs/M6RegressionRunCommand"
+        },
+        "command_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Command Content Sha256",
+          "type": "string"
+        },
+        "command_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Command Size Bytes",
+          "type": "integer"
+        },
+        "execution_component": {
+          "$ref": "#/$defs/M6ReplayLockedExecutionComponentAuthority"
+        },
+        "execution_component_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Component Content Sha256",
+          "type": "string"
+        },
+        "execution_component_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Execution Component Size Bytes",
+          "type": "integer"
+        },
+        "execution_dataset": {
+          "$ref": "#/$defs/M6RegressionExecutionDatasetSnapshot"
+        },
+        "execution_dataset_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Dataset Content Sha256",
+          "type": "string"
+        },
+        "execution_dataset_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Execution Dataset Size Bytes",
+          "type": "integer"
+        },
+        "execution_scope_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Scope Authority Id",
+          "type": "string"
+        },
+        "execution_start_audit_head_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Start Audit Head Hash",
+          "type": "string"
+        },
+        "execution_start_audit_head_sequence": {
+          "minimum": -1,
+          "title": "Execution Start Audit Head Sequence",
+          "type": "integer"
+        },
+        "locked_config": {
+          "$ref": "#/$defs/AppConfig"
+        },
+        "locked_config_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Locked Config Content Sha256",
+          "type": "string"
+        },
+        "locked_config_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Locked Config Size Bytes",
+          "type": "integer"
+        },
+        "locked_manifest": {
+          "$ref": "#/$defs/RunManifest"
+        },
+        "locked_manifest_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Locked Manifest Content Sha256",
+          "type": "string"
+        },
+        "locked_manifest_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Locked Manifest Size Bytes",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m6-replay-locked-execution-scope-authority-v1",
+          "default": "m6-replay-locked-execution-scope-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_catalog_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Content Sha256",
+          "type": "string"
+        },
+        "source_catalog_entry_count": {
+          "exclusiveMinimum": 0,
+          "maximum": 100000,
+          "title": "Source Catalog Entry Count",
+          "type": "integer"
+        },
+        "source_catalog_entry_ids": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 100000,
+          "minItems": 1,
+          "title": "Source Catalog Entry Ids",
+          "type": "array"
+        },
+        "source_catalog_entry_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Catalog Entry Inventory Root Sha256",
+          "type": "string"
+        },
+        "source_catalog_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 268435456,
+          "title": "Source Catalog Size Bytes",
+          "type": "integer"
+        },
+        "source_run_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 100000,
+          "minItems": 1,
+          "title": "Source Run Ids",
+          "type": "array"
+        },
+        "source_run_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Run Inventory Root Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_run_id",
+        "command",
+        "command_content_sha256",
+        "command_size_bytes",
+        "execution_dataset",
+        "execution_dataset_content_sha256",
+        "execution_dataset_size_bytes",
+        "source_catalog_content_sha256",
+        "source_catalog_size_bytes",
+        "source_catalog_entry_count",
+        "source_catalog_entry_ids",
+        "source_run_ids",
+        "locked_manifest",
+        "locked_manifest_content_sha256",
+        "locked_manifest_size_bytes",
+        "locked_config",
+        "locked_config_content_sha256",
+        "locked_config_size_bytes",
+        "execution_component",
+        "execution_component_content_sha256",
+        "execution_component_size_bytes",
+        "execution_start_audit_head_sequence",
+        "execution_start_audit_head_hash",
+        "source_catalog_entry_inventory_root_sha256",
+        "source_run_inventory_root_sha256",
+        "execution_scope_authority_id"
+      ],
+      "title": "M6ReplayLockedExecutionScopeAuthority",
+      "type": "object"
+    },
+    "ModelManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "minLength": 1,
+          "title": "Component",
+          "type": "string"
+        },
+        "license_id": {
+          "minLength": 1,
+          "title": "License Id",
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "provider_revision_guarantee": {
+          "default": true,
+          "title": "Provider Revision Guarantee",
+          "type": "boolean"
+        },
+        "quantization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantization"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "weights_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weights Sha256"
+        }
+      },
+      "required": [
+        "component",
+        "provider",
+        "model",
+        "revision",
+        "license_id",
+        "model_manifest_id"
+      ],
+      "title": "ModelManifest",
+      "type": "object"
+    },
+    "NumericToleranceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "detection_score": {
+          "default": 0.01,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Detection Score",
+          "type": "number"
+        },
+        "duration_frames": {
+          "minimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "frame_interval_frames": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Frame Interval Frames",
+          "type": "integer"
+        },
+        "observability": {
+          "default": 0.01,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Observability",
+          "type": "number"
+        },
+        "person_count": {
+          "minimum": 0,
+          "title": "Person Count",
+          "type": "integer"
+        },
+        "track_presence_interval_frames": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Track Presence Interval Frames",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "duration_frames",
+        "person_count"
+      ],
+      "title": "NumericToleranceConfig",
+      "type": "object"
+    },
+    "ObservabilityConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "clear_frame_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Clear Frame Threshold",
+          "type": "number"
+        },
+        "weights": {
+          "$ref": "#/$defs/ObservabilityWeights"
+        }
+      },
+      "required": [
+        "weights",
+        "clear_frame_threshold"
+      ],
+      "title": "ObservabilityConfig",
+      "type": "object"
+    },
+    "ObservabilityWeights": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "frontality": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Frontality",
+          "type": "number"
+        },
+        "keypoint_visibility": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Visibility",
+          "type": "number"
+        },
+        "non_occlusion": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Non Occlusion",
+          "type": "number"
+        },
+        "person_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Person Confidence",
+          "type": "number"
+        },
+        "sharpness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sharpness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "person_confidence",
+        "keypoint_visibility",
+        "frontality",
+        "sharpness",
+        "exposure",
+        "non_occlusion"
+      ],
+      "title": "ObservabilityWeights",
+      "type": "object"
+    },
+    "OperatingSystemFamily": {
+      "enum": [
+        "WINDOWS",
+        "LINUX",
+        "MACOS",
+        "OTHER"
+      ],
+      "title": "OperatingSystemFamily",
+      "type": "string"
+    },
+    "PerceptionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "association": {
+          "$ref": "#/$defs/AssociationConfig"
+        },
+        "detector": {
+          "$ref": "#/$defs/DetectorConfig"
+        },
+        "observability": {
+          "$ref": "#/$defs/ObservabilityConfig"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "detector",
+        "association",
+        "observability"
+      ],
+      "title": "PerceptionConfig",
+      "type": "object"
+    },
+    "PlatformSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Architecture",
+          "type": "string"
+        },
+        "device_class": {
+          "$ref": "#/$defs/DeviceClass"
+        },
+        "os_family": {
+          "$ref": "#/$defs/OperatingSystemFamily"
+        },
+        "python_version": {
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "title": "Python Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "os_family",
+        "architecture",
+        "python_version",
+        "device_class"
+      ],
+      "title": "PlatformSummary",
+      "type": "object"
+    },
+    "PointXY": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "PointXY",
+      "type": "object"
+    },
+    "Polygon": {
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "items": {
+            "$ref": "#/$defs/PointXY"
+          },
+          "minItems": 3,
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "Polygon",
+      "type": "object"
+    },
+    "PpeType": {
+      "enum": [
+        "GOGGLES",
+        "GLOVES",
+        "LAB_COAT"
+      ],
+      "title": "PpeType",
+      "type": "string"
+    },
+    "PrecedentConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "automatic_activation_delay_days": {
+          "minimum": 0,
+          "title": "Automatic Activation Delay Days",
+          "type": "integer"
+        },
+        "conflict_similarity": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Conflict Similarity",
+          "type": "number"
+        },
+        "source_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/PrecedentSource"
+          },
+          "title": "Source Weights",
+          "type": "object"
+        },
+        "text_weight": {
+          "minimum": 0,
+          "title": "Text Weight",
+          "type": "number"
+        },
+        "visual_weight": {
+          "minimum": 0,
+          "title": "Visual Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "text_weight",
+        "visual_weight",
+        "source_weights",
+        "conflict_similarity",
+        "automatic_activation_delay_days"
+      ],
+      "title": "PrecedentConfig",
+      "type": "object"
+    },
+    "PrecedentSource": {
+      "enum": [
+        "PRESET",
+        "AUTOMATIC",
+        "HUMAN_REVIEW",
+        "APPEAL_OVERTURN"
+      ],
+      "title": "PrecedentSource",
+      "type": "string"
+    },
+    "PresenceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "default_cooldown_seconds": {
+          "minimum": 0,
+          "title": "Default Cooldown Seconds",
+          "type": "number"
+        },
+        "default_dwell_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Default Dwell Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "default_dwell_seconds",
+        "default_cooldown_seconds"
+      ],
+      "title": "PresenceConfig",
+      "type": "object"
+    },
+    "PrivacyPolicy": {
+      "enum": [
+        "EPHEMERAL_RAW",
+        "PPE_PRESERVING_REDACTION",
+        "FULL_REDACTION"
+      ],
+      "title": "PrivacyPolicy",
+      "type": "string"
+    },
+    "ProceduralGateConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "absence_clear_frame_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Absence Clear Frame Threshold",
+          "type": "number"
+        },
+        "gate_version": {
+          "default": "procedural-gate-v1",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Gate Version",
+          "type": "string"
+        },
+        "minimum_absence_clear_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Minimum Absence Clear Frames",
+          "type": "integer"
+        },
+        "objective_numeric_tolerance": {
+          "$ref": "#/$defs/NumericToleranceConfig"
+        },
+        "precedent_similarity_min": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Precedent Similarity Min",
+          "type": "number"
+        }
+      },
+      "required": [
+        "objective_numeric_tolerance",
+        "precedent_similarity_min",
+        "absence_clear_frame_threshold",
+        "minimum_absence_clear_frames"
+      ],
+      "title": "ProceduralGateConfig",
+      "type": "object"
+    },
+    "ProviderTransport": {
+      "enum": [
+        "IN_PROCESS",
+        "HTTP"
+      ],
+      "title": "ProviderTransport",
+      "type": "string"
+    },
+    "RegressionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "gold_set_max_accuracy_drop": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Gold Set Max Accuracy Drop",
+          "type": "number"
+        },
+        "maximum_machine_flip_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Maximum Machine Flip Rate",
+          "type": "number"
+        }
+      },
+      "required": [
+        "maximum_machine_flip_rate",
+        "gold_set_max_accuracy_drop"
+      ],
+      "title": "RegressionConfig",
+      "type": "object"
+    },
+    "ReproducibilityMode": {
+      "enum": [
+        "REPLAY_LOCKED",
+        "REINFER_PINNED",
+        "UPGRADE_REGRESSION"
+      ],
+      "title": "ReproducibilityMode",
+      "type": "string"
+    },
+    "RetentionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "case_metadata_days": {
+          "minimum": 0,
+          "title": "Case Metadata Days",
+          "type": "integer"
+        },
+        "preserve_appeals_and_gold_sets": {
+          "const": true,
+          "default": true,
+          "title": "Preserve Appeals And Gold Sets",
+          "type": "boolean"
+        },
+        "raw_frame_cache_minutes": {
+          "minimum": 0,
+          "title": "Raw Frame Cache Minutes",
+          "type": "integer"
+        },
+        "redacted_crop_days": {
+          "minimum": 0,
+          "title": "Redacted Crop Days",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "raw_frame_cache_minutes",
+        "redacted_crop_days",
+        "case_metadata_days"
+      ],
+      "title": "RetentionConfig",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "RunConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/RunMode",
+          "default": "STANDARD"
+        },
+        "random_seed": {
+          "title": "Random Seed",
+          "type": "integer"
+        },
+        "reproducibility_mode": {
+          "$ref": "#/$defs/ReproducibilityMode"
+        },
+        "storage_boundary": {
+          "const": "LOCAL_FILESYSTEM",
+          "default": "LOCAL_FILESYSTEM",
+          "title": "Storage Boundary",
+          "type": "string"
+        },
+        "workspace": {
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[\\\\<>:\\\"|?*])(?:[^/\\x00-\\x1f]+/)*[^/\\x00-\\x1f]+$",
+          "title": "Workspace",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reproducibility_mode",
+        "random_seed",
+        "workspace"
+      ],
+      "title": "RunConfig",
+      "type": "object"
+    },
+    "RunManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "code_commit": {
+          "minLength": 1,
+          "title": "Code Commit",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "decoding_parameters": {
+          "$ref": "#/$defs/DecodingParameters"
+        },
+        "image_encoding_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Image Encoding Version",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "models": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ModelManifest"
+          },
+          "minProperties": 9,
+          "title": "Models",
+          "type": "object"
+        },
+        "pixel_format": {
+          "const": "RGB8",
+          "title": "Pixel Format",
+          "type": "string"
+        },
+        "pixel_hash_algorithm": {
+          "const": "LCPIX1",
+          "title": "Pixel Hash Algorithm",
+          "type": "string"
+        },
+        "platform_summary": {
+          "$ref": "#/$defs/PlatformSummary"
+        },
+        "privacy_transform_version": {
+          "minLength": 1,
+          "title": "Privacy Transform Version",
+          "type": "string"
+        },
+        "prompt_bundle_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prompt Bundle Sha256",
+          "type": "string"
+        },
+        "random_seed": {
+          "title": "Random Seed",
+          "type": "integer"
+        },
+        "reproducibility_mode": {
+          "$ref": "#/$defs/ReproducibilityMode"
+        },
+        "rule_bundle_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Rule Bundle Sha256",
+          "type": "string"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "software_components": {
+          "additionalProperties": {
+            "$ref": "#/$defs/SoftwareComponentManifest"
+          },
+          "title": "Software Components",
+          "type": "object"
+        },
+        "storage_boundary": {
+          "const": "LOCAL_FILESYSTEM",
+          "title": "Storage Boundary",
+          "type": "string"
+        },
+        "streams": {
+          "items": {
+            "$ref": "#/$defs/StreamManifest"
+          },
+          "title": "Streams",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code_commit",
+        "schema_version",
+        "config_sha256",
+        "rule_version",
+        "rule_bundle_sha256",
+        "prompt_bundle_sha256",
+        "models",
+        "privacy_transform_version",
+        "reproducibility_mode",
+        "random_seed",
+        "decoding_parameters",
+        "platform_summary",
+        "storage_boundary",
+        "streams",
+        "software_components",
+        "pixel_format",
+        "pixel_hash_algorithm",
+        "image_encoding_version",
+        "manifest_id"
+      ],
+      "title": "RunManifest",
+      "type": "object"
+    },
+    "RunMode": {
+      "enum": [
+        "STANDARD",
+        "OFFLINE_EXPERIMENT"
+      ],
+      "title": "RunMode",
+      "type": "string"
+    },
+    "SafetyConfig": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "hard_alerts_enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "hard_alerts_enabled"
+            ]
+          },
+          "then": {
+            "properties": {
+              "allowed_signal_types": {
+                "minItems": 1
+              },
+              "certification_ids": {
+                "minItems": 1
+              },
+              "provider": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "provider",
+              "allowed_signal_types",
+              "certification_ids"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "allowed_direct_sources": {
+          "default": [
+            "PHYSICAL_SENSOR",
+            "VALIDATED_DETERMINISTIC",
+            "MANUAL"
+          ],
+          "items": {
+            "$ref": "#/$defs/DirectSafetySourceClass"
+          },
+          "title": "Allowed Direct Sources",
+          "type": "array"
+        },
+        "allowed_signal_types": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SafetySignalType"
+          },
+          "title": "Allowed Signal Types",
+          "type": "array"
+        },
+        "certification_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Certification Ids",
+          "type": "array"
+        },
+        "hard_alerts_enabled": {
+          "default": false,
+          "title": "Hard Alerts Enabled",
+          "type": "boolean"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        }
+      },
+      "title": "SafetyConfig",
+      "type": "object"
+    },
+    "SafetySignalType": {
+      "enum": [
+        "OPEN_FLAME",
+        "SMOKE",
+        "HEAT_ACTIVITY",
+        "OCCUPANCY",
+        "MANUAL_EMERGENCY"
+      ],
+      "title": "SafetySignalType",
+      "type": "string"
+    },
+    "ScreeningConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "backlog_max_attempts": {
+          "default": 3,
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Backlog Max Attempts",
+          "type": "integer"
+        },
+        "conflict_policy_version": {
+          "default": "strong-signal-v1",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Conflict Policy Version",
+          "type": "string"
+        },
+        "high_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "High Probability",
+          "type": "number"
+        },
+        "low_probability": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Low Probability",
+          "type": "number"
+        },
+        "max_estimated_cost": {
+          "default": 1.0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Max Estimated Cost",
+          "type": "number"
+        },
+        "max_images": {
+          "exclusiveMinimum": 0,
+          "maximum": 64,
+          "title": "Max Images",
+          "type": "integer"
+        },
+        "max_input_pixels": {
+          "default": 16777216,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000000,
+          "title": "Max Input Pixels",
+          "type": "integer"
+        },
+        "max_input_tokens": {
+          "default": 32768,
+          "exclusiveMinimum": 0,
+          "maximum": 262144,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_json_depth": {
+          "default": 16,
+          "exclusiveMinimum": 0,
+          "maximum": 64,
+          "title": "Max Json Depth",
+          "type": "integer"
+        },
+        "max_json_fields": {
+          "default": 512,
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Max Json Fields",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "default": 2048,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "max_prompt_bytes": {
+          "default": 524288,
+          "exclusiveMinimum": 0,
+          "maximum": 1048576,
+          "title": "Max Prompt Bytes",
+          "type": "integer"
+        },
+        "max_response_bytes": {
+          "default": 262144,
+          "exclusiveMinimum": 0,
+          "maximum": 262144,
+          "title": "Max Response Bytes",
+          "type": "integer"
+        },
+        "max_string_chars": {
+          "default": 8192,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Max String Chars",
+          "type": "integer"
+        },
+        "provider_profile": {
+          "minLength": 1,
+          "title": "Provider Profile",
+          "type": "string"
+        },
+        "router_version": {
+          "default": "screening-router-v1",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Router Version",
+          "type": "string"
+        },
+        "strong_signal_threshold": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Strong Signal Threshold",
+          "type": "number"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 3600,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "provider_profile",
+        "low_probability",
+        "high_probability",
+        "timeout_seconds",
+        "max_images"
+      ],
+      "title": "ScreeningConfig",
+      "type": "object"
+    },
+    "SoftwareComponentManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Component",
+          "type": "string"
+        },
+        "license_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "License Id",
+          "type": "string"
+        },
+        "package": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Package",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "package",
+        "version",
+        "license_id"
+      ],
+      "title": "SoftwareComponentManifest",
+      "type": "object"
+    },
+    "StorageConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "busy_timeout_ms": {
+          "exclusiveMinimum": 0,
+          "maximum": 60000,
+          "title": "Busy Timeout Ms",
+          "type": "integer"
+        },
+        "database_filename": {
+          "const": "labcourt.sqlite3",
+          "default": "labcourt.sqlite3",
+          "title": "Database Filename",
+          "type": "string"
+        },
+        "max_image_pixels": {
+          "exclusiveMinimum": 0,
+          "title": "Max Image Pixels",
+          "type": "integer"
+        },
+        "max_media_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Max Media Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "busy_timeout_ms",
+        "max_media_bytes",
+        "max_image_pixels"
+      ],
+      "title": "StorageConfig",
+      "type": "object"
+    },
+    "StreamManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Backend",
+          "type": "string"
+        },
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "codec": {
+          "pattern": "^[\\x20-\\x7e]{4}$",
+          "title": "Codec",
+          "type": "string"
+        },
+        "color_conversion": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Color Conversion",
+          "type": "string"
+        },
+        "decoder": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Decoder",
+          "type": "string"
+        },
+        "decoder_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Decoder Version",
+          "type": "string"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "frame_count": {
+          "exclusiveMinimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "input_file_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input File Sha256",
+          "type": "string"
+        },
+        "library": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Library",
+          "type": "string"
+        },
+        "library_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Library Version",
+          "type": "string"
+        },
+        "pixel_format": {
+          "const": "RGB8",
+          "title": "Pixel Format",
+          "type": "string"
+        },
+        "pixel_hash_algorithm": {
+          "const": "LCPIX1",
+          "title": "Pixel Hash Algorithm",
+          "type": "string"
+        },
+        "software_component": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Software Component",
+          "type": "string"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        },
+        "timing_authority": {
+          "enum": [
+            "CALLER_ATTESTED",
+            "TRUSTED_SIDECAR"
+          ],
+          "title": "Timing Authority",
+          "type": "string"
+        },
+        "timing_evidence_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Timing Evidence Sha256",
+          "type": "string"
+        },
+        "timing_evidence_type": {
+          "enum": [
+            "CALLER_DECLARATION",
+            "TRUSTED_SIDECAR_JSON"
+          ],
+          "title": "Timing Evidence Type",
+          "type": "string"
+        },
+        "timing_mode": {
+          "const": "CFR",
+          "title": "Timing Mode",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "camera_id",
+        "stream_id",
+        "input_file_sha256",
+        "fps_num",
+        "fps_den",
+        "timing_mode",
+        "timing_authority",
+        "timing_evidence_type",
+        "timing_evidence_sha256",
+        "width",
+        "height",
+        "frame_count",
+        "decoder",
+        "decoder_version",
+        "backend",
+        "software_component",
+        "library",
+        "library_version",
+        "codec",
+        "color_conversion",
+        "pixel_format",
+        "pixel_hash_algorithm"
+      ],
+      "title": "StreamManifest",
+      "type": "object"
+    },
+    "TrainingConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "export_minimum_quality": {
+          "$ref": "#/$defs/TrainingLabelQuality"
+        },
+        "include_weak_labels": {
+          "default": false,
+          "title": "Include Weak Labels",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "export_minimum_quality"
+      ],
+      "title": "TrainingConfig",
+      "type": "object"
+    },
+    "TrainingLabelQuality": {
+      "enum": [
+        "WEAK_AUTO",
+        "CONSENSUS_REVIEWED",
+        "HUMAN_CONFIRMED",
+        "APPEAL_CONFIRMED"
+      ],
+      "title": "TrainingLabelQuality",
+      "type": "string"
+    },
+    "VlmProviderProfile": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "execution_location": {
+                "const": "EXTERNAL"
+              }
+            },
+            "required": [
+              "execution_location"
+            ]
+          },
+          "then": {
+            "properties": {
+              "allow_full_frame": {
+                "const": false
+              },
+              "api_key_env": {
+                "pattern": "^[A-Z_][A-Z0-9_]*$",
+                "type": "string"
+              },
+              "endpoint_env": {
+                "pattern": "^[A-Z_][A-Z0-9_]*$",
+                "type": "string"
+              },
+              "transport": {
+                "const": "HTTP"
+              }
+            },
+            "required": [
+              "endpoint_env",
+              "api_key_env",
+              "transport",
+              "pricing_currency",
+              "input_cost_per_million_tokens",
+              "output_cost_per_million_tokens"
+            ]
+          }
+        },
+        {
+          "else": {
+            "properties": {
+              "endpoint_env": {
+                "pattern": "^[A-Z_][A-Z0-9_]*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "endpoint_env",
+              "pricing_currency",
+              "input_cost_per_million_tokens",
+              "output_cost_per_million_tokens"
+            ]
+          },
+          "if": {
+            "properties": {
+              "transport": {
+                "const": "IN_PROCESS"
+              }
+            },
+            "required": [
+              "transport"
+            ]
+          },
+          "then": {
+            "properties": {
+              "api_key_env": {
+                "type": "null"
+              },
+              "endpoint_env": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "allow_full_frame": {
+          "default": false,
+          "title": "Allow Full Frame",
+          "type": "boolean"
+        },
+        "api_key_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key Env"
+        },
+        "cache_enabled": {
+          "const": true,
+          "default": true,
+          "title": "Cache Enabled",
+          "type": "boolean"
+        },
+        "endpoint_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endpoint Env"
+        },
+        "execution_location": {
+          "$ref": "#/$defs/ExecutionLocation"
+        },
+        "input_cost_per_million_tokens": {
+          "default": 0.0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Input Cost Per Million Tokens",
+          "type": "number"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "output_cost_per_million_tokens": {
+          "default": 0.0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Output Cost Per Million Tokens",
+          "type": "number"
+        },
+        "pricing_currency": {
+          "const": "USD",
+          "default": "USD",
+          "title": "Pricing Currency",
+          "type": "string"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "quantization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantization"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 3600,
+          "title": "Timeout Seconds",
+          "type": "number"
+        },
+        "transport": {
+          "$ref": "#/$defs/ProviderTransport"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "revision",
+        "execution_location",
+        "transport",
+        "timeout_seconds"
+      ],
+      "title": "VlmProviderProfile",
+      "type": "object"
+    },
+    "ZoneConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "polygon": {
+          "$ref": "#/$defs/Polygon"
+        },
+        "reminder_channel": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Reminder Channel",
+          "type": "string"
+        },
+        "required_ppe": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PpeType"
+          },
+          "title": "Required Ppe",
+          "type": "array"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "zone_id",
+        "camera_id",
+        "polygon",
+        "risk_level",
+        "reminder_channel"
+      ],
+      "title": "ZoneConfig",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-closed-policy-execution-scope-authority-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Candidate-blind V2 start cut that wraps the exact frozen V1 scope.",
+  "properties": {
+    "candidate_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Candidate Manifest Id",
+      "type": "string"
+    },
+    "candidate_run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Candidate Run Id",
+      "type": "string"
+    },
+    "command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Command Id",
+      "type": "string"
+    },
+    "execution_component": {
+      "$ref": "#/$defs/M6ReplayLockedClosedPolicyExecutionComponentAuthorityV2"
+    },
+    "execution_component_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Component Content Sha256",
+      "type": "string"
+    },
+    "execution_component_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 268435456,
+      "title": "Execution Component Size Bytes",
+      "type": "integer"
+    },
+    "execution_dataset_snapshot_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Dataset Snapshot Id",
+      "type": "string"
+    },
+    "execution_scope_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Execution Scope Authority Id",
+      "type": "string"
+    },
+    "locked_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Locked Config Sha256",
+      "type": "string"
+    },
+    "pre_policy_execution_scope": {
+      "$ref": "#/$defs/M6ReplayLockedExecutionScopeAuthority"
+    },
+    "pre_policy_execution_scope_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pre Policy Execution Scope Authority Id",
+      "type": "string"
+    },
+    "pre_policy_execution_scope_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Pre Policy Execution Scope Content Sha256",
+      "type": "string"
+    },
+    "pre_policy_execution_scope_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 268435456,
+      "title": "Pre Policy Execution Scope Size Bytes",
+      "type": "integer"
+    },
+    "route": {
+      "const": "ALERT_POLICY_CLOSED",
+      "default": "ALERT_POLICY_CLOSED",
+      "title": "Route",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-closed-policy-execution-scope-authority-v2",
+      "default": "m6-replay-locked-closed-policy-execution-scope-authority-v2",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pre_policy_execution_scope",
+    "pre_policy_execution_scope_content_sha256",
+    "pre_policy_execution_scope_size_bytes",
+    "execution_component",
+    "execution_component_content_sha256",
+    "execution_component_size_bytes",
+    "pre_policy_execution_scope_authority_id",
+    "candidate_run_id",
+    "command_id",
+    "execution_dataset_snapshot_id",
+    "candidate_manifest_id",
+    "locked_config_sha256",
+    "execution_scope_authority_id"
+  ],
+  "title": "M6ReplayLockedClosedPolicyExecutionScopeAuthorityV2",
+  "type": "object"
+}

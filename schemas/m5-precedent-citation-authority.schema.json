@@ -1,0 +1,73 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m5-precedent-citation-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "citation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Citation Id",
+      "type": "string"
+    },
+    "cited_at": {
+      "format": "date-time",
+      "title": "Cited At",
+      "type": "string"
+    },
+    "precedent_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Precedent Authority Id",
+      "type": "string"
+    },
+    "precedent_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Precedent Id",
+      "type": "string"
+    },
+    "precedent_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Precedent Revision",
+      "type": "integer"
+    },
+    "query_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Query Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-precedent-citation-authority-v1",
+      "default": "m5-precedent-citation-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "score": {
+      "maximum": 10,
+      "minimum": -10,
+      "title": "Score",
+      "type": "number"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "precedent_id",
+    "precedent_authority_id",
+    "precedent_revision",
+    "query_id",
+    "score",
+    "cited_at",
+    "citation_id"
+  ],
+  "title": "M5PrecedentCitationAuthority",
+  "type": "object"
+}

@@ -1,0 +1,44 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m5-precedent-import-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accepted_count": {
+      "maximum": 9999,
+      "minimum": 0,
+      "title": "Accepted Count",
+      "type": "integer"
+    },
+    "authority_ids": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 9999,
+      "title": "Authority Ids",
+      "type": "array"
+    },
+    "precedent_ids": {
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 9999,
+      "title": "Precedent Ids",
+      "type": "array"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "accepted_count",
+    "precedent_ids",
+    "authority_ids"
+  ],
+  "title": "M5PrecedentImportReport",
+  "type": "object"
+}

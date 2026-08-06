@@ -1,0 +1,749 @@
+{
+  "$defs": {
+    "AlertCooldownAuthority": {
+      "additionalProperties": false,
+      "description": "The last emitted alert and its exclusive frame-space cooldown bound.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "cooldown_frames": {
+          "minimum": 0,
+          "title": "Cooldown Frames",
+          "type": "integer"
+        },
+        "cooldown_until_frame_exclusive": {
+          "minimum": 0,
+          "title": "Cooldown Until Frame Exclusive",
+          "type": "integer"
+        },
+        "key": {
+          "$ref": "#/$defs/AlertCooldownKey"
+        },
+        "source_alert_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Alert Id",
+          "type": "string"
+        },
+        "source_trigger_frame": {
+          "minimum": 0,
+          "title": "Source Trigger Frame",
+          "type": "integer"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "stream_id",
+        "source_alert_id",
+        "source_trigger_frame",
+        "cooldown_frames",
+        "cooldown_until_frame_exclusive",
+        "authority_id"
+      ],
+      "title": "AlertCooldownAuthority",
+      "type": "object"
+    },
+    "AlertCooldownKey": {
+      "additionalProperties": false,
+      "description": "Frame-space deduplication key scoped by the complete anonymous track ref.",
+      "properties": {
+        "key_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Key Id",
+          "type": "string"
+        },
+        "track_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Track Ref",
+          "type": "string"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "zone_id",
+        "violation_type",
+        "track_ref",
+        "key_id"
+      ],
+      "title": "AlertCooldownKey",
+      "type": "object"
+    },
+    "AlertDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "minLength": 1,
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "human_review_required": {
+          "default": false,
+          "title": "Human Review Required",
+          "type": "boolean"
+        },
+        "level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "merged_into_alert_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Merged Into Alert Id"
+        },
+        "policy_rule_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Policy Rule Ids",
+          "type": "array"
+        },
+        "recipients": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Recipients",
+          "type": "array"
+        },
+        "rescinded": {
+          "default": false,
+          "title": "Rescinded",
+          "type": "boolean"
+        },
+        "suppressed_by_cooldown": {
+          "default": false,
+          "title": "Suppressed By Cooldown",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alert_id",
+        "case_id",
+        "level",
+        "recipients",
+        "policy_rule_ids"
+      ],
+      "title": "AlertDecision",
+      "type": "object"
+    },
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AlertOutboxItem": {
+      "additionalProperties": false,
+      "description": "Deliverable alert payload created in the same transaction as Case closure.",
+      "properties": {
+        "alert": {
+          "$ref": "#/$defs/AlertDecision"
+        },
+        "case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Authority Sha256",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "outbox_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Outbox Id",
+          "type": "string"
+        },
+        "policy_request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Request Id",
+          "type": "string"
+        },
+        "priority": {
+          "$ref": "#/$defs/AlertOutboxPriority"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "case_authority_sha256",
+        "policy_request_id",
+        "manifest_id",
+        "alert",
+        "priority",
+        "idempotency_key",
+        "outbox_id"
+      ],
+      "title": "AlertOutboxItem",
+      "type": "object"
+    },
+    "AlertOutboxPriority": {
+      "enum": [
+        "NORMAL",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "AlertOutboxPriority",
+      "type": "string"
+    },
+    "AlertPolicyDisposition": {
+      "enum": [
+        "ENQUEUE",
+        "SUPPRESSED_MERGED",
+        "CLOSE_NO_ALERT"
+      ],
+      "title": "AlertPolicyDisposition",
+      "type": "string"
+    },
+    "AlertPolicyRequest": {
+      "additionalProperties": false,
+      "description": "Exact immutable roots consumed by the deterministic case alert policy.",
+      "properties": {
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Authority Sha256",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "confirmed_min_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confirmed Min Confidence",
+          "type": "number"
+        },
+        "cooldown_frames": {
+          "minimum": 0,
+          "title": "Cooldown Frames",
+          "type": "integer"
+        },
+        "cooldown_seconds": {
+          "minimum": 0,
+          "title": "Cooldown Seconds",
+          "type": "number"
+        },
+        "cross_day_repeat_count": {
+          "const": 0,
+          "default": 0,
+          "title": "Cross Day Repeat Count",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "hard_rule": {
+          "title": "Hard Rule",
+          "type": "boolean"
+        },
+        "insufficient_evidence_max_level": {
+          "const": "ADVISORY",
+          "title": "Insufficient Evidence Max Level",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "observation_sufficiency_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observation Sufficiency Sha256"
+        },
+        "policy_version": {
+          "const": "alert-policy-v1",
+          "default": "alert-policy-v1",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "primary_track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Track Ref"
+        },
+        "prior_cooldown": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertCooldownAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "prior_emergency_delivery": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImmediateSafetyDeliveryAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "procedural_review_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Procedural Review Id",
+          "type": "string"
+        },
+        "procedural_review_passed": {
+          "const": true,
+          "title": "Procedural Review Passed",
+          "type": "boolean"
+        },
+        "procedural_review_version": {
+          "exclusiveMinimum": 0,
+          "title": "Procedural Review Version",
+          "type": "integer"
+        },
+        "recommended_alert_level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "repeat_history_mode": {
+          "const": "DISABLED_UNTRUSTED_DEMO",
+          "default": "DISABLED_UNTRUSTED_DEMO",
+          "title": "Repeat History Mode",
+          "type": "string"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Request Id",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_case_status": {
+          "const": "READY_FOR_ALERT_POLICY",
+          "title": "Source Case Status",
+          "type": "string"
+        },
+        "stream_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Stream Authority Sha256",
+          "type": "string"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        },
+        "trigger_frame": {
+          "minimum": 0,
+          "title": "Trigger Frame",
+          "type": "integer"
+        },
+        "verdict_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Verdict Confidence",
+          "type": "number"
+        },
+        "verdict_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "verdict_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Id",
+          "type": "string"
+        },
+        "verdict_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verdict Sha256",
+          "type": "string"
+        },
+        "verdict_version": {
+          "exclusiveMinimum": 0,
+          "title": "Verdict Version",
+          "type": "integer"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        },
+        "zone_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Zone Id",
+          "type": "string"
+        },
+        "zone_risk": {
+          "$ref": "#/$defs/RiskLevel"
+        }
+      },
+      "required": [
+        "run_id",
+        "case_id",
+        "case_authority_sha256",
+        "source_case_status",
+        "config_sha256",
+        "manifest_id",
+        "camera_id",
+        "stream_id",
+        "stream_authority_sha256",
+        "fps_num",
+        "fps_den",
+        "zone_id",
+        "zone_risk",
+        "violation_type",
+        "trigger_frame",
+        "hard_rule",
+        "verdict_id",
+        "verdict_version",
+        "verdict_sha256",
+        "verdict_decision",
+        "verdict_confidence",
+        "recommended_alert_level",
+        "procedural_review_id",
+        "procedural_review_version",
+        "procedural_review_passed",
+        "cooldown_seconds",
+        "cooldown_frames",
+        "confirmed_min_confidence",
+        "insufficient_evidence_max_level",
+        "request_id"
+      ],
+      "title": "AlertPolicyRequest",
+      "type": "object"
+    },
+    "DeliveryReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "alert_id": {
+          "minLength": 1,
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "channel": {
+          "minLength": 1,
+          "title": "Channel",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "provider_receipt_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Receipt Ref"
+        }
+      },
+      "required": [
+        "alert_id",
+        "channel",
+        "idempotency_key",
+        "accepted"
+      ],
+      "title": "DeliveryReceipt",
+      "type": "object"
+    },
+    "EmergencySafetyIncident": {
+      "additionalProperties": false,
+      "properties": {
+        "adjudicated": {
+          "const": false,
+          "default": false,
+          "title": "Adjudicated",
+          "type": "boolean"
+        },
+        "certification_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Certification Id"
+        },
+        "delivery_idempotency_key": {
+          "minLength": 1,
+          "title": "Delivery Idempotency Key",
+          "type": "string"
+        },
+        "incident_id": {
+          "minLength": 1,
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "level": {
+          "const": "EMERGENCY",
+          "default": "EMERGENCY",
+          "title": "Level",
+          "type": "string"
+        },
+        "signal_id": {
+          "minLength": 1,
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_type": {
+          "$ref": "#/$defs/SafetySignalType"
+        },
+        "zone_id": {
+          "minLength": 1,
+          "title": "Zone Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "incident_id",
+        "signal_id",
+        "signal_type",
+        "zone_id",
+        "delivery_idempotency_key"
+      ],
+      "title": "EmergencySafetyIncident",
+      "type": "object"
+    },
+    "ImmediateSafetyDeliveryAuthority": {
+      "additionalProperties": false,
+      "description": "Proof that a certified case-external hard signal was already accepted.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "delivery_receipt": {
+          "$ref": "#/$defs/DeliveryReceipt"
+        },
+        "incident": {
+          "$ref": "#/$defs/EmergencySafetyIncident"
+        }
+      },
+      "required": [
+        "incident",
+        "delivery_receipt",
+        "authority_id"
+      ],
+      "title": "ImmediateSafetyDeliveryAuthority",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "SafetySignalType": {
+      "enum": [
+        "OPEN_FLAME",
+        "SMOKE",
+        "HEAT_ACTIVITY",
+        "OCCUPANCY",
+        "MANUAL_EMERGENCY"
+      ],
+      "title": "SafetySignalType",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/alert-policy-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Pure close-and-enqueue intent for one current READY Case snapshot.",
+  "properties": {
+    "authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Authority Id",
+      "type": "string"
+    },
+    "cooldown_write": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AlertCooldownAuthority"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AlertDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "disposition": {
+      "$ref": "#/$defs/AlertPolicyDisposition"
+    },
+    "final_decision": {
+      "$ref": "#/$defs/VerdictDecision"
+    },
+    "outbox_item": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AlertOutboxItem"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "policy_rule_ids": {
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Policy Rule Ids",
+      "type": "array"
+    },
+    "request": {
+      "$ref": "#/$defs/AlertPolicyRequest"
+    },
+    "target_case_status": {
+      "const": "CLOSED",
+      "default": "CLOSED",
+      "title": "Target Case Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request",
+    "disposition",
+    "policy_rule_ids",
+    "final_decision",
+    "authority_id"
+  ],
+  "title": "AlertPolicyAuthority",
+  "type": "object"
+}

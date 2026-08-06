@@ -1,0 +1,9 @@
+schema_version: "1.0.0"
+rule_version: "laboratory-v1"
+presence:
+  default_dwell_seconds: 3
+  default_cooldown_seconds: 30
+  evidence:
+    pre_seconds: 15
+    post_seconds: 15
+

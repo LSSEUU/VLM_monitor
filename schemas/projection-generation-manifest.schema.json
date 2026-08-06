@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "ProjectionArtifactKind": {
+      "enum": [
+        "EVENTS_JSONL",
+        "AUDIT_JSONL",
+        "CASE_JSON",
+        "PACK_JSON"
+      ],
+      "title": "ProjectionArtifactKind",
+      "type": "string"
+    },
+    "ProjectionGenerationEntry": {
+      "additionalProperties": false,
+      "description": "One exact canonical document in a generation closure.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/ProjectionArtifactKind"
+        },
+        "projection_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Projection Id",
+          "type": "string"
+        },
+        "relative_path": {
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "projection_id",
+        "relative_path",
+        "sha256",
+        "size_bytes"
+      ],
+      "title": "ProjectionGenerationEntry",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/projection-generation-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The complete immutable file inventory for one authority snapshot.",
+  "properties": {
+    "audit_head_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Head Hash",
+      "type": "string"
+    },
+    "audit_head_sequence": {
+      "minimum": -1,
+      "title": "Audit Head Sequence",
+      "type": "integer"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/ProjectionGenerationEntry"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "generation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "projection-generation-v1",
+      "default": "projection-generation-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "audit_head_sequence",
+    "audit_head_hash",
+    "entries",
+    "generation_id"
+  ],
+  "title": "ProjectionGenerationManifest",
+  "type": "object"
+}

@@ -1,0 +1,306 @@
+{
+  "$defs": {
+    "AnchorType": {
+      "enum": [
+        "HEAD",
+        "HANDS",
+        "TORSO"
+      ],
+      "title": "AnchorType",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AssociationMethod": {
+      "enum": [
+        "KEYPOINT",
+        "BODY_FALLBACK"
+      ],
+      "title": "AssociationMethod",
+      "type": "string"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "Keypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "x",
+        "y",
+        "score"
+      ],
+      "title": "Keypoint",
+      "type": "object"
+    },
+    "MediaAccess": {
+      "enum": [
+        "LOCAL_ONLY",
+        "CLOUD_ALLOWED"
+      ],
+      "title": "MediaAccess",
+      "type": "string"
+    },
+    "PpeType": {
+      "enum": [
+        "GOGGLES",
+        "GLOVES",
+        "LAB_COAT"
+      ],
+      "title": "PpeType",
+      "type": "string"
+    },
+    "PrivacyPolicy": {
+      "enum": [
+        "EPHEMERAL_RAW",
+        "PPE_PRESERVING_REDACTION",
+        "FULL_REDACTION"
+      ],
+      "title": "PrivacyPolicy",
+      "type": "string"
+    },
+    "PrivacyReasonCode": {
+      "enum": [
+        "PPE_REGION_PRESERVED",
+        "KEYPOINTS_INSUFFICIENT_LOCAL_ONLY",
+        "PANORAMA_FULL_REDACTION",
+        "SUBJECT_FULL_REDACTION",
+        "POLICY_LOCAL_ONLY"
+      ],
+      "title": "PrivacyReasonCode",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/privacy-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "anchor_bbox": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "anchor_type": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AnchorType"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "association_method": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AssociationMethod"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "fallback_used": {
+      "default": false,
+      "title": "Fallback Used",
+      "type": "boolean"
+    },
+    "fill_rgb": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        }
+      ],
+      "title": "Fill Rgb",
+      "type": "array"
+    },
+    "input_refs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "minItems": 1,
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "keypoints": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Keypoint"
+      },
+      "title": "Keypoints",
+      "type": "array"
+    },
+    "media_access": {
+      "$ref": "#/$defs/MediaAccess"
+    },
+    "policy": {
+      "$ref": "#/$defs/PrivacyPolicy"
+    },
+    "ppe_type": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PpeType"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "preserved_regions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/BBoxXYXY"
+      },
+      "title": "Preserved Regions",
+      "type": "array"
+    },
+    "reason_code": {
+      "$ref": "#/$defs/PrivacyReasonCode"
+    },
+    "transform_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Transform Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy",
+    "transform_version",
+    "media_access",
+    "reason_code",
+    "input_refs",
+    "fill_rgb"
+  ],
+  "title": "PrivacyReceipt",
+  "type": "object"
+}

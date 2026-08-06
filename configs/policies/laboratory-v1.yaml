@@ -1,0 +1,16 @@
+rule_version: "laboratory-v1"
+purpose: "Development-only laboratory safety policy for deterministic fixtures."
+rules:
+  PPE_GOGGLES_MISSING:
+    evidence_class: ABSENCE
+    reminder_first: true
+    disciplinary_use_allowed: false
+  REAGENT_CONTAINER_OPEN:
+    evidence_class: PRESENCE
+    reminder_first: false
+    disciplinary_use_allowed: false
+  OPEN_FLAME:
+    evidence_class: PRESENCE
+    emergency_requires_certified_signal: true
+    disciplinary_use_allowed: false
+

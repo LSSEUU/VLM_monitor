@@ -1,0 +1,112 @@
+{
+  "$defs": {
+    "SafetySignalType": {
+      "enum": [
+        "OPEN_FLAME",
+        "SMOKE",
+        "HEAT_ACTIVITY",
+        "OCCUPANCY",
+        "MANUAL_EMERGENCY"
+      ],
+      "title": "SafetySignalType",
+      "type": "string"
+    },
+    "SafetySourceClass": {
+      "enum": [
+        "PHYSICAL_SENSOR",
+        "VALIDATED_DETERMINISTIC",
+        "VIDEO_HEURISTIC",
+        "MANUAL"
+      ],
+      "title": "SafetySourceClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/safety-signal.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "certification_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Certification Id"
+    },
+    "end_frame_exclusive": {
+      "exclusiveMinimum": 0,
+      "title": "End Frame Exclusive",
+      "type": "integer"
+    },
+    "quality": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Quality",
+      "type": "number"
+    },
+    "signal_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Signal Id",
+      "type": "string"
+    },
+    "signal_type": {
+      "$ref": "#/$defs/SafetySignalType"
+    },
+    "source_class": {
+      "$ref": "#/$defs/SafetySourceClass"
+    },
+    "start_frame": {
+      "minimum": 0,
+      "title": "Start Frame",
+      "type": "integer"
+    },
+    "unit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unit"
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "boolean"
+        }
+      ],
+      "title": "Value"
+    },
+    "zone_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Zone Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "signal_id",
+    "signal_type",
+    "zone_id",
+    "start_frame",
+    "end_frame_exclusive",
+    "value",
+    "source_class",
+    "quality"
+  ],
+  "title": "SafetySignal",
+  "type": "object"
+}

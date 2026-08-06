@@ -1,0 +1,186 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ProceduralDefectCode": {
+      "enum": [
+        "MALFORMED_STRUCTURE",
+        "INVALID_ENUM",
+        "MISSING_REQUIRED_FIELD",
+        "FABRICATED_EVIDENCE_REFERENCE",
+        "INVALID_COORDINATES",
+        "FABRICATED_PRECEDENT_REFERENCE",
+        "PRECEDENT_DIRECTION_MISMATCH",
+        "EMPTY_DISTINGUISHING_REASON",
+        "ESTABLISHED_WITHOUT_EVIDENCE",
+        "UNANSWERED_DEFENSE_POINT",
+        "CONFIDENCE_ALERT_LEVEL_MISMATCH",
+        "OBJECTIVE_ASSERTION_CONTRADICTION",
+        "VIOLATION_TYPE_MISMATCH",
+        "ABSENCE_FROM_INSUFFICIENT_OBSERVATION"
+      ],
+      "title": "ProceduralDefectCode",
+      "type": "string"
+    },
+    "ProceduralDefectOrigin": {
+      "enum": [
+        "PARSER",
+        "PROCEDURAL_GATE"
+      ],
+      "title": "ProceduralDefectOrigin",
+      "type": "string"
+    },
+    "ProceduralField": {
+      "enum": [
+        "JSON_ROOT",
+        "ENUM_VALUE",
+        "REQUIRED_FIELD",
+        "EVIDENCE_REFERENCE",
+        "EVIDENCE_COORDINATES",
+        "PRECEDENT_REFERENCE",
+        "PRECEDENT_MODE",
+        "DISTINGUISHING_REASON",
+        "EVIDENCE_REFS",
+        "DEFENSE_ARGUMENTS",
+        "RECOMMENDED_ALERT_LEVEL",
+        "OBJECTIVE_CLAIMS",
+        "VIOLATION_TYPE",
+        "OBSERVATION_SUFFICIENCY"
+      ],
+      "title": "ProceduralField",
+      "type": "string"
+    },
+    "ProceduralReasonCode": {
+      "enum": [
+        "MALFORMED_JSON",
+        "ROOT_NOT_OBJECT",
+        "RESPONSE_LIMIT_EXCEEDED",
+        "UNKNOWN_ENUM_VALUE",
+        "REQUIRED_FIELD_ABSENT",
+        "REFERENCE_NOT_ALLOWED",
+        "COORDINATE_OUTSIDE_EVIDENCE",
+        "PRECEDENT_NOT_VISIBLE",
+        "PRECEDENT_DIRECTION_CONFLICT",
+        "DISTINGUISHING_REASON_ABSENT",
+        "ESTABLISHED_REQUIRES_SUPPORT",
+        "DEFENSE_RESPONSE_CARDINALITY",
+        "ALERT_POLICY_CONFLICT",
+        "OBJECTIVE_VALUE_CONFLICT",
+        "CASE_VIOLATION_CONFLICT",
+        "ABSENCE_OBSERVATION_INSUFFICIENT"
+      ],
+      "title": "ProceduralReasonCode",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/procedural-defect.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One code-specific, non-sensitive parser or gate defect.",
+  "properties": {
+    "artifact_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "code": {
+      "$ref": "#/$defs/ProceduralDefectCode"
+    },
+    "defect_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Defect Id",
+      "type": "string"
+    },
+    "field": {
+      "$ref": "#/$defs/ProceduralField"
+    },
+    "origin": {
+      "$ref": "#/$defs/ProceduralDefectOrigin"
+    },
+    "reason_code": {
+      "$ref": "#/$defs/ProceduralReasonCode"
+    },
+    "related_refs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Related Refs",
+      "type": "array"
+    },
+    "value_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Value Sha256"
+    }
+  },
+  "required": [
+    "code",
+    "origin",
+    "reason_code",
+    "artifact_ref",
+    "field",
+    "defect_id"
+  ],
+  "title": "ProceduralDefect",
+  "type": "object"
+}

@@ -1,0 +1,261 @@
+{
+  "$defs": {
+    "AlertChannelCapabilityAuthority": {
+      "additionalProperties": false,
+      "description": "Durable channel claim governing retries after an unknown delivery.",
+      "properties": {
+        "capability_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "capability_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Capability Revision",
+          "type": "string"
+        },
+        "channel": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Channel",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "idempotency_guarantee": {
+          "$ref": "#/$defs/AlertChannelIdempotencyGuarantee"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "provider_idempotency_key": {
+          "anyOf": [
+            {
+              "const": "alert_id",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Idempotency Key"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "manifest_id",
+        "config_sha256",
+        "channel",
+        "capability_revision",
+        "idempotency_guarantee",
+        "capability_id"
+      ],
+      "title": "AlertChannelCapabilityAuthority",
+      "type": "object"
+    },
+    "AlertChannelIdempotencyGuarantee": {
+      "enum": [
+        "NONE",
+        "EXACT_ALERT_ID"
+      ],
+      "title": "AlertChannelIdempotencyGuarantee",
+      "type": "string"
+    },
+    "AlertDispatchContinuation": {
+      "enum": [
+        "CLOSED",
+        "RETRY_ALLOWED",
+        "ATTENTION_REQUIRED"
+      ],
+      "title": "AlertDispatchContinuation",
+      "type": "string"
+    },
+    "AlertDispatchDisposition": {
+      "enum": [
+        "SUCCEEDED",
+        "RETRYABLE_FAILURE",
+        "UNKNOWN_DELIVERY"
+      ],
+      "title": "AlertDispatchDisposition",
+      "type": "string"
+    },
+    "AlertDispatchFailureCode": {
+      "enum": [
+        "CHANNEL_EXCEPTION",
+        "CHANNEL_DEFINITELY_NOT_SENT",
+        "CHANNEL_REJECTED",
+        "RECEIPT_MISMATCH",
+        "LEASE_EXPIRED"
+      ],
+      "title": "AlertDispatchFailureCode",
+      "type": "string"
+    },
+    "DeliveryReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "alert_id": {
+          "minLength": 1,
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "channel": {
+          "minLength": 1,
+          "title": "Channel",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "provider_receipt_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Receipt Ref"
+        }
+      },
+      "required": [
+        "alert_id",
+        "channel",
+        "idempotency_key",
+        "accepted"
+      ],
+      "title": "DeliveryReceipt",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/alert-dispatch-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "alert_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Alert Id",
+      "type": "string"
+    },
+    "attempt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "attempt_number": {
+      "exclusiveMinimum": 0,
+      "title": "Attempt Number",
+      "type": "integer"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "channel_capability": {
+      "$ref": "#/$defs/AlertChannelCapabilityAuthority"
+    },
+    "continuation": {
+      "$ref": "#/$defs/AlertDispatchContinuation"
+    },
+    "delivery_receipt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DeliveryReceipt"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "disposition": {
+      "$ref": "#/$defs/AlertDispatchDisposition"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AlertDispatchFailureCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "fence": {
+      "exclusiveMinimum": 0,
+      "title": "Fence",
+      "type": "integer"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "lease_expires_at": {
+      "format": "date-time",
+      "title": "Lease Expires At",
+      "type": "string"
+    },
+    "lease_owner_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Lease Owner Sha256",
+      "type": "string"
+    },
+    "outbox_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Outbox Id",
+      "type": "string"
+    },
+    "receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "outbox_id",
+    "alert_id",
+    "case_id",
+    "attempt_number",
+    "fence",
+    "lease_owner_sha256",
+    "started_at",
+    "lease_expires_at",
+    "channel_capability",
+    "idempotency_key",
+    "disposition",
+    "continuation",
+    "receipt_id"
+  ],
+  "title": "AlertDispatchReceipt",
+  "type": "object"
+}

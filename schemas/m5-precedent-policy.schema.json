@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "PrecedentSource": {
+      "enum": [
+        "PRESET",
+        "AUTOMATIC",
+        "HUMAN_REVIEW",
+        "APPEAL_OVERTURN"
+      ],
+      "title": "PrecedentSource",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-precedent-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "automatic_activation_delay_seconds": {
+      "maximum": 316224000,
+      "minimum": 0,
+      "title": "Automatic Activation Delay Seconds",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "conflict_similarity": {
+      "maximum": 1,
+      "minimum": -1,
+      "title": "Conflict Similarity",
+      "type": "number"
+    },
+    "policy_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-precedent-policy-v1",
+      "default": "m5-precedent-policy-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_priorities": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/PrecedentSource"
+      },
+      "title": "Source Priorities",
+      "type": "object"
+    },
+    "source_weights": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/PrecedentSource"
+      },
+      "title": "Source Weights",
+      "type": "object"
+    },
+    "text_weight": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Text Weight",
+      "type": "number"
+    },
+    "visual_weight": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Visual Weight",
+      "type": "number"
+    }
+  },
+  "required": [
+    "config_sha256",
+    "text_weight",
+    "visual_weight",
+    "source_weights",
+    "source_priorities",
+    "conflict_similarity",
+    "automatic_activation_delay_seconds",
+    "policy_id"
+  ],
+  "title": "M5PrecedentPolicy",
+  "type": "object"
+}

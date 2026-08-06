@@ -1,0 +1,98 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/evidence-pack-derivation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Exact predecessor/tool/successor authority for one acquired pack version.",
+  "properties": {
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "derivation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Derivation Id",
+      "type": "string"
+    },
+    "derivation_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Derivation Sha256",
+      "type": "string"
+    },
+    "hearing_session_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Hearing Session Id",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "new_evidence_pack_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "New Evidence Pack Id",
+      "type": "string"
+    },
+    "new_evidence_pack_version": {
+      "exclusiveMinimum": 0,
+      "title": "New Evidence Pack Version",
+      "type": "integer"
+    },
+    "previous_evidence_pack_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Evidence Pack Id",
+      "type": "string"
+    },
+    "previous_evidence_pack_version": {
+      "exclusiveMinimum": 0,
+      "title": "Previous Evidence Pack Version",
+      "type": "integer"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m4-evidence-pack-derivation-v1",
+      "default": "m4-evidence-pack-derivation-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_cycle_scope_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Cycle Scope Id",
+      "type": "string"
+    },
+    "source_cycle_scope_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Cycle Scope Sha256",
+      "type": "string"
+    },
+    "tool_execution_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tool Execution Receipt Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "hearing_session_id",
+    "source_cycle_scope_id",
+    "source_cycle_scope_sha256",
+    "previous_evidence_pack_id",
+    "previous_evidence_pack_version",
+    "new_evidence_pack_id",
+    "new_evidence_pack_version",
+    "tool_execution_receipt_id",
+    "manifest_id",
+    "derivation_id",
+    "derivation_sha256"
+  ],
+  "title": "EvidencePackDerivation",
+  "type": "object"
+}

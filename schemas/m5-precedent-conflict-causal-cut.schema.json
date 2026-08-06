@@ -1,0 +1,74 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m5-precedent-conflict-causal-cut.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Authority-only ledger watermark and complete ACTIVE-head root.",
+  "properties": {
+    "active_head_count": {
+      "maximum": 9999,
+      "minimum": 0,
+      "title": "Active Head Count",
+      "type": "integer"
+    },
+    "active_head_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Active Head Root Sha256",
+      "type": "string"
+    },
+    "authority_event_sequence": {
+      "minimum": 0,
+      "title": "Authority Event Sequence",
+      "type": "integer"
+    },
+    "authority_event_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authority Event Sha256",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "cut_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Cut Id",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "policy_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-precedent-conflict-causal-cut-v1",
+      "default": "m5-precedent-conflict-causal-cut-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "manifest_id",
+    "config_sha256",
+    "policy_id",
+    "authority_event_sequence",
+    "authority_event_sha256",
+    "active_head_count",
+    "active_head_root_sha256",
+    "cut_id"
+  ],
+  "title": "M5PrecedentConflictCausalCut",
+  "type": "object"
+}

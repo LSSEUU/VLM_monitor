@@ -1,0 +1,59 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m5-projection-current-pointer.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority_root_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authority Root Sha256",
+      "type": "string"
+    },
+    "generation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Generation Id",
+      "type": "string"
+    },
+    "manifest_relative_path": {
+      "title": "Manifest Relative Path",
+      "type": "string"
+    },
+    "manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "manifest_size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Manifest Size Bytes",
+      "type": "integer"
+    },
+    "pointer_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Pointer Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m5-projection-current-v1",
+      "default": "m5-projection-current-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "authority_root_sha256",
+    "generation_id",
+    "manifest_relative_path",
+    "manifest_sha256",
+    "manifest_size_bytes",
+    "pointer_id"
+  ],
+  "title": "M5ProjectionCurrentPointer",
+  "type": "object"
+}

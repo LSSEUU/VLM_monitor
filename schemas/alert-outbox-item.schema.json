@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "AlertDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "minLength": 1,
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "human_review_required": {
+          "default": false,
+          "title": "Human Review Required",
+          "type": "boolean"
+        },
+        "level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "merged_into_alert_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Merged Into Alert Id"
+        },
+        "policy_rule_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Policy Rule Ids",
+          "type": "array"
+        },
+        "recipients": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Recipients",
+          "type": "array"
+        },
+        "rescinded": {
+          "default": false,
+          "title": "Rescinded",
+          "type": "boolean"
+        },
+        "suppressed_by_cooldown": {
+          "default": false,
+          "title": "Suppressed By Cooldown",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alert_id",
+        "case_id",
+        "level",
+        "recipients",
+        "policy_rule_ids"
+      ],
+      "title": "AlertDecision",
+      "type": "object"
+    },
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AlertOutboxPriority": {
+      "enum": [
+        "NORMAL",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "AlertOutboxPriority",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/alert-outbox-item.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Deliverable alert payload created in the same transaction as Case closure.",
+  "properties": {
+    "alert": {
+      "$ref": "#/$defs/AlertDecision"
+    },
+    "case_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Authority Sha256",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "outbox_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Outbox Id",
+      "type": "string"
+    },
+    "policy_request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Request Id",
+      "type": "string"
+    },
+    "priority": {
+      "$ref": "#/$defs/AlertOutboxPriority"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "case_authority_sha256",
+    "policy_request_id",
+    "manifest_id",
+    "alert",
+    "priority",
+    "idempotency_key",
+    "outbox_id"
+  ],
+  "title": "AlertOutboxItem",
+  "type": "object"
+}

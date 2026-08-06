@@ -1,0 +1,142 @@
+{
+  "$defs": {
+    "M6ReplayLockedExecutionRoute": {
+      "enum": [
+        "M3_FAST_TERMINAL_POST_PARSE",
+        "M4_HEARING_GATE_TERMINAL_POST_PARSE"
+      ],
+      "title": "M6ReplayLockedExecutionRoute",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-replay-locked-execution-component-authority.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cache_write_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Cache Write Ports Exposed",
+      "type": "boolean"
+    },
+    "code_commit": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Code Commit",
+      "type": "string"
+    },
+    "component": {
+      "const": "labcourt-m6-replay-locked-executor",
+      "default": "labcourt-m6-replay-locked-executor",
+      "title": "Component",
+      "type": "string"
+    },
+    "component_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Component Authority Id",
+      "type": "string"
+    },
+    "evaluator_fields_accessible": {
+      "const": false,
+      "default": false,
+      "title": "Evaluator Fields Accessible",
+      "type": "boolean"
+    },
+    "execution_mode": {
+      "const": "OFFLINE_LOCKED",
+      "default": "OFFLINE_LOCKED",
+      "title": "Execution Mode",
+      "type": "string"
+    },
+    "gpu_required": {
+      "const": false,
+      "default": false,
+      "title": "Gpu Required",
+      "type": "boolean"
+    },
+    "input_contract": {
+      "const": "SEALED_SAVED_AUTHORITIES",
+      "default": "SEALED_SAVED_AUTHORITIES",
+      "title": "Input Contract",
+      "type": "string"
+    },
+    "live_tail_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Live Tail Ports Exposed",
+      "type": "boolean"
+    },
+    "network_allowed": {
+      "const": false,
+      "default": false,
+      "title": "Network Allowed",
+      "type": "boolean"
+    },
+    "output_contract": {
+      "const": "APPEND_ONLY_LOCKED_INVENTORY",
+      "default": "APPEND_ONLY_LOCKED_INVENTORY",
+      "title": "Output Contract",
+      "type": "string"
+    },
+    "package": {
+      "const": "labcourt",
+      "default": "labcourt",
+      "title": "Package",
+      "type": "string"
+    },
+    "provider_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Provider Ports Exposed",
+      "type": "boolean"
+    },
+    "raw_model_response_accessible": {
+      "const": false,
+      "default": false,
+      "title": "Raw Model Response Accessible",
+      "type": "boolean"
+    },
+    "recovery_ports_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Recovery Ports Exposed",
+      "type": "boolean"
+    },
+    "safety_signal_accessible": {
+      "const": false,
+      "default": false,
+      "title": "Safety Signal Accessible",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m6-replay-locked-execution-component-authority-v1",
+      "default": "m6-replay-locked-execution-component-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "supported_routes": {
+      "default": [
+        "M3_FAST_TERMINAL_POST_PARSE"
+      ],
+      "items": {
+        "$ref": "#/$defs/M6ReplayLockedExecutionRoute"
+      },
+      "title": "Supported Routes",
+      "type": "array"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "code_commit",
+    "component_authority_id"
+  ],
+  "title": "M6ReplayLockedExecutionComponentAuthority",
+  "type": "object"
+}

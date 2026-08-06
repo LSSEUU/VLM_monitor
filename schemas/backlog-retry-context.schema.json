@@ -1,0 +1,31 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/backlog-retry-context.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Request identity input that changes only after a proven parse failure.\n\nThe lease is deliberately absent.  A provider outage, timeout, or unknown\nworker crash may result in another lease, but must keep the same model\nrequest identity so durable claim/journal recovery can prevent a duplicate\nexternal call.",
+  "properties": {
+    "backlog_item_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Backlog Item Id",
+      "type": "string"
+    },
+    "context_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Context Id",
+      "type": "string"
+    },
+    "retry_generation": {
+      "minimum": 0,
+      "title": "Retry Generation",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "backlog_item_id",
+    "retry_generation",
+    "context_id"
+  ],
+  "title": "BacklogRetryContext",
+  "type": "object"
+}

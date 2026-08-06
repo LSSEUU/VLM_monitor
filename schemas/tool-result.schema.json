@@ -1,0 +1,336 @@
+{
+  "$defs": {
+    "AcquisitionAction": {
+      "enum": [
+        "REQUEST_MORE_FRAMES",
+        "RECROP",
+        "OTHER_CAMERA_SAME_TIME",
+        "TRACK_CONFIDENCE_CURVE",
+        "REDETECT_HIGH_RES"
+      ],
+      "title": "AcquisitionAction",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "OtherCameraSameTimeParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "OTHER_CAMERA_SAME_TIME",
+          "title": "Action",
+          "type": "string"
+        },
+        "source_frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Source Frame Id",
+          "type": "string"
+        },
+        "target_camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Target Camera Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "source_frame_id",
+        "target_camera_id"
+      ],
+      "title": "OtherCameraSameTimeParameters",
+      "type": "object"
+    },
+    "RecropParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "RECROP",
+          "title": "Action",
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "frame_id",
+        "bbox"
+      ],
+      "title": "RecropParameters",
+      "type": "object"
+    },
+    "RedetectHighResolutionParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "REDETECT_HIGH_RES",
+          "title": "Action",
+          "type": "string"
+        },
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "prompts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Prompts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "action",
+        "crop_id",
+        "prompts"
+      ],
+      "title": "RedetectHighResolutionParameters",
+      "type": "object"
+    },
+    "RequestMoreFramesParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "REQUEST_MORE_FRAMES",
+          "title": "Action",
+          "type": "string"
+        },
+        "camera_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Camera Id",
+          "type": "string"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "step": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Step",
+          "type": "integer"
+        },
+        "stream_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Stream Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "camera_id",
+        "stream_id",
+        "start_frame",
+        "end_frame_exclusive"
+      ],
+      "title": "RequestMoreFramesParameters",
+      "type": "object"
+    },
+    "TrackConfidenceCurveParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "TRACK_CONFIDENCE_CURVE",
+          "title": "Action",
+          "type": "string"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "track_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Track Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "track_ref",
+        "start_frame",
+        "end_frame_exclusive"
+      ],
+      "title": "TrackConfidenceCurveParameters",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/tool-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/AcquisitionAction"
+    },
+    "execution_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Manifest Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "output_refs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Output Refs",
+      "type": "array"
+    },
+    "tool_result_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Tool Result Id",
+      "type": "string"
+    },
+    "validated_parameters": {
+      "discriminator": {
+        "mapping": {
+          "OTHER_CAMERA_SAME_TIME": "#/$defs/OtherCameraSameTimeParameters",
+          "RECROP": "#/$defs/RecropParameters",
+          "REDETECT_HIGH_RES": "#/$defs/RedetectHighResolutionParameters",
+          "REQUEST_MORE_FRAMES": "#/$defs/RequestMoreFramesParameters",
+          "TRACK_CONFIDENCE_CURVE": "#/$defs/TrackConfidenceCurveParameters"
+        },
+        "propertyName": "action"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RequestMoreFramesParameters"
+        },
+        {
+          "$ref": "#/$defs/RecropParameters"
+        },
+        {
+          "$ref": "#/$defs/OtherCameraSameTimeParameters"
+        },
+        {
+          "$ref": "#/$defs/TrackConfidenceCurveParameters"
+        },
+        {
+          "$ref": "#/$defs/RedetectHighResolutionParameters"
+        }
+      ],
+      "title": "Validated Parameters"
+    }
+  },
+  "required": [
+    "tool_result_id",
+    "action",
+    "input_refs",
+    "output_refs",
+    "validated_parameters",
+    "execution_manifest_id"
+  ],
+  "title": "ToolResult",
+  "type": "object"
+}

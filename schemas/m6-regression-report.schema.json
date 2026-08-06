@@ -1,0 +1,1362 @@
+{
+  "$defs": {
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "M6BaselineAuthorityKind": {
+      "enum": [
+        "MACHINE_TERMINAL_CASE",
+        "PRE_APPEAL_CLOSED_CASE",
+        "CHALLENGE_NO_CASE"
+      ],
+      "title": "M6BaselineAuthorityKind",
+      "type": "string"
+    },
+    "M6CaseReplaySnapshot": {
+      "additionalProperties": false,
+      "description": "One replayed Case semantic projection without operational identity noise.",
+      "properties": {
+        "case_status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "final_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "highest_alert_level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "projection_version": {
+          "const": "m6-semantic-case-v1",
+          "default": "m6-semantic-case-v1",
+          "title": "Projection Version",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-case-replay-snapshot-v1",
+          "default": "m6-case-replay-snapshot-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "semantic_case_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Semantic Case Hash",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Document Sha256",
+          "type": "string"
+        },
+        "source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Case Id",
+          "type": "string"
+        },
+        "source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Revision",
+          "type": "integer"
+        },
+        "source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Run Id",
+          "type": "string"
+        },
+        "stage_roots": {
+          "items": {
+            "$ref": "#/$defs/M6SemanticStageRoot"
+          },
+          "maxItems": 6,
+          "minItems": 6,
+          "title": "Stage Roots",
+          "type": "array"
+        },
+        "terminal_appeal_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppealStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "sample_id",
+        "source_run_id",
+        "source_case_id",
+        "source_case_revision",
+        "source_case_document_sha256",
+        "manifest_id",
+        "stage_roots",
+        "case_status",
+        "semantic_case_hash",
+        "snapshot_id"
+      ],
+      "title": "M6CaseReplaySnapshot",
+      "type": "object"
+    },
+    "M6ChallengeKind": {
+      "enum": [
+        "DIFFICULT_NEGATIVE",
+        "INSUFFICIENT_OBSERVATION",
+        "DON_AFTER_THRESHOLD",
+        "OCCLUSION",
+        "DETECTOR_MISS",
+        "FABRICATED_REFERENCE",
+        "OBJECTIVE_CONFLICT",
+        "PROVIDER_OUTAGE",
+        "PRECEDENT_MISMATCH",
+        "HARD_SIGNAL_UNCERTIFIED"
+      ],
+      "title": "M6ChallengeKind",
+      "type": "string"
+    },
+    "M6EmergencyRegressionReview": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Snapshot Id",
+          "type": "string"
+        },
+        "candidate_snapshot_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Snapshot Id"
+        },
+        "decision": {
+          "$ref": "#/$defs/M6EmergencyReviewDecision"
+        },
+        "human_input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Human Input Authority Document Sha256",
+          "type": "string"
+        },
+        "human_input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Human Input Authority Id",
+          "type": "string"
+        },
+        "result_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Result Id",
+          "type": "string"
+        },
+        "review_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Review Id",
+          "type": "string"
+        },
+        "reviewer_capability_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Reviewer Capability Authority Id",
+          "type": "string"
+        },
+        "reviewer_capability_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Reviewer Capability Document Sha256",
+          "type": "string"
+        },
+        "reviewer_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Reviewer Id",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_id",
+        "baseline_snapshot_id",
+        "human_input_authority_id",
+        "human_input_authority_document_sha256",
+        "reviewer_capability_authority_id",
+        "reviewer_capability_document_sha256",
+        "reviewer_id",
+        "decision",
+        "summary",
+        "review_id"
+      ],
+      "title": "M6EmergencyRegressionReview",
+      "type": "object"
+    },
+    "M6EmergencyReviewDecision": {
+      "enum": [
+        "APPROVED",
+        "REJECTED"
+      ],
+      "title": "M6EmergencyReviewDecision",
+      "type": "string"
+    },
+    "M6GoldTruthAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_kind": {
+          "$ref": "#/$defs/M6GoldTruthAuthorityKind"
+        },
+        "baseline_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Snapshot Id",
+          "type": "string"
+        },
+        "baseline_source_case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Baseline Source Case Id",
+          "type": "string"
+        },
+        "baseline_source_case_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Baseline Source Case Revision",
+          "type": "integer"
+        },
+        "baseline_source_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Baseline Source Run Id",
+          "type": "string"
+        },
+        "decision_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Decision Authority Document Sha256",
+          "type": "string"
+        },
+        "decision_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Decision Authority Id",
+          "type": "string"
+        },
+        "expected_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "resolution_commit_document_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution Commit Document Sha256"
+        },
+        "resolution_commit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution Commit Id"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "truth_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Truth Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "baseline_snapshot_id",
+        "baseline_source_run_id",
+        "baseline_source_case_id",
+        "baseline_source_case_revision",
+        "authority_kind",
+        "decision_authority_id",
+        "decision_authority_document_sha256",
+        "expected_decision",
+        "truth_id"
+      ],
+      "title": "M6GoldTruthAuthority",
+      "type": "object"
+    },
+    "M6GoldTruthAuthorityKind": {
+      "enum": [
+        "APPEAL_RESOLUTION",
+        "HUMAN_REVIEW",
+        "PRESET_GOLD"
+      ],
+      "title": "M6GoldTruthAuthorityKind",
+      "type": "string"
+    },
+    "M6RegressionCaseDisposition": {
+      "enum": [
+        "IDENTICAL",
+        "MANIFEST_ONLY_CHANGE",
+        "SEMANTIC_DRIFT",
+        "DECISION_FLIP",
+        "CANDIDATE_MISSING",
+        "CANDIDATE_ADDED"
+      ],
+      "title": "M6RegressionCaseDisposition",
+      "type": "string"
+    },
+    "M6RegressionCaseResult": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6CaseReplaySnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "behavior_identical": {
+          "readOnly": true,
+          "title": "Behavior Identical",
+          "type": "boolean"
+        },
+        "candidate_snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6CaseReplaySnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "changed_stages": {
+          "items": {
+            "$ref": "#/$defs/M6RegressionStage"
+          },
+          "readOnly": true,
+          "title": "Changed Stages",
+          "type": "array"
+        },
+        "direction_flipped": {
+          "readOnly": true,
+          "title": "Direction Flipped",
+          "type": "boolean"
+        },
+        "disposition": {
+          "$ref": "#/$defs/M6RegressionCaseDisposition",
+          "readOnly": true
+        },
+        "emergency_degradation": {
+          "readOnly": true,
+          "title": "Emergency Degradation",
+          "type": "boolean"
+        },
+        "entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Entry Id",
+          "type": "string"
+        },
+        "first_divergence_stage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6RegressionStage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "readOnly": true
+        },
+        "result_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Result Id",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "semantic_identical": {
+          "readOnly": true,
+          "title": "Semantic Identical",
+          "type": "boolean"
+        },
+        "stage_comparisons": {
+          "items": {
+            "$ref": "#/$defs/M6SemanticStageComparison"
+          },
+          "readOnly": true,
+          "title": "Stage Comparisons",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entry_id",
+        "sample_id",
+        "stage_comparisons",
+        "changed_stages",
+        "first_divergence_stage",
+        "semantic_identical",
+        "behavior_identical",
+        "direction_flipped",
+        "emergency_degradation",
+        "disposition",
+        "result_id"
+      ],
+      "title": "M6RegressionCaseResult",
+      "type": "object"
+    },
+    "M6RegressionDatasetEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Authority Document Sha256",
+          "type": "string"
+        },
+        "baseline_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Authority Id",
+          "type": "string"
+        },
+        "baseline_authority_kind": {
+          "$ref": "#/$defs/M6BaselineAuthorityKind"
+        },
+        "baseline_snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6CaseReplaySnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "challenge_kinds": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M6ChallengeKind"
+          },
+          "maxItems": 10,
+          "title": "Challenge Kinds",
+          "type": "array"
+        },
+        "entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Entry Id",
+          "type": "string"
+        },
+        "gold_truth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M6GoldTruthAuthority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "memberships": {
+          "items": {
+            "$ref": "#/$defs/M6RegressionDatasetKind"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Memberships",
+          "type": "array"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "baseline_authority_kind",
+        "baseline_authority_id",
+        "baseline_authority_document_sha256",
+        "memberships",
+        "entry_id"
+      ],
+      "title": "M6RegressionDatasetEntry",
+      "type": "object"
+    },
+    "M6RegressionDatasetKind": {
+      "enum": [
+        "STABILITY",
+        "GOLD",
+        "CHALLENGE"
+      ],
+      "title": "M6RegressionDatasetKind",
+      "type": "string"
+    },
+    "M6RegressionDatasetSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Manifest Id",
+          "type": "string"
+        },
+        "challenge_count": {
+          "readOnly": true,
+          "title": "Challenge Count",
+          "type": "integer"
+        },
+        "dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Dataset Snapshot Id",
+          "type": "string"
+        },
+        "eligibility_policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Eligibility Policy Authority Id",
+          "type": "string"
+        },
+        "eligibility_policy_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Eligibility Policy Document Sha256",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/M6RegressionDatasetEntry"
+          },
+          "maxItems": 100000,
+          "minItems": 1,
+          "title": "Entries",
+          "type": "array"
+        },
+        "execution_dataset": {
+          "$ref": "#/$defs/M6RegressionExecutionDatasetSnapshot"
+        },
+        "gold_count": {
+          "readOnly": true,
+          "title": "Gold Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m6-regression-dataset-snapshot-v1",
+          "default": "m6-regression-dataset-snapshot-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selection_inventory_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Selection Inventory Authority Id",
+          "type": "string"
+        },
+        "selection_inventory_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Selection Inventory Document Sha256",
+          "type": "string"
+        },
+        "selection_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Selection Inventory Root Sha256",
+          "type": "string"
+        },
+        "selection_receipt_count": {
+          "exclusiveMinimum": 0,
+          "title": "Selection Receipt Count",
+          "type": "integer"
+        },
+        "source_inventory_cut_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Inventory Cut Authority Id",
+          "type": "string"
+        },
+        "source_inventory_cut_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Inventory Cut Document Sha256",
+          "type": "string"
+        },
+        "source_inventory_item_count": {
+          "exclusiveMinimum": 0,
+          "title": "Source Inventory Item Count",
+          "type": "integer"
+        },
+        "source_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Inventory Root Sha256",
+          "type": "string"
+        },
+        "stability_count": {
+          "readOnly": true,
+          "title": "Stability Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "baseline_manifest_id",
+        "execution_dataset",
+        "source_inventory_cut_authority_id",
+        "source_inventory_cut_document_sha256",
+        "source_inventory_item_count",
+        "source_inventory_root_sha256",
+        "eligibility_policy_authority_id",
+        "eligibility_policy_document_sha256",
+        "selection_inventory_authority_id",
+        "selection_inventory_document_sha256",
+        "selection_receipt_count",
+        "selection_inventory_root_sha256",
+        "entries",
+        "stability_count",
+        "gold_count",
+        "challenge_count",
+        "dataset_snapshot_id"
+      ],
+      "title": "M6RegressionDatasetSnapshot",
+      "type": "object"
+    },
+    "M6RegressionDisposition": {
+      "enum": [
+        "PASSED",
+        "FAILED",
+        "REQUIRES_HUMAN_REVIEW",
+        "DIAGNOSTIC_COMPLETE"
+      ],
+      "title": "M6RegressionDisposition",
+      "type": "string"
+    },
+    "M6RegressionExecutionDatasetSnapshot": {
+      "additionalProperties": false,
+      "description": "Candidate-facing dataset projection with evaluator truth intentionally absent.",
+      "properties": {
+        "baseline_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Manifest Id",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/M6RegressionExecutionEntry"
+          },
+          "maxItems": 100000,
+          "minItems": 1,
+          "title": "Entries",
+          "type": "array"
+        },
+        "entry_count": {
+          "readOnly": true,
+          "title": "Entry Count",
+          "type": "integer"
+        },
+        "execution_dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Dataset Snapshot Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-regression-execution-dataset-v1",
+          "default": "m6-regression-execution-dataset-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_catalog_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Authority Id",
+          "type": "string"
+        },
+        "source_catalog_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Document Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "baseline_manifest_id",
+        "source_catalog_authority_id",
+        "source_catalog_document_sha256",
+        "entries",
+        "entry_count",
+        "execution_dataset_snapshot_id"
+      ],
+      "title": "M6RegressionExecutionDatasetSnapshot",
+      "type": "object"
+    },
+    "M6RegressionExecutionEntry": {
+      "additionalProperties": false,
+      "description": "Blinded candidate input; it contains no membership or expected decision.",
+      "properties": {
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "input_authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Document Sha256",
+          "type": "string"
+        },
+        "input_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Authority Id",
+          "type": "string"
+        },
+        "replay_input_closure_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Replay Input Closure Document Sha256",
+          "type": "string"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sample_id",
+        "input_authority_id",
+        "input_authority_document_sha256",
+        "replay_input_closure_authority_id",
+        "replay_input_closure_document_sha256",
+        "execution_entry_id"
+      ],
+      "title": "M6RegressionExecutionEntry",
+      "type": "object"
+    },
+    "M6RegressionGateReason": {
+      "enum": [
+        "LOCKED_SEMANTIC_MISMATCH",
+        "REQUIRED_CANDIDATE_MISSING",
+        "REQUIRED_CANDIDATE_NONTERMINAL",
+        "MACHINE_FLIP_RATE_EXCEEDED",
+        "GOLD_ACCURACY_DROP_EXCEEDED",
+        "EMERGENCY_DEGRADATION_UNREVIEWED",
+        "EMERGENCY_DEGRADATION_REJECTED"
+      ],
+      "title": "M6RegressionGateReason",
+      "type": "string"
+    },
+    "M6RegressionPolicyAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "gold_set_max_accuracy_drop": {
+          "maximum": 0,
+          "minimum": 0,
+          "title": "Gold Set Max Accuracy Drop",
+          "type": "number"
+        },
+        "maximum_machine_flip_rate": {
+          "maximum": 0.05,
+          "minimum": 0,
+          "title": "Maximum Machine Flip Rate",
+          "type": "number"
+        },
+        "policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Policy Authority Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-regression-policy-authority-v1",
+          "default": "m6-regression-policy-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "config_sha256",
+        "policy_version",
+        "maximum_machine_flip_rate",
+        "gold_set_max_accuracy_drop",
+        "policy_authority_id"
+      ],
+      "title": "M6RegressionPolicyAuthority",
+      "type": "object"
+    },
+    "M6RegressionRunCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Manifest Id",
+          "type": "string"
+        },
+        "candidate_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Candidate Manifest Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Command Id",
+          "type": "string"
+        },
+        "execution_dataset_snapshot_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Dataset Snapshot Id",
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/ReproducibilityMode"
+        },
+        "policy_authority": {
+          "$ref": "#/$defs/M6RegressionPolicyAuthority"
+        },
+        "schema_version": {
+          "const": "m6-regression-run-command-v1",
+          "default": "m6-regression-run-command-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "execution_dataset_snapshot_id",
+        "baseline_manifest_id",
+        "candidate_manifest_id",
+        "policy_authority",
+        "command_id"
+      ],
+      "title": "M6RegressionRunCommand",
+      "type": "object"
+    },
+    "M6RegressionStage": {
+      "enum": [
+        "PERCEPTION",
+        "SCREENING",
+        "RETRIEVAL",
+        "HEARING",
+        "GATE",
+        "POLICY"
+      ],
+      "title": "M6RegressionStage",
+      "type": "string"
+    },
+    "M6ReplayExecutionOutcome": {
+      "enum": [
+        "CASE_REPLAYED",
+        "NO_CASE"
+      ],
+      "title": "M6ReplayExecutionOutcome",
+      "type": "string"
+    },
+    "M6ReplayExecutionReceipt": {
+      "additionalProperties": false,
+      "description": "Per-sample proof envelope reconstructed from replay input/output closure.",
+      "properties": {
+        "candidate_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Candidate Manifest Id",
+          "type": "string"
+        },
+        "candidate_run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Candidate Run Id",
+          "type": "string"
+        },
+        "candidate_snapshot_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Snapshot Id"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "detection_count": {
+          "minimum": 0,
+          "title": "Detection Count",
+          "type": "integer"
+        },
+        "detection_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Detection Inventory Root Sha256",
+          "type": "string"
+        },
+        "embedding_count": {
+          "minimum": 0,
+          "title": "Embedding Count",
+          "type": "integer"
+        },
+        "embedding_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Embedding Inventory Root Sha256",
+          "type": "string"
+        },
+        "execution_component_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Component Manifest Id",
+          "type": "string"
+        },
+        "execution_entry_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Entry Id",
+          "type": "string"
+        },
+        "execution_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Execution Receipt Id",
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/ReproducibilityMode"
+        },
+        "model_response_count": {
+          "minimum": 0,
+          "title": "Model Response Count",
+          "type": "integer"
+        },
+        "model_response_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Response Inventory Root Sha256",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/M6ReplayExecutionOutcome"
+        },
+        "provider_call_count": {
+          "minimum": 0,
+          "title": "Provider Call Count",
+          "type": "integer"
+        },
+        "provider_trap_authority_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Trap Authority Id"
+        },
+        "provider_trap_document_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Trap Document Sha256"
+        },
+        "sample_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m6-replay-execution-receipt-v1",
+          "default": "m6-replay-execution-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tool_result_count": {
+          "minimum": 0,
+          "title": "Tool Result Count",
+          "type": "integer"
+        },
+        "tool_result_inventory_root_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Tool Result Inventory Root Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "mode",
+        "sample_id",
+        "execution_entry_id",
+        "candidate_run_id",
+        "candidate_manifest_id",
+        "execution_component_manifest_id",
+        "outcome",
+        "detection_count",
+        "detection_inventory_root_sha256",
+        "model_response_count",
+        "model_response_inventory_root_sha256",
+        "embedding_count",
+        "embedding_inventory_root_sha256",
+        "tool_result_count",
+        "tool_result_inventory_root_sha256",
+        "provider_call_count",
+        "execution_receipt_id"
+      ],
+      "title": "M6ReplayExecutionReceipt",
+      "type": "object"
+    },
+    "M6SemanticStageComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_projection_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseline Projection Sha256"
+        },
+        "candidate_projection_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Projection Sha256"
+        },
+        "changed": {
+          "readOnly": true,
+          "title": "Changed",
+          "type": "boolean"
+        },
+        "stage": {
+          "$ref": "#/$defs/M6RegressionStage"
+        }
+      },
+      "required": [
+        "stage",
+        "changed"
+      ],
+      "title": "M6SemanticStageComparison",
+      "type": "object"
+    },
+    "M6SemanticStageRoot": {
+      "additionalProperties": false,
+      "properties": {
+        "projection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Projection Sha256",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/M6RegressionStage"
+        }
+      },
+      "required": [
+        "stage",
+        "projection_sha256"
+      ],
+      "title": "M6SemanticStageRoot",
+      "type": "object"
+    },
+    "ReproducibilityMode": {
+      "enum": [
+        "REPLAY_LOCKED",
+        "REINFER_PINNED",
+        "UPGRADE_REGRESSION"
+      ],
+      "title": "ReproducibilityMode",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m6-regression-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "baseline_gold_accuracy": {
+      "readOnly": true,
+      "title": "Baseline Gold Accuracy",
+      "type": "number"
+    },
+    "baseline_gold_correct_count": {
+      "readOnly": true,
+      "title": "Baseline Gold Correct Count",
+      "type": "integer"
+    },
+    "candidate_gold_accuracy": {
+      "readOnly": true,
+      "title": "Candidate Gold Accuracy",
+      "type": "number"
+    },
+    "candidate_gold_correct_count": {
+      "readOnly": true,
+      "title": "Candidate Gold Correct Count",
+      "type": "integer"
+    },
+    "challenge_case_count": {
+      "readOnly": true,
+      "title": "Challenge Case Count",
+      "type": "integer"
+    },
+    "command": {
+      "$ref": "#/$defs/M6RegressionRunCommand"
+    },
+    "dataset": {
+      "$ref": "#/$defs/M6RegressionDatasetSnapshot"
+    },
+    "disposition": {
+      "$ref": "#/$defs/M6RegressionDisposition",
+      "readOnly": true
+    },
+    "emergency_degradation_sample_ids": {
+      "items": {
+        "type": "string"
+      },
+      "readOnly": true,
+      "title": "Emergency Degradation Sample Ids",
+      "type": "array"
+    },
+    "emergency_reviews": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M6EmergencyRegressionReview"
+      },
+      "title": "Emergency Reviews",
+      "type": "array"
+    },
+    "execution_receipts": {
+      "items": {
+        "$ref": "#/$defs/M6ReplayExecutionReceipt"
+      },
+      "maxItems": 100000,
+      "minItems": 1,
+      "title": "Execution Receipts",
+      "type": "array"
+    },
+    "gate_reason_codes": {
+      "items": {
+        "$ref": "#/$defs/M6RegressionGateReason"
+      },
+      "readOnly": true,
+      "title": "Gate Reason Codes",
+      "type": "array"
+    },
+    "gold_accuracy_drop": {
+      "readOnly": true,
+      "title": "Gold Accuracy Drop",
+      "type": "number"
+    },
+    "gold_case_count": {
+      "readOnly": true,
+      "title": "Gold Case Count",
+      "type": "integer"
+    },
+    "machine_flip_count": {
+      "readOnly": true,
+      "title": "Machine Flip Count",
+      "type": "integer"
+    },
+    "machine_flip_rate": {
+      "readOnly": true,
+      "title": "Machine Flip Rate",
+      "type": "number"
+    },
+    "release_allowed": {
+      "readOnly": true,
+      "title": "Release Allowed",
+      "type": "boolean"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Report Id",
+      "type": "string"
+    },
+    "results": {
+      "items": {
+        "$ref": "#/$defs/M6RegressionCaseResult"
+      },
+      "maxItems": 100000,
+      "minItems": 1,
+      "title": "Results",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m6-regression-report-v1",
+      "default": "m6-regression-report-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stability_case_count": {
+      "readOnly": true,
+      "title": "Stability Case Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "command",
+    "dataset",
+    "results",
+    "execution_receipts",
+    "stability_case_count",
+    "machine_flip_count",
+    "machine_flip_rate",
+    "gold_case_count",
+    "baseline_gold_correct_count",
+    "candidate_gold_correct_count",
+    "baseline_gold_accuracy",
+    "candidate_gold_accuracy",
+    "gold_accuracy_drop",
+    "challenge_case_count",
+    "emergency_degradation_sample_ids",
+    "gate_reason_codes",
+    "disposition",
+    "release_allowed",
+    "report_id"
+  ],
+  "title": "M6RegressionReport",
+  "type": "object"
+}

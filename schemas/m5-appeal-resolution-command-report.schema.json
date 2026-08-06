@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m5-appeal-resolution-command-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Audit-safe terminal report without reproducing human-authored free text.",
+  "properties": {
+    "affected_citation_case_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Affected Citation Case Ids",
+      "type": "array"
+    },
+    "affected_citation_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Affected Citation Report Sha256",
+      "type": "string"
+    },
+    "appeal_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Appeal Authority Sha256",
+      "type": "string"
+    },
+    "appeal_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Appeal Id",
+      "type": "string"
+    },
+    "appeal_version": {
+      "const": 3,
+      "default": 3,
+      "title": "Appeal Version",
+      "type": "integer"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "committed_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Committed Case Revision",
+      "type": "integer"
+    },
+    "final_decision": {
+      "$ref": "#/$defs/VerdictDecision"
+    },
+    "precedent_snapshot_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Precedent Snapshot Sha256",
+      "type": "string"
+    },
+    "previous_appeal_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Appeal Authority Sha256",
+      "type": "string"
+    },
+    "replacement_precedent_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Replacement Precedent Id"
+    },
+    "rescinded_alert_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Rescinded Alert Ids",
+      "type": "array"
+    },
+    "resolution_intent_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resolution Intent Id",
+      "type": "string"
+    },
+    "reviewer_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Reviewer Id",
+      "type": "string"
+    },
+    "revoked_precedent_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Revoked Precedent Ids",
+      "type": "array"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "source_case_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Revision",
+      "type": "integer"
+    },
+    "source_decision": {
+      "$ref": "#/$defs/VerdictDecision"
+    },
+    "status": {
+      "enum": [
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "training_label_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Training Label Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "appeal_id",
+    "source_case_revision",
+    "committed_case_revision",
+    "status",
+    "reviewer_id",
+    "source_decision",
+    "final_decision",
+    "previous_appeal_authority_sha256",
+    "appeal_authority_sha256",
+    "precedent_snapshot_sha256",
+    "affected_citation_report_sha256",
+    "resolution_intent_id"
+  ],
+  "title": "M5AppealResolutionCommandReport",
+  "type": "object"
+}

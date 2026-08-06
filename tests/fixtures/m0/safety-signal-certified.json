@@ -1,0 +1,13 @@
+{
+  "signal_id": "signal-open-flame-001",
+  "signal_type": "OPEN_FLAME",
+  "zone_id": "hood-01",
+  "start_frame": 120,
+  "end_frame_exclusive": 121,
+  "value": true,
+  "unit": null,
+  "source_class": "PHYSICAL_SENSOR",
+  "certification_id": "demo-fixture-cert-v1",
+  "quality": 1.0
+}
+
