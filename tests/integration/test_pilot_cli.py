@@ -8,6 +8,7 @@ import pytest
 from typer.testing import CliRunner
 
 from labcourt.cli import app
+from labcourt.contracts.pilot import PilotPerceptionReport
 
 PROJECT_ROOT = Path(__file__).parents[2]
 RUNNER = CliRunner()
@@ -111,6 +112,49 @@ def test_pilot_run_rejects_absolute_video_paths_before_opening(tmp_path: Path) -
 
     assert result.exit_code == 2
     assert json.loads(result.stderr)["reason_code"] == "VIDEO_PATH_INVALID"
+
+
+def test_pilot_perceive_emits_the_a1_report_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "inputs").mkdir()
+    (tmp_path / "runs").mkdir()
+    (tmp_path / "inputs" / "demo.mp4").write_bytes(b"bounded-pilot-mp4-fixture")
+    monkeypatch.chdir(tmp_path)
+    expected = PilotPerceptionReport(
+        run_id="pilot-001",
+        frames_processed=4,
+        detection_count=7,
+        person_count=4,
+        goggles_count=3,
+        track_count=1,
+        provider_failures=0,
+        manifest_id="a" * 64,
+        preview_path="runs/pilot-001/debug/perception-preview.mp4",
+    )
+    monkeypatch.setattr(
+        "labcourt.pilot_cli.run_pilot_perception",
+        lambda **_: expected,
+    )
+
+    result = RUNNER.invoke(
+        app,
+        [
+            "pilot",
+            "perceive",
+            "--config",
+            str(PROJECT_ROOT / "configs" / "pilot.yaml"),
+            "--video",
+            "inputs/demo.mp4",
+            "--run-id",
+            "pilot-001",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == expected.model_dump(mode="json")
 
 
 def test_later_pilot_stage_is_explicitly_unavailable_in_a0() -> None:

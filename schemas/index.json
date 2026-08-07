@@ -1234,6 +1234,54 @@
       "name": "parsed-screening-output"
     },
     {
+      "file": "pilot-perception-execution-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotPerceptionExecutionManifest",
+      "name": "pilot-perception-execution-manifest"
+    },
+    {
+      "file": "pilot-perception-frame-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotPerceptionFrameReceipt",
+      "name": "pilot-perception-frame-receipt"
+    },
+    {
+      "file": "pilot-perception-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotPerceptionReport",
+      "name": "pilot-perception-report"
+    },
+    {
+      "file": "pilot-perception-worker-failure.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.pilot.PilotPerceptionWorkerFailure",
+      "name": "pilot-perception-worker-failure"
+    },
+    {
+      "file": "pilot-perception-worker-ready.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.pilot.PilotPerceptionWorkerReady",
+      "name": "pilot-perception-worker-ready"
+    },
+    {
+      "file": "pilot-perception-worker-request.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.pilot.PilotPerceptionWorkerRequest",
+      "name": "pilot-perception-worker-request"
+    },
+    {
+      "file": "pilot-perception-worker-response.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.pilot.PilotPerceptionWorkerResponse",
+      "name": "pilot-perception-worker-response"
+    },
+    {
+      "file": "pilot-perception-worker-startup-failure.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.pilot.PilotPerceptionWorkerStartupFailure",
+      "name": "pilot-perception-worker-startup-failure"
+    },
+    {
       "file": "pilot-run-request.schema.json",
       "mode": "validation",
       "model": "labcourt.contracts.pilot.PilotRunRequest",

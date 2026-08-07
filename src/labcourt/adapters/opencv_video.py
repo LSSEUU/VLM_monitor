@@ -8,16 +8,19 @@ import math
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
+from fractions import Fraction
+from hashlib import sha256
 from hmac import compare_digest
 from pathlib import Path
 from threading import Lock
 from typing import Protocol, cast
 
+from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.detections import FrameBundle
 from labcourt.contracts.frames import FrameData, FrameRef
 from labcourt.contracts.manifests import StreamManifest
 from labcourt.contracts.paths import require_safe_relative_posix_path
-from labcourt.contracts.references import parse_frame_id
+from labcourt.contracts.references import parse_frame_id, require_reference_token
 from labcourt.exceptions import (
     EvidenceMissing,
     LabCourtError,
@@ -325,6 +328,108 @@ def _range_argument(value: int, name: str) -> int:
     return value
 
 
+def probe_caller_attested_stream_manifest(
+    *,
+    camera_id: str,
+    stream_id: str,
+    input_file_sha256: str,
+    verified_input: VerifiedVideoInput,
+    relative_path: str,
+    max_input_bytes: int,
+    max_frame_pixels: int,
+    max_total_decoded_pixels: int,
+    backend: VideoDecoderBackend | None = None,
+) -> StreamManifest:
+    """Probe one verified pilot MP4 and bind the caller-selected CFR declaration.
+
+    Selecting the input in the pilot CLI is the caller declaration. Decoder
+    metadata remains untrusted until it is bounded here and later revalidated by
+    :class:`OpenCvVideoSource` before any frame crosses the adapter boundary.
+    """
+
+    controlled_camera = require_reference_token(camera_id, "pilot camera_id")
+    controlled_stream = require_reference_token(stream_id, "pilot stream_id")
+    controlled_path = require_safe_relative_posix_path(relative_path)
+    if not isinstance(max_input_bytes, int) or isinstance(max_input_bytes, bool):
+        raise TypeError("max_input_bytes must be an integer")
+    if not isinstance(max_frame_pixels, int) or isinstance(max_frame_pixels, bool):
+        raise TypeError("max_frame_pixels must be an integer")
+    if not isinstance(max_total_decoded_pixels, int) or isinstance(max_total_decoded_pixels, bool):
+        raise TypeError("max_total_decoded_pixels must be an integer")
+    if max_input_bytes <= 0 or max_frame_pixels <= 0 or max_total_decoded_pixels <= 0:
+        raise ValueError("video probe limits must be positive")
+
+    selected_backend = backend if backend is not None else OpenCvDecoderBackend()
+    with verified_input.open_verified_video(controlled_path, max_input_bytes) as lease:
+        if not compare_digest(lease.input_file_sha256, input_file_sha256):
+            raise ManifestMismatch("pilot video bytes changed before decoder probe")
+        try:
+            session = selected_backend.open(lease.decoder_path)
+            metadata = session.metadata()
+        except LabCourtError:
+            raise
+        except Exception:
+            raise ProviderUnavailable("video decoder probe failed") from None
+        finally:
+            if "session" in locals():
+                try:
+                    session.close()
+                except LabCourtError:
+                    raise
+                except Exception:
+                    raise ProviderUnavailable("video decoder probe release failed") from None
+
+    width = _reported_integer(metadata.width, "width")
+    height = _reported_integer(metadata.height, "height")
+    frame_count = _reported_integer(metadata.frame_count, "frame count")
+    if width * height > max_frame_pixels:
+        raise ManifestMismatch("probed video dimensions exceed the configured pixel limit")
+    if width * height * frame_count > max_total_decoded_pixels:
+        raise ManifestMismatch("probed video exceeds the configured decoded-pixel budget")
+    if not isinstance(metadata.fps, (float, int)) or isinstance(metadata.fps, bool):
+        raise ManifestMismatch("decoder FPS must be finite and positive")
+    reported_fps = float(metadata.fps)
+    if not math.isfinite(reported_fps) or reported_fps <= 0:
+        raise ManifestMismatch("decoder FPS must be finite and positive")
+    timebase = Fraction(str(reported_fps)).limit_denominator(1_000_000)
+    timing_evidence = canonical_json(
+        {
+            "authority": "CALLER_ATTESTED",
+            "declaration": "selected-pilot-mp4-decoder-cfr-metadata",
+            "input_file_sha256": input_file_sha256,
+            "fps_num": timebase.numerator,
+            "fps_den": timebase.denominator,
+            "width": width,
+            "height": height,
+            "frame_count": frame_count,
+        }
+    ).encode("utf-8")
+    return StreamManifest(
+        camera_id=controlled_camera,
+        stream_id=controlled_stream,
+        input_file_sha256=input_file_sha256,
+        fps_num=timebase.numerator,
+        fps_den=timebase.denominator,
+        timing_mode="CFR",
+        timing_authority="CALLER_ATTESTED",
+        timing_evidence_type="CALLER_DECLARATION",
+        timing_evidence_sha256=sha256(timing_evidence).hexdigest(),
+        width=width,
+        height=height,
+        frame_count=frame_count,
+        decoder=selected_backend.decoder,
+        decoder_version=selected_backend.module_version,
+        backend=metadata.backend,
+        software_component=selected_backend.software_component,
+        library=selected_backend.library,
+        library_version=selected_backend.library_version,
+        codec=metadata.codec,
+        color_conversion=_COLOR_CONVERSION,
+        pixel_format="RGB8",
+        pixel_hash_algorithm="LCPIX1",
+    )
+
+
 class OpenCvVideoSource:
     """Sequential CFR decoder implementing FrameSource and PixelFrameProvider."""
 
@@ -617,4 +722,5 @@ __all__ = [
     "VideoDecoderBackend",
     "VideoDecoderSession",
     "VideoInputLease",
+    "probe_caller_attested_stream_manifest",
 ]

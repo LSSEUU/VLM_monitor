@@ -38,7 +38,9 @@ from labcourt.contracts.enums import (
 )
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.geometry import PolygonInput
+from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.paths import SAFE_RELATIVE_PATH_PATTERN, require_safe_relative_posix_path
+from labcourt.contracts.pilot import PilotTrackerThresholds
 from labcourt.contracts.references import ReferenceToken, require_reference_token
 
 _ENV_NAME = re.compile(r"^[A-Z_][A-Z0-9_]*$")
@@ -61,6 +63,16 @@ def _config_digest(payload: dict[str, object]) -> str:
         run.pop("workspace", None)
     if fingerprint.get("pilot") is None:
         fingerprint.pop("pilot", None)
+    perception = fingerprint.get("perception")
+    if isinstance(perception, dict):
+        for optional_worker_field in (
+            "detector_manifest",
+            "tracker_manifest",
+            "tracker_thresholds",
+            "worker",
+        ):
+            if perception.get(optional_worker_field) is None:
+                perception.pop(optional_worker_field, None)
     return sha256_hex(fingerprint)
 
 
@@ -171,6 +183,99 @@ class PerceptionConfig(ContractModel):
     detector: DetectorConfig
     association: AssociationConfig
     observability: ObservabilityConfig
+    detector_manifest: ModelManifest | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    tracker_manifest: ModelManifest | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    tracker_thresholds: PilotTrackerThresholds | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    worker: PerceptionWorkerConfig | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+
+    @model_validator(mode="after")
+    def validate_local_worker(self) -> PerceptionConfig:
+        local_worker = self.provider == "local-worker"
+        worker_fields = (
+            self.detector_manifest,
+            self.tracker_manifest,
+            self.tracker_thresholds,
+            self.worker,
+        )
+        if local_worker and any(value is None for value in worker_fields):
+            raise ValueError("local-worker perception requires complete model and worker pins")
+        if not local_worker and any(value is not None for value in worker_fields):
+            raise ValueError("worker model pins are allowed only for local-worker perception")
+        if not local_worker:
+            return self
+        assert self.detector_manifest is not None
+        assert self.tracker_manifest is not None
+        if self.detector_manifest.component != "detector":
+            raise ValueError("local-worker detector manifest must use detector component")
+        if self.tracker_manifest.component != "tracker":
+            raise ValueError("local-worker tracker manifest must use tracker component")
+        if self.detector_manifest.model != self.detector.model_id:
+            raise ValueError("detector config and manifest model IDs must match")
+        if self.detector_manifest.weights_sha256 is None:
+            raise ValueError("local-worker detector requires a pinned weight SHA-256")
+        return self
+
+
+class PerceptionWorkerConfig(ContractModel):
+    """Bounded local process controls; the executable is resolved without a shell."""
+
+    protocol_version: Literal["1.0"] = "1.0"
+    python_executable_env: str = "LABCOURT_PERCEPTION_PYTHON"
+    module: Literal["labcourt.perception_worker"] = "labcourt.perception_worker"
+    startup_timeout_seconds: StrictFloat = Field(gt=0, le=3_600)
+    frame_timeout_seconds: StrictFloat = Field(gt=0, le=3_600)
+    max_request_bytes: int = Field(gt=0, le=64 * 1024 * 1024, strict=True)
+    max_response_bytes: int = Field(gt=0, le=16 * 1024 * 1024, strict=True)
+    device: str = Field(pattern=r"^(?:cpu|cuda(?::[0-9]+)?)$")
+    local_files_only: Literal[True] = True
+    cache_enabled: Literal[True] = True
+    required_software_versions: dict[ReferenceToken, str] = Field(min_length=1)
+
+    @field_validator("python_executable_env")
+    @classmethod
+    def validate_python_executable_environment(cls, value: str) -> str:
+        if not _ENV_NAME.fullmatch(value):
+            raise ValueError("worker Python executable must use an uppercase environment name")
+        return value
+
+    @model_validator(mode="after")
+    def validate_required_versions(self) -> PerceptionWorkerConfig:
+        required = {
+            "huggingface-hub",
+            "numpy",
+            "opencv-python",
+            "pillow",
+            "pydantic",
+            "pyyaml",
+            "safetensors",
+            "scipy",
+            "socksio",
+            "supervision",
+            "tokenizers",
+            "torch",
+            "trackers",
+            "transformers",
+        }
+        if set(self.required_software_versions) != required:
+            raise ValueError(f"worker software versions must define exactly {sorted(required)}")
+        if any(
+            not version or len(version) > 128
+            for version in self.required_software_versions.values()
+        ):
+            raise ValueError("worker software versions must be bounded non-empty text")
+        return self
 
 
 class PilotConfig(ContractModel):
@@ -574,7 +679,10 @@ class AppConfig(ContractModel):
     zones: tuple[ZoneConfig, ...] = Field(min_length=1)
     l0: L0Config
     perception: PerceptionConfig
-    pilot: PilotConfig | None = None
+    pilot: PilotConfig | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     absence: AbsenceConfig
     presence: PresenceConfig
     evidence: EvidenceConfig

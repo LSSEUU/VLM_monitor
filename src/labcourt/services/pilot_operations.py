@@ -2,17 +2,53 @@
 
 from __future__ import annotations
 
+import hashlib
+import os
 from enum import StrEnum
 from pathlib import Path
+from typing import cast
 
+from pydantic import BaseModel, ValidationError
+
+from labcourt.adapters.opencv_video import (
+    OpenCvDecoderBackend,
+    OpenCvVideoSource,
+    VerifiedVideoInput,
+    VideoDecoderBackend,
+    probe_caller_attested_stream_manifest,
+)
+from labcourt.adapters.perception.local_worker import (
+    CachedPerceptionWorkerTransport,
+    JsonlPerceptionWorkerClient,
+    LocalWorkerPerceptionProvider,
+    RawPerceptionWorkerTransport,
+)
+from labcourt.adapters.perception.opencv_preview import OpenCvPerceptionPreview
 from labcourt.adapters.storage.secure_workspace import SecureWorkspace
+from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.config import AppConfig
+from labcourt.contracts.detections import FrameBundle
+from labcourt.contracts.frames import FrameData
+from labcourt.contracts.manifests import StreamManifest
 from labcourt.contracts.paths import require_safe_relative_posix_path
-from labcourt.contracts.pilot import PilotRunRequest
+from labcourt.contracts.pilot import (
+    PilotPerceptionExecutionManifest,
+    PilotPerceptionReport,
+    PilotRunRequest,
+)
 from labcourt.contracts.references import require_portable_run_id
-from labcourt.exceptions import LabCourtError, PathBoundaryViolation
+from labcourt.exceptions import (
+    ArtifactConflict,
+    BudgetExceeded,
+    LabCourtError,
+    ManifestMismatch,
+    PathBoundaryViolation,
+    PerceptionWorkerCrashed,
+)
+from labcourt.ports.pixels import RGB8Frame
 
 MAX_PILOT_VIDEO_BYTES = 8 * 1024 * 1024 * 1024
+MAX_PILOT_FRAMES = 108_000
 
 
 class PilotOperationsBoundaryCode(StrEnum):
@@ -24,6 +60,7 @@ class PilotOperationsBoundaryCode(StrEnum):
     VIDEO_BOUNDARY_REJECTED = "VIDEO_BOUNDARY_REJECTED"
     WORKSPACE_BOUNDARY_REJECTED = "WORKSPACE_BOUNDARY_REJECTED"
     STAGE_NOT_AVAILABLE = "STAGE_NOT_AVAILABLE"
+    PERCEPTION_FAILED = "PERCEPTION_FAILED"
 
 
 class PilotOperationsBoundaryError(LabCourtError):
@@ -133,3 +170,335 @@ def build_pilot_run_request(
         resume=resume,
         max_cases=pilot.max_cases,
     )
+
+
+def build_expected_perception_manifest(config: AppConfig) -> PilotPerceptionExecutionManifest:
+    """Build the manifest the isolated worker must reproduce after runtime checks."""
+
+    perception = config.perception
+    worker = perception.worker
+    detector = perception.detector_manifest
+    tracker = perception.tracker_manifest
+    tracker_thresholds = perception.tracker_thresholds
+    if (
+        perception.provider != "local-worker"
+        or worker is None
+        or detector is None
+        or tracker is None
+        or tracker_thresholds is None
+    ):
+        raise PilotOperationsBoundaryError(PilotOperationsBoundaryCode.PILOT_CONFIG_MISSING)
+    return PilotPerceptionExecutionManifest(
+        protocol_version=worker.protocol_version,
+        detector=detector,
+        tracker=tracker,
+        prompts={
+            "person": perception.detector.prompts["person"],
+            "goggles": perception.detector.prompts["goggles"],
+        },
+        device=worker.device,
+        score_threshold=perception.detector.score_threshold,
+        high_confidence_threshold=perception.detector.high_confidence_threshold,
+        bbox_policy="CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1",
+        tracker_initialization_policy="ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
+        tracker_thresholds=tracker_thresholds,
+        software_versions=dict(worker.required_software_versions),
+    )
+
+
+def _resolve_worker_python(config: AppConfig, project_root: Path) -> str:
+    worker = config.perception.worker
+    if worker is None:
+        raise PerceptionWorkerCrashed("perception worker configuration is unavailable")
+    configured = os.environ.get(worker.python_executable_env)
+    candidates = ((Path(configured),) if configured else ()) + (
+        project_root / ".venv-perception" / "Scripts" / "python.exe",
+        project_root / ".venv-perception" / "bin" / "python",
+    )
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve(strict=True)
+        except OSError:
+            continue
+        if resolved.is_file():
+            return str(resolved)
+    raise PerceptionWorkerCrashed("isolated perception Python is unavailable")
+
+
+def _artifact_bytes(model: object) -> bytes:
+    payload = model.model_dump(mode="json") if isinstance(model, BaseModel) else model
+    return (canonical_json(payload) + "\n").encode("utf-8")
+
+
+def _publish_immutable(
+    workspace: SecureWorkspace,
+    relative_path: str,
+    data: bytes,
+) -> None:
+    digest = hashlib.sha256(data).hexdigest()
+    try:
+        workspace.create_new(relative_path, data, digest)
+    except ArtifactConflict:
+        workspace.read_verified(relative_path, digest)
+
+
+def _publish_first_receipts(
+    workspace: SecureWorkspace,
+    relative_path: str,
+    data: bytes,
+) -> None:
+    digest = hashlib.sha256(data).hexdigest()
+    try:
+        workspace.create_new(relative_path, data, digest)
+    except ArtifactConflict:
+        workspace.read_verified(relative_path)
+
+
+class _CurrentFramePixels:
+    __slots__ = ("_current",)
+
+    def __init__(self) -> None:
+        self._current: RGB8Frame | None = None
+
+    def bind(self, frame: RGB8Frame) -> None:
+        self._current = frame
+
+    def read_rgb8(self, frame_id: str) -> RGB8Frame:
+        current = self._current
+        if current is None or current.frame.frame_id != frame_id:
+            raise ManifestMismatch("sequential pixel provider received a stale frame request")
+        return current
+
+
+def _resume_perception_report(
+    *,
+    workspace: SecureWorkspace,
+    request: PilotRunRequest,
+    expected_manifest: PilotPerceptionExecutionManifest,
+) -> PilotPerceptionReport | None:
+    if not request.resume:
+        return None
+    report_path = f"{request.run_id}/perception/report.json"
+    try:
+        report_snapshot = workspace.read_verified(report_path)
+        execution_snapshot = workspace.read_verified(
+            f"{request.run_id}/perception/execution-manifest.json"
+        )
+        stream_snapshot = workspace.read_verified(f"{request.run_id}/input/video-manifest.json")
+    except PathBoundaryViolation as error:
+        if error.reason_code == "FILE_MISSING":
+            return None
+        raise
+    try:
+        report = PilotPerceptionReport.model_validate_json(report_snapshot.bytes)
+        execution = PilotPerceptionExecutionManifest.model_validate_json(execution_snapshot.bytes)
+        stream = StreamManifest.model_validate_json(stream_snapshot.bytes)
+    except ValidationError:
+        raise ManifestMismatch("persisted pilot perception artifacts are invalid") from None
+    if (
+        report.run_id != request.run_id
+        or report.manifest_id != expected_manifest.manifest_id
+        or execution != expected_manifest
+        or stream.input_file_sha256 != request.video_sha256
+    ):
+        raise ManifestMismatch("persisted pilot perception artifacts do not match the request")
+    return report
+
+
+def run_pilot_perception(
+    *,
+    config: AppConfig,
+    request: PilotRunRequest,
+    config_path: Path,
+    project_root: Path,
+    decoder_backend: VideoDecoderBackend | None = None,
+    raw_transport: RawPerceptionWorkerTransport | None = None,
+) -> PilotPerceptionReport:
+    """Decode a verified MP4 and publish a complete, resumable A1 perception run."""
+
+    if request.config_sha256 != config.config_sha256:
+        raise ManifestMismatch("pilot request configuration identity changed")
+    pilot = config.pilot
+    worker_config = config.perception.worker
+    if pilot is None or worker_config is None:
+        raise PilotOperationsBoundaryError(PilotOperationsBoundaryCode.PILOT_CONFIG_MISSING)
+    expected_manifest = build_expected_perception_manifest(config)
+    root = project_root.absolute()
+    runs_root = root / config.run.workspace
+    backend = decoder_backend if decoder_backend is not None else OpenCvDecoderBackend()
+
+    with (
+        SecureWorkspace(root, max_file_bytes=MAX_PILOT_VIDEO_BYTES) as input_workspace,
+        SecureWorkspace(
+            runs_root,
+            max_file_bytes=config.storage.max_media_bytes,
+        ) as run_workspace,
+    ):
+        resumed = _resume_perception_report(
+            workspace=run_workspace,
+            request=request,
+            expected_manifest=expected_manifest,
+        )
+        if resumed is not None:
+            return resumed
+
+        stream_id = f"video-{request.video_sha256[:16]}"
+        camera_ids = {zone.camera_id for zone in config.zones}
+        if len(camera_ids) != 1:
+            raise ManifestMismatch("pilot perception requires exactly one configured camera")
+        stream_manifest = probe_caller_attested_stream_manifest(
+            camera_id=next(iter(camera_ids)),
+            stream_id=stream_id,
+            input_file_sha256=request.video_sha256,
+            verified_input=cast(VerifiedVideoInput, input_workspace),
+            relative_path=request.video_relative_path,
+            max_input_bytes=MAX_PILOT_VIDEO_BYTES,
+            max_frame_pixels=config.storage.max_image_pixels,
+            max_total_decoded_pixels=config.storage.max_image_pixels * MAX_PILOT_FRAMES,
+            backend=backend,
+        )
+        if stream_manifest.frame_count > MAX_PILOT_FRAMES:
+            raise BudgetExceeded("pilot video exceeds the maximum frame count")
+        source = OpenCvVideoSource(
+            manifest=stream_manifest,
+            verified_input=cast(VerifiedVideoInput, input_workspace),
+            relative_path=request.video_relative_path,
+            max_input_bytes=MAX_PILOT_VIDEO_BYTES,
+            max_frame_pixels=config.storage.max_image_pixels,
+            max_total_decoded_pixels=config.storage.max_image_pixels * MAX_PILOT_FRAMES,
+            backend=backend,
+        )
+
+        selected_transport = raw_transport
+        if selected_transport is None:
+            python = _resolve_worker_python(config, root)
+            selected_transport = JsonlPerceptionWorkerClient(
+                command=(
+                    python,
+                    "-u",
+                    "-m",
+                    worker_config.module,
+                    "--config",
+                    str(config_path.resolve(strict=True)),
+                ),
+                expected_manifest=expected_manifest,
+                startup_timeout_seconds=worker_config.startup_timeout_seconds,
+                frame_timeout_seconds=worker_config.frame_timeout_seconds,
+                max_request_bytes=worker_config.max_request_bytes,
+                max_response_bytes=worker_config.max_response_bytes,
+            )
+        if selected_transport.manifest != expected_manifest:
+            selected_transport.close()
+            raise ManifestMismatch("perception transport manifest does not match configuration")
+
+        cached_transport = CachedPerceptionWorkerTransport(
+            transport=selected_transport,
+            workspace=run_workspace,
+            run_id=request.run_id,
+        )
+        for directory in (
+            f"{request.run_id}/input",
+            f"{request.run_id}/perception",
+            f"{request.run_id}/debug",
+        ):
+            run_workspace.ensure_private_directory(directory)
+
+        preview_relative = f"{request.run_id}/debug/perception-preview.mp4"
+        preview_ref = f"runs/{preview_relative}" if pilot.write_debug_preview else None
+        preview: OpenCvPerceptionPreview | None = None
+        if pilot.write_debug_preview:
+            try:
+                run_workspace.inspect_verified(preview_relative)
+            except PathBoundaryViolation as error:
+                if error.reason_code != "FILE_MISSING":
+                    cached_transport.close()
+                    raise
+                preview = OpenCvPerceptionPreview(
+                    width=stream_manifest.width,
+                    height=stream_manifest.height,
+                    fps=stream_manifest.fps_num / stream_manifest.fps_den,
+                )
+
+        pixels = _CurrentFramePixels()
+        provider = LocalWorkerPerceptionProvider(
+            pixels=pixels,
+            transport=cached_transport,
+            tracker_epoch=f"t{request.video_sha256[:16]}",
+        )
+        bundle_lines = bytearray()
+        detection_count = 0
+        person_count = 0
+        goggles_count = 0
+        tracks: set[str] = set()
+        frames_processed = 0
+        try:
+            for rgb8 in source.iter_rgb8():
+                pixels.bind(rgb8)
+                frame_data = FrameData(
+                    frame=rgb8.frame,
+                    media_ref=(
+                        f"verified-video/{rgb8.frame.camera_id}/"
+                        f"{rgb8.frame.stream_id}/{rgb8.frame.frame_index}"
+                    ),
+                    ephemeral=True,
+                )
+                detections = tuple(provider.detect(frame_data))
+                bundle = FrameBundle(frame=rgb8.frame, detections=detections)
+                line = _artifact_bytes(bundle)
+                if len(bundle_lines) + len(line) > config.storage.max_media_bytes:
+                    raise BudgetExceeded("pilot FrameBundle artifact exceeded its byte budget")
+                bundle_lines.extend(line)
+                frames_processed += 1
+                detection_count += len(detections)
+                person_count += sum(item.label == "person" for item in detections)
+                goggles_count += sum(item.label == "goggles" for item in detections)
+                tracks.update(item.track_ref for item in detections if item.track_ref is not None)
+                if preview is not None:
+                    preview.add(rgb8, detections)
+            if preview is not None:
+                preview_bytes = preview.finish(max_bytes=config.storage.max_media_bytes)
+                _publish_immutable(run_workspace, preview_relative, preview_bytes)
+                preview = None
+        finally:
+            if preview is not None:
+                preview.close()
+            cached_transport.close()
+
+        report = PilotPerceptionReport(
+            run_id=request.run_id,
+            frames_processed=frames_processed,
+            detection_count=detection_count,
+            person_count=person_count,
+            goggles_count=goggles_count,
+            track_count=len(tracks),
+            provider_failures=0,
+            manifest_id=expected_manifest.manifest_id,
+            preview_path=preview_ref,
+        )
+        _publish_immutable(
+            run_workspace,
+            f"{request.run_id}/input/video-manifest.json",
+            _artifact_bytes(stream_manifest),
+        )
+        _publish_immutable(
+            run_workspace,
+            f"{request.run_id}/perception/execution-manifest.json",
+            _artifact_bytes(expected_manifest),
+        )
+        _publish_immutable(
+            run_workspace,
+            f"{request.run_id}/perception/frame-bundles.jsonl",
+            bytes(bundle_lines),
+        )
+        receipt_bytes = b"".join(_artifact_bytes(item) for item in cached_transport.receipts)
+        _publish_first_receipts(
+            run_workspace,
+            f"{request.run_id}/perception/frame-receipts.jsonl",
+            receipt_bytes,
+        )
+        _publish_immutable(
+            run_workspace,
+            f"{request.run_id}/perception/report.json",
+            _artifact_bytes(report),
+        )
+        return report

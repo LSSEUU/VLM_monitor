@@ -12,12 +12,13 @@ from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.config import AppConfig
 from labcourt.contracts.enums import VerdictDecision
 from labcourt.contracts.references import require_portable_run_id, require_reference_token
-from labcourt.exceptions import ContractViolation
+from labcourt.exceptions import ContractViolation, LabCourtError
 from labcourt.services.pilot_operations import (
     PilotOperationsBoundaryCode,
     PilotOperationsBoundaryError,
     build_pilot_run_request,
     require_pilot_config,
+    run_pilot_perception,
 )
 
 DEFAULT_PILOT_CONFIG = Path("configs/pilot.yaml")
@@ -105,15 +106,39 @@ def pilot_perceive(
     resume: Annotated[bool, typer.Option("--resume/--no-resume")] = True,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Validate perception inputs without calling a detector during A0."""
+    """Generate real person/goggles detections without calling a VLM."""
 
-    _preflight(
-        operation="PERCEIVE",
-        config_path=config,
-        video_path=video,
-        run_id=run_id,
-        resume=resume,
-        json_output=json_output,
+    parsed = _load_config(config, "PERCEIVE", json_output)
+    try:
+        request = build_pilot_run_request(
+            config=parsed,
+            run_id=run_id,
+            video_path=video,
+            project_root=Path.cwd(),
+            resume=resume,
+        )
+        report = run_pilot_perception(
+            config=parsed,
+            request=request,
+            config_path=config,
+            project_root=Path.cwd(),
+        )
+    except PilotOperationsBoundaryError as error:
+        _pilot_boundary_error(json_output, "PERCEIVE", error.code.value)
+    except (LabCourtError, OSError, TypeError, ValueError):
+        _pilot_boundary_error(
+            json_output,
+            "PERCEIVE",
+            PilotOperationsBoundaryCode.PERCEPTION_FAILED.value,
+        )
+    if json_output:
+        typer.echo(canonical_json(report.model_dump(mode="json")))
+        return
+    typer.echo(
+        f"pilot perception complete; frames={report.frames_processed}; "
+        f"detections={report.detection_count}; persons={report.person_count}; "
+        f"goggles={report.goggles_count}; tracks={report.track_count}; "
+        f"preview={report.preview_path or 'disabled'}"
     )
 
 

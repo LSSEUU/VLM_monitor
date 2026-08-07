@@ -99,7 +99,7 @@ l0:
 perception:
   provider: local-worker
   detector:
-    model_id: "pilot-detector-unconfigured"
+    model_id: "IDEA-Research/grounding-dino-tiny"
     score_threshold: 0.35
     high_confidence_threshold: 0.50
     prompts:
@@ -111,6 +111,55 @@ perception:
       bottle_cap: ["bottle cap", "bottle lid"]
       fume_sash: ["fume hood sash window"]
       food: ["food", "drink cup", "snack"]
+  detector_manifest:
+    component: detector
+    provider: HuggingFace
+    model: "IDEA-Research/grounding-dino-tiny"
+    revision: "a2bb814dd30d776dcf7e30523b00659f4f141c71"
+    quantization: null
+    weights_sha256: "1a2412ef99bd74bcd3c2a246fa1e48581f8889a1300c9051974741314fc042f3"
+    license_id: Apache-2.0
+    provider_revision_guarantee: true
+  tracker_manifest:
+    component: tracker
+    provider: Roboflow
+    model: "trackers.ByteTrackTracker"
+    revision: "2.5.0.post0"
+    quantization: null
+    weights_sha256: null
+    license_id: Apache-2.0
+    provider_revision_guarantee: true
+  tracker_thresholds:
+    track_activation_threshold: 0.25
+    lost_track_buffer: 30
+    minimum_iou_threshold: 0.10
+    minimum_consecutive_frames: 1
+  worker:
+    protocol_version: "1.0"
+    python_executable_env: LABCOURT_PERCEPTION_PYTHON
+    module: labcourt.perception_worker
+    startup_timeout_seconds: 300.0
+    frame_timeout_seconds: 30.0
+    max_request_bytes: 33554432
+    max_response_bytes: 1048576
+    device: "cuda:0"
+    local_files_only: true
+    cache_enabled: true
+    required_software_versions:
+      torch: "2.8.0+cu128"
+      transformers: "5.14.1"
+      trackers: "2.5.0.post0"
+      supervision: "0.29.1"
+      pillow: "12.3.0"
+      numpy: "2.2.6"
+      scipy: "1.16.0"
+      opencv-python: "4.12.0.88"
+      pydantic: "2.13.4"
+      pyyaml: "6.0.3"
+      huggingface-hub: "1.27.0"
+      safetensors: "0.8.0"
+      socksio: "1.0.0"
+      tokenizers: "0.22.2"
   association:
     iou_threshold: 0.15
     keypoint_threshold: 0.30

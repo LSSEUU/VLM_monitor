@@ -1,0 +1,350 @@
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+from labcourt.adapters.perception.local_worker import (
+    CachedPerceptionWorkerTransport,
+    JsonlPerceptionWorkerClient,
+    LocalWorkerPerceptionProvider,
+    PerceptionWorkerExchange,
+    WorkerResult,
+)
+from labcourt.adapters.storage.secure_workspace import SecureWorkspace
+from labcourt.contracts.canonical import canonical_json
+from labcourt.contracts.frames import FrameData, FrameRef
+from labcourt.contracts.manifests import ModelManifest
+from labcourt.contracts.pilot import (
+    PilotPerceptionExecutionManifest,
+    PilotPerceptionWorkerFailure,
+    PilotPerceptionWorkerRequest,
+    PilotPerceptionWorkerResponse,
+    PilotTrackerThresholds,
+    PilotWorkerBox,
+    PilotWorkerDetection,
+)
+from labcourt.exceptions import (
+    PerceptionFrameIdentityMismatch,
+    PerceptionWorkerCrashed,
+    PerceptionWorkerRejected,
+    PerceptionWorkerTimeout,
+)
+from labcourt.perception_worker import GroundingDinoByteTrackBackend
+from labcourt.ports.pixels import RGB8Frame, rgb8_pixel_sha256
+
+
+def _manifest() -> PilotPerceptionExecutionManifest:
+    return PilotPerceptionExecutionManifest(
+        detector=ModelManifest(
+            component="detector",
+            provider="HuggingFace",
+            model="IDEA-Research/grounding-dino-tiny",
+            revision="a2bb814dd30d776dcf7e30523b00659f4f141c71",
+            weights_sha256="1a2412ef99bd74bcd3c2a246fa1e48581f8889a1300c9051974741314fc042f3",
+            license_id="Apache-2.0",
+        ),
+        tracker=ModelManifest(
+            component="tracker",
+            provider="Roboflow",
+            model="trackers.ByteTrackTracker",
+            revision="2.5.0.post0",
+            license_id="Apache-2.0",
+        ),
+        prompts={
+            "person": ("person",),
+            "goggles": ("safety goggles", "protective eyewear"),
+        },
+        device="cpu",
+        score_threshold=0.35,
+        high_confidence_threshold=0.5,
+        bbox_policy="CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1",
+        tracker_initialization_policy="ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
+        tracker_thresholds=PilotTrackerThresholds(
+            track_activation_threshold=0.25,
+            lost_track_buffer=30,
+            minimum_iou_threshold=0.1,
+            minimum_consecutive_frames=1,
+        ),
+        software_versions={
+            "torch": "2.8.0+cpu",
+            "transformers": "5.14.1",
+            "trackers": "2.5.0.post0",
+            "supervision": "0.29.1",
+            "pillow": "12.3.0",
+        },
+    )
+
+
+def _frame() -> RGB8Frame:
+    width = 20
+    height = 12
+    pixels = bytes(index % 251 for index in range(width * height * 3))
+    return RGB8Frame(
+        frame=FrameRef(
+            camera_id="cam-01",
+            stream_id="pilot-stream",
+            frame_index=4,
+            fps_num=25,
+            fps_den=1,
+            width=width,
+            height=height,
+            content_sha256=rgb8_pixel_sha256(width, height, pixels),
+        ),
+        pixels=pixels,
+    )
+
+
+class _Pixels:
+    def __init__(self, frame: RGB8Frame) -> None:
+        self.frame = frame
+
+    def read_rgb8(self, frame_id: str) -> RGB8Frame:
+        assert frame_id == self.frame.frame.frame_id
+        return self.frame
+
+
+class _FakeTransport:
+    def __init__(self, manifest: PilotPerceptionExecutionManifest) -> None:
+        self.manifest = manifest
+        self.frame_id_override: str | None = None
+        self.failure = False
+
+    def exchange(self, request: PilotPerceptionWorkerRequest) -> WorkerResult:
+        common = {
+            "request_id": request.request_id,
+            "frame_id": self.frame_id_override or request.frame_id,
+            "frame_content_sha256": request.frame_content_sha256,
+            "manifest_id": self.manifest.manifest_id,
+        }
+        if self.failure:
+            return PilotPerceptionWorkerFailure(**common, error_code="INFERENCE_FAILED")
+        return PilotPerceptionWorkerResponse(
+            **common,
+            detections=(
+                PilotWorkerDetection(
+                    label="person",
+                    source_label="person",
+                    bbox=PilotWorkerBox(x1=1.2, y1=2.1, x2=18.0, y2=11.0),
+                    score=0.91,
+                    local_track_id="42",
+                ),
+                PilotWorkerDetection(
+                    label="goggles",
+                    source_label="safety goggles",
+                    bbox=PilotWorkerBox(x1=6.1, y1=2.2, x2=12.6, y2=5.1),
+                    score=0.72,
+                    local_track_id=None,
+                ),
+            ),
+        )
+
+    def close(self) -> None:
+        return None
+
+
+def test_adapter_maps_real_worker_output_to_existing_detection_contract() -> None:
+    frame = _frame()
+    manifest = _manifest()
+    provider = LocalWorkerPerceptionProvider(
+        pixels=_Pixels(frame),
+        transport=_FakeTransport(manifest),
+        tracker_epoch="epoch-01",
+    )
+
+    detections = provider.detect(
+        FrameData(frame=frame.frame, media_ref="verified-video/frame-4", ephemeral=True)
+    )
+
+    assert [detection.label for detection in detections] == ["person", "goggles"]
+    assert detections[0].track_ref == "cam-01:epoch-01:42"
+    assert detections[1].track_ref is None
+    assert detections[0].bbox.model_dump() == {"x1": 1, "y1": 2, "x2": 18, "y2": 11}
+    assert all(
+        detection.model_manifest_id == manifest.detector.model_manifest_id
+        for detection in detections
+    )
+    assert len({detection.detection_id for detection in detections}) == 2
+
+
+def test_worker_frame_identity_mismatch_is_not_accepted() -> None:
+    frame = _frame()
+    transport = _FakeTransport(_manifest())
+    transport.frame_id_override = "cam-01:pilot-stream:5"
+    provider = LocalWorkerPerceptionProvider(
+        pixels=_Pixels(frame),
+        transport=transport,
+        tracker_epoch="epoch-01",
+    )
+    with pytest.raises(PerceptionFrameIdentityMismatch):
+        provider.detect(FrameData(frame=frame.frame, media_ref="verified-video/frame-4"))
+
+
+def test_explicit_worker_failure_is_not_silently_mapped_to_empty_detections() -> None:
+    frame = _frame()
+    transport = _FakeTransport(_manifest())
+    transport.failure = True
+    provider = LocalWorkerPerceptionProvider(
+        pixels=_Pixels(frame),
+        transport=transport,
+        tracker_epoch="epoch-01",
+    )
+    with pytest.raises(PerceptionWorkerRejected, match="INFERENCE_FAILED"):
+        provider.detect(FrameData(frame=frame.frame, media_ref="verified-video/frame-4"))
+
+
+def _write_worker_script(tmp_path: Path, body: str) -> Path:
+    ready = json.dumps(
+        {
+            "protocol_version": "1.0",
+            "kind": "READY",
+            "manifest": _manifest().model_dump(mode="json"),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    path = tmp_path / "fake_worker.py"
+    path.write_text(
+        "import sys, time\n"
+        f"print({ready!r}, flush=True)\n"
+        "request = sys.stdin.buffer.readline()\n"
+        f"{body}\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return path
+
+
+def _client(script: Path, *, timeout: float = 0.2) -> JsonlPerceptionWorkerClient:
+    return JsonlPerceptionWorkerClient(
+        command=(sys.executable, "-u", str(script)),
+        expected_manifest=_manifest(),
+        startup_timeout_seconds=2.0,
+        frame_timeout_seconds=timeout,
+        max_request_bytes=1024,
+        max_response_bytes=1024 * 1024,
+    )
+
+
+def _small_request() -> PilotPerceptionWorkerRequest:
+    return PilotPerceptionWorkerRequest(
+        request_id="request-1",
+        frame_id="cam-01:pilot-stream:1",
+        frame_content_sha256="1" * 64,
+        fps_num=25,
+        fps_den=1,
+        width=1,
+        height=1,
+        image_sha256="2" * 64,
+        image_base64="cG5n",
+        expected_manifest_id=_manifest().manifest_id,
+    )
+
+
+def test_jsonl_worker_timeout_kills_the_child_and_returns_typed_failure(tmp_path: Path) -> None:
+    script = _write_worker_script(tmp_path, "time.sleep(30)")
+    with _client(script, timeout=0.05) as client, pytest.raises(PerceptionWorkerTimeout):
+        client.exchange(_small_request())
+
+
+def test_jsonl_worker_crash_returns_typed_failure(tmp_path: Path) -> None:
+    script = _write_worker_script(tmp_path, "sys.exit(7)")
+    with _client(script) as client, pytest.raises(PerceptionWorkerCrashed):
+        client.exchange(_small_request())
+
+
+class _RawFakeTransport:
+    def __init__(self) -> None:
+        self.manifest = _manifest()
+        self.calls = 0
+        self.modes: list[str] = []
+
+    def exchange_with_raw(
+        self,
+        request: PilotPerceptionWorkerRequest,
+    ) -> PerceptionWorkerExchange:
+        self.calls += 1
+        self.modes.append(request.mode)
+        result = PilotPerceptionWorkerResponse(
+            request_id=request.request_id,
+            frame_id=request.frame_id,
+            frame_content_sha256=request.frame_content_sha256,
+            manifest_id=request.expected_manifest_id,
+            detections=request.replay_detections,
+        )
+        raw = canonical_json(result.model_dump(mode="json")).encode("utf-8")
+        return PerceptionWorkerExchange(result=result, raw_response=raw)
+
+    def close(self) -> None:
+        return None
+
+
+def test_worker_responses_are_cached_with_raw_response_receipts(tmp_path: Path) -> None:
+    raw_transport = _RawFakeTransport()
+    request = _small_request()
+    with SecureWorkspace(tmp_path, max_file_bytes=1024 * 1024) as workspace:
+        cached = CachedPerceptionWorkerTransport(
+            transport=raw_transport,
+            workspace=workspace,
+            run_id="pilot-001",
+        )
+        assert cached.exchange(request).status == "SUCCEEDED"
+        assert raw_transport.calls == 1
+        assert raw_transport.modes == ["INFER"]
+        assert cached.receipts[0].cache_hit is False
+
+        assert cached.exchange(request).status == "SUCCEEDED"
+        assert raw_transport.calls == 2
+        assert raw_transport.modes == ["INFER", "REPLAY"]
+        receipt = cached.receipts[0]
+        assert receipt.cache_hit is True
+        assert receipt.raw_response_ref == "runs/pilot-001/raw/perception/request-1.json"
+        assert len(receipt.raw_response_sha256) == 64
+
+
+class _Vector(list[float]):
+    def tolist(self) -> list[float]:
+        return list(self)
+
+
+class _NewTracklet:
+    def __init__(self, box: _Vector) -> None:
+        self.tracker_id = -1
+        self._box = box
+
+    def get_state_bbox(self) -> _Vector:
+        return self._box
+
+
+class _NewTrackTracker:
+    def __init__(self, tracklet: _NewTracklet) -> None:
+        self.tracks = [tracklet]
+        self.next_id = 1
+
+    def _allocate_tracker_id(self) -> int:
+        allocated = self.next_id
+        self.next_id += 1
+        return allocated
+
+
+class _TrackedResult:
+    def __init__(self, box: _Vector) -> None:
+        self.xyxy = [box]
+        self.confidence = [0.9]
+
+
+def test_pinned_bytetrack_first_detection_receives_a_stable_anonymous_id() -> None:
+    box = _Vector([1.0, 2.0, 10.0, 11.0])
+    tracklet = _NewTracklet(box)
+    tracker = _NewTrackTracker(tracklet)
+    tracked = _TrackedResult(box)
+    tracker_ids = [-1]
+    backend = object.__new__(GroundingDinoByteTrackBackend)
+    backend._score_threshold = 0.35
+
+    backend._allocate_first_frame_ids(tracker, tracked, tracker_ids)
+
+    assert tracker_ids == [1]
+    assert tracklet.tracker_id == 1

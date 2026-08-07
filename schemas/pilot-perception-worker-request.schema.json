@@ -1,0 +1,194 @@
+{
+  "$defs": {
+    "PilotWorkerBox": {
+      "additionalProperties": false,
+      "description": "Unrounded detector coordinates in the worker response.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "number"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "number"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "number"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "PilotWorkerBox",
+      "type": "object"
+    },
+    "PilotWorkerDetection": {
+      "additionalProperties": false,
+      "description": "Strict, model-native detection before conversion to the authority contract.",
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/PilotWorkerBox"
+        },
+        "label": {
+          "enum": [
+            "person",
+            "goggles"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "local_track_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Local Track Id"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "source_label": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "source_label",
+        "bbox",
+        "score"
+      ],
+      "title": "PilotWorkerDetection",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-perception-worker-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One bounded RGB frame request sent over the local JSONL worker protocol.",
+  "properties": {
+    "expected_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Expected Manifest Id",
+      "type": "string"
+    },
+    "fps_den": {
+      "exclusiveMinimum": 0,
+      "title": "Fps Den",
+      "type": "integer"
+    },
+    "fps_num": {
+      "exclusiveMinimum": 0,
+      "title": "Fps Num",
+      "type": "integer"
+    },
+    "frame_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Frame Content Sha256",
+      "type": "string"
+    },
+    "frame_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+      "title": "Frame Id",
+      "type": "string"
+    },
+    "height": {
+      "exclusiveMinimum": 0,
+      "title": "Height",
+      "type": "integer"
+    },
+    "image_base64": {
+      "maxLength": 33554432,
+      "minLength": 1,
+      "title": "Image Base64",
+      "type": "string"
+    },
+    "image_encoding": {
+      "const": "PNG_RGB8_V1",
+      "default": "PNG_RGB8_V1",
+      "title": "Image Encoding",
+      "type": "string"
+    },
+    "image_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Image Sha256",
+      "type": "string"
+    },
+    "kind": {
+      "const": "DETECT",
+      "default": "DETECT",
+      "title": "Kind",
+      "type": "string"
+    },
+    "mode": {
+      "default": "INFER",
+      "enum": [
+        "INFER",
+        "REPLAY"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "protocol_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "replay_detections": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PilotWorkerDetection"
+      },
+      "title": "Replay Detections",
+      "type": "array"
+    },
+    "request_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "width": {
+      "exclusiveMinimum": 0,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "request_id",
+    "frame_id",
+    "frame_content_sha256",
+    "fps_num",
+    "fps_den",
+    "width",
+    "height",
+    "image_sha256",
+    "image_base64",
+    "expected_manifest_id"
+  ],
+  "title": "PilotPerceptionWorkerRequest",
+  "type": "object"
+}

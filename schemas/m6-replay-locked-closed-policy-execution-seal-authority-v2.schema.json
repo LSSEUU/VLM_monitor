@@ -6959,6 +6959,17 @@
         "detector": {
           "$ref": "#/$defs/DetectorConfig"
         },
+        "detector_manifest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelManifest"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "observability": {
           "$ref": "#/$defs/ObservabilityConfig"
         },
@@ -6966,6 +6977,39 @@
           "minLength": 1,
           "title": "Provider",
           "type": "string"
+        },
+        "tracker_manifest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelManifest"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tracker_thresholds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PilotTrackerThresholds"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "worker": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PerceptionWorkerConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -6975,6 +7019,90 @@
         "observability"
       ],
       "title": "PerceptionConfig",
+      "type": "object"
+    },
+    "PerceptionWorkerConfig": {
+      "additionalProperties": false,
+      "description": "Bounded local process controls; the executable is resolved without a shell.",
+      "properties": {
+        "cache_enabled": {
+          "const": true,
+          "default": true,
+          "title": "Cache Enabled",
+          "type": "boolean"
+        },
+        "device": {
+          "pattern": "^(?:cpu|cuda(?::[0-9]+)?)$",
+          "title": "Device",
+          "type": "string"
+        },
+        "frame_timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 3600,
+          "title": "Frame Timeout Seconds",
+          "type": "number"
+        },
+        "local_files_only": {
+          "const": true,
+          "default": true,
+          "title": "Local Files Only",
+          "type": "boolean"
+        },
+        "max_request_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 67108864,
+          "title": "Max Request Bytes",
+          "type": "integer"
+        },
+        "max_response_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 16777216,
+          "title": "Max Response Bytes",
+          "type": "integer"
+        },
+        "module": {
+          "const": "labcourt.perception_worker",
+          "default": "labcourt.perception_worker",
+          "title": "Module",
+          "type": "string"
+        },
+        "protocol_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Protocol Version",
+          "type": "string"
+        },
+        "python_executable_env": {
+          "default": "LABCOURT_PERCEPTION_PYTHON",
+          "title": "Python Executable Env",
+          "type": "string"
+        },
+        "required_software_versions": {
+          "minProperties": 1,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$": {
+              "type": "string"
+            }
+          },
+          "title": "Required Software Versions",
+          "type": "object"
+        },
+        "startup_timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 3600,
+          "title": "Startup Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "startup_timeout_seconds",
+        "frame_timeout_seconds",
+        "max_request_bytes",
+        "max_response_bytes",
+        "device",
+        "required_software_versions"
+      ],
+      "title": "PerceptionWorkerConfig",
       "type": "object"
     },
     "PilotConfig": {
@@ -7028,6 +7156,44 @@
       ],
       "title": "PilotStage",
       "type": "string"
+    },
+    "PilotTrackerThresholds": {
+      "additionalProperties": false,
+      "description": "Pinned ByteTrack controls that materially affect anonymous track identity.",
+      "properties": {
+        "lost_track_buffer": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Lost Track Buffer",
+          "type": "integer"
+        },
+        "minimum_consecutive_frames": {
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Minimum Consecutive Frames",
+          "type": "integer"
+        },
+        "minimum_iou_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Minimum Iou Threshold",
+          "type": "number"
+        },
+        "track_activation_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Track Activation Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "track_activation_threshold",
+        "lost_track_buffer",
+        "minimum_iou_threshold",
+        "minimum_consecutive_frames"
+      ],
+      "title": "PilotTrackerThresholds",
+      "type": "object"
     },
     "PlatformSummary": {
       "additionalProperties": false,
