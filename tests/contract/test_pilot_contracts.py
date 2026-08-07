@@ -6,6 +6,9 @@ from pydantic import ValidationError
 from labcourt.contracts.enums import ViolationType
 from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.pilot import (
+    PilotPerceptionArtifactReceipt,
+    PilotPerceptionArtifactRole,
+    PilotPerceptionCompletionManifest,
     PilotPerceptionExecutionManifest,
     PilotPerceptionReport,
     PilotPerceptionWorkerRequest,
@@ -175,7 +178,7 @@ def test_worker_detection_requires_person_track_and_strict_supported_labels() ->
 
     with pytest.raises(ValidationError):
         PilotWorkerDetection(
-            label="gloves",  # type: ignore[arg-type]
+            label="gloves",
             source_label="gloves",
             bbox=PilotWorkerBox(x1=1.0, y1=2.0, x2=10.0, y2=11.0),
             score=0.75,
@@ -201,3 +204,96 @@ def test_perception_report_counts_are_self_consistent() -> None:
     payload["detection_count"] = 4
     with pytest.raises(ValidationError, match="label counts"):
         PilotPerceptionReport.model_validate(payload)
+
+
+def _artifact_receipt(
+    role: PilotPerceptionArtifactRole,
+    suffix: str,
+    marker: str,
+) -> PilotPerceptionArtifactReceipt:
+    return PilotPerceptionArtifactReceipt(
+        role=role,
+        artifact_ref=f"runs/pilot-001/{suffix}",
+        artifact_sha256=marker * 64,
+        artifact_size_bytes=12,
+    )
+
+
+def _completion_manifest() -> PilotPerceptionCompletionManifest:
+    return PilotPerceptionCompletionManifest(
+        run_id="pilot-001",
+        config_sha256="1" * 64,
+        video_sha256="2" * 64,
+        manifest_id=_execution_manifest().manifest_id,
+        artifacts=(
+            _artifact_receipt("VIDEO_MANIFEST", "input/video-manifest.json", "3"),
+            _artifact_receipt(
+                "EXECUTION_MANIFEST",
+                "perception/execution-manifest.json",
+                "4",
+            ),
+            _artifact_receipt(
+                "FRAME_BUNDLES",
+                "perception/frame-bundles.jsonl",
+                "5",
+            ),
+            _artifact_receipt(
+                "FRAME_RECEIPTS",
+                "perception/frame-receipts.jsonl",
+                "6",
+            ),
+            _artifact_receipt("REPORT", "perception/report.json", "7"),
+            _artifact_receipt("PREVIEW", "debug/perception-preview.mp4", "8"),
+        ),
+    )
+
+
+def test_perception_completion_is_content_derived_and_exported() -> None:
+    completion = _completion_manifest()
+
+    assert len(completion.completion_id) == 64
+    assert (
+        PilotPerceptionCompletionManifest.model_validate_json(completion.model_dump_json())
+        == completion
+    )
+    schemas = expected_schema_files()
+    assert "pilot-perception-artifact-receipt.schema.json" in schemas
+    assert "pilot-perception-completion-manifest.schema.json" in schemas
+
+    payload = completion.model_dump(mode="python")
+    payload["completion_id"] = "0" * 64
+    with pytest.raises(ValidationError, match="completion_id"):
+        PilotPerceptionCompletionManifest.model_validate(payload)
+
+
+def test_perception_completion_requires_exact_ordered_run_scoped_inventory() -> None:
+    completion = _completion_manifest()
+    payload = completion.model_dump(mode="python", exclude_computed_fields=True)
+    payload["artifacts"] = list(reversed(payload["artifacts"]))
+    with pytest.raises(ValidationError, match="exact ordered"):
+        PilotPerceptionCompletionManifest.model_validate(payload)
+
+    payload = completion.model_dump(mode="python", exclude_computed_fields=True)
+    payload["artifacts"][0]["artifact_ref"] = "runs/another/input/video-manifest.json"
+    with pytest.raises(ValidationError, match="run and role"):
+        PilotPerceptionCompletionManifest.model_validate(payload)
+
+    payload = completion.model_dump(mode="python")
+    payload["artifacts"][0]["artifact_sha256"] = "9" * 64
+    with pytest.raises(ValidationError, match="receipt_id"):
+        PilotPerceptionCompletionManifest.model_validate(payload)
+
+
+def test_perception_completion_accepts_exact_inventory_without_optional_preview() -> None:
+    payload = _completion_manifest().model_dump(mode="python", exclude_computed_fields=True)
+    payload["artifacts"] = payload["artifacts"][:-1]
+
+    completion = PilotPerceptionCompletionManifest.model_validate(payload)
+
+    assert tuple(artifact.role for artifact in completion.artifacts) == (
+        "VIDEO_MANIFEST",
+        "EXECUTION_MANIFEST",
+        "FRAME_BUNDLES",
+        "FRAME_RECEIPTS",
+        "REPORT",
+    )

@@ -45,7 +45,9 @@ frames_processed, detection_count, person_count, goggles_count,
 track_count, provider_failures, manifest_id, preview_path
 ```
 
-同一 `run-id` 和同一视频重复运行会读取已完成结果，不会再次调用 detector。
+同一 `run-id` 和同一视频重复运行时，系统会先验证完成封印、全部 A1 工件及逐帧 raw
+response，再读取已完成结果，不会再次调用 detector。任何已封印工件缺失或内容不一致都会
+失败关闭，不能被误报为“运行完成”。
 
 ## 4. 只需人工检查三件事
 
@@ -67,12 +69,14 @@ runs/<run-id>/
 ├── perception/frame-bundles.jsonl
 ├── perception/frame-receipts.jsonl
 ├── perception/report.json
+├── perception/completion-manifest.json
 ├── raw/perception/*.json
 └── debug/perception-preview.mp4
 ```
 
 预览是非权威调试文件，可能含真人画面；不得上传到未授权服务。权威感知数据通过
-`frame_id`、像素 SHA-256、模型 manifest 和 raw response receipt 相互绑定。
+`frame_id`、像素 SHA-256、模型 manifest 和 raw response receipt 相互绑定；
+`completion-manifest.json` 最后写入，并固定上述所有 A1 输出的路径、大小和 SHA-256。
 
 ## 6. 常见失败
 

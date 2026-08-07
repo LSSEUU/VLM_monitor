@@ -1,0 +1,51 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-perception-artifact-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One immutable A1 output bound into the final completion inventory.",
+  "properties": {
+    "artifact_ref": {
+      "minLength": 1,
+      "title": "Artifact Ref",
+      "type": "string"
+    },
+    "artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Artifact Sha256",
+      "type": "string"
+    },
+    "artifact_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 8589934592,
+      "title": "Artifact Size Bytes",
+      "type": "integer"
+    },
+    "receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "VIDEO_MANIFEST",
+        "EXECUTION_MANIFEST",
+        "FRAME_BUNDLES",
+        "FRAME_RECEIPTS",
+        "REPORT",
+        "PREVIEW"
+      ],
+      "title": "Role",
+      "type": "string"
+    }
+  },
+  "required": [
+    "role",
+    "artifact_ref",
+    "artifact_sha256",
+    "artifact_size_bytes",
+    "receipt_id"
+  ],
+  "title": "PilotPerceptionArtifactReceipt",
+  "type": "object"
+}
