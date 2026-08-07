@@ -24,6 +24,7 @@ from labcourt.contracts.enums import (
     ConfirmationPolicy,
     DirectSafetySourceClass,
     ExecutionLocation,
+    PilotStage,
     PpeType,
     PrecedentSource,
     PrivacyPolicy,
@@ -33,6 +34,7 @@ from labcourt.contracts.enums import (
     RunMode,
     SafetySignalType,
     TrainingLabelQuality,
+    ViolationType,
 )
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.geometry import PolygonInput
@@ -57,6 +59,8 @@ def _config_digest(payload: dict[str, object]) -> str:
     run = fingerprint.get("run")
     if isinstance(run, dict):
         run.pop("workspace", None)
+    if fingerprint.get("pilot") is None:
+        fingerprint.pop("pilot", None)
     return sha256_hex(fingerprint)
 
 
@@ -167,6 +171,22 @@ class PerceptionConfig(ContractModel):
     detector: DetectorConfig
     association: AssociationConfig
     observability: ObservabilityConfig
+
+
+class PilotConfig(ContractModel):
+    selected_rules: tuple[ViolationType, ...] = Field(min_length=1)
+    max_cases: int = Field(gt=0, le=1_000, strict=True)
+    write_debug_preview: StrictBool = True
+    stop_after_stage: PilotStage | None = None
+
+    @model_validator(mode="after")
+    def validate_initial_rule_scope(self) -> PilotConfig:
+        if len(self.selected_rules) != len(set(self.selected_rules)):
+            raise ValueError("pilot selected_rules must be unique")
+        unsupported = set(self.selected_rules) - {ViolationType.PPE_GOGGLES_MISSING}
+        if unsupported:
+            raise ValueError("v0.2 alpha1 supports only PPE_GOGGLES_MISSING")
+        return self
 
 
 class AbsenceConfig(ContractModel):
@@ -554,6 +574,7 @@ class AppConfig(ContractModel):
     zones: tuple[ZoneConfig, ...] = Field(min_length=1)
     l0: L0Config
     perception: PerceptionConfig
+    pilot: PilotConfig | None = None
     absence: AbsenceConfig
     presence: PresenceConfig
     evidence: EvidenceConfig

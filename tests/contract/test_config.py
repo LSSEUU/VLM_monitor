@@ -24,6 +24,23 @@ def test_default_and_demo_configs_are_valid() -> None:
     assert default.storage.busy_timeout_ms == 5_000
     assert default.storage.max_media_bytes == 104_857_600
     assert default.storage.max_image_pixels == 100_000_000
+    assert default.pilot is None
+
+
+def test_pilot_config_is_strict_and_does_not_claim_future_rules() -> None:
+    pilot = load_config(PROJECT_ROOT / "configs" / "pilot.yaml")
+    assert pilot.pilot is not None
+    assert [rule.value for rule in pilot.pilot.selected_rules] == ["PPE_GOGGLES_MISSING"]
+    assert pilot.pilot.max_cases == 20
+    assert pilot.perception.provider == "local-worker"
+    assert (
+        pilot.config_sha256 != load_config(PROJECT_ROOT / "configs" / "default.yaml").config_sha256
+    )
+
+    payload = pilot.model_dump(mode="json", exclude={"config_sha256"})
+    payload["pilot"]["selected_rules"] = ["REAGENT_CONTAINER_OPEN"]
+    with pytest.raises(ValidationError, match="alpha1"):
+        AppConfig.model_validate(payload)
 
 
 def test_workspace_does_not_change_config_fingerprint() -> None:

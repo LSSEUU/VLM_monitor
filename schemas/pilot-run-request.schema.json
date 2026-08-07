@@ -1,0 +1,75 @@
+{
+  "$defs": {
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-run-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Validated, content-bound input for a pilot run or perception preflight.",
+  "properties": {
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "max_cases": {
+      "exclusiveMinimum": 0,
+      "maximum": 1000,
+      "title": "Max Cases",
+      "type": "integer"
+    },
+    "resume": {
+      "title": "Resume",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "selected_rules": {
+      "items": {
+        "$ref": "#/$defs/ViolationType"
+      },
+      "minItems": 1,
+      "title": "Selected Rules",
+      "type": "array"
+    },
+    "video_relative_path": {
+      "minLength": 1,
+      "title": "Video Relative Path",
+      "type": "string"
+    },
+    "video_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Video Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "config_sha256",
+    "video_relative_path",
+    "video_sha256",
+    "selected_rules",
+    "resume",
+    "max_cases"
+  ],
+  "title": "PilotRunRequest",
+  "type": "object"
+}

@@ -166,6 +166,17 @@
         "perception": {
           "$ref": "#/$defs/PerceptionConfig"
         },
+        "pilot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PilotConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "precedents": {
           "$ref": "#/$defs/PrecedentConfig"
         },
@@ -5273,6 +5284,58 @@
       "title": "PerceptionConfig",
       "type": "object"
     },
+    "PilotConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "max_cases": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "title": "Max Cases",
+          "type": "integer"
+        },
+        "selected_rules": {
+          "items": {
+            "$ref": "#/$defs/ViolationType"
+          },
+          "minItems": 1,
+          "title": "Selected Rules",
+          "type": "array"
+        },
+        "stop_after_stage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PilotStage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "write_debug_preview": {
+          "default": true,
+          "title": "Write Debug Preview",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "selected_rules",
+        "max_cases"
+      ],
+      "title": "PilotConfig",
+      "type": "object"
+    },
+    "PilotStage": {
+      "enum": [
+        "PERCEPTION",
+        "EVIDENCE",
+        "SCREENING",
+        "FINALIZATION",
+        "REPORT"
+      ],
+      "title": "PilotStage",
+      "type": "string"
+    },
     "PlatformSummary": {
       "additionalProperties": false,
       "properties": {
@@ -6220,6 +6283,22 @@
         "INSUFFICIENT_EVIDENCE"
       ],
       "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
       "type": "string"
     },
     "VlmProviderProfile": {
