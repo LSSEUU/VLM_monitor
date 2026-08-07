@@ -1234,6 +1234,18 @@
       "name": "parsed-screening-output"
     },
     {
+      "file": "pilot-perception-artifact-receipt.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotPerceptionArtifactReceipt",
+      "name": "pilot-perception-artifact-receipt"
+    },
+    {
+      "file": "pilot-perception-completion-manifest.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotPerceptionCompletionManifest",
+      "name": "pilot-perception-completion-manifest"
+    },
+    {
       "file": "pilot-perception-execution-manifest.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.pilot.PilotPerceptionExecutionManifest",

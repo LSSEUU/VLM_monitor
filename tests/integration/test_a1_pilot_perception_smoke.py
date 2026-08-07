@@ -10,12 +10,15 @@ from labcourt.adapters.perception.local_worker import PerceptionWorkerExchange
 from labcourt.config_loader import load_config
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.pilot import (
+    PilotPerceptionCompletionManifest,
     PilotPerceptionExecutionManifest,
+    PilotPerceptionFrameReceipt,
     PilotPerceptionWorkerRequest,
     PilotPerceptionWorkerResponse,
     PilotWorkerBox,
     PilotWorkerDetection,
 )
+from labcourt.exceptions import ManifestMismatch
 from labcourt.services.pilot_operations import (
     build_expected_perception_manifest,
     build_pilot_run_request,
@@ -142,6 +145,17 @@ def test_short_real_mp4_produces_frame_bundles_manifest_receipts_and_preview(
     assert len((run / "perception" / "frame-bundles.jsonl").read_text().splitlines()) == 3
     assert len((run / "perception" / "frame-receipts.jsonl").read_text().splitlines()) == 3
     assert (run / "debug" / "perception-preview.mp4").stat().st_size > 0
+    completion = PilotPerceptionCompletionManifest.model_validate_json(
+        (run / "perception" / "completion-manifest.json").read_bytes()
+    )
+    assert tuple(artifact.role for artifact in completion.artifacts) == (
+        "VIDEO_MANIFEST",
+        "EXECUTION_MANIFEST",
+        "FRAME_BUNDLES",
+        "FRAME_RECEIPTS",
+        "REPORT",
+        "PREVIEW",
+    )
 
     unused_worker = _TrackingFakeWorker(build_expected_perception_manifest(config))
     resumed = run_pilot_perception(
@@ -153,3 +167,154 @@ def test_short_real_mp4_produces_frame_bundles_manifest_receipts_and_preview(
     )
     assert resumed == report
     assert unused_worker.calls == []
+
+
+@pytest.mark.video
+@pytest.mark.parametrize(
+    "missing_artifact",
+    (
+        "perception/frame-bundles.jsonl",
+        "debug/perception-preview.mp4",
+        "raw-response",
+    ),
+)
+def test_completed_resume_fails_closed_when_sealed_artifact_is_missing(
+    tmp_path: Path,
+    missing_artifact: str,
+) -> None:
+    (tmp_path / "inputs").mkdir()
+    (tmp_path / "runs").mkdir()
+    video = tmp_path / "inputs" / "short.mp4"
+    _write_short_mp4(video)
+    config_path = PROJECT_ROOT / "configs" / "pilot.yaml"
+    config = load_config(config_path)
+    request = build_pilot_run_request(
+        config=config,
+        run_id="pilot-sealed",
+        video_path=Path("inputs/short.mp4"),
+        project_root=tmp_path,
+        resume=True,
+    )
+    initial_worker = _TrackingFakeWorker(build_expected_perception_manifest(config))
+    run_pilot_perception(
+        config=config,
+        request=request,
+        config_path=config_path,
+        project_root=tmp_path,
+        raw_transport=initial_worker,
+    )
+    run = tmp_path / "runs" / "pilot-sealed"
+    if missing_artifact == "raw-response":
+        receipt = PilotPerceptionFrameReceipt.model_validate_json(
+            (run / "perception" / "frame-receipts.jsonl").read_bytes().splitlines()[0]
+        )
+        target = tmp_path / receipt.raw_response_ref
+    else:
+        target = run / missing_artifact
+    target.unlink()
+
+    unused_worker = _TrackingFakeWorker(build_expected_perception_manifest(config))
+    with pytest.raises(ManifestMismatch):
+        run_pilot_perception(
+            config=config,
+            request=request,
+            config_path=config_path,
+            project_root=tmp_path,
+            raw_transport=unused_worker,
+        )
+    assert unused_worker.calls == []
+
+
+@pytest.mark.video
+def test_incomplete_legacy_run_rebuilds_completion_from_cached_raw_responses(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "inputs").mkdir()
+    (tmp_path / "runs").mkdir()
+    video = tmp_path / "inputs" / "short.mp4"
+    _write_short_mp4(video)
+    config_path = PROJECT_ROOT / "configs" / "pilot.yaml"
+    config = load_config(config_path)
+    request = build_pilot_run_request(
+        config=config,
+        run_id="pilot-recover",
+        video_path=Path("inputs/short.mp4"),
+        project_root=tmp_path,
+        resume=True,
+    )
+    initial_worker = _TrackingFakeWorker(build_expected_perception_manifest(config))
+    initial_report = run_pilot_perception(
+        config=config,
+        request=request,
+        config_path=config_path,
+        project_root=tmp_path,
+        raw_transport=initial_worker,
+    )
+    completion_path = (
+        tmp_path / "runs" / "pilot-recover" / "perception" / "completion-manifest.json"
+    )
+    completion_path.unlink()
+
+    replay_worker = _TrackingFakeWorker(build_expected_perception_manifest(config))
+    recovered = run_pilot_perception(
+        config=config,
+        request=request,
+        config_path=config_path,
+        project_root=tmp_path,
+        raw_transport=replay_worker,
+    )
+
+    assert recovered == initial_report
+    assert replay_worker.calls == ["REPLAY", "REPLAY", "REPLAY"]
+    assert (
+        PilotPerceptionCompletionManifest.model_validate_json(completion_path.read_bytes()).run_id
+        == "pilot-recover"
+    )
+
+
+@pytest.mark.video
+def test_completion_inventory_omits_preview_when_debug_output_is_disabled(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "inputs").mkdir()
+    (tmp_path / "runs").mkdir()
+    video = tmp_path / "inputs" / "short.mp4"
+    _write_short_mp4(video)
+    config_path = PROJECT_ROOT / "configs" / "pilot.yaml"
+    config = load_config(config_path)
+    assert config.pilot is not None
+    config = config.model_copy(
+        update={
+            "pilot": config.pilot.model_copy(update={"write_debug_preview": False}),
+        }
+    )
+    request = build_pilot_run_request(
+        config=config,
+        run_id="pilot-no-preview",
+        video_path=Path("inputs/short.mp4"),
+        project_root=tmp_path,
+        resume=True,
+    )
+    worker = _TrackingFakeWorker(build_expected_perception_manifest(config))
+
+    report = run_pilot_perception(
+        config=config,
+        request=request,
+        config_path=config_path,
+        project_root=tmp_path,
+        raw_transport=worker,
+    )
+
+    run = tmp_path / "runs" / "pilot-no-preview"
+    completion = PilotPerceptionCompletionManifest.model_validate_json(
+        (run / "perception" / "completion-manifest.json").read_bytes()
+    )
+    assert report.preview_path is None
+    assert tuple(artifact.role for artifact in completion.artifacts) == (
+        "VIDEO_MANIFEST",
+        "EXECUTION_MANIFEST",
+        "FRAME_BUNDLES",
+        "FRAME_RECEIPTS",
+        "REPORT",
+    )
+    assert not (run / "debug" / "perception-preview.mp4").exists()

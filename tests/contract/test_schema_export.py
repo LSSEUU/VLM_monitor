@@ -224,6 +224,8 @@ EXPECTED_SCHEMA_MODES = {
     "model-response-recovery-report": "serialization",
     "observability-score": "serialization",
     "parsed-screening-output": "serialization",
+    "pilot-perception-artifact-receipt": "serialization",
+    "pilot-perception-completion-manifest": "serialization",
     "pilot-perception-execution-manifest": "serialization",
     "pilot-perception-frame-receipt": "serialization",
     "pilot-perception-report": "serialization",

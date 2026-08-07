@@ -22,6 +22,8 @@ from labcourt.adapters.perception.local_worker import (
     JsonlPerceptionWorkerClient,
     LocalWorkerPerceptionProvider,
     RawPerceptionWorkerTransport,
+    map_perception_worker_detections,
+    parse_perception_worker_result,
 )
 from labcourt.adapters.perception.opencv_preview import OpenCvPerceptionPreview
 from labcourt.adapters.storage.secure_workspace import SecureWorkspace
@@ -32,8 +34,13 @@ from labcourt.contracts.frames import FrameData
 from labcourt.contracts.manifests import StreamManifest
 from labcourt.contracts.paths import require_safe_relative_posix_path
 from labcourt.contracts.pilot import (
+    PilotPerceptionArtifactReceipt,
+    PilotPerceptionArtifactRole,
+    PilotPerceptionCompletionManifest,
     PilotPerceptionExecutionManifest,
+    PilotPerceptionFrameReceipt,
     PilotPerceptionReport,
+    PilotPerceptionWorkerResponse,
     PilotRunRequest,
 )
 from labcourt.contracts.references import require_portable_run_id
@@ -254,6 +261,171 @@ def _publish_first_receipts(
         workspace.read_verified(relative_path)
 
 
+def _completion_artifact_receipt(
+    *,
+    workspace: SecureWorkspace,
+    role: PilotPerceptionArtifactRole,
+    relative_path: str,
+) -> PilotPerceptionArtifactReceipt:
+    snapshot = workspace.read_verified(relative_path)
+    return PilotPerceptionArtifactReceipt(
+        role=role,
+        artifact_ref=f"runs/{relative_path}",
+        artifact_sha256=snapshot.sha256,
+        artifact_size_bytes=snapshot.size_bytes,
+    )
+
+
+def _completed_artifact_payloads(
+    *,
+    workspace: SecureWorkspace,
+    completion: PilotPerceptionCompletionManifest,
+) -> dict[PilotPerceptionArtifactRole, bytes]:
+    payloads: dict[PilotPerceptionArtifactRole, bytes] = {}
+    for artifact in completion.artifacts:
+        relative_path = artifact.artifact_ref.removeprefix("runs/")
+        snapshot = workspace.read_verified(
+            relative_path,
+            artifact.artifact_sha256,
+            max_bytes=artifact.artifact_size_bytes,
+        )
+        if snapshot.size_bytes != artifact.artifact_size_bytes:
+            raise ManifestMismatch("completed A1 artifact size does not match its receipt")
+        payloads[artifact.role] = snapshot.bytes
+    return payloads
+
+
+def _parse_completed_jsonl(
+    data: bytes,
+    *,
+    artifact_name: str,
+) -> tuple[bytes, ...]:
+    if not data or not data.endswith(b"\n"):
+        raise ManifestMismatch(f"completed {artifact_name} is not canonical JSONL")
+    lines = tuple(data.splitlines())
+    if not lines or any(not line for line in lines):
+        raise ManifestMismatch(f"completed {artifact_name} contains an empty record")
+    return lines
+
+
+def _validate_completed_perception_artifacts(
+    *,
+    workspace: SecureWorkspace,
+    request: PilotRunRequest,
+    expected_manifest: PilotPerceptionExecutionManifest,
+    completion: PilotPerceptionCompletionManifest,
+) -> PilotPerceptionReport:
+    try:
+        payloads = _completed_artifact_payloads(
+            workspace=workspace,
+            completion=completion,
+        )
+        report = PilotPerceptionReport.model_validate_json(payloads["REPORT"])
+        execution = PilotPerceptionExecutionManifest.model_validate_json(
+            payloads["EXECUTION_MANIFEST"]
+        )
+        stream = StreamManifest.model_validate_json(payloads["VIDEO_MANIFEST"])
+        bundles = tuple(
+            FrameBundle.model_validate_json(line)
+            for line in _parse_completed_jsonl(
+                payloads["FRAME_BUNDLES"],
+                artifact_name="FrameBundle inventory",
+            )
+        )
+        receipts = tuple(
+            PilotPerceptionFrameReceipt.model_validate_json(line)
+            for line in _parse_completed_jsonl(
+                payloads["FRAME_RECEIPTS"],
+                artifact_name="frame receipt inventory",
+            )
+        )
+    except (LabCourtError, ValidationError, UnicodeError, ValueError):
+        raise ManifestMismatch("completed A1 artifact inventory is invalid") from None
+
+    if (
+        report.run_id != request.run_id
+        or report.manifest_id != expected_manifest.manifest_id
+        or report.provider_failures != 0
+        or execution != expected_manifest
+        or stream.input_file_sha256 != request.video_sha256
+        or report.frames_processed != stream.frame_count
+        or len(bundles) != stream.frame_count
+        or len(receipts) != stream.frame_count
+    ):
+        raise ManifestMismatch("completed A1 artifacts do not match the request and report")
+
+    expected_preview = f"runs/{request.run_id}/debug/perception-preview.mp4"
+    has_preview = "PREVIEW" in payloads
+    if (report.preview_path == expected_preview) != has_preview:
+        raise ManifestMismatch("completed A1 preview inventory is inconsistent")
+
+    receipt_by_frame = {receipt.frame_id: receipt for receipt in receipts}
+    if len(receipt_by_frame) != len(receipts):
+        raise ManifestMismatch("completed A1 receipts contain duplicate frame identities")
+
+    detection_count = 0
+    person_count = 0
+    goggles_count = 0
+    tracks: set[str] = set()
+    tracker_epoch = f"t{request.video_sha256[:16]}"
+    for frame_index, bundle in enumerate(bundles):
+        frame = bundle.frame
+        if (
+            frame.camera_id != stream.camera_id
+            or frame.stream_id != stream.stream_id
+            or frame.frame_index != frame_index
+            or frame.fps_num != stream.fps_num
+            or frame.fps_den != stream.fps_den
+            or frame.width != stream.width
+            or frame.height != stream.height
+            or frame.content_sha256 is None
+        ):
+            raise ManifestMismatch("completed A1 FrameBundle stream identity is invalid")
+        receipt = receipt_by_frame.get(frame.frame_id)
+        if receipt is None or receipt.frame_content_sha256 != frame.content_sha256:
+            raise ManifestMismatch("completed A1 frame receipt does not bind its FrameBundle")
+        expected_raw_ref = f"runs/{request.run_id}/raw/perception/{receipt.request_id}.json"
+        if receipt.raw_response_ref != expected_raw_ref:
+            raise ManifestMismatch("completed A1 raw response path is not request-scoped")
+        try:
+            raw_snapshot = workspace.read_verified(
+                receipt.raw_response_ref.removeprefix("runs/"),
+                receipt.raw_response_sha256,
+            )
+            raw_result = parse_perception_worker_result(raw_snapshot.bytes)
+        except LabCourtError:
+            raise ManifestMismatch("completed A1 raw response is missing or invalid") from None
+        if not isinstance(raw_result, PilotPerceptionWorkerResponse) or (
+            raw_result.request_id != receipt.request_id
+            or raw_result.frame_id != receipt.frame_id
+            or raw_result.frame_content_sha256 != receipt.frame_content_sha256
+            or raw_result.manifest_id != expected_manifest.manifest_id
+        ):
+            raise ManifestMismatch("completed A1 raw response identity is invalid")
+        mapped = map_perception_worker_detections(
+            frame=frame,
+            manifest=expected_manifest,
+            tracker_epoch=tracker_epoch,
+            request_id=receipt.request_id,
+            detections=raw_result.detections,
+        )
+        if mapped != bundle.detections:
+            raise ManifestMismatch("completed A1 detections diverge from the raw response")
+        detection_count += len(mapped)
+        person_count += sum(item.label == "person" for item in mapped)
+        goggles_count += sum(item.label == "goggles" for item in mapped)
+        tracks.update(item.track_ref for item in mapped if item.track_ref is not None)
+
+    if (
+        report.detection_count != detection_count
+        or report.person_count != person_count
+        or report.goggles_count != goggles_count
+        or report.track_count != len(tracks)
+    ):
+        raise ManifestMismatch("completed A1 report counts diverge from its FrameBundles")
+    return report
+
+
 class _CurrentFramePixels:
     __slots__ = ("_current",)
 
@@ -278,31 +450,32 @@ def _resume_perception_report(
 ) -> PilotPerceptionReport | None:
     if not request.resume:
         return None
-    report_path = f"{request.run_id}/perception/report.json"
+    completion_path = f"{request.run_id}/perception/completion-manifest.json"
     try:
-        report_snapshot = workspace.read_verified(report_path)
-        execution_snapshot = workspace.read_verified(
-            f"{request.run_id}/perception/execution-manifest.json"
-        )
-        stream_snapshot = workspace.read_verified(f"{request.run_id}/input/video-manifest.json")
+        completion_snapshot = workspace.read_verified(completion_path)
     except PathBoundaryViolation as error:
         if error.reason_code == "FILE_MISSING":
             return None
         raise
     try:
-        report = PilotPerceptionReport.model_validate_json(report_snapshot.bytes)
-        execution = PilotPerceptionExecutionManifest.model_validate_json(execution_snapshot.bytes)
-        stream = StreamManifest.model_validate_json(stream_snapshot.bytes)
+        completion = PilotPerceptionCompletionManifest.model_validate_json(
+            completion_snapshot.bytes
+        )
     except ValidationError:
-        raise ManifestMismatch("persisted pilot perception artifacts are invalid") from None
+        raise ManifestMismatch("persisted pilot perception completion is invalid") from None
     if (
-        report.run_id != request.run_id
-        or report.manifest_id != expected_manifest.manifest_id
-        or execution != expected_manifest
-        or stream.input_file_sha256 != request.video_sha256
+        completion.run_id != request.run_id
+        or completion.config_sha256 != request.config_sha256
+        or completion.video_sha256 != request.video_sha256
+        or completion.manifest_id != expected_manifest.manifest_id
     ):
-        raise ManifestMismatch("persisted pilot perception artifacts do not match the request")
-    return report
+        raise ManifestMismatch("persisted pilot perception completion does not match the request")
+    return _validate_completed_perception_artifacts(
+        workspace=workspace,
+        request=request,
+        expected_manifest=expected_manifest,
+        completion=completion,
+    )
 
 
 def run_pilot_perception(
@@ -407,17 +580,11 @@ def run_pilot_perception(
         preview_ref = f"runs/{preview_relative}" if pilot.write_debug_preview else None
         preview: OpenCvPerceptionPreview | None = None
         if pilot.write_debug_preview:
-            try:
-                run_workspace.inspect_verified(preview_relative)
-            except PathBoundaryViolation as error:
-                if error.reason_code != "FILE_MISSING":
-                    cached_transport.close()
-                    raise
-                preview = OpenCvPerceptionPreview(
-                    width=stream_manifest.width,
-                    height=stream_manifest.height,
-                    fps=stream_manifest.fps_num / stream_manifest.fps_den,
-                )
+            preview = OpenCvPerceptionPreview(
+                width=stream_manifest.width,
+                height=stream_manifest.height,
+                fps=stream_manifest.fps_num / stream_manifest.fps_den,
+            )
 
         pixels = _CurrentFramePixels()
         provider = LocalWorkerPerceptionProvider(
@@ -500,5 +667,36 @@ def run_pilot_perception(
             run_workspace,
             f"{request.run_id}/perception/report.json",
             _artifact_bytes(report),
+        )
+        artifact_specs: list[tuple[PilotPerceptionArtifactRole, str]] = [
+            ("VIDEO_MANIFEST", f"{request.run_id}/input/video-manifest.json"),
+            (
+                "EXECUTION_MANIFEST",
+                f"{request.run_id}/perception/execution-manifest.json",
+            ),
+            ("FRAME_BUNDLES", f"{request.run_id}/perception/frame-bundles.jsonl"),
+            ("FRAME_RECEIPTS", f"{request.run_id}/perception/frame-receipts.jsonl"),
+            ("REPORT", f"{request.run_id}/perception/report.json"),
+        ]
+        if preview_ref is not None:
+            artifact_specs.append(("PREVIEW", f"{request.run_id}/debug/perception-preview.mp4"))
+        completion = PilotPerceptionCompletionManifest(
+            run_id=request.run_id,
+            config_sha256=request.config_sha256,
+            video_sha256=request.video_sha256,
+            manifest_id=expected_manifest.manifest_id,
+            artifacts=tuple(
+                _completion_artifact_receipt(
+                    workspace=run_workspace,
+                    role=role,
+                    relative_path=relative_path,
+                )
+                for role, relative_path in artifact_specs
+            ),
+        )
+        _publish_immutable(
+            run_workspace,
+            f"{request.run_id}/perception/completion-manifest.json",
+            _artifact_bytes(completion),
         )
         return report

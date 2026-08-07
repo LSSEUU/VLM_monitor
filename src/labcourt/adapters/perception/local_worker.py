@@ -21,7 +21,7 @@ from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.detections import Detection
 from labcourt.contracts.evidence import Crop
-from labcourt.contracts.frames import FrameData
+from labcourt.contracts.frames import FrameData, FrameRef
 from labcourt.contracts.geometry import BBoxXYXY
 from labcourt.contracts.pilot import (
     PilotPerceptionExecutionManifest,
@@ -293,7 +293,9 @@ class JsonlPerceptionWorkerClient:
         self.close()
 
 
-def _parse_worker_result(raw: bytes) -> WorkerResult:
+def parse_perception_worker_result(raw: bytes) -> WorkerResult:
+    """Strictly parse one persisted raw worker response for replay validation."""
+
     parsed = _strict_json_object(raw)
     try:
         if parsed.get("status") == "SUCCEEDED":
@@ -355,7 +357,7 @@ class CachedPerceptionWorkerTransport:
                 raw_sha256 = existing.sha256
                 cache_hit = True
 
-        result = _parse_worker_result(raw)
+        result = parse_perception_worker_result(raw)
         if cache_hit and isinstance(result, PilotPerceptionWorkerResponse):
             replay = request.model_copy(
                 update={
@@ -400,9 +402,14 @@ def _request_id(frame: RGB8Frame, manifest_id: str) -> str:
     return require_reference_token(f"p{digest[:63]}", "perception request_id")
 
 
-def _integer_box(detection: PilotWorkerDetection, frame: RGB8Frame) -> BBoxXYXY:
+def _integer_box(
+    detection: PilotWorkerDetection,
+    *,
+    width: int,
+    height: int,
+) -> BBoxXYXY:
     box = detection.bbox
-    if box.x2 > frame.frame.width or box.y2 > frame.frame.height:
+    if box.x2 > width or box.y2 > height:
         raise PerceptionWorkerProtocolViolation("worker bbox exceeds the requested frame")
     try:
         return BBoxXYXY(
@@ -410,9 +417,62 @@ def _integer_box(detection: PilotWorkerDetection, frame: RGB8Frame) -> BBoxXYXY:
             y1=math.floor(box.y1),
             x2=math.ceil(box.x2),
             y2=math.ceil(box.y2),
-        ).require_within(frame.frame.width, frame.frame.height)
+        ).require_within(width, height)
     except ValueError:
         raise PerceptionWorkerProtocolViolation("worker bbox cannot map to RGB8 pixels") from None
+
+
+def map_perception_worker_detections(
+    *,
+    frame: FrameRef,
+    manifest: PilotPerceptionExecutionManifest,
+    tracker_epoch: str,
+    request_id: str,
+    detections: Sequence[PilotWorkerDetection],
+) -> tuple[Detection, ...]:
+    """Deterministically map model-native output onto authoritative Detection values."""
+
+    controlled_epoch = require_reference_token(tracker_epoch, "tracker_epoch")
+    controlled_request_id = require_reference_token(request_id, "perception request_id")
+    mapped: list[Detection] = []
+    for index, worker_detection in enumerate(detections):
+        box = _integer_box(
+            worker_detection,
+            width=frame.width,
+            height=frame.height,
+        )
+        identity = hashlib.sha256(
+            canonical_json(
+                [
+                    controlled_request_id,
+                    index,
+                    worker_detection.label,
+                    worker_detection.source_label,
+                    box.model_dump(mode="json"),
+                ]
+            ).encode("utf-8")
+        ).hexdigest()
+        track_ref = (
+            f"{frame.camera_id}:{controlled_epoch}:{worker_detection.local_track_id}"
+            if worker_detection.local_track_id is not None
+            else None
+        )
+        mapped.append(
+            Detection(
+                detection_id=f"d{identity[:63]}",
+                frame_id=frame.frame_id,
+                label=worker_detection.label,
+                bbox=box,
+                score=worker_detection.score,
+                track_ref=track_ref,
+                attributes={
+                    "observation_source": "PIXEL_COMPUTED",
+                    "source_label": worker_detection.source_label,
+                },
+                model_manifest_id=manifest.detector.model_manifest_id,
+            )
+        )
+    return tuple(mapped)
 
 
 class LocalWorkerPerceptionProvider:
@@ -470,41 +530,13 @@ class LocalWorkerPerceptionProvider:
         if isinstance(result, PilotPerceptionWorkerFailure):
             raise PerceptionWorkerRejected(f"perception worker failed: {result.error_code}")
 
-        detections: list[Detection] = []
-        for index, worker_detection in enumerate(result.detections):
-            box = _integer_box(worker_detection, rgb8)
-            identity = hashlib.sha256(
-                canonical_json(
-                    [
-                        request.request_id,
-                        index,
-                        worker_detection.label,
-                        worker_detection.source_label,
-                        box.model_dump(mode="json"),
-                    ]
-                ).encode("utf-8")
-            ).hexdigest()
-            track_ref = (
-                f"{rgb8.frame.camera_id}:{self._tracker_epoch}:{worker_detection.local_track_id}"
-                if worker_detection.local_track_id is not None
-                else None
-            )
-            detections.append(
-                Detection(
-                    detection_id=f"d{identity[:63]}",
-                    frame_id=rgb8.frame.frame_id,
-                    label=worker_detection.label,
-                    bbox=box,
-                    score=worker_detection.score,
-                    track_ref=track_ref,
-                    attributes={
-                        "observation_source": "PIXEL_COMPUTED",
-                        "source_label": worker_detection.source_label,
-                    },
-                    model_manifest_id=self.manifest.detector.model_manifest_id,
-                )
-            )
-        return tuple(detections)
+        return map_perception_worker_detections(
+            frame=rgb8.frame,
+            manifest=self.manifest,
+            tracker_epoch=self._tracker_epoch,
+            request_id=request.request_id,
+            detections=result.detections,
+        )
 
     def redetect(self, crop: Crop, prompts: Sequence[str]) -> Sequence[Detection]:
         del crop, prompts
@@ -521,4 +553,6 @@ __all__ = [
     "PerceptionWorkerTransport",
     "RawPerceptionWorkerTransport",
     "WorkerResult",
+    "map_perception_worker_detections",
+    "parse_perception_worker_result",
 ]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import Literal, Self, TypeAlias
 
 from pydantic import (
     Field,
@@ -29,6 +29,30 @@ from labcourt.contracts.references import (
 
 PILOT_PERCEPTION_PROTOCOL_VERSION: Literal["1.0"] = "1.0"
 PILOT_PERCEPTION_LABELS = frozenset({"person", "goggles"})
+PILOT_PERCEPTION_REQUIRED_ARTIFACT_ROLES = (
+    "VIDEO_MANIFEST",
+    "EXECUTION_MANIFEST",
+    "FRAME_BUNDLES",
+    "FRAME_RECEIPTS",
+    "REPORT",
+)
+PILOT_PERCEPTION_PREVIEW_ARTIFACT_ROLE = "PREVIEW"
+PilotPerceptionArtifactRole: TypeAlias = Literal[
+    "VIDEO_MANIFEST",
+    "EXECUTION_MANIFEST",
+    "FRAME_BUNDLES",
+    "FRAME_RECEIPTS",
+    "REPORT",
+    "PREVIEW",
+]
+_PILOT_PERCEPTION_ARTIFACT_SUFFIXES = {
+    "VIDEO_MANIFEST": "input/video-manifest.json",
+    "EXECUTION_MANIFEST": "perception/execution-manifest.json",
+    "FRAME_BUNDLES": "perception/frame-bundles.jsonl",
+    "FRAME_RECEIPTS": "perception/frame-receipts.jsonl",
+    "REPORT": "perception/report.json",
+    "PREVIEW": "debug/perception-preview.mp4",
+}
 
 
 def _pilot_perception_digest(payload: object) -> str:
@@ -240,6 +264,114 @@ class PilotPerceptionFrameReceipt(ContractModel):
     @classmethod
     def validate_raw_response_ref(cls, value: str) -> str:
         return require_safe_relative_posix_path(value)
+
+
+class PilotPerceptionArtifactReceipt(ContractModel):
+    """One immutable A1 output bound into the final completion inventory."""
+
+    role: PilotPerceptionArtifactRole
+    artifact_ref: str = Field(min_length=1)
+    artifact_sha256: Sha256Hex
+    artifact_size_bytes: int = Field(gt=0, le=8 * 1024 * 1024 * 1024, strict=True)
+
+    @field_validator("artifact_ref")
+    @classmethod
+    def validate_artifact_ref(cls, value: str) -> str:
+        return require_safe_relative_posix_path(value)
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_receipt_id(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        if not isinstance(value, dict):
+            return handler(value)
+        payload = dict(value)
+        claimed_present = "receipt_id" in payload
+        claimed = payload.pop("receipt_id", None)
+        receipt = handler(payload)
+        if claimed_present and claimed != receipt.receipt_id:
+            raise ValueError("serialized receipt_id does not match perception artifact")
+        return receipt
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "pilot-perception-artifact-receipt",
+                1,
+                self.role,
+                self.artifact_ref,
+                self.artifact_sha256,
+                self.artifact_size_bytes,
+            ]
+        )
+
+
+class PilotPerceptionCompletionManifest(ContractModel):
+    """Last-written A1 seal proving that every resumable output is present."""
+
+    schema_version: Literal["pilot-perception-completion-v1"] = "pilot-perception-completion-v1"
+    run_id: ReferenceToken
+    config_sha256: Sha256Hex
+    video_sha256: Sha256Hex
+    manifest_id: Sha256Hex
+    artifacts: tuple[PilotPerceptionArtifactReceipt, ...] = Field(min_length=5, max_length=6)
+
+    @field_validator("run_id")
+    @classmethod
+    def validate_run_id(cls, value: str) -> str:
+        return require_portable_run_id(value, "pilot completion run_id")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_completion_id(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        if not isinstance(value, dict):
+            return handler(value)
+        payload = dict(value)
+        claimed_present = "completion_id" in payload
+        claimed = payload.pop("completion_id", None)
+        manifest = handler(payload)
+        if claimed_present and claimed != manifest.completion_id:
+            raise ValueError("serialized completion_id does not match perception completion")
+        return manifest
+
+    @model_validator(mode="after")
+    def validate_exact_artifact_inventory(self) -> PilotPerceptionCompletionManifest:
+        roles = tuple(item.role for item in self.artifacts)
+        required = PILOT_PERCEPTION_REQUIRED_ARTIFACT_ROLES
+        if roles not in (
+            required,
+            (*required, PILOT_PERCEPTION_PREVIEW_ARTIFACT_ROLE),
+        ):
+            raise ValueError("pilot completion requires the exact ordered A1 artifact inventory")
+        for artifact in self.artifacts:
+            suffix = _PILOT_PERCEPTION_ARTIFACT_SUFFIXES[artifact.role]
+            if artifact.artifact_ref != f"runs/{self.run_id}/{suffix}":
+                raise ValueError("pilot completion artifact path does not match its run and role")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def completion_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "pilot-perception-completion",
+                1,
+                self.run_id,
+                self.config_sha256,
+                self.video_sha256,
+                self.manifest_id,
+                [artifact.receipt_id for artifact in self.artifacts],
+            ]
+        )
 
 
 class PilotPerceptionReport(ContractModel):
