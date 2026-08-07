@@ -1,0 +1,207 @@
+{
+  "$defs": {
+    "ModelManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "minLength": 1,
+          "title": "Component",
+          "type": "string"
+        },
+        "license_id": {
+          "minLength": 1,
+          "title": "License Id",
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "provider_revision_guarantee": {
+          "default": true,
+          "title": "Provider Revision Guarantee",
+          "type": "boolean"
+        },
+        "quantization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantization"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "weights_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weights Sha256"
+        }
+      },
+      "required": [
+        "component",
+        "provider",
+        "model",
+        "revision",
+        "license_id",
+        "model_manifest_id"
+      ],
+      "title": "ModelManifest",
+      "type": "object"
+    },
+    "PilotTrackerThresholds": {
+      "additionalProperties": false,
+      "description": "Pinned ByteTrack controls that materially affect anonymous track identity.",
+      "properties": {
+        "lost_track_buffer": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Lost Track Buffer",
+          "type": "integer"
+        },
+        "minimum_consecutive_frames": {
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Minimum Consecutive Frames",
+          "type": "integer"
+        },
+        "minimum_iou_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Minimum Iou Threshold",
+          "type": "number"
+        },
+        "track_activation_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Track Activation Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "track_activation_threshold",
+        "lost_track_buffer",
+        "minimum_iou_threshold",
+        "minimum_consecutive_frames"
+      ],
+      "title": "PilotTrackerThresholds",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-perception-execution-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Complete identity of one real detector/tracker execution environment.",
+  "properties": {
+    "bbox_policy": {
+      "const": "CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1",
+      "default": "CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1",
+      "title": "Bbox Policy",
+      "type": "string"
+    },
+    "detector": {
+      "$ref": "#/$defs/ModelManifest"
+    },
+    "device": {
+      "pattern": "^(?:cpu|cuda(?::[0-9]+)?)$",
+      "title": "Device",
+      "type": "string"
+    },
+    "high_confidence_threshold": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "High Confidence Threshold",
+      "type": "number"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "prompts": {
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "title": "Prompts",
+      "type": "object"
+    },
+    "protocol_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "score_threshold": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Score Threshold",
+      "type": "number"
+    },
+    "software_versions": {
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$": {
+          "type": "string"
+        }
+      },
+      "title": "Software Versions",
+      "type": "object"
+    },
+    "tracker": {
+      "$ref": "#/$defs/ModelManifest"
+    },
+    "tracker_initialization_policy": {
+      "const": "ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
+      "default": "ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
+      "title": "Tracker Initialization Policy",
+      "type": "string"
+    },
+    "tracker_thresholds": {
+      "$ref": "#/$defs/PilotTrackerThresholds"
+    }
+  },
+  "required": [
+    "detector",
+    "tracker",
+    "prompts",
+    "device",
+    "score_threshold",
+    "high_confidence_threshold",
+    "tracker_thresholds",
+    "software_versions",
+    "manifest_id"
+  ],
+  "title": "PilotPerceptionExecutionManifest",
+  "type": "object"
+}

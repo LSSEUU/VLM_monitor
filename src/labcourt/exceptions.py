@@ -17,6 +17,26 @@ class ProviderUnavailable(LabCourtError):
     """A required external capability is unavailable."""
 
 
+class PerceptionWorkerError(ProviderUnavailable):
+    """Base for sanitized isolated-perception worker failures."""
+
+
+class PerceptionWorkerTimeout(PerceptionWorkerError):
+    """The bounded startup or frame inference deadline expired."""
+
+
+class PerceptionWorkerCrashed(PerceptionWorkerError):
+    """The worker exited or closed its protocol stream unexpectedly."""
+
+
+class PerceptionWorkerProtocolViolation(PerceptionWorkerError):
+    """The worker emitted malformed, oversized, or unexpected protocol data."""
+
+
+class PerceptionWorkerRejected(PerceptionWorkerError):
+    """The worker returned an explicit sanitized failure response."""
+
+
 class ModelOutputInvalid(LabCourtError):
     """A model response cannot be validated against its output contract."""
 
@@ -56,6 +76,10 @@ class ConcurrentModification(LabCourtError):
 
 class ManifestMismatch(LabCourtError):
     """An artifact does not match the pinned run manifest."""
+
+
+class PerceptionFrameIdentityMismatch(ManifestMismatch):
+    """A worker result does not belong to the exact requested frame pixels."""
 
 
 def _controlled_relative_reference(value: str | None) -> str | None:

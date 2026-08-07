@@ -1,0 +1,42 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-perception-worker-startup-failure.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Sanitized failure emitted before READY when the real backend cannot start.",
+  "properties": {
+    "error_code": {
+      "enum": [
+        "CONFIG_INVALID",
+        "DEPENDENCY_INVALID",
+        "DEVICE_UNAVAILABLE",
+        "MODEL_LOAD_FAILED",
+        "WEIGHT_IDENTITY_MISMATCH"
+      ],
+      "title": "Error Code",
+      "type": "string"
+    },
+    "kind": {
+      "const": "STARTUP_FAILED",
+      "default": "STARTUP_FAILED",
+      "title": "Kind",
+      "type": "string"
+    },
+    "protocol_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "FAILED",
+      "default": "FAILED",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "error_code"
+  ],
+  "title": "PilotPerceptionWorkerStartupFailure",
+  "type": "object"
+}

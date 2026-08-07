@@ -1,0 +1,72 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-perception-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A1 command result; aggregate counts remain deterministic code facts.",
+  "properties": {
+    "detection_count": {
+      "minimum": 0,
+      "title": "Detection Count",
+      "type": "integer"
+    },
+    "frames_processed": {
+      "minimum": 0,
+      "title": "Frames Processed",
+      "type": "integer"
+    },
+    "goggles_count": {
+      "minimum": 0,
+      "title": "Goggles Count",
+      "type": "integer"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "person_count": {
+      "minimum": 0,
+      "title": "Person Count",
+      "type": "integer"
+    },
+    "preview_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preview Path"
+    },
+    "provider_failures": {
+      "minimum": 0,
+      "title": "Provider Failures",
+      "type": "integer"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "track_count": {
+      "minimum": 0,
+      "title": "Track Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "frames_processed",
+    "detection_count",
+    "person_count",
+    "goggles_count",
+    "track_count",
+    "provider_failures",
+    "manifest_id"
+  ],
+  "title": "PilotPerceptionReport",
+  "type": "object"
+}

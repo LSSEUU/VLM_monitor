@@ -1,0 +1,148 @@
+{
+  "$defs": {
+    "PilotWorkerBox": {
+      "additionalProperties": false,
+      "description": "Unrounded detector coordinates in the worker response.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "number"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "number"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "number"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "PilotWorkerBox",
+      "type": "object"
+    },
+    "PilotWorkerDetection": {
+      "additionalProperties": false,
+      "description": "Strict, model-native detection before conversion to the authority contract.",
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/PilotWorkerBox"
+        },
+        "label": {
+          "enum": [
+            "person",
+            "goggles"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "local_track_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Local Track Id"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "source_label": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "source_label",
+        "bbox",
+        "score"
+      ],
+      "title": "PilotWorkerDetection",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-perception-worker-response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Explicit worker success; an empty detection tuple is a real successful result.",
+  "properties": {
+    "detections": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PilotWorkerDetection"
+      },
+      "title": "Detections",
+      "type": "array"
+    },
+    "frame_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Frame Content Sha256",
+      "type": "string"
+    },
+    "frame_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+      "title": "Frame Id",
+      "type": "string"
+    },
+    "kind": {
+      "const": "RESULT",
+      "default": "RESULT",
+      "title": "Kind",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "protocol_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "request_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "status": {
+      "const": "SUCCEEDED",
+      "default": "SUCCEEDED",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request_id",
+    "frame_id",
+    "frame_content_sha256",
+    "manifest_id"
+  ],
+  "title": "PilotPerceptionWorkerResponse",
+  "type": "object"
+}

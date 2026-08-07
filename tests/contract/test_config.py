@@ -25,6 +25,14 @@ def test_default_and_demo_configs_are_valid() -> None:
     assert default.storage.max_media_bytes == 104_857_600
     assert default.storage.max_image_pixels == 100_000_000
     assert default.pilot is None
+    serialized = default.model_dump(mode="json", exclude={"config_sha256"})
+    assert "pilot" not in serialized
+    assert not {
+        "detector_manifest",
+        "tracker_manifest",
+        "tracker_thresholds",
+        "worker",
+    }.intersection(serialized["perception"])
 
 
 def test_pilot_config_is_strict_and_does_not_claim_future_rules() -> None:
@@ -33,6 +41,15 @@ def test_pilot_config_is_strict_and_does_not_claim_future_rules() -> None:
     assert [rule.value for rule in pilot.pilot.selected_rules] == ["PPE_GOGGLES_MISSING"]
     assert pilot.pilot.max_cases == 20
     assert pilot.perception.provider == "local-worker"
+    assert pilot.perception.detector_manifest is not None
+    assert pilot.perception.detector_manifest.weights_sha256 == (
+        "1a2412ef99bd74bcd3c2a246fa1e48581f8889a1300c9051974741314fc042f3"
+    )
+    assert pilot.perception.tracker_manifest is not None
+    assert pilot.perception.tracker_manifest.model == "trackers.ByteTrackTracker"
+    assert pilot.perception.worker is not None
+    assert pilot.perception.worker.local_files_only
+    assert pilot.perception.worker.cache_enabled
     assert (
         pilot.config_sha256 != load_config(PROJECT_ROOT / "configs" / "default.yaml").config_sha256
     )
@@ -41,6 +58,19 @@ def test_pilot_config_is_strict_and_does_not_claim_future_rules() -> None:
     payload["pilot"]["selected_rules"] = ["REAGENT_CONTAINER_OPEN"]
     with pytest.raises(ValidationError, match="alpha1"):
         AppConfig.model_validate(payload)
+
+
+def test_local_perception_worker_requires_complete_real_model_pins() -> None:
+    pilot = load_config(PROJECT_ROOT / "configs" / "pilot.yaml")
+    payload = pilot.perception.model_dump(mode="python", exclude_computed_fields=True)
+    payload["detector_manifest"] = None
+    with pytest.raises(ValidationError, match="complete model and worker pins"):
+        type(pilot.perception).model_validate(payload)
+
+    payload = pilot.perception.model_dump(mode="python", exclude_computed_fields=True)
+    payload["worker"]["cache_enabled"] = False
+    with pytest.raises(ValidationError):
+        type(pilot.perception).model_validate(payload)
 
 
 def test_workspace_does_not_change_config_fingerprint() -> None:

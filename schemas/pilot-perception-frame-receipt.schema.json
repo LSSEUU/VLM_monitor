@@ -1,0 +1,47 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-perception-frame-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Content-bound raw-response reference and cache fact for one frame.",
+  "properties": {
+    "cache_hit": {
+      "title": "Cache Hit",
+      "type": "boolean"
+    },
+    "frame_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Frame Content Sha256",
+      "type": "string"
+    },
+    "frame_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+      "title": "Frame Id",
+      "type": "string"
+    },
+    "raw_response_ref": {
+      "minLength": 1,
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "raw_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Response Sha256",
+      "type": "string"
+    },
+    "request_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Request Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request_id",
+    "frame_id",
+    "frame_content_sha256",
+    "raw_response_ref",
+    "raw_response_sha256",
+    "cache_hit"
+  ],
+  "title": "PilotPerceptionFrameReceipt",
+  "type": "object"
+}

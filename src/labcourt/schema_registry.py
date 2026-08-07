@@ -277,7 +277,17 @@ from labcourt.contracts.model_response_recovery import (
     MaintenanceRecoveryReport,
     ModelResponseRecoveryReport,
 )
-from labcourt.contracts.pilot import PilotRunRequest
+from labcourt.contracts.pilot import (
+    PilotPerceptionExecutionManifest,
+    PilotPerceptionFrameReceipt,
+    PilotPerceptionReport,
+    PilotPerceptionWorkerFailure,
+    PilotPerceptionWorkerReady,
+    PilotPerceptionWorkerRequest,
+    PilotPerceptionWorkerResponse,
+    PilotPerceptionWorkerStartupFailure,
+    PilotRunRequest,
+)
 from labcourt.contracts.precedents import Precedent
 from labcourt.contracts.projection_generation import (
     ProjectionCurrentPointer,
@@ -543,6 +553,14 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "model-response-recovery-report": ModelResponseRecoveryReport,
     "observability-score": ObservabilityScore,
     "parsed-screening-output": ParsedScreeningOutput,
+    "pilot-perception-execution-manifest": PilotPerceptionExecutionManifest,
+    "pilot-perception-frame-receipt": PilotPerceptionFrameReceipt,
+    "pilot-perception-report": PilotPerceptionReport,
+    "pilot-perception-worker-failure": PilotPerceptionWorkerFailure,
+    "pilot-perception-worker-ready": PilotPerceptionWorkerReady,
+    "pilot-perception-worker-request": PilotPerceptionWorkerRequest,
+    "pilot-perception-worker-response": PilotPerceptionWorkerResponse,
+    "pilot-perception-worker-startup-failure": PilotPerceptionWorkerStartupFailure,
     "pilot-run-request": PilotRunRequest,
     "precedent": Precedent,
     "precedent-lookup-query": PrecedentLookupQuery,
@@ -590,6 +608,11 @@ SCHEMA_VALIDATION_MODELS = {
     "judge-model-payload",
     "m4-fake-vlm-fixture-bundle",
     "m5-appeal-training-label-input",
+    "pilot-perception-worker-failure",
+    "pilot-perception-worker-ready",
+    "pilot-perception-worker-request",
+    "pilot-perception-worker-response",
+    "pilot-perception-worker-startup-failure",
     "pilot-run-request",
     "prosecutor-model-payload",
     "screening-model-payload",
