@@ -1234,6 +1234,12 @@
       "name": "parsed-screening-output"
     },
     {
+      "file": "pilot-run-request.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.pilot.PilotRunRequest",
+      "name": "pilot-run-request"
+    },
+    {
       "file": "precedent.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.precedents.Precedent",

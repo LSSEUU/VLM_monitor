@@ -10,6 +10,12 @@ dist/
 build/
 *.egg-info/
 .env
+inputs/*
+!inputs/.gitkeep
+weights/
+*.onnx
+*.pt
+*.pth
+*.safetensors
 runs/*
 !runs/.gitkeep
-

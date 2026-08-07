@@ -50,6 +50,14 @@ class ReproducibilityMode(StrEnum):
     UPGRADE_REGRESSION = "UPGRADE_REGRESSION"
 
 
+class PilotStage(StrEnum):
+    PERCEPTION = "PERCEPTION"
+    EVIDENCE = "EVIDENCE"
+    SCREENING = "SCREENING"
+    FINALIZATION = "FINALIZATION"
+    REPORT = "REPORT"
+
+
 class ConfirmationPolicy(StrEnum):
     STRICT_CAUSAL = "STRICT_CAUSAL"
     SOURCE_COMPAT = "SOURCE_COMPAT"

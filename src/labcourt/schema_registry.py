@@ -277,6 +277,7 @@ from labcourt.contracts.model_response_recovery import (
     MaintenanceRecoveryReport,
     ModelResponseRecoveryReport,
 )
+from labcourt.contracts.pilot import PilotRunRequest
 from labcourt.contracts.precedents import Precedent
 from labcourt.contracts.projection_generation import (
     ProjectionCurrentPointer,
@@ -542,6 +543,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "model-response-recovery-report": ModelResponseRecoveryReport,
     "observability-score": ObservabilityScore,
     "parsed-screening-output": ParsedScreeningOutput,
+    "pilot-run-request": PilotRunRequest,
     "precedent": Precedent,
     "precedent-lookup-query": PrecedentLookupQuery,
     "precedent-resolution": PrecedentResolution,
@@ -588,6 +590,7 @@ SCHEMA_VALIDATION_MODELS = {
     "judge-model-payload",
     "m4-fake-vlm-fixture-bundle",
     "m5-appeal-training-label-input",
+    "pilot-run-request",
     "prosecutor-model-payload",
     "screening-model-payload",
 }

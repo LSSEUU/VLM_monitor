@@ -788,6 +788,17 @@
         "perception": {
           "$ref": "#/$defs/PerceptionConfig"
         },
+        "pilot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PilotConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "precedents": {
           "$ref": "#/$defs/PrecedentConfig"
         },
@@ -6965,6 +6976,58 @@
       ],
       "title": "PerceptionConfig",
       "type": "object"
+    },
+    "PilotConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "max_cases": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "title": "Max Cases",
+          "type": "integer"
+        },
+        "selected_rules": {
+          "items": {
+            "$ref": "#/$defs/ViolationType"
+          },
+          "minItems": 1,
+          "title": "Selected Rules",
+          "type": "array"
+        },
+        "stop_after_stage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PilotStage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "write_debug_preview": {
+          "default": true,
+          "title": "Write Debug Preview",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "selected_rules",
+        "max_cases"
+      ],
+      "title": "PilotConfig",
+      "type": "object"
+    },
+    "PilotStage": {
+      "enum": [
+        "PERCEPTION",
+        "EVIDENCE",
+        "SCREENING",
+        "FINALIZATION",
+        "REPORT"
+      ],
+      "title": "PilotStage",
+      "type": "string"
     },
     "PlatformSummary": {
       "additionalProperties": false,
