@@ -207,6 +207,8 @@ def build_expected_perception_manifest(config: AppConfig) -> PilotPerceptionExec
         score_threshold=perception.detector.score_threshold,
         high_confidence_threshold=perception.detector.high_confidence_threshold,
         bbox_policy="CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1",
+        empty_detection_policy="TRANSFORMERS_EMPTY_TEXT_LABEL_SENTINEL_V1",
+        goggles_nms_iou_threshold=0.95,
         tracker_initialization_policy="ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
         tracker_thresholds=tracker_thresholds,
         software_versions=dict(worker.required_software_versions),

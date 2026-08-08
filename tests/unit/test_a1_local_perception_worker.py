@@ -32,7 +32,13 @@ from labcourt.exceptions import (
     PerceptionWorkerRejected,
     PerceptionWorkerTimeout,
 )
-from labcourt.perception_worker import GroundingDinoByteTrackBackend
+from labcourt.perception_worker import (
+    GroundingDinoByteTrackBackend,
+    _FrameError,
+    _RawDetection,
+    normalize_grounding_dino_postprocess_result,
+    suppress_duplicate_goggle_detections,
+)
 from labcourt.ports.pixels import RGB8Frame, rgb8_pixel_sha256
 
 
@@ -61,6 +67,7 @@ def _manifest() -> PilotPerceptionExecutionManifest:
         score_threshold=0.35,
         high_confidence_threshold=0.5,
         bbox_policy="CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1",
+        goggles_nms_iou_threshold=0.95,
         tracker_initialization_policy="ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
         tracker_thresholds=PilotTrackerThresholds(
             track_activation_threshold=0.25,
@@ -348,3 +355,73 @@ def test_pinned_bytetrack_first_detection_receives_a_stable_anonymous_id() -> No
 
     assert tracker_ids == [1]
     assert tracklet.tracker_id == 1
+
+
+def test_exact_transformers_empty_text_label_sentinel_maps_to_no_detections() -> None:
+    boxes: list[object] = []
+    scores: list[object] = []
+
+    normalized = normalize_grounding_dino_postprocess_result(
+        {
+            "boxes": boxes,
+            "scores": scores,
+            "text_labels": [""],
+        }
+    )
+
+    assert normalized == (boxes, scores, ())
+
+
+@pytest.mark.parametrize(
+    "labels",
+    (["goggles"], ["", ""]),
+)
+def test_other_postprocess_length_mismatches_still_fail_closed(labels: list[str]) -> None:
+    with pytest.raises(_FrameError, match="INFERENCE_FAILED"):
+        normalize_grounding_dino_postprocess_result(
+            {
+                "boxes": [],
+                "scores": [],
+                "text_labels": labels,
+            }
+        )
+
+
+def test_goggles_nms_keeps_highest_overlap_and_preserves_distinct_boxes() -> None:
+    person = _RawDetection(
+        label="person",
+        source_label="person",
+        bbox=(0.0, 0.0, 20.0, 30.0),
+        score=0.9,
+    )
+    stronger = _RawDetection(
+        label="goggles",
+        source_label="safety goggles",
+        bbox=(4.0, 3.0, 12.0, 8.0),
+        score=0.8,
+    )
+    duplicate = _RawDetection(
+        label="goggles",
+        source_label="protective eyewear",
+        bbox=(4.05, 3.0, 12.05, 8.0),
+        score=0.7,
+    )
+    distinct = _RawDetection(
+        label="goggles",
+        source_label="protective eyewear",
+        bbox=(30.0, 3.0, 38.0, 8.0),
+        score=0.6,
+    )
+
+    result = suppress_duplicate_goggle_detections(
+        (duplicate, person, distinct, stronger),
+        iou_threshold=0.95,
+    )
+
+    assert result == (person, stronger, distinct)
+
+
+@pytest.mark.parametrize("threshold", (-0.1, 1.1, float("nan"), True))
+def test_goggles_nms_rejects_invalid_thresholds(threshold: object) -> None:
+    with pytest.raises(_FrameError, match="INFERENCE_FAILED"):
+        suppress_duplicate_goggle_detections((), iou_threshold=threshold)  # type: ignore[arg-type]
