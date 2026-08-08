@@ -59,6 +59,7 @@ def _execution_manifest() -> PilotPerceptionExecutionManifest:
         score_threshold=0.35,
         high_confidence_threshold=0.5,
         bbox_policy="CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1",
+        goggles_nms_iou_threshold=0.95,
         tracker_initialization_policy="ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
         tracker_thresholds=PilotTrackerThresholds(
             track_activation_threshold=0.25,
@@ -130,6 +131,16 @@ def test_perception_manifest_requires_real_weight_identity_and_exact_initial_lab
     payload = _execution_manifest().model_dump(mode="python", exclude_computed_fields=True)
     payload["prompts"]["gloves"] = ["gloves"]
     with pytest.raises(ValidationError, match="exactly person and goggles"):
+        PilotPerceptionExecutionManifest.model_validate(payload)
+
+    payload = _execution_manifest().model_dump(mode="python", exclude_computed_fields=True)
+    payload["empty_detection_policy"] = "PERMISSIVE_EMPTY_LABELS"
+    with pytest.raises(ValidationError):
+        PilotPerceptionExecutionManifest.model_validate(payload)
+
+    payload = _execution_manifest().model_dump(mode="python", exclude_computed_fields=True)
+    payload["goggles_nms_iou_threshold"] = 1.1
+    with pytest.raises(ValidationError):
         PilotPerceptionExecutionManifest.model_validate(payload)
 
 

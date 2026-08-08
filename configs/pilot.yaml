@@ -100,7 +100,7 @@ perception:
   provider: local-worker
   detector:
     model_id: "IDEA-Research/grounding-dino-tiny"
-    score_threshold: 0.35
+    score_threshold: 0.50
     high_confidence_threshold: 0.50
     prompts:
       person: ["person"]

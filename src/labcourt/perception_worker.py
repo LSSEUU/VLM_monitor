@@ -153,6 +153,8 @@ def _execution_manifest(
         score_threshold=perception.detector.score_threshold,
         high_confidence_threshold=perception.detector.high_confidence_threshold,
         bbox_policy="CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1",
+        empty_detection_policy="TRANSFORMERS_EMPTY_TEXT_LABEL_SENTINEL_V1",
+        goggles_nms_iou_threshold=0.95,
         tracker_initialization_policy="ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
         tracker_thresholds=thresholds,
         software_versions=software_versions,
@@ -165,6 +167,60 @@ class _RawDetection:
     source_label: str
     bbox: tuple[float, float, float, float]
     score: float
+
+
+def normalize_grounding_dino_postprocess_result(
+    result: Mapping[str, Any],
+) -> tuple[Any, Any, Sequence[Any]]:
+    """Normalize only the pinned Transformers empty-label sentinel to zero results."""
+
+    try:
+        boxes = result["boxes"]
+        scores = result["scores"]
+        labels = result["text_labels"]
+        box_count = len(boxes)
+        score_count = len(scores)
+        label_count = len(labels)
+    except (KeyError, TypeError):
+        raise _FrameError("INFERENCE_FAILED") from None
+    if box_count == score_count == label_count:
+        return boxes, scores, labels
+    if (
+        box_count == 0
+        and score_count == 0
+        and label_count == 1
+        and isinstance(labels[0], str)
+        and labels[0] == ""
+    ):
+        return boxes, scores, ()
+    raise _FrameError("INFERENCE_FAILED")
+
+
+def suppress_duplicate_goggle_detections(
+    detections: Sequence[_RawDetection],
+    *,
+    iou_threshold: float,
+) -> tuple[_RawDetection, ...]:
+    """Apply deterministic score-first NMS only within the goggles label."""
+
+    if (
+        not isinstance(iou_threshold, (int, float))
+        or isinstance(iou_threshold, bool)
+        or not math.isfinite(iou_threshold)
+        or not 0 <= iou_threshold <= 1
+    ):
+        raise _FrameError("INFERENCE_FAILED")
+    people = tuple(item for item in detections if item.label != "goggles")
+    ranked = sorted(
+        (item for item in detections if item.label == "goggles"),
+        key=lambda item: (-item.score, item.source_label, item.bbox),
+    )
+    kept: list[_RawDetection] = []
+    for candidate in ranked:
+        if any(_float_box_iou(candidate.bbox, existing.bbox) >= iou_threshold for existing in kept):
+            continue
+        kept.append(candidate)
+    return people + tuple(kept)
 
 
 class GroundingDinoByteTrackBackend:
@@ -240,6 +296,7 @@ class GroundingDinoByteTrackBackend:
         self._prompt_batches = tuple(prompt_batches)
         self._local_files_only = worker.local_files_only
         self._model: Any | None = None
+        self._goggles_nms_iou_threshold = self.manifest.goggles_nms_iou_threshold
         self._numpy = numpy
         self._processor = processor
         self._score_threshold = perception.detector.score_threshold
@@ -340,13 +397,9 @@ class GroundingDinoByteTrackBackend:
                     target_sizes=[(image.height, image.width)],
                 )
                 result = results[0]
-                boxes = result["boxes"]
-                scores = result["scores"]
-                labels = result["text_labels"]
+                boxes, scores, labels = normalize_grounding_dino_postprocess_result(result)
             except Exception:
                 raise _FrameError("INFERENCE_FAILED") from None
-            if not (len(boxes) == len(scores) == len(labels)):
-                raise _FrameError("INFERENCE_FAILED")
 
             for box_value, score_value, source_label_value in zip(
                 boxes,
@@ -497,6 +550,10 @@ class GroundingDinoByteTrackBackend:
                 )
                 for item in request.replay_detections
             )
+        raw = suppress_duplicate_goggle_detections(
+            raw,
+            iou_threshold=self._goggles_nms_iou_threshold,
+        )
         people = self._track_people(raw)
         goggles = tuple(
             PilotWorkerDetection(

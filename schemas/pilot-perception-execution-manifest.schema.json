@@ -134,6 +134,18 @@
       "title": "Device",
       "type": "string"
     },
+    "empty_detection_policy": {
+      "const": "TRANSFORMERS_EMPTY_TEXT_LABEL_SENTINEL_V1",
+      "default": "TRANSFORMERS_EMPTY_TEXT_LABEL_SENTINEL_V1",
+      "title": "Empty Detection Policy",
+      "type": "string"
+    },
+    "goggles_nms_iou_threshold": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Goggles Nms Iou Threshold",
+      "type": "number"
+    },
     "high_confidence_threshold": {
       "maximum": 1,
       "minimum": 0,
@@ -198,6 +210,7 @@
     "device",
     "score_threshold",
     "high_confidence_threshold",
+    "goggles_nms_iou_threshold",
     "tracker_thresholds",
     "software_versions",
     "manifest_id"

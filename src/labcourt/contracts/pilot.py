@@ -79,6 +79,10 @@ class PilotPerceptionExecutionManifest(ContractModel):
     score_threshold: StrictFloat = Field(ge=0, le=1)
     high_confidence_threshold: StrictFloat = Field(ge=0, le=1)
     bbox_policy: Literal["CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1"] = "CLIP_TO_FRAME_THEN_FLOOR_CEIL_V1"
+    empty_detection_policy: Literal["TRANSFORMERS_EMPTY_TEXT_LABEL_SENTINEL_V1"] = (
+        "TRANSFORMERS_EMPTY_TEXT_LABEL_SENTINEL_V1"
+    )
+    goggles_nms_iou_threshold: StrictFloat = Field(ge=0, le=1)
     tracker_initialization_policy: Literal["ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1"] = (
         "ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1"
     )
