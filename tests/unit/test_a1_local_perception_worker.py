@@ -39,6 +39,7 @@ from labcourt.perception_worker import (
     _FrameError,
     _RawDetection,
     normalize_grounding_dino_postprocess_result,
+    restore_replayed_pose,
     select_trusted_face_keypoints,
     suppress_duplicate_goggle_detections,
 )
@@ -275,6 +276,31 @@ def test_pose_trust_gate_rejects_unclear_or_degenerate_eyes_without_guessing() -
         minimum_eye_span_ratio=0.03,
         maximum_eye_span_ratio=0.3,
     )
+
+
+def test_pose_cache_replay_restores_verified_keypoints_without_rerunning_model() -> None:
+    tracked = PilotWorkerDetection(
+        label="person",
+        source_label="person",
+        bbox=PilotWorkerBox(x1=1.0, y1=2.0, x2=18.0, y2=11.0),
+        score=0.91,
+        local_track_id="42",
+    )
+    cached = tracked.model_copy(
+        update={
+            "keypoints": (
+                Keypoint(name="left_eye", x=7.0, y=4.0, score=0.91),
+                Keypoint(name="right_eye", x=12.0, y=4.0, score=0.92),
+            ),
+            "pose_manifest_id": "9" * 64,
+        }
+    )
+
+    assert restore_replayed_pose((tracked,), (cached,)) == (cached,)
+
+    changed = tracked.model_copy(update={"score": 0.90})
+    with pytest.raises(_FrameError, match="TRACKER_FAILED"):
+        restore_replayed_pose((changed,), (cached,))
 
 
 def test_worker_frame_identity_mismatch_is_not_accepted() -> None:
