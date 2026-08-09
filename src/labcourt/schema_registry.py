@@ -294,6 +294,15 @@ from labcourt.contracts.pilot import (
     PilotPerceptionWorkerStartupFailure,
     PilotRunRequest,
 )
+from labcourt.contracts.pilot_report import (
+    PilotA4CaseView,
+    PilotA4MediaView,
+    PilotA4Metrics,
+    PilotA4ModelVersion,
+    PilotA4PublicationReport,
+    PilotA4ReviewReport,
+    PilotLocalAlertDocument,
+)
 from labcourt.contracts.precedents import Precedent
 from labcourt.contracts.projection_generation import (
     ProjectionCurrentPointer,
@@ -562,6 +571,13 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "pilot-a2-report": PilotA2Report,
     "pilot-a3-report": PilotA3Report,
     "pilot-a4-close-report": PilotA4CloseReport,
+    "pilot-a4-case-view": PilotA4CaseView,
+    "pilot-a4-media-view": PilotA4MediaView,
+    "pilot-a4-metrics": PilotA4Metrics,
+    "pilot-a4-model-version": PilotA4ModelVersion,
+    "pilot-a4-publication-report": PilotA4PublicationReport,
+    "pilot-a4-review-report": PilotA4ReviewReport,
+    "pilot-local-alert-document": PilotLocalAlertDocument,
     "pilot-evidence-pack-summary": PilotEvidencePackSummary,
     "pilot-perception-artifact-receipt": PilotPerceptionArtifactReceipt,
     "pilot-perception-completion-manifest": PilotPerceptionCompletionManifest,

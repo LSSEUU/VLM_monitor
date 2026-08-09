@@ -1,0 +1,75 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-a4-media-view.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "crop_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Crop Id",
+      "type": "string"
+    },
+    "frame_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+      "title": "Frame Id",
+      "type": "string"
+    },
+    "height": {
+      "exclusiveMinimum": 0,
+      "title": "Height",
+      "type": "integer"
+    },
+    "integrity": {
+      "enum": [
+        "VERIFIED",
+        "MISSING",
+        "HASH_MISMATCH",
+        "NOT_AVAILABLE"
+      ],
+      "title": "Integrity",
+      "type": "string"
+    },
+    "media_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Media Sha256",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "PANORAMA",
+        "SUBJECT",
+        "FOCUS",
+        "TEMPORAL"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "run_relative_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Relative Path"
+    },
+    "width": {
+      "exclusiveMinimum": 0,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "crop_id",
+    "role",
+    "frame_id",
+    "integrity",
+    "media_sha256",
+    "width",
+    "height"
+  ],
+  "title": "PilotA4MediaView",
+  "type": "object"
+}

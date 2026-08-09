@@ -1,0 +1,469 @@
+{
+  "$defs": {
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "PilotA4MediaView": {
+      "additionalProperties": false,
+      "properties": {
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "frame_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:(?:0|[1-9][0-9]{0,19})$",
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "integrity": {
+          "enum": [
+            "VERIFIED",
+            "MISSING",
+            "HASH_MISMATCH",
+            "NOT_AVAILABLE"
+          ],
+          "title": "Integrity",
+          "type": "string"
+        },
+        "media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Sha256",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "PANORAMA",
+            "SUBJECT",
+            "FOCUS",
+            "TEMPORAL"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "run_relative_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Relative Path"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "crop_id",
+        "role",
+        "frame_id",
+        "integrity",
+        "media_sha256",
+        "width",
+        "height"
+      ],
+      "title": "PilotA4MediaView",
+      "type": "object"
+    },
+    "PilotA4ModelVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Component",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        },
+        "provider": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "provider",
+        "model",
+        "revision",
+        "model_manifest_id"
+      ],
+      "title": "PilotA4ModelVersion",
+      "type": "object"
+    },
+    "ScreeningDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "ESCALATE"
+      ],
+      "title": "ScreeningDecision",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-a4-case-view.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "alert_level": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "alert_rescinded": {
+      "default": false,
+      "title": "Alert Rescinded",
+      "type": "boolean"
+    },
+    "anonymous_track_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Anonymous Track Ref"
+    },
+    "appeal_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AppealStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "association_end_frame_exclusive": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Association End Frame Exclusive"
+    },
+    "association_start_frame": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Association Start Frame"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_view_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Case View Id",
+      "type": "string"
+    },
+    "detector": {
+      "$ref": "#/$defs/PilotA4ModelVersion"
+    },
+    "disclaimer": {
+      "const": "用于安全辅助与记录，不直接作为处罚依据",
+      "default": "用于安全辅助与记录，不直接作为处罚依据",
+      "title": "Disclaimer",
+      "type": "string"
+    },
+    "end_frame_exclusive": {
+      "exclusiveMinimum": 0,
+      "title": "End Frame Exclusive",
+      "type": "integer"
+    },
+    "final_decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "human_review_required": {
+      "title": "Human Review Required",
+      "type": "boolean"
+    },
+    "key_crops": {
+      "items": {
+        "$ref": "#/$defs/PilotA4MediaView"
+      },
+      "maxItems": 12,
+      "title": "Key Crops",
+      "type": "array"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "observed_frame_count": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed Frame Count"
+    },
+    "procedural_gate_version": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Procedural Gate Version"
+    },
+    "procedural_review_passed": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Procedural Review Passed"
+    },
+    "prompt_bundle_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Bundle Sha256",
+      "type": "string"
+    },
+    "revision": {
+      "exclusiveMinimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "rule_version": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "screening_decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScreeningDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "screening_model": {
+      "$ref": "#/$defs/PilotA4ModelVersion"
+    },
+    "screening_probability": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Screening Probability"
+    },
+    "screening_router_version": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Screening Router Version"
+    },
+    "start_frame": {
+      "minimum": 0,
+      "title": "Start Frame",
+      "type": "integer"
+    },
+    "status": {
+      "$ref": "#/$defs/CaseStatus"
+    },
+    "verdict_confidence": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verdict Confidence"
+    },
+    "verdict_decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "violation_type": {
+      "$ref": "#/$defs/ViolationType"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "revision",
+    "status",
+    "violation_type",
+    "start_frame",
+    "end_frame_exclusive",
+    "key_crops",
+    "human_review_required",
+    "detector",
+    "screening_model",
+    "prompt_bundle_sha256",
+    "rule_version",
+    "manifest_id",
+    "case_view_id"
+  ],
+  "title": "PilotA4CaseView",
+  "type": "object"
+}

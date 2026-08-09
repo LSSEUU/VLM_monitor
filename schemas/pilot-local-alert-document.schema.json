@@ -1,0 +1,168 @@
+{
+  "$defs": {
+    "AlertDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "minLength": 1,
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "human_review_required": {
+          "default": false,
+          "title": "Human Review Required",
+          "type": "boolean"
+        },
+        "level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "merged_into_alert_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Merged Into Alert Id"
+        },
+        "policy_rule_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Policy Rule Ids",
+          "type": "array"
+        },
+        "recipients": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Recipients",
+          "type": "array"
+        },
+        "rescinded": {
+          "default": false,
+          "title": "Rescinded",
+          "type": "boolean"
+        },
+        "suppressed_by_cooldown": {
+          "default": false,
+          "title": "Suppressed By Cooldown",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alert_id",
+        "case_id",
+        "level",
+        "recipients",
+        "policy_rule_ids"
+      ],
+      "title": "AlertDecision",
+      "type": "object"
+    },
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-local-alert-document.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "alert": {
+      "$ref": "#/$defs/AlertDecision"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_status": {
+      "const": "CLOSED",
+      "title": "Case Status",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "disclaimer": {
+      "const": "用于安全辅助与记录，不直接作为处罚依据",
+      "default": "用于安全辅助与记录，不直接作为处罚依据",
+      "title": "Disclaimer",
+      "type": "string"
+    },
+    "document_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Document Id",
+      "type": "string"
+    },
+    "final_decision": {
+      "$ref": "#/$defs/VerdictDecision"
+    },
+    "idempotency_key": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "production_action_prohibited": {
+      "const": true,
+      "default": true,
+      "title": "Production Action Prohibited",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "pilot-local-json-alert-v1",
+      "default": "pilot-local-json-alert-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "case_status",
+    "final_decision",
+    "alert",
+    "idempotency_key",
+    "manifest_id",
+    "config_sha256",
+    "document_id"
+  ],
+  "title": "PilotLocalAlertDocument",
+  "type": "object"
+}

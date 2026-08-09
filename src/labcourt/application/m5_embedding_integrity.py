@@ -43,6 +43,24 @@ def _component_for_channel(channel: M5EmbeddingChannel) -> str:
     }[channel]
 
 
+def is_m5_controlled_fake_model_manifest(model_manifest: ModelManifest) -> bool:
+    """Accept the native fake identity or the exact legacy pilot disabled identity."""
+
+    if not isinstance(model_manifest, ModelManifest):
+        return False
+    if model_manifest.provider == "fake":
+        return True
+    return (
+        model_manifest.provider == "not-invoked"
+        and model_manifest.model == f"pilot-a2-{model_manifest.component}-disabled"
+        and model_manifest.revision == "1.0.0"
+        and model_manifest.quantization is None
+        and model_manifest.weights_sha256 is None
+        and model_manifest.license_id == "no-weights"
+        and model_manifest.provider_revision_guarantee
+    )
+
+
 def derive_m5_controlled_embedding_input_ref(
     *,
     channel: M5EmbeddingChannel,
@@ -128,7 +146,7 @@ def _require_controlled_fake_authorities(
     expected_component = _component_for_channel(channel)
     if model_manifest.component != expected_component:
         raise M5EmbeddingIntegrityError(M5EmbeddingIntegrityErrorCode.MANIFEST_MISMATCH)
-    if model_manifest.provider != "fake":
+    if not is_m5_controlled_fake_model_manifest(model_manifest):
         raise M5EmbeddingIntegrityError(M5EmbeddingIntegrityErrorCode.PROVIDER_UNSUPPORTED)
 
 
@@ -228,5 +246,6 @@ __all__ = [
     "derive_m5_controlled_embedding_input_ref",
     "derive_m5_controlled_fake_embedding",
     "derive_m5_fake_sha256_signed_projection",
+    "is_m5_controlled_fake_model_manifest",
     "require_m5_fake_sha256_signed_projection",
 ]

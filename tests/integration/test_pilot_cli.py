@@ -3,12 +3,14 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from typing import cast
 
 import pytest
 from typer.testing import CliRunner
 
 from labcourt.cli import app
+from labcourt.contracts.enums import VerdictDecision
 from labcourt.contracts.m3_operations import M3ProcessCounts
 from labcourt.contracts.pilot import (
     PilotA2Report,
@@ -257,7 +259,39 @@ def test_pilot_screen_opens_the_run_scoped_real_provider_service(
     assert captured["process"] == {"case_id": None, "max_cases": 10}
 
 
-def test_later_pilot_stage_is_explicitly_unavailable_in_a0() -> None:
+def test_pilot_report_uses_the_run_scoped_a4_publisher(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class _Report:
+        metrics = SimpleNamespace(
+            case_count=1,
+            closed_count=1,
+            verified_local_alert_count=1,
+            human_review_count=0,
+            unresolved_count=0,
+        )
+        dispatch = SimpleNamespace(
+            retryable_failure_count=0,
+            unknown_delivery_count=0,
+            attention_required_count=0,
+        )
+        index_path = "runs/pilot-001/report/index.html"
+        publication_id = "1" * 64
+
+        @staticmethod
+        def model_dump(*, mode: str) -> dict[str, object]:
+            assert mode == "json"
+            return {"publication_id": "1" * 64, "schema_version": "pilot-a4-publication-report-v1"}
+
+    def _publish(**kwargs: object) -> _Report:
+        captured.update(kwargs)
+        return _Report()
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("labcourt.pilot_cli.publish_pilot_run", _publish)
     result = RUNNER.invoke(
         app,
         [
@@ -271,5 +305,93 @@ def test_later_pilot_stage_is_explicitly_unavailable_in_a0() -> None:
         ],
     )
 
-    assert result.exit_code == 2
-    assert json.loads(result.stderr)["reason_code"] == "STAGE_NOT_AVAILABLE"
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)["publication_id"] == "1" * 64
+    assert captured["runs_root"] == tmp_path / "runs"
+    assert captured["database_path"] == tmp_path / "runs" / "pilot-001" / "labcourt.sqlite3"
+
+
+def test_pilot_report_returns_attention_exit_for_human_review_backlog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = SimpleNamespace(
+        metrics=SimpleNamespace(
+            case_count=1,
+            closed_count=0,
+            verified_local_alert_count=0,
+            human_review_count=1,
+            unresolved_count=1,
+        ),
+        dispatch=SimpleNamespace(
+            retryable_failure_count=0,
+            unknown_delivery_count=0,
+            attention_required_count=0,
+        ),
+        index_path="runs/pilot-001/report/index.html",
+        publication_id="1" * 64,
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("labcourt.pilot_cli.publish_pilot_run", lambda **_: report)
+
+    result = RUNNER.invoke(
+        app,
+        [
+            "pilot",
+            "report",
+            "--config",
+            str(PROJECT_ROOT / "configs" / "pilot.yaml"),
+            "--run-id",
+            "pilot-001",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "pilot report published" in result.stdout
+
+
+def test_pilot_review_reads_explicit_reason_and_uses_run_scoped_authority(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reason = tmp_path / "review.md"
+    reason.write_text("manual review reason", encoding="utf-8")
+    captured: dict[str, object] = {}
+
+    class _Report:
+        @staticmethod
+        def model_dump(*, mode: str) -> dict[str, object]:
+            assert mode == "json"
+            return {"review_id": "1" * 64, "schema_version": "pilot-a4-review-report-v1"}
+
+    def _review(**kwargs: object) -> _Report:
+        captured.update(kwargs)
+        return _Report()
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("labcourt.pilot_cli.review_pilot_case", _review)
+    result = RUNNER.invoke(
+        app,
+        [
+            "pilot",
+            "review",
+            "--config",
+            str(PROJECT_ROOT / "configs" / "pilot.yaml"),
+            "--run-id",
+            "pilot-001",
+            "--case-id",
+            "case-001",
+            "--decision",
+            "ESTABLISHED",
+            "--reason-file",
+            str(reason),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)["review_id"] == "1" * 64
+    assert captured["runs_root"] == tmp_path / "runs"
+    assert captured["database_path"] == tmp_path / "runs" / "pilot-001" / "labcourt.sqlite3"
+    assert captured["reason"] == "manual review reason"
+    assert captured["decision"] == VerdictDecision.ESTABLISHED

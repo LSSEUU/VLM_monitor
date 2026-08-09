@@ -1,0 +1,44 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-a4-model-version.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "component": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Component",
+      "type": "string"
+    },
+    "model": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Manifest Id",
+      "type": "string"
+    },
+    "provider": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "revision": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Revision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "component",
+    "provider",
+    "model",
+    "revision",
+    "model_manifest_id"
+  ],
+  "title": "PilotA4ModelVersion",
+  "type": "object"
+}

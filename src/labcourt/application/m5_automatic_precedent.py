@@ -23,6 +23,7 @@ from .m5_embedding_integrity import (
     M5EmbeddingIntegrityError,
     build_m5_controlled_fake_embedding,
     derive_m5_controlled_fake_embedding,
+    is_m5_controlled_fake_model_manifest,
 )
 from .m5_precedents import create_m5_precedent_authority, m5_precedent_policy_from_config
 
@@ -86,7 +87,7 @@ def _require_automatic_precedent_context(
         raise AutomaticPrecedentError(AutomaticPrecedentErrorCode.SOURCE_AUTHORITY_MISMATCH)
     if config.config_sha256 != manifest.config_sha256:
         raise AutomaticPrecedentError(AutomaticPrecedentErrorCode.CONFIG_AUTHORITY_MISMATCH)
-    if manifest.models["text_embedding"].provider != "fake":
+    if not is_m5_controlled_fake_model_manifest(manifest.models["text_embedding"]):
         raise AutomaticPrecedentError(AutomaticPrecedentErrorCode.EMBEDDING_PROVIDER_UNSUPPORTED)
 
     request = alert_authority.request
