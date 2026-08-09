@@ -276,6 +276,30 @@ def _summary(pack: EvidencePack) -> PilotEvidencePackSummary:
     )
 
 
+def _objective_perception_bundles(
+    bundles: tuple[FrameBundle, ...],
+) -> tuple[FrameBundle, ...]:
+    """Project out advisory pose so it cannot rewrite objective trigger history."""
+
+    projected: list[FrameBundle] = []
+    for bundle in bundles:
+        detections = tuple(
+            detection.model_copy(
+                update={
+                    "keypoints": (),
+                    "attributes": {
+                        key: value
+                        for key, value in detection.attributes.items()
+                        if key != "pose_source"
+                    },
+                }
+            )
+            for detection in bundle.detections
+        )
+        projected.append(FrameBundle(frame=bundle.frame, detections=detections))
+    return tuple(projected)
+
+
 def _resume_report(
     *,
     workspace: SecureWorkspace,
@@ -450,7 +474,7 @@ def run_pilot_a2(
             return resumed
 
         perception = PerceptionPipeline(config=config, run_manifest=manifest).run(
-            PrecomputedFrameSource(completed.bundles)
+            PrecomputedFrameSource(_objective_perception_bundles(completed.bundles))
         )
         events = tuple(
             event for event in perception.events if event.violation_type in request.selected_rules

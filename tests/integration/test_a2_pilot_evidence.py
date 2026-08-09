@@ -10,8 +10,10 @@ from labcourt.adapters.perception.local_worker import PerceptionWorkerExchange
 from labcourt.config_loader import load_config
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.config import AppConfig
+from labcourt.contracts.detections import Detection, FrameBundle, Keypoint
 from labcourt.contracts.enums import MediaAccess, PrivacyPolicy, PrivacyReasonCode
 from labcourt.contracts.evidence import EvidencePack
+from labcourt.contracts.frames import FrameRef
 from labcourt.contracts.pilot import (
     PilotPerceptionExecutionManifest,
     PilotPerceptionWorkerRequest,
@@ -20,7 +22,7 @@ from labcourt.contracts.pilot import (
     PilotWorkerDetection,
 )
 from labcourt.exceptions import ManifestMismatch
-from labcourt.services.pilot_evidence import run_pilot_a2
+from labcourt.services.pilot_evidence import _objective_perception_bundles, run_pilot_a2
 from labcourt.services.pilot_operations import (
     build_expected_perception_manifest,
     build_pilot_run_request,
@@ -141,6 +143,45 @@ def _pilot_config() -> AppConfig:
             "zones": (zone,),
         }
     )
+
+
+def test_advisory_pose_is_projected_out_of_objective_perception_without_mutation() -> None:
+    frame = FrameRef(
+        camera_id="cam-01",
+        stream_id="pose-boundary",
+        frame_index=0,
+        fps_num=5,
+        fps_den=1,
+        width=WIDTH,
+        height=HEIGHT,
+        content_sha256="1" * 64,
+    )
+    detection = Detection(
+        detection_id="person-001",
+        frame_id=frame.frame_id,
+        label="person",
+        bbox={"x1": 10, "y1": 4, "x2": 54, "y2": 44},
+        score=0.93,
+        track_ref="cam-01:epoch-01:1",
+        keypoints=(
+            Keypoint(name="left_eye", x=22.0, y=12.0, score=0.95),
+            Keypoint(name="right_eye", x=36.0, y=12.0, score=0.94),
+        ),
+        attributes={
+            "observation_source": "PIXEL_COMPUTED",
+            "pose_source": "9" * 64,
+            "source_label": "person",
+        },
+        model_manifest_id="8" * 64,
+    )
+    original = FrameBundle(frame=frame, detections=(detection,))
+
+    projected = _objective_perception_bundles((original,))
+
+    assert original.detections[0].keypoints == detection.keypoints
+    assert projected[0].detections[0].keypoints == ()
+    assert "pose_source" not in projected[0].detections[0].attributes
+    assert projected[0].detections[0].detection_id == detection.detection_id
 
 
 def test_sealed_detections_reach_one_privacy_safe_evidence_ready_case_idempotently(
