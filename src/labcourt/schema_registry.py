@@ -294,6 +294,7 @@ from labcourt.contracts.pilot import (
     PilotPerceptionWorkerStartupFailure,
     PilotRunRequest,
 )
+from labcourt.contracts.pilot_a5 import PilotA5RunReport
 from labcourt.contracts.pilot_report import (
     PilotA4CaseView,
     PilotA4MediaView,
@@ -577,6 +578,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "pilot-a4-model-version": PilotA4ModelVersion,
     "pilot-a4-publication-report": PilotA4PublicationReport,
     "pilot-a4-review-report": PilotA4ReviewReport,
+    "pilot-a5-run-report": PilotA5RunReport,
     "pilot-local-alert-document": PilotLocalAlertDocument,
     "pilot-evidence-pack-summary": PilotEvidencePackSummary,
     "pilot-perception-artifact-receipt": PilotPerceptionArtifactReceipt,

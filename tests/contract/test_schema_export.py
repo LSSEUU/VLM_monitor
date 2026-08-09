@@ -233,6 +233,7 @@ EXPECTED_SCHEMA_MODES = {
     "pilot-a4-model-version": "serialization",
     "pilot-a4-publication-report": "serialization",
     "pilot-a4-review-report": "serialization",
+    "pilot-a5-run-report": "serialization",
     "pilot-evidence-pack-summary": "serialization",
     "pilot-local-alert-document": "serialization",
     "pilot-perception-artifact-receipt": "serialization",

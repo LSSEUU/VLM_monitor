@@ -1288,6 +1288,12 @@
       "name": "pilot-a4-review-report"
     },
     {
+      "file": "pilot-a5-run-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_a5.PilotA5RunReport",
+      "name": "pilot-a5-run-report"
+    },
+    {
       "file": "pilot-evidence-pack-summary.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.pilot.PilotEvidencePackSummary",

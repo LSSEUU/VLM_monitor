@@ -13,7 +13,6 @@ from labcourt.cli import app
 from labcourt.contracts.enums import VerdictDecision
 from labcourt.contracts.m3_operations import M3ProcessCounts
 from labcourt.contracts.pilot import (
-    PilotA2Report,
     PilotA3Report,
     PilotPerceptionReport,
     PilotRunRequest,
@@ -36,7 +35,7 @@ def test_pilot_command_help_is_available(command: str) -> None:
     assert result.exit_code == 0
 
 
-def test_pilot_run_binds_the_verified_video_and_emits_the_a2_report(
+def test_pilot_run_binds_the_verified_video_and_emits_the_full_run_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -45,32 +44,35 @@ def test_pilot_run_binds_the_verified_video_and_emits_the_a2_report(
     payload = b"bounded-pilot-mp4-fixture"
     (tmp_path / "inputs" / "demo.mp4").write_bytes(payload)
     monkeypatch.chdir(tmp_path)
-    expected: PilotA2Report | None = None
+    expected: dict[str, object] | None = None
 
-    def _run_a2(**kwargs: object) -> PilotA2Report:
+    class _Report:
+        state = "COMPLETE"
+        evidence = SimpleNamespace(candidate_event_count=0)
+        publication = SimpleNamespace(
+            metrics=SimpleNamespace(case_count=0),
+            index_path="runs/pilot-001/report/index.html",
+        )
+        report_id = "d" * 64
+
+        @staticmethod
+        def model_dump(*, mode: str) -> dict[str, object]:
+            assert mode == "json"
+            return {
+                "report_id": "d" * 64,
+                "run_id": "pilot-001",
+                "schema_version": "pilot-a5-run-report-v1",
+                "state": "COMPLETE",
+            }
+
+    def _run_a5(**kwargs: object) -> _Report:
         nonlocal expected
         request = cast(PilotRunRequest, kwargs["request"])
         assert request.video_sha256 == hashlib.sha256(payload).hexdigest()
-        expected = PilotA2Report(
-            run_id="pilot-001",
-            state="NO_CANDIDATE",
-            config_sha256=request.config_sha256,
-            video_sha256=request.video_sha256,
-            perception_manifest_id="a" * 64,
-            perception_completion_id="b" * 64,
-            run_manifest_id="c" * 64,
-            selected_rules=("PPE_GOGGLES_MISSING",),
-            frames_processed=4,
-            association_count=4,
-            l0_reminder_count=0,
-            suppression_count=0,
-            candidate_event_count=0,
-            evidence_pack_count=0,
-            evidence_packs=(),
-        )
-        return expected
+        expected = _Report.model_dump(mode="json")
+        return _Report()
 
-    monkeypatch.setattr("labcourt.pilot_cli.run_pilot_a2", _run_a2)
+    monkeypatch.setattr("labcourt.pilot_cli.run_pilot_a5", _run_a5)
 
     result = RUNNER.invoke(
         app,
@@ -89,7 +91,7 @@ def test_pilot_run_binds_the_verified_video_and_emits_the_a2_report(
 
     assert result.exit_code == 0, result.output
     assert expected is not None
-    assert json.loads(result.stdout) == expected.model_dump(mode="json")
+    assert json.loads(result.stdout) == expected
     assert not (tmp_path / "runs" / "pilot-001").exists()
 
 
@@ -117,6 +119,47 @@ def test_pilot_run_missing_video_fails_closed_without_echoing_the_path() -> None
         "status": "FAILED",
     }
     assert missing not in result.output
+
+
+def test_pilot_run_returns_attention_exit_with_its_typed_json_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "inputs").mkdir()
+    (tmp_path / "runs").mkdir()
+    (tmp_path / "inputs" / "demo.mp4").write_bytes(b"bounded-pilot-mp4-fixture")
+
+    class _Report:
+        state = "ATTENTION_REQUIRED"
+
+        @staticmethod
+        def model_dump(*, mode: str) -> dict[str, object]:
+            assert mode == "json"
+            return {
+                "run_id": "pilot-attention",
+                "schema_version": "pilot-a5-run-report-v1",
+                "state": "ATTENTION_REQUIRED",
+            }
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("labcourt.pilot_cli.run_pilot_a5", lambda **_: _Report())
+    result = RUNNER.invoke(
+        app,
+        [
+            "pilot",
+            "run",
+            "--config",
+            str(PROJECT_ROOT / "configs" / "pilot.yaml"),
+            "--video",
+            "inputs/demo.mp4",
+            "--run-id",
+            "pilot-attention",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert json.loads(result.stdout)["state"] == "ATTENTION_REQUIRED"
 
 
 def test_pilot_run_rejects_absolute_video_paths_before_opening(tmp_path: Path) -> None:
