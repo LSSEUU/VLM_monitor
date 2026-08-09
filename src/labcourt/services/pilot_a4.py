@@ -24,6 +24,10 @@ from labcourt.application.pilot_operator_report import (
 from labcourt.contracts.config import AppConfig
 from labcourt.contracts.enums import AppealStatus, VerdictDecision
 from labcourt.contracts.geometry import BBoxXYXY
+from labcourt.contracts.m3_command_reports import (
+    M3ProjectionBudget,
+    M3ProjectionDisposition,
+)
 from labcourt.contracts.m3_models import require_bounded_public_text
 from labcourt.contracts.m5_human_inputs import M5AppealTrainingLabelInput
 from labcourt.contracts.manifests import RunManifest
@@ -34,14 +38,16 @@ from labcourt.contracts.pilot_report import (
 )
 from labcourt.contracts.references import require_portable_run_id, require_reference_token
 from labcourt.contracts.training import TrainingLabel
-from labcourt.exceptions import LabCourtError
+from labcourt.exceptions import ContractViolation, LabCourtError
 from labcourt.ports.evidence_repository import CaseSnapshot
+from labcourt.services.m3_projection import rebuild_m3_projection
 from labcourt.services.m5_human_appeals import (
     begin_human_appeal_review,
     resolve_human_appeal,
     submit_human_appeal,
 )
 from labcourt.services.m5_operations import dispatch_m5_alerts, finalize_m5_run
+from labcourt.services.m5_projection import rebuild_m5_projection
 
 PILOT_REVIEW_ACTOR = "pilot-local-operator"
 
@@ -158,6 +164,30 @@ def publish_pilot_run(
         run_id=controlled_run_id,
         verified_local_alert_count=len(local_alert_paths),
     )
+    m3_projection = rebuild_m3_projection(
+        config=config,
+        run_id=controlled_run_id,
+        workspace_root=run_root,
+        database_path=database,
+        output_root=root,
+        budget=M3ProjectionBudget(
+            max_database_bytes=4 * 1024**3,
+            max_audit_entries=100_000,
+            max_cases=10_000,
+            max_packs=50_000,
+            max_document_bytes=16 * 1024**2,
+            max_projection_file_bytes=64 * 1024**2,
+            max_materialization_bytes=512 * 1024**2,
+        ),
+    )
+    if m3_projection.disposition != M3ProjectionDisposition.REBUILT:
+        raise ContractViolation("pilot A4 M2/M3 projection publication did not complete")
+    rebuild_m5_projection(
+        config=config,
+        run_id=controlled_run_id,
+        database_path=database,
+        workspace_root=root,
+    )
     PilotStaticReportStore(run_root=run_root, run_id=controlled_run_id).publish(metrics)
     return PilotA4PublicationReport(
         closure=closure,
@@ -169,6 +199,10 @@ def publish_pilot_run(
             f"runs/{controlled_run_id}/report/cases/{case.case_id}.html" for case in views
         ),
         local_alert_paths=local_alert_paths,
+        projection_paths=(
+            f"runs/{controlled_run_id}/projections/current.json",
+            f"runs/{controlled_run_id}/m5-projections/current.json",
+        ),
     )
 
 

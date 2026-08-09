@@ -371,13 +371,14 @@ class PilotA4PublicationReport(ContractModel):
     metrics_path: str
     case_paths: tuple[str, ...]
     local_alert_paths: tuple[str, ...]
+    projection_paths: tuple[str, str]
 
     @field_validator("index_path", "metrics_path")
     @classmethod
     def validate_index_path(cls, value: str) -> str:
         return require_safe_relative_posix_path(value)
 
-    @field_validator("case_paths", "local_alert_paths")
+    @field_validator("case_paths", "local_alert_paths", "projection_paths")
     @classmethod
     def validate_paths(cls, values: tuple[str, ...]) -> tuple[str, ...]:
         return tuple(require_safe_relative_posix_path(value) for value in values)
@@ -406,10 +407,15 @@ class PilotA4PublicationReport(ContractModel):
         expected_cases = tuple(
             f"runs/{run_id}/report/cases/{item.case_id}.html" for item in self.metrics.cases
         )
+        expected_projections = (
+            f"runs/{run_id}/projections/current.json",
+            f"runs/{run_id}/m5-projections/current.json",
+        )
         if (
             self.index_path != expected_index
             or self.metrics_path != expected_metrics
             or self.case_paths != expected_cases
+            or self.projection_paths != expected_projections
         ):
             raise ValueError("pilot A4 publication paths do not match its case inventory")
         if self.case_paths != tuple(sorted(set(self.case_paths))):

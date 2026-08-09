@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
+from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.contracts.enums import AppealStatus, CaseStatus, VerdictDecision
 from labcourt.contracts.evidence import EvidencePackDraft
 from labcourt.contracts.pilot_report import PilotA4Metrics, PilotLocalAlertDocument
@@ -68,7 +69,8 @@ def test_pilot_a4_publishes_local_alert_and_operator_report_idempotently(
     tmp_path: Path,
 ) -> None:
     run_root = tmp_path / RUN_ID
-    run_root.mkdir()
+    with SecureWorkspace(tmp_path, max_file_bytes=100 * 1024**2) as workspace:
+        workspace.ensure_private_directory(RUN_ID)
     database, _, _, ready, _, config = _prepare_ready_case(run_root)
 
     first = publish_pilot_run(
@@ -79,6 +81,8 @@ def test_pilot_a4_publishes_local_alert_and_operator_report_idempotently(
         clock=_clock,
     )
     first_index = (run_root / "report" / "index.html").read_bytes()
+    first_m2_pointer = (run_root / "projections" / "current.json").read_bytes()
+    first_m5_pointer = (run_root / "m5-projections" / "current.json").read_bytes()
     repeated = publish_pilot_run(
         config=config,
         runs_root=tmp_path,
@@ -95,6 +99,16 @@ def test_pilot_a4_publishes_local_alert_and_operator_report_idempotently(
     assert repeated.closure.selected_count == 0
     assert repeated.dispatch.selected_count == 0
     assert (run_root / "report" / "index.html").read_bytes() == first_index
+    assert (run_root / "projections" / "current.json").read_bytes() == first_m2_pointer
+    assert (run_root / "m5-projections" / "current.json").read_bytes() == first_m5_pointer
+    assert (
+        first.projection_paths
+        == repeated.projection_paths
+        == (
+            f"runs/{RUN_ID}/projections/current.json",
+            f"runs/{RUN_ID}/m5-projections/current.json",
+        )
+    )
     assert 'href="../metrics.json"' in first_index.decode("utf-8")
     metrics = PilotA4Metrics.model_validate_json(run_root.joinpath("metrics.json").read_bytes())
     assert metrics.metrics_id == first.metrics.metrics_id == repeated.metrics.metrics_id
@@ -111,7 +125,8 @@ def test_pilot_a4_review_reuses_appeal_authority_and_republishes_idempotently(
     tmp_path: Path,
 ) -> None:
     run_root = tmp_path / RUN_ID
-    run_root.mkdir()
+    with SecureWorkspace(tmp_path, max_file_bytes=100 * 1024**2) as workspace:
+        workspace.ensure_private_directory(RUN_ID)
     frames = run_root / "frames"
     frames.mkdir()
     media_path = frames / "focus.png"

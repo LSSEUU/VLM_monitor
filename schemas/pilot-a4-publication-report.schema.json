@@ -1079,6 +1079,20 @@
       "title": "Metrics Path",
       "type": "string"
     },
+    "projection_paths": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Projection Paths",
+      "type": "array"
+    },
     "publication_id": {
       "pattern": "^[0-9a-f]{64}$",
       "readOnly": true,
@@ -1100,6 +1114,7 @@
     "metrics_path",
     "case_paths",
     "local_alert_paths",
+    "projection_paths",
     "publication_id"
   ],
   "title": "PilotA4PublicationReport",
