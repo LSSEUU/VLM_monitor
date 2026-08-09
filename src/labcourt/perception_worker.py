@@ -253,6 +253,21 @@ def select_trusted_face_keypoints(
     )
 
 
+def restore_replayed_pose(
+    tracked_people: tuple[PilotWorkerDetection, ...],
+    replay_detections: tuple[PilotWorkerDetection, ...],
+) -> tuple[PilotWorkerDetection, ...]:
+    """Restore hash-verified cached pose output after deterministic tracker replay."""
+
+    replay_people = tuple(item for item in replay_detections if item.label == "person")
+    if len(tracked_people) != len(replay_people):
+        raise _FrameError("TRACKER_FAILED")
+    for tracked, replayed in zip(tracked_people, replay_people, strict=True):
+        if tracked != replayed.model_copy(update={"keypoints": (), "pose_manifest_id": None}):
+            raise _FrameError("TRACKER_FAILED")
+    return replay_people
+
+
 def normalize_grounding_dino_postprocess_result(
     result: Mapping[str, Any],
 ) -> tuple[Any, Any, Sequence[Any]]:
@@ -760,7 +775,11 @@ class GroundingDinoByteTrackBackend:
             raw,
             iou_threshold=self._goggles_nms_iou_threshold,
         )
-        people = self._localize_people(image, self._track_people(raw))
+        people = self._track_people(raw)
+        if request.mode == "INFER":
+            people = self._localize_people(image, people)
+        else:
+            people = restore_replayed_pose(people, request.replay_detections)
         goggles = tuple(
             PilotWorkerDetection(
                 label="goggles",
