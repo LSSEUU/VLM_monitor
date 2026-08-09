@@ -158,6 +158,85 @@
       "title": "Manifest Id",
       "type": "string"
     },
+    "pose": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelManifest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "pose_dataset_index": {
+      "anyOf": [
+        {
+          "const": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pose Dataset Index"
+    },
+    "pose_keypoint_policy": {
+      "anyOf": [
+        {
+          "const": "DUAL_EYE_SCORE_AND_GEOMETRY_V1",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pose Keypoint Policy"
+    },
+    "pose_keypoint_score_threshold": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pose Keypoint Score Threshold"
+    },
+    "pose_maximum_eye_span_ratio": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pose Maximum Eye Span Ratio"
+    },
+    "pose_minimum_eye_span_ratio": {
+      "anyOf": [
+        {
+          "exclusiveMaximum": 1,
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pose Minimum Eye Span Ratio"
+    },
     "prompts": {
       "additionalProperties": {
         "items": {

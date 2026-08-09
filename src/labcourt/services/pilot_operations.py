@@ -199,6 +199,8 @@ def build_expected_perception_manifest(config: AppConfig) -> PilotPerceptionExec
     worker = perception.worker
     detector = perception.detector_manifest
     tracker = perception.tracker_manifest
+    pose = perception.pose
+    pose_manifest = perception.pose_manifest
     tracker_thresholds = perception.tracker_thresholds
     if (
         perception.provider != "local-worker"
@@ -212,6 +214,7 @@ def build_expected_perception_manifest(config: AppConfig) -> PilotPerceptionExec
         protocol_version=worker.protocol_version,
         detector=detector,
         tracker=tracker,
+        pose=pose_manifest,
         prompts={
             "person": perception.detector.prompts["person"],
             "goggles": perception.detector.prompts["goggles"],
@@ -224,6 +227,11 @@ def build_expected_perception_manifest(config: AppConfig) -> PilotPerceptionExec
         goggles_nms_iou_threshold=0.95,
         tracker_initialization_policy="ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
         tracker_thresholds=tracker_thresholds,
+        pose_dataset_index=pose.dataset_index if pose is not None else None,
+        pose_keypoint_score_threshold=(pose.keypoint_score_threshold if pose is not None else None),
+        pose_minimum_eye_span_ratio=(pose.minimum_eye_span_ratio if pose is not None else None),
+        pose_maximum_eye_span_ratio=(pose.maximum_eye_span_ratio if pose is not None else None),
+        pose_keypoint_policy=pose.keypoint_policy if pose is not None else None,
         software_versions=dict(worker.required_software_versions),
     )
 

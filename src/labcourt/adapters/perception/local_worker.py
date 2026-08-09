@@ -19,7 +19,7 @@ from pydantic import ValidationError
 from labcourt.adapters.pillow_media import encode_rgb_png
 from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.contracts.canonical import canonical_json
-from labcourt.contracts.detections import Detection
+from labcourt.contracts.detections import Detection, Keypoint
 from labcourt.contracts.evidence import Crop
 from labcourt.contracts.frames import FrameData, FrameRef
 from labcourt.contracts.geometry import BBoxXYXY
@@ -457,6 +457,28 @@ def map_perception_worker_detections(
             if worker_detection.local_track_id is not None
             else None
         )
+        pose_manifest_id = worker_detection.pose_manifest_id
+        if pose_manifest_id is not None and (
+            manifest.pose is None or pose_manifest_id != manifest.pose.model_manifest_id
+        ):
+            raise PerceptionWorkerProtocolViolation("worker pose output uses an unknown manifest")
+        keypoints = tuple(
+            Keypoint(
+                name=keypoint.name,
+                x=keypoint.x,
+                y=keypoint.y,
+                score=keypoint.score,
+            )
+            for keypoint in worker_detection.keypoints
+        )
+        if any(keypoint.x >= frame.width or keypoint.y >= frame.height for keypoint in keypoints):
+            raise PerceptionWorkerProtocolViolation("worker keypoint exceeds the requested frame")
+        attributes = {
+            "observation_source": "PIXEL_COMPUTED",
+            "source_label": worker_detection.source_label,
+        }
+        if pose_manifest_id is not None:
+            attributes["pose_source"] = pose_manifest_id
         mapped.append(
             Detection(
                 detection_id=f"d{identity[:63]}",
@@ -465,10 +487,8 @@ def map_perception_worker_detections(
                 bbox=box,
                 score=worker_detection.score,
                 track_ref=track_ref,
-                attributes={
-                    "observation_source": "PIXEL_COMPUTED",
-                    "source_label": worker_detection.source_label,
-                },
+                keypoints=keypoints,
+                attributes=attributes,
                 model_manifest_id=manifest.detector.model_manifest_id,
             )
         )

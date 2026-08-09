@@ -29,6 +29,8 @@ def test_default_and_demo_configs_are_valid() -> None:
     assert "pilot" not in serialized
     assert not {
         "detector_manifest",
+        "pose",
+        "pose_manifest",
         "tracker_manifest",
         "tracker_thresholds",
         "worker",
@@ -47,6 +49,13 @@ def test_pilot_config_is_strict_and_does_not_claim_future_rules() -> None:
     )
     assert pilot.perception.tracker_manifest is not None
     assert pilot.perception.tracker_manifest.model == "trackers.ByteTrackTracker"
+    assert pilot.perception.pose is not None
+    assert pilot.perception.pose.keypoint_score_threshold == 0.8
+    assert pilot.perception.pose.minimum_eye_span_ratio == 0.03
+    assert pilot.perception.pose_manifest is not None
+    assert pilot.perception.pose_manifest.weights_sha256 == (
+        "f7bad8ed09eeeb2a7de6b38faaa8a88d07838e23e9c06a2a782099bca7467cb9"
+    )
     assert pilot.perception.worker is not None
     assert pilot.perception.worker.local_files_only
     assert pilot.perception.worker.cache_enabled
@@ -70,6 +79,11 @@ def test_local_perception_worker_requires_complete_real_model_pins() -> None:
     payload = pilot.perception.model_dump(mode="python", exclude_computed_fields=True)
     payload["worker"]["cache_enabled"] = False
     with pytest.raises(ValidationError):
+        type(pilot.perception).model_validate(payload)
+
+    payload = pilot.perception.model_dump(mode="python", exclude_computed_fields=True)
+    payload["pose_manifest"] = None
+    with pytest.raises(ValidationError, match="supplied together"):
         type(pilot.perception).model_validate(payload)
 
 

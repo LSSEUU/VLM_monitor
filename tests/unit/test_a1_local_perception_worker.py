@@ -12,9 +12,11 @@ from labcourt.adapters.perception.local_worker import (
     LocalWorkerPerceptionProvider,
     PerceptionWorkerExchange,
     WorkerResult,
+    map_perception_worker_detections,
 )
 from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.contracts.canonical import canonical_json
+from labcourt.contracts.detections import Keypoint
 from labcourt.contracts.frames import FrameData, FrameRef
 from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.pilot import (
@@ -37,6 +39,7 @@ from labcourt.perception_worker import (
     _FrameError,
     _RawDetection,
     normalize_grounding_dino_postprocess_result,
+    select_trusted_face_keypoints,
     suppress_duplicate_goggle_detections,
 )
 from labcourt.ports.pixels import RGB8Frame, rgb8_pixel_sha256
@@ -174,6 +177,104 @@ def test_adapter_maps_real_worker_output_to_existing_detection_contract() -> Non
         for detection in detections
     )
     assert len({detection.detection_id for detection in detections}) == 2
+
+
+def test_pose_keypoints_cross_worker_boundary_with_exact_manifest_provenance() -> None:
+    frame = _frame().frame
+    pose = ModelManifest(
+        component="pose",
+        provider="HuggingFace",
+        model="usyd-community/vitpose-plus-small",
+        revision="0c30b6534bb621af0162b481176742577264e36e",
+        weights_sha256="f" * 64,
+        license_id="Apache-2.0",
+    )
+    manifest = _manifest().model_copy(
+        update={
+            "pose": pose,
+            "pose_dataset_index": 0,
+            "pose_keypoint_score_threshold": 0.8,
+            "pose_minimum_eye_span_ratio": 0.03,
+            "pose_maximum_eye_span_ratio": 0.3,
+            "pose_keypoint_policy": "DUAL_EYE_SCORE_AND_GEOMETRY_V1",
+        }
+    )
+    worker_detection = PilotWorkerDetection(
+        label="person",
+        source_label="person",
+        bbox=PilotWorkerBox(x1=1.0, y1=1.0, x2=19.0, y2=11.0),
+        score=0.9,
+        local_track_id="1",
+        keypoints=(
+            Keypoint(name="left_eye", x=7.0, y=4.0, score=0.91),
+            Keypoint(name="right_eye", x=12.0, y=4.0, score=0.92),
+        ),
+        pose_manifest_id=pose.model_manifest_id,
+    )
+
+    mapped = map_perception_worker_detections(
+        frame=frame,
+        manifest=manifest,
+        tracker_epoch="epoch-01",
+        request_id="request-01",
+        detections=(worker_detection,),
+    )
+
+    assert mapped[0].keypoints == worker_detection.keypoints
+    assert mapped[0].attributes["pose_source"] == pose.model_manifest_id
+    assert mapped[0].model_manifest_id == manifest.detector.model_manifest_id
+
+
+def test_pose_trust_gate_rejects_unclear_or_degenerate_eyes_without_guessing() -> None:
+    box = PilotWorkerBox(x1=100.0, y1=20.0, x2=300.0, y2=460.0)
+    points = [[150.0 + index, 80.0 + index] for index in range(17)]
+    points[1] = [170.0, 90.0]
+    points[2] = [190.0, 93.0]
+    scores = [0.9] * 17
+
+    trusted = select_trusted_face_keypoints(
+        keypoints=points,
+        scores=scores,
+        person_bbox=box,
+        frame_width=640,
+        frame_height=480,
+        score_threshold=0.8,
+        minimum_eye_span_ratio=0.03,
+        maximum_eye_span_ratio=0.3,
+    )
+    assert tuple(keypoint.name for keypoint in trusted) == (
+        "nose",
+        "left_eye",
+        "right_eye",
+        "left_ear",
+        "right_ear",
+    )
+
+    low_score = list(scores)
+    low_score[2] = 0.55
+    assert not select_trusted_face_keypoints(
+        keypoints=points,
+        scores=low_score,
+        person_bbox=box,
+        frame_width=640,
+        frame_height=480,
+        score_threshold=0.8,
+        minimum_eye_span_ratio=0.03,
+        maximum_eye_span_ratio=0.3,
+    )
+
+    degenerate = [list(point) for point in points]
+    degenerate[2] = [171.0, 90.0]
+    assert not select_trusted_face_keypoints(
+        keypoints=degenerate,
+        scores=scores,
+        person_bbox=box,
+        frame_width=640,
+        frame_height=480,
+        score_threshold=0.8,
+        minimum_eye_span_ratio=0.03,
+        maximum_eye_span_ratio=0.3,
+    )
 
 
 def test_worker_frame_identity_mismatch_is_not_accepted() -> None:
