@@ -224,7 +224,7 @@ def _external_pilot_config() -> AppConfig:
             "transport": "HTTP",
             "endpoint_env": "LABCOURT_TEST_ENDPOINT",
             "api_key_env": "LABCOURT_TEST_API_KEY",
-            "timeout_seconds": 30.0,
+            "timeout_seconds": base.screening.timeout_seconds,
             "input_cost_per_million_tokens": 1.0,
             "output_cost_per_million_tokens": 2.0,
         }

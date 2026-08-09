@@ -50,6 +50,7 @@ from labcourt.contracts.screening import (
 from labcourt.contracts.storage import ArtifactRef, ClosureReport
 from labcourt.contracts.verdicts import ObjectiveClaim
 from labcourt.domain.screening_router import (
+    DETERMINISTIC_NARRATIVE_ROUTER_VERSION,
     FastVerdictBuilder,
     FastVerdictPolicy,
     ScreeningRouteError,
@@ -528,6 +529,43 @@ def test_fast_verdict_preserves_typed_content_without_inventing_hearing_records(
     assert canonical_json(first.model_dump(mode="json")) == canonical_json(
         second.model_dump(mode="json")
     )
+
+
+def test_v2_fast_verdict_isolates_model_narrative_from_authoritative_verdict() -> None:
+    pack = _presence_pack()
+    parsed = _parsed(pack, probability=0.9)
+    model_claim = "The model claims 123 frames and 99 seconds prove the allegation."
+    model_rationale = "The model claims an objective duration without authoritative facts."
+    parsed = parsed.model_copy(
+        update={
+            "payload": parsed.payload.model_copy(
+                update={
+                    "prosecution_summary": model_claim,
+                    "rationale_summary": model_rationale,
+                }
+            )
+        }
+    )
+    policy = ScreeningRoutePolicy(
+        low_probability=0.2,
+        high_probability=0.8,
+        strong_signal_threshold=1.0,
+        router_version=DETERMINISTIC_NARRATIVE_ROUTER_VERSION,
+    )
+
+    verdict = build_fast_verdict(route_screening(parsed, pack, policy), pack)
+
+    assert verdict.prosecution_arguments[0].claim == (
+        "The deterministic screening route established the allegation from cited typed evidence."
+    )
+    assert verdict.rationale_summary == (
+        "The decision follows evidence-pack authority, strictly parsed typed fields, and the "
+        "versioned screening policy; model-authored narrative is not decision authority."
+    )
+    assert model_claim not in canonical_json(verdict.model_dump(mode="json"))
+    assert model_rationale not in canonical_json(verdict.model_dump(mode="json"))
+    assert parsed.payload.prosecution_summary == model_claim
+    assert parsed.payload.rationale_summary == model_rationale
 
 
 def test_fast_verdict_can_preserve_the_complete_repair_response_chain() -> None:

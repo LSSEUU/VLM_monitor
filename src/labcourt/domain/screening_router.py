@@ -32,6 +32,7 @@ from labcourt.contracts.verdicts import (
 )
 
 DEFAULT_ROUTER_VERSION = "screening-router-v1"
+DETERMINISTIC_NARRATIVE_ROUTER_VERSION = "screening-router-v2"
 DEFAULT_CONFLICT_POLICY_VERSION = "strong-signal-v1"
 
 
@@ -305,6 +306,41 @@ def _model_response_refs(
     return supplied
 
 
+def _verdict_narratives(
+    screening_result: ScreeningResult,
+    decision: VerdictDecision,
+) -> tuple[str, str]:
+    """Keep model prose auditable without making it authoritative in v2 verdicts.
+
+    The v1 behavior remains available for exact replay of sealed historical runs.
+    Pilot v2 verdicts instead describe only the deterministic route; the raw
+    model-authored summaries remain bound through ``model_response_refs`` and the
+    parsed screening record.
+    """
+
+    if screening_result.router_version != DETERMINISTIC_NARRATIVE_ROUTER_VERSION:
+        return (
+            screening_result.parsed_output.prosecution_summary,
+            screening_result.parsed_output.rationale_summary,
+        )
+
+    if decision == VerdictDecision.ESTABLISHED:
+        claim = (
+            "The deterministic screening route established the allegation from cited typed "
+            "evidence."
+        )
+    else:
+        claim = (
+            "The deterministic screening route did not establish the allegation from cited "
+            "typed evidence."
+        )
+    rationale = (
+        "The decision follows evidence-pack authority, strictly parsed typed fields, and the "
+        "versioned screening policy; model-authored narrative is not decision authority."
+    )
+    return claim, rationale
+
+
 def build_fast_verdict(
     screening_result: ScreeningResult,
     evidence_pack: EvidencePack,
@@ -341,9 +377,11 @@ def build_fast_verdict(
         confidence = 1.0 - screening_result.parsed_output.violation_probability
         recommended_alert = verdict_policy.not_established_alert_level
 
+    prosecution_claim, rationale_summary = _verdict_narratives(screening_result, decision)
+
     prosecution_argument = Argument(
         stance=ArgumentStance.PROSECUTION,
-        claim=screening_result.parsed_output.prosecution_summary,
+        claim=prosecution_claim,
         evidence_refs=citation_refs,
         uncertainty=1.0 - confidence,
     )
@@ -360,7 +398,7 @@ def build_fast_verdict(
         decision=decision,
         confidence=confidence,
         recommended_alert_level=recommended_alert,
-        rationale_summary=screening_result.parsed_output.rationale_summary,
+        rationale_summary=rationale_summary,
         evidence_citations=citations,
         prosecution_arguments=(prosecution_argument,),
         defense_arguments=(),
@@ -410,6 +448,7 @@ class FastVerdictBuilder:
 __all__ = [
     "DEFAULT_CONFLICT_POLICY_VERSION",
     "DEFAULT_ROUTER_VERSION",
+    "DETERMINISTIC_NARRATIVE_ROUTER_VERSION",
     "FastVerdictBuilder",
     "FastVerdictPolicy",
     "ScreeningRouteError",
