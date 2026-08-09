@@ -273,6 +273,7 @@ def artifacts_validate(
         M5ArtifactValidationBudget,
         M5ArtifactValidationReport,
     )
+    from labcourt.contracts.references import require_portable_run_id
     from labcourt.exceptions import PathBoundaryViolation
     from labcourt.services.m5_artifact_validation import validate_m5_snapshot
 
@@ -319,7 +320,17 @@ def artifacts_validate(
         _artifact_boundary_error(json_output, "CONFIG_OR_BUDGET_INVALID")
 
     workspace_root = (Path.cwd() / Path(parsed.run.workspace)).absolute()
-    database = workspace_root / parsed.storage.database_filename
+    if parsed.pilot is not None:
+        try:
+            controlled_run_id = require_portable_run_id(
+                run_id,
+                "pilot artifact validation run_id",
+            )
+        except (TypeError, ValueError):
+            _artifact_boundary_error(json_output, "RUN_ID_INVALID")
+        database = workspace_root / controlled_run_id / parsed.storage.database_filename
+    else:
+        database = workspace_root / parsed.storage.database_filename
     try:
         with readonly_sqlite_snapshot(
             database,

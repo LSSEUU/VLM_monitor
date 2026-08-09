@@ -133,6 +133,10 @@ def test_pilot_a4_metrics_and_publication_are_content_bound_and_exported() -> No
         metrics_path="runs/pilot-001/metrics.json",
         case_paths=("runs/pilot-001/report/cases/case-001.html",),
         local_alert_paths=(f"runs/pilot-001/alerts/{'8' * 64}.json",),
+        projection_paths=(
+            "runs/pilot-001/projections/current.json",
+            "runs/pilot-001/m5-projections/current.json",
+        ),
     )
 
     assert PilotA4Metrics.model_validate_json(metrics.model_dump_json()) == metrics

@@ -33,6 +33,7 @@ def rebuild_m3_projection(
     workspace_root: str | Path,
     database_path: str | Path,
     budget: M3ProjectionBudget,
+    output_root: str | Path | None = None,
     fault_injector: ProjectionFaultInjector | None = None,
 ) -> M3ProjectionOutcome:
     """Rebuild from one bounded private snapshot, returning only typed failures."""
@@ -47,6 +48,10 @@ def rebuild_m3_projection(
 
     root = Path(workspace_root).absolute()
     database = Path(database_path).absolute()
+    supplied_output = Path(output_root) if output_root is not None else None
+    if supplied_output is not None and ".." in supplied_output.parts:
+        raise ValueError("M3 projection output_root cannot contain parent traversal")
+    projection_root = supplied_output.absolute() if supplied_output is not None else root
     if database != root / config.storage.database_filename:
         raise ValueError("database_path must match the configured projection authority")
 
@@ -80,7 +85,7 @@ def rebuild_m3_projection(
             )
             JsonProjector(
                 repository,
-                root,
+                projection_root,
                 fault_injector=fault_injector,
                 max_projection_bytes=budget.max_projection_file_bytes,
             ).project_run(controlled_run_id)

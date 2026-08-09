@@ -631,9 +631,14 @@ class ReadonlyM5ArtifactRepository:
             ),
         }
         detector = manifest.models["detector"]
+        configured_detector = config.perception.detector_manifest
         checks["detector"] = (
-            detector.provider == config.perception.provider
-            and detector.model == config.perception.detector.model_id
+            detector == configured_detector
+            if configured_detector is not None
+            else (
+                detector.provider == config.perception.provider
+                and detector.model == config.perception.detector.model_id
+            )
         )
         role_profiles = {
             "screening": config.screening.provider_profile,

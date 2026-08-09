@@ -395,3 +395,29 @@ def test_pilot_review_reads_explicit_reason_and_uses_run_scoped_authority(
     assert captured["database_path"] == tmp_path / "runs" / "pilot-001" / "labcourt.sqlite3"
     assert captured["reason"] == "manual review reason"
     assert captured["decision"] == VerdictDecision.ESTABLISHED
+
+
+def test_artifact_validation_uses_pilot_run_scoped_database(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    run_root = tmp_path / "runs" / "pilot-001"
+    run_root.mkdir(parents=True)
+    (run_root / "labcourt.sqlite3").write_bytes(b"not-a-database")
+    monkeypatch.chdir(tmp_path)
+
+    result = RUNNER.invoke(
+        app,
+        [
+            "artifacts",
+            "validate",
+            "--config",
+            str(PROJECT_ROOT / "configs" / "pilot.yaml"),
+            "--run-id",
+            "pilot-001",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert json.loads(result.stdout)["reason_code"] == "DATABASE_BACKUP_FAILED"
