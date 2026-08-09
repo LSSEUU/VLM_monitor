@@ -9,7 +9,7 @@ from enum import StrEnum
 from typing import Final, NoReturn
 
 from labcourt.application.model_parser import ScreeningParseInspection
-from labcourt.application.screening_request import FROZEN_M3_PROMPT_BUNDLE_SHA256
+from labcourt.application.screening_request import SUPPORTED_M3_PROMPT_BUNDLE_SHA256S
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.enums import (
     ArtifactKind,
@@ -258,7 +258,7 @@ def _validate_run_and_prompt_authority(
 
     bundle = run_manifest.prompt_bundle_sha256
     if (
-        bundle != FROZEN_M3_PROMPT_BUNDLE_SHA256
+        bundle not in SUPPORTED_M3_PROMPT_BUNDLE_SHA256S
         or request.prompt_manifest.prompt_bundle_sha256 != bundle
         or catalog.bundle_sha256 != bundle
     ):

@@ -12,6 +12,7 @@ from labcourt.adapters.jinja_prompt_renderer import PROMPT_DEFINITIONS, JinjaPro
 from labcourt.adapters.vlm.openai_compatible import ImmutableRenderedPromptRegistry
 from labcourt.application.screening_request import (
     FROZEN_M3_PROMPT_BUNDLE_SHA256,
+    LEGACY_M3_PROMPT_BUNDLE_SHA256,
     SCREENING_ABSENCE_PROMPT_ID,
     SCREENING_PRESENCE_PROMPT_ID,
     prepare_screening_request,
@@ -379,6 +380,16 @@ def test_production_catalog_uses_frozen_bundle_and_exact_exported_schema() -> No
     assert catalog.bundle_sha256 == FROZEN_M3_PROMPT_BUNDLE_SHA256
     assert {
         catalog.manifest(definition.prompt_id).output_schema_sha256
+        for definition in PROMPT_DEFINITIONS
+    } == {expected_schema_sha}
+
+    legacy_manifest = manifest.model_copy(
+        update={"prompt_bundle_sha256": LEGACY_M3_PROMPT_BUNDLE_SHA256}
+    )
+    legacy_catalog = build_screening_prompt_catalog(legacy_manifest)
+    assert legacy_catalog.bundle_sha256 == LEGACY_M3_PROMPT_BUNDLE_SHA256
+    assert {
+        legacy_catalog.manifest(definition.prompt_id).output_schema_sha256
         for definition in PROMPT_DEFINITIONS
     } == {expected_schema_sha}
 

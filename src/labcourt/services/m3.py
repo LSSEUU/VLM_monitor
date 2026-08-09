@@ -6,10 +6,14 @@ import json
 from typing import Final
 
 from labcourt.adapters.jinja_prompt_renderer import (
+    LEGACY_PROMPT_DEFINITIONS,
     PROMPT_DEFINITIONS,
     JinjaPromptCatalog,
 )
-from labcourt.application.screening_request import FROZEN_M3_PROMPT_BUNDLE_SHA256
+from labcourt.application.screening_request import (
+    FROZEN_M3_PROMPT_BUNDLE_SHA256,
+    LEGACY_M3_PROMPT_BUNDLE_SHA256,
+)
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.manifests import RunManifest
 from labcourt.exceptions import ManifestMismatch
@@ -24,15 +28,20 @@ def build_screening_prompt_catalog(run_manifest: RunManifest) -> PromptCatalog:
 
     if not isinstance(run_manifest, RunManifest):
         raise TypeError("run_manifest must be a RunManifest")
-    if run_manifest.prompt_bundle_sha256 != FROZEN_M3_PROMPT_BUNDLE_SHA256:
+    definitions = {
+        FROZEN_M3_PROMPT_BUNDLE_SHA256: PROMPT_DEFINITIONS,
+        LEGACY_M3_PROMPT_BUNDLE_SHA256: LEGACY_PROMPT_DEFINITIONS,
+    }.get(run_manifest.prompt_bundle_sha256)
+    if definitions is None:
         raise ManifestMismatch("run manifest does not use the frozen M3 prompt bundle")
 
     schema_document = json.loads(expected_schema_files()[_SCREENING_SCHEMA_FILENAME])
     output_schema_json = canonical_json(schema_document)
-    schemas = {definition.prompt_id: output_schema_json for definition in PROMPT_DEFINITIONS}
+    schemas = {definition.prompt_id: output_schema_json for definition in definitions}
     return JinjaPromptCatalog(
         output_schema_json_by_prompt=schemas,
         expected_bundle_sha256=run_manifest.prompt_bundle_sha256,
+        definitions=definitions,
     )
 
 
