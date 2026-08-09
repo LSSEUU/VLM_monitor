@@ -20,7 +20,7 @@ from labcourt.services.pilot_a4 import (
     publish_pilot_run,
     review_pilot_case,
 )
-from labcourt.services.pilot_evidence import run_pilot_a2
+from labcourt.services.pilot_a5 import PilotA5OperationsError, run_pilot_a5
 from labcourt.services.pilot_operations import (
     PilotOperationsBoundaryCode,
     PilotOperationsBoundaryError,
@@ -59,7 +59,7 @@ def pilot_run(
     resume: Annotated[bool, typer.Option("--resume/--no-resume")] = True,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Run real perception and stop after authoritative A2 evidence publication."""
+    """Run or resume the complete real-video pilot through the local report."""
 
     parsed = _load_config(config, "RUN", json_output)
     try:
@@ -70,12 +70,14 @@ def pilot_run(
             project_root=Path.cwd(),
             resume=resume,
         )
-        report = run_pilot_a2(
+        report = run_pilot_a5(
             config=parsed,
             request=request,
             config_path=config,
             project_root=Path.cwd(),
         )
+    except PilotA5OperationsError as error:
+        _pilot_boundary_error(json_output, "RUN", error.code.value)
     except PilotOperationsBoundaryError as error:
         _pilot_boundary_error(json_output, "RUN", error.code.value)
     except (LabCourtError, OSError, TypeError, ValueError):
@@ -86,12 +88,15 @@ def pilot_run(
         )
     if json_output:
         typer.echo(canonical_json(report.model_dump(mode="json")))
-        return
-    typer.echo(
-        f"pilot evidence complete; state={report.state}; "
-        f"candidates={report.candidate_event_count}; "
-        f"packs={report.evidence_pack_count}; report_id={report.report_id}"
-    )
+    else:
+        typer.echo(
+            f"pilot run complete; state={report.state}; "
+            f"candidates={report.evidence.candidate_event_count}; "
+            f"cases={report.publication.metrics.case_count}; "
+            f"index={report.publication.index_path}; report_id={report.report_id}"
+        )
+    if report.state == "ATTENTION_REQUIRED":
+        raise typer.Exit(code=1)
 
 
 @pilot_app.command("perceive")
