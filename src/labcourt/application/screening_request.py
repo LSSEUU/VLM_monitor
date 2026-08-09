@@ -37,7 +37,7 @@ from labcourt.exceptions import (
 from labcourt.ports.prompts import PromptCatalog, RenderedPrompt
 
 FROZEN_M3_PROMPT_BUNDLE_SHA256: Final = (
-    "b6a7e737fb9942b41e1b5027a694ec3ee9db55a9a6705b5988d5a806b99291d7"
+    "a2465fd6bcd0ef02834aeb0fb7ee6d9512ee2213515722e9a120caffd17c9e2a"
 )
 SCREENING_PRESENCE_PROMPT_ID: Final = "screening_presence_v1"
 SCREENING_ABSENCE_PROMPT_ID: Final = "screening_absence_v1"

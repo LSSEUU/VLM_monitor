@@ -4,7 +4,7 @@
   "config_sha256": "ec85dd6dc78540056c01589c136d312ca3c12ee78b7a3a69d68f375473a3abe7",
   "rule_version": "laboratory-v1",
   "rule_bundle_sha256": "75199dff33f2cb01ec7c82f5c1035e528bb4aa3d6707f468fcf30ab4118be86a",
-  "prompt_bundle_sha256": "b6a7e737fb9942b41e1b5027a694ec3ee9db55a9a6705b5988d5a806b99291d7",
+  "prompt_bundle_sha256": "a2465fd6bcd0ef02834aeb0fb7ee6d9512ee2213515722e9a120caffd17c9e2a",
   "models": {
     "detector": {
       "component": "detector",
@@ -126,5 +126,5 @@
   "pixel_format": "RGB8",
   "pixel_hash_algorithm": "LCPIX1",
   "image_encoding_version": "png-v1",
-  "manifest_id": "aa4bdd2f9b995b13889398468bc6ae2cef01f329651b9cdb6ee7d641ff928c1c"
+  "manifest_id": "dcec1d7ae85d9f35e5b7e906c0b1051637a72a5ff27e90f30e29a19344a5e61a"
 }
