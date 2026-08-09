@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from labcourt.contracts.detections import Keypoint
 from labcourt.contracts.enums import ConfirmationPolicy, PrivacyPolicy, ViolationType
 from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.pilot import (
@@ -140,6 +141,40 @@ def test_perception_manifest_requires_real_weight_identity_and_exact_initial_lab
     with pytest.raises(ValidationError):
         PilotPerceptionExecutionManifest.model_validate(payload)
 
+
+def test_perception_manifest_binds_complete_fail_closed_pose_controls() -> None:
+    base = _execution_manifest().model_dump(mode="python", exclude_computed_fields=True)
+    base.update(
+        {
+            "pose": ModelManifest(
+                component="pose",
+                provider="HuggingFace",
+                model="usyd-community/vitpose-plus-small",
+                revision="0c30b6534bb621af0162b481176742577264e36e",
+                weights_sha256=("f7bad8ed09eeeb2a7de6b38faaa8a88d07838e23e9c06a2a782099bca7467cb9"),
+                license_id="Apache-2.0",
+            ).model_dump(mode="python", exclude_computed_fields=True),
+            "pose_dataset_index": 0,
+            "pose_keypoint_score_threshold": 0.8,
+            "pose_minimum_eye_span_ratio": 0.03,
+            "pose_maximum_eye_span_ratio": 0.3,
+            "pose_keypoint_policy": "DUAL_EYE_SCORE_AND_GEOMETRY_V1",
+        }
+    )
+    manifest = PilotPerceptionExecutionManifest.model_validate(base)
+    assert manifest.pose is not None
+    assert manifest.pose.component == "pose"
+
+    missing_control = dict(base)
+    missing_control.pop("pose_keypoint_score_threshold")
+    with pytest.raises(ValidationError, match="complete fail-closed controls"):
+        PilotPerceptionExecutionManifest.model_validate(missing_control)
+
+    reversed_span = dict(base)
+    reversed_span["pose_minimum_eye_span_ratio"] = 0.4
+    with pytest.raises(ValidationError, match="strictly ordered"):
+        PilotPerceptionExecutionManifest.model_validate(reversed_span)
+
     payload = _execution_manifest().model_dump(mode="python", exclude_computed_fields=True)
     payload["goggles_nms_iou_threshold"] = 1.1
     with pytest.raises(ValidationError):
@@ -197,6 +232,34 @@ def test_worker_detection_requires_person_track_and_strict_supported_labels() ->
             score=0.75,
             local_track_id=None,
         )
+
+
+def test_worker_pose_output_requires_typed_keypoints_and_manifest_identity() -> None:
+    pose_manifest_id = "9" * 64
+    detection = PilotWorkerDetection(
+        label="person",
+        source_label="person",
+        bbox=PilotWorkerBox(x1=1.0, y1=2.0, x2=10.0, y2=11.0),
+        score=0.75,
+        local_track_id="42",
+        keypoints=(
+            Keypoint(name="left_eye", x=4.0, y=4.0, score=0.91),
+            Keypoint(name="right_eye", x=7.0, y=4.0, score=0.92),
+        ),
+        pose_manifest_id=pose_manifest_id,
+    )
+    assert detection.pose_manifest_id == pose_manifest_id
+
+    payload = detection.model_dump(mode="python")
+    payload["pose_manifest_id"] = None
+    with pytest.raises(ValidationError, match="require a pose manifest"):
+        PilotWorkerDetection.model_validate(payload)
+
+    payload = detection.model_dump(mode="python")
+    payload["label"] = "goggles"
+    payload["local_track_id"] = None
+    with pytest.raises(ValidationError, match="only person detections"):
+        PilotWorkerDetection.model_validate(payload)
 
 
 def test_perception_report_counts_are_self_consistent() -> None:

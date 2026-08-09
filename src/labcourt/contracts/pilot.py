@@ -16,6 +16,7 @@ from pydantic import (
 
 from labcourt.contracts.base import ContractModel
 from labcourt.contracts.canonical import sha256_hex
+from labcourt.contracts.detections import Keypoint
 from labcourt.contracts.enums import ConfirmationPolicy, PrivacyPolicy, ViolationType
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.manifests import ModelManifest
@@ -74,6 +75,10 @@ class PilotPerceptionExecutionManifest(ContractModel):
     protocol_version: Literal["1.0"] = PILOT_PERCEPTION_PROTOCOL_VERSION
     detector: ModelManifest
     tracker: ModelManifest
+    pose: ModelManifest | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     prompts: dict[str, tuple[str, ...]]
     device: str = Field(pattern=r"^(?:cpu|cuda(?::[0-9]+)?)$")
     score_threshold: StrictFloat = Field(ge=0, le=1)
@@ -87,6 +92,32 @@ class PilotPerceptionExecutionManifest(ContractModel):
         "ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1"
     )
     tracker_thresholds: PilotTrackerThresholds
+    pose_dataset_index: Literal[0] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    pose_keypoint_score_threshold: StrictFloat | None = Field(
+        default=None,
+        ge=0,
+        le=1,
+        exclude_if=lambda value: value is None,
+    )
+    pose_minimum_eye_span_ratio: StrictFloat | None = Field(
+        default=None,
+        gt=0,
+        lt=1,
+        exclude_if=lambda value: value is None,
+    )
+    pose_maximum_eye_span_ratio: StrictFloat | None = Field(
+        default=None,
+        gt=0,
+        le=1,
+        exclude_if=lambda value: value is None,
+    )
+    pose_keypoint_policy: Literal["DUAL_EYE_SCORE_AND_GEOMETRY_V1"] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     software_versions: dict[ReferenceToken, str] = Field(min_length=1)
 
     @model_validator(mode="wrap")
@@ -116,6 +147,24 @@ class PilotPerceptionExecutionManifest(ContractModel):
             raise ValueError("pilot tracker manifest must use the tracker component")
         if self.detector.weights_sha256 is None:
             raise ValueError("real pilot detector manifest requires a weight SHA-256")
+        pose_controls = (
+            self.pose_dataset_index,
+            self.pose_keypoint_score_threshold,
+            self.pose_minimum_eye_span_ratio,
+            self.pose_maximum_eye_span_ratio,
+            self.pose_keypoint_policy,
+        )
+        if self.pose is None and any(value is not None for value in pose_controls):
+            raise ValueError("pose controls require a pose manifest")
+        if self.pose is not None:
+            if self.pose.component != "pose" or self.pose.weights_sha256 is None:
+                raise ValueError("pilot pose manifest requires pinned pose weights")
+            if any(value is None for value in pose_controls):
+                raise ValueError("pilot pose manifest requires complete fail-closed controls")
+            assert self.pose_minimum_eye_span_ratio is not None
+            assert self.pose_maximum_eye_span_ratio is not None
+            if self.pose_minimum_eye_span_ratio >= self.pose_maximum_eye_span_ratio:
+                raise ValueError("pilot pose eye-span bounds must be strictly ordered")
         if set(self.prompts) != PILOT_PERCEPTION_LABELS:
             raise ValueError("pilot perception prompts must define exactly person and goggles")
         if any(not values for values in self.prompts.values()):
@@ -164,6 +213,11 @@ class PilotWorkerDetection(ContractModel):
     bbox: PilotWorkerBox
     score: StrictFloat = Field(ge=0, le=1)
     local_track_id: ReferenceToken | None = None
+    keypoints: tuple[Keypoint, ...] = Field(default=(), max_length=17)
+    pose_manifest_id: Sha256Hex | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
 
     @model_validator(mode="after")
     def validate_tracking_scope(self) -> PilotWorkerDetection:
@@ -171,6 +225,13 @@ class PilotWorkerDetection(ContractModel):
             raise ValueError("every person detection requires a local anonymous track ID")
         if self.label != "person" and self.local_track_id is not None:
             raise ValueError("only person detections may carry a local track ID")
+        if self.label != "person" and (self.keypoints or self.pose_manifest_id is not None):
+            raise ValueError("only person detections may carry pose output")
+        if self.keypoints and self.pose_manifest_id is None:
+            raise ValueError("worker keypoints require a pose manifest identity")
+        names = tuple(keypoint.name for keypoint in self.keypoints)
+        if len(names) != len(set(names)):
+            raise ValueError("worker keypoint names must be unique")
         return self
 
 

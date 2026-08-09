@@ -129,6 +129,22 @@ perception:
     weights_sha256: null
     license_id: Apache-2.0
     provider_revision_guarantee: true
+  pose:
+    model_id: "usyd-community/vitpose-plus-small"
+    dataset_index: 0
+    keypoint_score_threshold: 0.80
+    minimum_eye_span_ratio: 0.03
+    maximum_eye_span_ratio: 0.30
+    keypoint_policy: DUAL_EYE_SCORE_AND_GEOMETRY_V1
+  pose_manifest:
+    component: pose
+    provider: HuggingFace
+    model: "usyd-community/vitpose-plus-small"
+    revision: "0c30b6534bb621af0162b481176742577264e36e"
+    quantization: null
+    weights_sha256: "f7bad8ed09eeeb2a7de6b38faaa8a88d07838e23e9c06a2a782099bca7467cb9"
+    license_id: Apache-2.0
+    provider_revision_guarantee: true
   tracker_thresholds:
     track_activation_threshold: 0.25
     lost_track_buffer: 30
@@ -171,7 +187,7 @@ perception:
       sharpness: 0.20
       exposure: 0.10
       non_occlusion: 0.10
-    clear_frame_threshold: 0.65
+    clear_frame_threshold: 0.60
 
 absence:
   dwell_seconds_by_risk:
@@ -239,7 +255,7 @@ procedural_gate:
     detection_score: 0.01
     observability: 0.01
   precedent_similarity_min: 0.55
-  absence_clear_frame_threshold: 0.65
+  absence_clear_frame_threshold: 0.60
   minimum_absence_clear_frames: 2
 
 precedents:

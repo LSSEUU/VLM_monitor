@@ -67,6 +67,8 @@ def _config_digest(payload: dict[str, object]) -> str:
     if isinstance(perception, dict):
         for optional_worker_field in (
             "detector_manifest",
+            "pose",
+            "pose_manifest",
             "tracker_manifest",
             "tracker_thresholds",
             "worker",
@@ -178,12 +180,37 @@ class ObservabilityConfig(ContractModel):
     clear_frame_threshold: StrictFloat = Field(ge=0, le=1)
 
 
+class PoseConfig(ContractModel):
+    """Pinned fail-closed face-keypoint controls for the local pilot worker."""
+
+    model_id: str = Field(min_length=1)
+    dataset_index: Literal[0] = 0
+    keypoint_score_threshold: StrictFloat = Field(ge=0, le=1)
+    minimum_eye_span_ratio: StrictFloat = Field(gt=0, lt=1)
+    maximum_eye_span_ratio: StrictFloat = Field(gt=0, le=1)
+    keypoint_policy: Literal["DUAL_EYE_SCORE_AND_GEOMETRY_V1"] = "DUAL_EYE_SCORE_AND_GEOMETRY_V1"
+
+    @model_validator(mode="after")
+    def validate_eye_span(self) -> PoseConfig:
+        if self.minimum_eye_span_ratio >= self.maximum_eye_span_ratio:
+            raise ValueError("pose eye-span bounds must be strictly ordered")
+        return self
+
+
 class PerceptionConfig(ContractModel):
     provider: str = Field(min_length=1)
     detector: DetectorConfig
     association: AssociationConfig
     observability: ObservabilityConfig
     detector_manifest: ModelManifest | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    pose: PoseConfig | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
+    pose_manifest: ModelManifest | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
     )
@@ -211,12 +238,16 @@ class PerceptionConfig(ContractModel):
         )
         if local_worker and any(value is None for value in worker_fields):
             raise ValueError("local-worker perception requires complete model and worker pins")
-        if not local_worker and any(value is not None for value in worker_fields):
+        if not local_worker and any(
+            value is not None for value in (*worker_fields, self.pose, self.pose_manifest)
+        ):
             raise ValueError("worker model pins are allowed only for local-worker perception")
         if not local_worker:
             return self
         assert self.detector_manifest is not None
         assert self.tracker_manifest is not None
+        if (self.pose is None) != (self.pose_manifest is None):
+            raise ValueError("local-worker pose config and manifest must be supplied together")
         if self.detector_manifest.component != "detector":
             raise ValueError("local-worker detector manifest must use detector component")
         if self.tracker_manifest.component != "tracker":
@@ -225,6 +256,13 @@ class PerceptionConfig(ContractModel):
             raise ValueError("detector config and manifest model IDs must match")
         if self.detector_manifest.weights_sha256 is None:
             raise ValueError("local-worker detector requires a pinned weight SHA-256")
+        if self.pose is not None and self.pose_manifest is not None:
+            if self.pose_manifest.component != "pose":
+                raise ValueError("local-worker pose manifest must use the pose component")
+            if self.pose_manifest.model != self.pose.model_id:
+                raise ValueError("pose config and manifest model IDs must match")
+            if self.pose_manifest.weights_sha256 is None:
+                raise ValueError("local-worker pose requires a pinned weight SHA-256")
         return self
 
 

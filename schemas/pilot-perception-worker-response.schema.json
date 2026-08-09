@@ -1,5 +1,39 @@
 {
   "$defs": {
+    "Keypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "x",
+        "y",
+        "score"
+      ],
+      "title": "Keypoint",
+      "type": "object"
+    },
     "PilotWorkerBox": {
       "additionalProperties": false,
       "description": "Unrounded detector coordinates in the worker response.",
@@ -41,6 +75,15 @@
         "bbox": {
           "$ref": "#/$defs/PilotWorkerBox"
         },
+        "keypoints": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Keypoint"
+          },
+          "maxItems": 17,
+          "title": "Keypoints",
+          "type": "array"
+        },
         "label": {
           "enum": [
             "person",
@@ -61,6 +104,19 @@
           ],
           "default": null,
           "title": "Local Track Id"
+        },
+        "pose_manifest_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pose Manifest Id"
         },
         "score": {
           "maximum": 1,

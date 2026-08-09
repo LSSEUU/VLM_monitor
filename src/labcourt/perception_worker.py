@@ -27,6 +27,7 @@ from pydantic import ValidationError
 from labcourt.config_loader import load_config
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.config import AppConfig, PerceptionWorkerConfig
+from labcourt.contracts.detections import Keypoint
 from labcourt.contracts.pilot import (
     PilotPerceptionExecutionManifest,
     PilotPerceptionWorkerFailure,
@@ -138,6 +139,8 @@ def _execution_manifest(
     worker = perception.worker
     detector = perception.detector_manifest
     tracker = perception.tracker_manifest
+    pose = perception.pose
+    pose_manifest = perception.pose_manifest
     thresholds = perception.tracker_thresholds
     if worker is None or detector is None or tracker is None or thresholds is None:
         raise _StartupError("CONFIG_INVALID")
@@ -145,6 +148,7 @@ def _execution_manifest(
         protocol_version=worker.protocol_version,
         detector=detector,
         tracker=tracker,
+        pose=pose_manifest,
         prompts={
             "person": perception.detector.prompts["person"],
             "goggles": perception.detector.prompts["goggles"],
@@ -157,6 +161,11 @@ def _execution_manifest(
         goggles_nms_iou_threshold=0.95,
         tracker_initialization_policy="ALLOCATE_ON_FIRST_ACCEPTED_DETECTION_V1",
         tracker_thresholds=thresholds,
+        pose_dataset_index=pose.dataset_index if pose is not None else None,
+        pose_keypoint_score_threshold=(pose.keypoint_score_threshold if pose is not None else None),
+        pose_minimum_eye_span_ratio=(pose.minimum_eye_span_ratio if pose is not None else None),
+        pose_maximum_eye_span_ratio=(pose.maximum_eye_span_ratio if pose is not None else None),
+        pose_keypoint_policy=pose.keypoint_policy if pose is not None else None,
         software_versions=software_versions,
     )
 
@@ -167,6 +176,81 @@ class _RawDetection:
     source_label: str
     bbox: tuple[float, float, float, float]
     score: float
+
+
+_COCO_KEYPOINT_NAMES = (
+    "nose",
+    "left_eye",
+    "right_eye",
+    "left_ear",
+    "right_ear",
+    "left_shoulder",
+    "right_shoulder",
+    "left_elbow",
+    "right_elbow",
+    "left_wrist",
+    "right_wrist",
+    "left_hip",
+    "right_hip",
+    "left_knee",
+    "right_knee",
+    "left_ankle",
+    "right_ankle",
+)
+_FACE_KEYPOINT_COUNT = 5
+
+
+def select_trusted_face_keypoints(
+    *,
+    keypoints: Sequence[Sequence[float]],
+    scores: Sequence[float],
+    person_bbox: PilotWorkerBox,
+    frame_width: int,
+    frame_height: int,
+    score_threshold: float,
+    minimum_eye_span_ratio: float,
+    maximum_eye_span_ratio: float,
+) -> tuple[Keypoint, ...]:
+    """Return observed COCO face keypoints only after the dual-eye trust gate passes."""
+
+    if len(keypoints) != len(_COCO_KEYPOINT_NAMES) or len(scores) != len(keypoints):
+        raise _FrameError("INFERENCE_FAILED")
+    face: list[tuple[str, float, float, float]] = []
+    for name, point, score_value in zip(
+        _COCO_KEYPOINT_NAMES[:_FACE_KEYPOINT_COUNT],
+        keypoints[:_FACE_KEYPOINT_COUNT],
+        scores[:_FACE_KEYPOINT_COUNT],
+        strict=True,
+    ):
+        try:
+            if len(point) != 2:
+                raise ValueError
+            x = float(point[0])
+            y = float(point[1])
+            score = float(score_value)
+        except (TypeError, ValueError):
+            raise _FrameError("INFERENCE_FAILED") from None
+        if (
+            not all(math.isfinite(value) for value in (x, y, score))
+            or not 0 <= x < frame_width
+            or not 0 <= y < frame_height
+        ):
+            raise _FrameError("INFERENCE_FAILED")
+        face.append((name, x, y, score))
+
+    left_eye = face[1]
+    right_eye = face[2]
+    eye_span = math.hypot(left_eye[1] - right_eye[1], left_eye[2] - right_eye[2])
+    eye_span_ratio = eye_span / (person_bbox.x2 - person_bbox.x1)
+    if (
+        left_eye[3] < score_threshold
+        or right_eye[3] < score_threshold
+        or not minimum_eye_span_ratio <= eye_span_ratio <= maximum_eye_span_ratio
+    ):
+        return ()
+    return tuple(
+        Keypoint(name=name, x=x, y=y, score=min(1.0, max(0.0, score))) for name, x, y, score in face
+    )
 
 
 def normalize_grounding_dino_postprocess_result(
@@ -230,6 +314,8 @@ class GroundingDinoByteTrackBackend:
         perception = config.perception
         worker = perception.worker
         detector = perception.detector_manifest
+        pose = perception.pose
+        pose_manifest = perception.pose_manifest
         tracker_thresholds = perception.tracker_thresholds
         if worker is None or detector is None or tracker_thresholds is None:
             raise _StartupError("CONFIG_INVALID")
@@ -269,6 +355,30 @@ class GroundingDinoByteTrackBackend:
         if _file_sha256(Path(weight_path)) != detector.weights_sha256:
             raise _StartupError("WEIGHT_IDENTITY_MISMATCH")
 
+        pose_processor: Any | None = None
+        if pose is not None and pose_manifest is not None:
+            try:
+                pose_weight_path = cached_file(
+                    pose_manifest.model,
+                    "model.safetensors",
+                    revision=pose_manifest.revision,
+                    local_files_only=worker.local_files_only,
+                )
+            except Exception:
+                raise _StartupError("MODEL_LOAD_FAILED") from None
+            if not isinstance(pose_weight_path, str) or not pose_weight_path:
+                raise _StartupError("MODEL_LOAD_FAILED")
+            if _file_sha256(Path(pose_weight_path)) != pose_manifest.weights_sha256:
+                raise _StartupError("WEIGHT_IDENTITY_MISMATCH")
+            try:
+                pose_processor = transformers.VitPoseImageProcessorPil.from_pretrained(
+                    pose_manifest.model,
+                    revision=pose_manifest.revision,
+                    local_files_only=worker.local_files_only,
+                )
+            except Exception:
+                raise _StartupError("MODEL_LOAD_FAILED") from None
+
         try:
             processor = transformers.AutoProcessor.from_pretrained(
                 detector.model,
@@ -296,6 +406,8 @@ class GroundingDinoByteTrackBackend:
         self._prompt_batches = tuple(prompt_batches)
         self._local_files_only = worker.local_files_only
         self._model: Any | None = None
+        self._pose_model: Any | None = None
+        self._pose_processor = pose_processor
         self._goggles_nms_iou_threshold = self.manifest.goggles_nms_iou_threshold
         self._numpy = numpy
         self._processor = processor
@@ -308,6 +420,26 @@ class GroundingDinoByteTrackBackend:
         self._tracker: Any | None = None
         self._stream_identity: tuple[str, str, int, int] | None = None
         self._next_frame_index = 0
+
+    def _ensure_pose_model(self) -> Any:
+        if self._pose_model is not None:
+            return self._pose_model
+        pose = self.manifest.pose
+        if pose is None:
+            raise _FrameError("INFERENCE_FAILED")
+        try:
+            model = self._transformers.VitPoseForPoseEstimation.from_pretrained(
+                pose.model,
+                revision=pose.revision,
+                local_files_only=self._local_files_only,
+                use_safetensors=True,
+            )
+            model = model.to(self.manifest.device)
+            model.eval()
+        except Exception:
+            raise _FrameError("INFERENCE_FAILED") from None
+        self._pose_model = model
+        return model
 
     def _ensure_model(self) -> Any:
         if self._model is not None:
@@ -533,6 +665,80 @@ class GroundingDinoByteTrackBackend:
             selected.tracker_id = allocated
             tracker_ids[index] = allocated
 
+    def _localize_people(
+        self,
+        image: Image.Image,
+        people: tuple[PilotWorkerDetection, ...],
+    ) -> tuple[PilotWorkerDetection, ...]:
+        pose = self.manifest.pose
+        processor = self._pose_processor
+        if pose is None:
+            return people
+        if not people:
+            return ()
+        if processor is None:
+            raise _FrameError("INFERENCE_FAILED")
+        if (
+            self.manifest.pose_dataset_index is None
+            or self.manifest.pose_keypoint_score_threshold is None
+            or self.manifest.pose_minimum_eye_span_ratio is None
+            or self.manifest.pose_maximum_eye_span_ratio is None
+        ):
+            raise _FrameError("INFERENCE_FAILED")
+        boxes = [
+            [
+                person.bbox.x1,
+                person.bbox.y1,
+                person.bbox.x2 - person.bbox.x1,
+                person.bbox.y2 - person.bbox.y1,
+            ]
+            for person in people
+        ]
+        try:
+            inputs = processor(image, boxes=[boxes], return_tensors="pt").to(self.manifest.device)
+            dataset_index = self._torch.full(
+                (len(people),),
+                self.manifest.pose_dataset_index,
+                dtype=self._torch.long,
+                device=self.manifest.device,
+            )
+            with self._torch.inference_mode():
+                outputs = self._ensure_pose_model()(
+                    **inputs,
+                    dataset_index=dataset_index,
+                )
+            results = processor.post_process_pose_estimation(outputs, boxes=[boxes])[0]
+        except Exception:
+            raise _FrameError("INFERENCE_FAILED") from None
+        if len(results) != len(people):
+            raise _FrameError("INFERENCE_FAILED")
+        enriched: list[PilotWorkerDetection] = []
+        for person, result in zip(people, results, strict=True):
+            try:
+                points = result["keypoints"].detach().cpu().tolist()
+                scores = result["scores"].detach().cpu().tolist()
+            except (AttributeError, KeyError, TypeError):
+                raise _FrameError("INFERENCE_FAILED") from None
+            trusted = select_trusted_face_keypoints(
+                keypoints=points,
+                scores=scores,
+                person_bbox=person.bbox,
+                frame_width=image.width,
+                frame_height=image.height,
+                score_threshold=self.manifest.pose_keypoint_score_threshold,
+                minimum_eye_span_ratio=self.manifest.pose_minimum_eye_span_ratio,
+                maximum_eye_span_ratio=self.manifest.pose_maximum_eye_span_ratio,
+            )
+            enriched.append(
+                person.model_copy(
+                    update={
+                        "keypoints": trusted,
+                        "pose_manifest_id": pose.model_manifest_id,
+                    }
+                )
+            )
+        return tuple(enriched)
+
     def infer(self, request: PilotPerceptionWorkerRequest) -> tuple[PilotWorkerDetection, ...]:
         if request.expected_manifest_id != self.manifest.manifest_id:
             raise _FrameError("REQUEST_INVALID")
@@ -554,7 +760,7 @@ class GroundingDinoByteTrackBackend:
             raw,
             iou_threshold=self._goggles_nms_iou_threshold,
         )
-        people = self._track_people(raw)
+        people = self._localize_people(image, self._track_people(raw))
         goggles = tuple(
             PilotWorkerDetection(
                 label="goggles",

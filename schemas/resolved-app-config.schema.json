@@ -539,6 +539,28 @@
         "observability": {
           "$ref": "#/$defs/ObservabilityConfig"
         },
+        "pose": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PoseConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pose_manifest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelManifest"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "provider": {
           "minLength": 1,
           "title": "Provider",
@@ -798,6 +820,55 @@
         "points"
       ],
       "title": "Polygon",
+      "type": "object"
+    },
+    "PoseConfig": {
+      "additionalProperties": false,
+      "description": "Pinned fail-closed face-keypoint controls for the local pilot worker.",
+      "properties": {
+        "dataset_index": {
+          "const": 0,
+          "default": 0,
+          "title": "Dataset Index",
+          "type": "integer"
+        },
+        "keypoint_policy": {
+          "const": "DUAL_EYE_SCORE_AND_GEOMETRY_V1",
+          "default": "DUAL_EYE_SCORE_AND_GEOMETRY_V1",
+          "title": "Keypoint Policy",
+          "type": "string"
+        },
+        "keypoint_score_threshold": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Score Threshold",
+          "type": "number"
+        },
+        "maximum_eye_span_ratio": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Maximum Eye Span Ratio",
+          "type": "number"
+        },
+        "minimum_eye_span_ratio": {
+          "exclusiveMaximum": 1,
+          "exclusiveMinimum": 0,
+          "title": "Minimum Eye Span Ratio",
+          "type": "number"
+        },
+        "model_id": {
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_id",
+        "keypoint_score_threshold",
+        "minimum_eye_span_ratio",
+        "maximum_eye_span_ratio"
+      ],
+      "title": "PoseConfig",
       "type": "object"
     },
     "PpeType": {

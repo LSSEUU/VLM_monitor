@@ -173,9 +173,10 @@ def _build_run_manifest(
 ) -> RunManifest:
     detector = config.perception.detector_manifest
     tracker = config.perception.tracker_manifest
+    pose = completed.execution_manifest.pose
     worker = config.perception.worker
-    if detector is None or tracker is None or worker is None:
-        raise ManifestMismatch("pilot A2 requires the sealed local-worker model pins")
+    if detector is None or tracker is None or worker is None or pose is None:
+        raise ManifestMismatch("pilot A2 requires sealed detector, tracker, and pose pins")
     profiles = {
         "screening": config.providers[config.screening.provider_profile],
         "prosecutor": config.providers[config.hearing.prosecutor_profile],
@@ -203,7 +204,7 @@ def _build_run_manifest(
         models={
             "detector": detector,
             "tracker": tracker,
-            "pose": _not_invoked_model("pose"),
+            "pose": pose,
             "screening": _model_from_profile("screening", profiles["screening"]),
             "prosecutor": _model_from_profile("prosecutor", profiles["prosecutor"]),
             "defender": _model_from_profile("defender", profiles["defender"]),
