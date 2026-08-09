@@ -16,6 +16,12 @@ from labcourt.adapters.vlm.fake import (
     FakeVLMFixture,
 )
 from labcourt.adapters.vlm.hearing_fake import DeterministicFakeHearingVLMClient
+from labcourt.adapters.vlm.http_transport import (
+    OpenAICompatibleTransportConfigurationCode,
+    OpenAICompatibleTransportConfigurationError,
+    StdlibOpenAICompatibleTransport,
+    build_openai_compatible_transport,
+)
 from labcourt.adapters.vlm.openai_compatible import (
     AppendOnlyRenderedPromptRegistry,
     ImmutableRenderedPromptRegistry,
@@ -40,10 +46,14 @@ __all__ = [
     "ImmutableRenderedPromptRegistry",
     "OpenAICompatibleClientIdentity",
     "OpenAICompatibleTransport",
+    "OpenAICompatibleTransportConfigurationCode",
+    "OpenAICompatibleTransportConfigurationError",
     "OpenAICompatibleTransportRequest",
     "OpenAICompatibleTransportResponse",
     "OpenAICompatibleVLMClient",
+    "StdlibOpenAICompatibleTransport",
     "VLMDeliveryCertainty",
     "VLMProviderError",
     "VLMProviderFailureCode",
+    "build_openai_compatible_transport",
 ]

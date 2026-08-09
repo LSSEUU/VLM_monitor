@@ -395,6 +395,59 @@ def test_http_provider_requires_explicit_token_pricing_and_currency() -> None:
     assert resolved.output_cost_per_million_tokens == 10.0
 
 
+def test_http_provider_model_identity_can_be_resolved_from_deployment_environment(
+    tmp_path: Path,
+) -> None:
+    source = (PROJECT_ROOT / "configs" / "default.yaml").read_text(encoding="utf-8")
+    source = source.replace("provider: fake", "provider: openai-compatible", 1)
+    source = source.replace(
+        "model: deterministic-screening",
+        "model: ${LABCOURT_TEST_MODEL}",
+        1,
+    )
+    source = source.replace('revision: "1.0.0"', "revision: ${LABCOURT_TEST_REVISION}", 1)
+    source = source.replace("execution_location: LOCAL", "execution_location: EXTERNAL", 1)
+    source = source.replace("transport: IN_PROCESS", "transport: HTTP", 1)
+    source = source.replace("endpoint_env: null", "endpoint_env: LABCOURT_TEST_ENDPOINT", 1)
+    source = source.replace("api_key_env: null", "api_key_env: LABCOURT_TEST_API_KEY", 1)
+    path = tmp_path / "environment-config.yaml"
+    path.write_text(source, encoding="utf-8")
+
+    config = load_config(
+        path,
+        environment={
+            "LABCOURT_TEST_MODEL": "vision-model",
+            "LABCOURT_TEST_REVISION": "2026-08-01",
+        },
+    )
+
+    profile = config.providers["fake-screening"]
+    assert profile.model == "vision-model"
+    assert profile.revision == "2026-08-01"
+    serialized = config.model_dump_json()
+    assert "LABCOURT_TEST_MODEL" not in serialized
+    assert "LABCOURT_TEST_REVISION" not in serialized
+
+
+def test_missing_model_deployment_environment_is_a_redacted_configuration_failure(
+    tmp_path: Path,
+) -> None:
+    source = (PROJECT_ROOT / "configs" / "default.yaml").read_text(encoding="utf-8")
+    source = source.replace(
+        "model: deterministic-screening",
+        "model: ${LABCOURT_SECRET_MODEL_NAME}",
+        1,
+    )
+    path = tmp_path / "missing-environment-config.yaml"
+    path.write_text(source, encoding="utf-8")
+
+    with pytest.raises(ContractViolation) as captured:
+        load_config(path, environment={})
+
+    assert "deployment environment variable is missing" in str(captured.value)
+    assert "LABCOURT_SECRET_MODEL_NAME" not in str(captured.value)
+
+
 def test_procedural_gate_tolerances_cover_every_objective_numeric_kind() -> None:
     tolerances = load_config(
         PROJECT_ROOT / "configs" / "default.yaml"

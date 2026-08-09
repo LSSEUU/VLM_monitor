@@ -9,7 +9,13 @@ import pytest
 from typer.testing import CliRunner
 
 from labcourt.cli import app
-from labcourt.contracts.pilot import PilotA2Report, PilotPerceptionReport, PilotRunRequest
+from labcourt.contracts.m3_operations import M3ProcessCounts
+from labcourt.contracts.pilot import (
+    PilotA2Report,
+    PilotA3Report,
+    PilotPerceptionReport,
+    PilotRunRequest,
+)
 
 PROJECT_ROOT = Path(__file__).parents[2]
 RUNNER = CliRunner()
@@ -18,11 +24,11 @@ RUNNER = CliRunner()
 def test_pilot_group_exposes_all_staged_commands() -> None:
     result = RUNNER.invoke(app, ["pilot", "--help"])
     assert result.exit_code == 0
-    for command in ("run", "perceive", "report", "review"):
+    for command in ("run", "perceive", "screen", "report", "review"):
         assert command in result.stdout
 
 
-@pytest.mark.parametrize("command", ("run", "perceive", "report", "review"))
+@pytest.mark.parametrize("command", ("run", "perceive", "screen", "report", "review"))
 def test_pilot_command_help_is_available(command: str) -> None:
     result = RUNNER.invoke(app, ["pilot", command, "--help"])
     assert result.exit_code == 0
@@ -174,6 +180,81 @@ def test_pilot_perceive_emits_the_a1_report_contract(
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.stdout) == expected.model_dump(mode="json")
+
+
+def test_pilot_screen_opens_the_run_scoped_real_provider_service(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "runs" / "pilot-001").mkdir(parents=True)
+    monkeypatch.chdir(tmp_path)
+    expected = PilotA3Report(
+        run_id="pilot-001",
+        manifest_id="1" * 64,
+        provider_profile="pilot-screening",
+        provider="openai-compatible",
+        model="vision-model",
+        revision="2026-08-01",
+        model_manifest_id="2" * 64,
+        execution_location="EXTERNAL",
+        transport="HTTP",
+        requested_case_id=None,
+        selection_limit=10,
+        available_case_count=0,
+        selection_truncated=False,
+        outcomes=(),
+        counts=M3ProcessCounts(
+            selected_cases=0,
+            pipeline_invocations=0,
+            processed_cases=0,
+            deferred_to_backlog_cases=0,
+            observed_existing_cases=0,
+            skipped_not_ready_cases=0,
+            cache_hits=0,
+            recovered_responses=0,
+            repair_attempts=0,
+        ),
+    )
+    captured: dict[str, object] = {}
+
+    class _Service:
+        def __enter__(self) -> _Service:
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        def process_run(self, **kwargs: object) -> PilotA3Report:
+            captured["process"] = kwargs
+            return expected
+
+    def _open(**kwargs: object) -> _Service:
+        captured["open"] = kwargs
+        return _Service()
+
+    monkeypatch.setattr("labcourt.pilot_cli.open_pilot_a3_operations_service", _open)
+
+    result = RUNNER.invoke(
+        app,
+        [
+            "pilot",
+            "screen",
+            "--config",
+            str(PROJECT_ROOT / "configs" / "pilot.yaml"),
+            "--run-id",
+            "pilot-001",
+            "--max-cases",
+            "10",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == expected.model_dump(mode="json")
+    opened = cast(dict[str, object], captured["open"])
+    assert opened["workspace_root"] == tmp_path / "runs"
+    assert opened["database_path"] == tmp_path / "runs" / "pilot-001" / "labcourt.sqlite3"
+    assert captured["process"] == {"case_id": None, "max_cases": 10}
 
 
 def test_later_pilot_stage_is_explicitly_unavailable_in_a0() -> None:

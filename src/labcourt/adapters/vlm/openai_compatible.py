@@ -292,6 +292,8 @@ class OpenAICompatibleVLMClient:
         )
         try:
             transport_response = self._transport.send(transport_request)
+        except VLMProviderError:
+            raise
         except TimeoutError:
             raise VLMProviderError(VLMProviderFailureCode.PROVIDER_TIMEOUT) from None
         except Exception:

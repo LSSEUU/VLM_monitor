@@ -17,8 +17,20 @@ from pydantic import (
 from labcourt.contracts.base import ContractModel
 from labcourt.contracts.canonical import sha256_hex
 from labcourt.contracts.detections import Keypoint
-from labcourt.contracts.enums import ConfirmationPolicy, PrivacyPolicy, ViolationType
+from labcourt.contracts.enums import (
+    ConfirmationPolicy,
+    ExecutionLocation,
+    PrivacyPolicy,
+    ProviderTransport,
+    ViolationType,
+)
 from labcourt.contracts.frames import Sha256Hex
+from labcourt.contracts.m3_operations import (
+    MAX_M3_PROCESS_CASES,
+    M3ProcessCaseOutcome,
+    M3ProcessCounts,
+    M3ProcessDisposition,
+)
 from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.paths import require_safe_relative_posix_path
 from labcourt.contracts.references import (
@@ -577,6 +589,104 @@ class PilotA2Report(ContractModel):
     def report_id(self) -> Sha256Hex:
         payload = self.model_dump(mode="json", exclude={"report_id"})
         return sha256_hex(["pilot-a2-report", 1, payload])
+
+
+class PilotA3Report(ContractModel):
+    """Secret-free bounded result of real-provider screening over one pilot run."""
+
+    schema_version: Literal["pilot-a3-report-v1"] = "pilot-a3-report-v1"
+    run_id: ReferenceToken
+    manifest_id: Sha256Hex
+    provider_profile: ReferenceToken
+    provider: ReferenceToken
+    model: str = Field(min_length=1, max_length=256)
+    revision: str = Field(min_length=1, max_length=256)
+    model_manifest_id: Sha256Hex
+    execution_location: Literal[ExecutionLocation.EXTERNAL]
+    transport: Literal[ProviderTransport.HTTP]
+    perception_mode: Literal["REAL PERCEPTION"] = "REAL PERCEPTION"
+    model_mode: Literal["OPENAI-COMPATIBLE VLM"] = "OPENAI-COMPATIBLE VLM"
+    requested_case_id: ReferenceToken | None
+    selection_limit: int = Field(gt=0, le=MAX_M3_PROCESS_CASES, strict=True)
+    available_case_count: int = Field(ge=0, strict=True)
+    selection_truncated: bool = Field(strict=True)
+    outcomes: tuple[M3ProcessCaseOutcome, ...] = Field(max_length=MAX_M3_PROCESS_CASES)
+    counts: M3ProcessCounts
+
+    @field_validator("run_id", "provider_profile", "provider", "requested_case_id")
+    @classmethod
+    def validate_report_references(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return require_reference_token(value, "pilot A3 report reference")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_report_id(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        if not isinstance(value, dict):
+            return handler(value)
+        payload = dict(value)
+        claimed_present = "report_id" in payload
+        claimed = payload.pop("report_id", None)
+        report = handler(payload)
+        if claimed_present and claimed != report.report_id:
+            raise ValueError("serialized report_id does not match pilot A3 report")
+        return report
+
+    @model_validator(mode="after")
+    def validate_selection_and_counts(self) -> PilotA3Report:
+        keys = tuple(outcome.case_id for outcome in self.outcomes)
+        if len(keys) != len(set(keys)):
+            raise ValueError("pilot A3 outcomes must have unique case IDs")
+        if keys != tuple(sorted(keys)):
+            raise ValueError("pilot A3 outcomes must use stable case-ID order")
+        selected = len(self.outcomes)
+        if selected > self.selection_limit or selected > self.available_case_count:
+            raise ValueError("pilot A3 selection exceeds its reported bound")
+        if self.requested_case_id is not None:
+            if (
+                self.available_case_count != 1
+                or selected != 1
+                or self.outcomes[0].case_id != self.requested_case_id
+                or self.selection_truncated
+            ):
+                raise ValueError("single-case pilot A3 report has inconsistent selection scope")
+        elif self.selection_truncated != (self.available_case_count > selected):
+            raise ValueError("pilot A3 truncation flag conflicts with available cases")
+
+        dispositions = tuple(outcome.disposition for outcome in self.outcomes)
+        expected = M3ProcessCounts(
+            selected_cases=selected,
+            pipeline_invocations=sum(outcome.pipeline_invoked for outcome in self.outcomes),
+            processed_cases=dispositions.count(M3ProcessDisposition.PROCESSED),
+            deferred_to_backlog_cases=dispositions.count(
+                M3ProcessDisposition.DEFERRED_TO_BACKLOG
+            ),
+            observed_existing_cases=dispositions.count(
+                M3ProcessDisposition.OBSERVED_EXISTING
+            ),
+            skipped_not_ready_cases=dispositions.count(
+                M3ProcessDisposition.SKIPPED_NOT_READY
+            ),
+            cache_hits=sum(outcome.cache_hit_count for outcome in self.outcomes),
+            recovered_responses=sum(
+                outcome.recovered_response_count for outcome in self.outcomes
+            ),
+            repair_attempts=sum(outcome.repair_attempt_count for outcome in self.outcomes),
+        )
+        if self.counts != expected:
+            raise ValueError("pilot A3 counts conflict with case outcomes")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def report_id(self) -> Sha256Hex:
+        payload = self.model_dump(mode="json", exclude={"report_id"})
+        return sha256_hex(["pilot-a3-report", 1, payload])
 
 
 class PilotRunRequest(ContractModel):

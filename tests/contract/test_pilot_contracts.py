@@ -8,6 +8,7 @@ from labcourt.contracts.enums import ConfirmationPolicy, PrivacyPolicy, Violatio
 from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.pilot import (
     PilotA2Report,
+    PilotA3Report,
     PilotEvidencePackSummary,
     PilotPerceptionArtifactReceipt,
     PilotPerceptionArtifactRole,
@@ -369,6 +370,49 @@ def test_a2_evidence_summary_rejects_media_access_count_drift() -> None:
 
     with pytest.raises(ValidationError, match="media-access counts"):
         PilotEvidencePackSummary.model_validate(payload)
+
+
+def test_a3_report_is_secret_free_content_bound_and_exported() -> None:
+    from labcourt.contracts.m3_operations import M3ProcessCounts
+
+    report = PilotA3Report(
+        run_id="pilot-001",
+        manifest_id="1" * 64,
+        provider_profile="pilot-screening",
+        provider="openai-compatible",
+        model="vision-model",
+        revision="2026-08-01",
+        model_manifest_id="2" * 64,
+        execution_location="EXTERNAL",
+        transport="HTTP",
+        requested_case_id=None,
+        selection_limit=10,
+        available_case_count=0,
+        selection_truncated=False,
+        outcomes=(),
+        counts=M3ProcessCounts(
+            selected_cases=0,
+            pipeline_invocations=0,
+            processed_cases=0,
+            deferred_to_backlog_cases=0,
+            observed_existing_cases=0,
+            skipped_not_ready_cases=0,
+            cache_hits=0,
+            recovered_responses=0,
+            repair_attempts=0,
+        ),
+    )
+
+    assert PilotA3Report.model_validate_json(report.model_dump_json()) == report
+    assert "pilot-a3-report.schema.json" in expected_schema_files()
+    serialized = report.model_dump_json()
+    assert "endpoint" not in serialized
+    assert "api_key" not in serialized
+
+    payload = report.model_dump(mode="python")
+    payload["report_id"] = "0" * 64
+    with pytest.raises(ValidationError, match="report_id"):
+        PilotA3Report.model_validate(payload)
 
 
 def _artifact_receipt(

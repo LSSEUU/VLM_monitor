@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import re
+from collections.abc import Mapping
 from pathlib import Path
 from typing import TypeAlias
 
@@ -15,6 +18,7 @@ from labcourt.exceptions import ContractViolation
 
 YamlMapping: TypeAlias = dict[str, object]
 MAX_CONFIG_BYTES = 1_048_576
+_DEPLOYMENT_ENV_REFERENCE = re.compile(r"^\$\{([A-Z][A-Z0-9_]*)\}$")
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -65,7 +69,34 @@ def _reject_yaml_aliases(text: str) -> None:
         return
 
 
-def load_config(path: str | Path) -> AppConfig:
+def _resolve_provider_deployment_environment(
+    raw: YamlMapping,
+    environment: Mapping[str, str],
+) -> None:
+    providers = raw.get("providers")
+    if not isinstance(providers, dict):
+        return
+    for profile in providers.values():
+        if not isinstance(profile, dict):
+            continue
+        for field in ("model", "revision"):
+            value = profile.get(field)
+            if not isinstance(value, str):
+                continue
+            matched = _DEPLOYMENT_ENV_REFERENCE.fullmatch(value)
+            if matched is None:
+                continue
+            resolved = environment.get(matched.group(1))
+            if not isinstance(resolved, str) or not resolved:
+                raise ContractViolation("configuration deployment environment variable is missing")
+            profile[field] = resolved
+
+
+def load_config(
+    path: str | Path,
+    *,
+    environment: Mapping[str, str] | None = None,
+) -> AppConfig:
     config_path = Path(path)
     try:
         raw_bytes = config_path.read_bytes()
@@ -88,6 +119,10 @@ def load_config(path: str | Path) -> AppConfig:
         raise ContractViolation(f"invalid YAML{location}") from None
     if not isinstance(raw, dict):
         raise ContractViolation("configuration root must be a mapping")
+    _resolve_provider_deployment_environment(
+        raw,
+        os.environ if environment is None else environment,
+    )
     try:
         return AppConfig.model_validate(raw)
     except ValidationError as exc:
