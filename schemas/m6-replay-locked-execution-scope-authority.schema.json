@@ -2441,6 +2441,18 @@
           "title": "Cache Enabled",
           "type": "boolean"
         },
+        "enable_thinking": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enable Thinking"
+        },
         "endpoint_env": {
           "anyOf": [
             {

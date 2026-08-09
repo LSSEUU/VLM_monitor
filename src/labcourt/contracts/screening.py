@@ -8,6 +8,7 @@ from pydantic import (
     ConfigDict,
     Field,
     ModelWrapValidatorHandler,
+    StrictBool,
     StrictFloat,
     computed_field,
     field_validator,
@@ -224,6 +225,10 @@ class VLMRequest(FrozenContractModel):
     objective_summary: dict[str, Scalar] = Field(default_factory=dict)
     temperature: StrictFloat = Field(ge=0)
     seed: int | None = Field(default=None, strict=True)
+    enable_thinking: StrictBool | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     budget: VlmCallBudget
     backlog_retry_context: BacklogRetryContext | None = None
     manifest_id: Sha256Hex
@@ -315,6 +320,8 @@ class VLMRequest(FrozenContractModel):
             "budget": self.budget.model_dump(mode="json"),
             "manifest_id": self.manifest_id,
         }
+        if self.enable_thinking is not None:
+            projection["enable_thinking"] = self.enable_thinking
         _add_retry_generation_identity(projection, self.backlog_retry_context)
         return projection
 
@@ -366,6 +373,10 @@ class VLMRequest(FrozenContractModel):
             },
             "budget": self.budget.model_dump(mode="json"),
         }
+        if self.enable_thinking is not None:
+            decoding = cache_projection["decoding_parameters"]
+            assert isinstance(decoding, dict)
+            decoding["enable_thinking"] = self.enable_thinking
         _add_retry_generation_identity(cache_projection, self.backlog_retry_context)
         return sha256_hex(
             [
@@ -439,6 +450,10 @@ class StructureRepairRequest(FrozenContractModel):
     parse_defect_codes: tuple[ProceduralDefectCode, ...] = Field(min_length=1)
     temperature: StrictFloat = Field(ge=0)
     seed: int | None = Field(default=None, strict=True)
+    enable_thinking: StrictBool | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     budget: VlmCallBudget
     backlog_retry_context: BacklogRetryContext | None = None
     manifest_id: Sha256Hex
@@ -501,6 +516,8 @@ class StructureRepairRequest(FrozenContractModel):
             "budget": self.budget.model_dump(mode="json"),
             "manifest_id": self.manifest_id,
         }
+        if self.enable_thinking is not None:
+            projection["enable_thinking"] = self.enable_thinking
         _add_retry_generation_identity(projection, self.backlog_retry_context)
         return projection
 
@@ -545,6 +562,10 @@ class StructureRepairRequest(FrozenContractModel):
             },
             "budget": self.budget.model_dump(mode="json"),
         }
+        if self.enable_thinking is not None:
+            decoding = cache_projection["decoding_parameters"]
+            assert isinstance(decoding, dict)
+            decoding["enable_thinking"] = self.enable_thinking
         _add_retry_generation_identity(cache_projection, self.backlog_retry_context)
         return sha256_hex(
             [

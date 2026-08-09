@@ -89,6 +89,7 @@ def _request(
     input_cost_per_million_tokens: float = 2.0,
     output_cost_per_million_tokens: float = 4.0,
     max_estimated_cost: float = 1.0,
+    enable_thinking: bool | None = None,
 ) -> VLMRequest:
     media = VLMMediaRef(
         crop_id=SHA_4,
@@ -122,6 +123,7 @@ def _request(
         objective_summary={},
         temperature=0.0,
         seed=7,
+        enable_thinking=enable_thinking,
         budget=VlmCallBudget(
             max_images=1,
             max_input_pixels=64,
@@ -326,10 +328,27 @@ def test_openai_adapter_revalidates_media_calls_once_and_persists_exact_content(
         "type": "image_url",
     }
     assert RUN_ID not in transport.calls[0].body.decode("utf-8")
+    assert "enable_thinking" not in wire
     assert response.input_tokens == 3
     assert response.output_tokens == 4
     assert response.latency_ms == 9
     assert (root / Path(response.raw_response_ref)).read_bytes() == content.encode("utf-8")
+
+
+def test_openai_adapter_emits_explicit_non_thinking_mode_when_request_bound(
+    tmp_path: Path,
+) -> None:
+    root = _root(tmp_path)
+    transport = _Transport(
+        response=OpenAICompatibleTransportResponse(body=_envelope("{}"), latency_ms=3)
+    )
+    request = _request(enable_thinking=False)
+    with SecureWorkspace(root, 16384) as workspace:
+        _prepare_media(workspace)
+        _client(workspace, transport).complete(request)
+
+    wire = json.loads(transport.calls[0].body.decode("utf-8"))
+    assert wire["enable_thinking"] is False
 
 
 @pytest.mark.parametrize("content", ["", '{"malformed":'])

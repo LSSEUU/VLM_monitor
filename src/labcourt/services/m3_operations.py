@@ -490,9 +490,7 @@ def _controlled_pilot_runtime_paths(
         raise ValueError("workspace_root and database_path cannot contain parent traversal")
     controlled_workspace_root = supplied_workspace_root.absolute()
     controlled_database_path = supplied_database_path.absolute()
-    expected_database_path = (
-        controlled_workspace_root / run_id / config.storage.database_filename
-    )
+    expected_database_path = controlled_workspace_root / run_id / config.storage.database_filename
     if controlled_database_path != expected_database_path:
         raise ValueError(
             "database_path must exactly match the configured pilot run file inside workspace_root"

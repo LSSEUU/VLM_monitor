@@ -663,19 +663,11 @@ class PilotA3Report(ContractModel):
             selected_cases=selected,
             pipeline_invocations=sum(outcome.pipeline_invoked for outcome in self.outcomes),
             processed_cases=dispositions.count(M3ProcessDisposition.PROCESSED),
-            deferred_to_backlog_cases=dispositions.count(
-                M3ProcessDisposition.DEFERRED_TO_BACKLOG
-            ),
-            observed_existing_cases=dispositions.count(
-                M3ProcessDisposition.OBSERVED_EXISTING
-            ),
-            skipped_not_ready_cases=dispositions.count(
-                M3ProcessDisposition.SKIPPED_NOT_READY
-            ),
+            deferred_to_backlog_cases=dispositions.count(M3ProcessDisposition.DEFERRED_TO_BACKLOG),
+            observed_existing_cases=dispositions.count(M3ProcessDisposition.OBSERVED_EXISTING),
+            skipped_not_ready_cases=dispositions.count(M3ProcessDisposition.SKIPPED_NOT_READY),
             cache_hits=sum(outcome.cache_hit_count for outcome in self.outcomes),
-            recovered_responses=sum(
-                outcome.recovered_response_count for outcome in self.outcomes
-            ),
+            recovered_responses=sum(outcome.recovered_response_count for outcome in self.outcomes),
             repair_attempts=sum(outcome.repair_attempt_count for outcome in self.outcomes),
         )
         if self.counts != expected:
