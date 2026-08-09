@@ -582,6 +582,36 @@ def test_absence_fast_verdict_preserves_clear_and_non_clear_observations() -> No
     ) == tuple((observation.crop_id, observation.wear_status) for observation in observations)
 
 
+def test_fast_verdict_derives_formal_crop_citations_from_typed_observations() -> None:
+    pack = _absence_pack()
+    authority = _absence_authority(pack)
+    clear_ids = tuple(sorted(authority.clear_crop_ids))
+    observations = _observations(
+        clear_ids,
+        (WearStatus.NOT_WORN,) * len(clear_ids),
+    )
+    screening = route_screening(
+        _parsed(pack, probability=0.95, observations=observations, citations=()),
+        pack,
+        _policy(),
+    )
+
+    verdict = build_fast_verdict(screening, pack)
+
+    assert verdict.decision == VerdictDecision.ESTABLISHED
+    assert tuple(
+        (citation.evidence_ref.kind, citation.evidence_ref.artifact_id)
+        for citation in verdict.evidence_citations
+    ) == tuple((ArtifactKind.CROP, crop_id) for crop_id in clear_ids)
+    assert all(
+        citation.bbox is None and citation.coordinate_space is None
+        for citation in verdict.evidence_citations
+    )
+    assert verdict.prosecution_arguments[0].evidence_refs == tuple(
+        ArtifactRef(kind=ArtifactKind.CROP, artifact_id=crop_id) for crop_id in clear_ids
+    )
+
+
 def test_negative_fast_verdict_uses_directional_confidence_and_retains_support() -> None:
     pack = _presence_pack()
     parsed = _parsed(pack, probability=0.1)
