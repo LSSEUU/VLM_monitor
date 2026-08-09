@@ -13,6 +13,7 @@ from labcourt.contracts.config import AppConfig
 from labcourt.contracts.enums import VerdictDecision
 from labcourt.contracts.references import require_portable_run_id, require_reference_token
 from labcourt.exceptions import ContractViolation, LabCourtError
+from labcourt.services.m3_operations import open_pilot_a3_operations_service
 from labcourt.services.pilot_evidence import run_pilot_a2
 from labcourt.services.pilot_operations import (
     PilotOperationsBoundaryCode,
@@ -131,6 +132,51 @@ def pilot_perceive(
         f"goggles={report.goggles_count}; tracks={report.track_count}; "
         f"preview={report.preview_path or 'disabled'}"
     )
+
+
+@pilot_app.command("screen")
+def pilot_screen(
+    run_id: Annotated[str, typer.Option("--run-id")],
+    case_id: Annotated[str | None, typer.Option("--case-id")] = None,
+    max_cases: Annotated[int, typer.Option("--max-cases", min=1, max=1_000)] = 10,
+    config: Annotated[Path, typer.Option("--config", "-c", dir_okay=False)] = (
+        DEFAULT_PILOT_CONFIG
+    ),
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Screen existing A2 evidence through the configured real VLM provider."""
+
+    parsed = _load_config(config, "SCREEN", json_output)
+    try:
+        controlled_run_id = require_portable_run_id(run_id, "pilot run_id")
+        controlled_case_id = (
+            require_reference_token(case_id, "pilot case_id") if case_id is not None else None
+        )
+        runs_root = Path.cwd() / parsed.run.workspace
+        database = runs_root / controlled_run_id / parsed.storage.database_filename
+        with open_pilot_a3_operations_service(
+            config=parsed,
+            run_id=controlled_run_id,
+            workspace_root=runs_root,
+            database_path=database,
+        ) as service:
+            report = service.process_run(case_id=controlled_case_id, max_cases=max_cases)
+    except (LabCourtError, OSError, TypeError, ValueError):
+        _pilot_boundary_error(json_output, "SCREEN", "SCREENING_FAILED")
+    if json_output:
+        typer.echo(canonical_json(report.model_dump(mode="json")))
+    else:
+        typer.echo(
+            f"pilot screening complete; selected={report.counts.selected_cases}; "
+            f"processed={report.counts.processed_cases}; "
+            f"backlogged={report.counts.deferred_to_backlog_cases}; "
+            f"report_id={report.report_id}"
+        )
+    if report.counts.deferred_to_backlog_cases or any(
+        outcome.status.value in {"ESCALATED", "REWORK_REQUIRED"}
+        for outcome in report.outcomes
+    ):
+        raise typer.Exit(code=1)
 
 
 @pilot_app.command("report")

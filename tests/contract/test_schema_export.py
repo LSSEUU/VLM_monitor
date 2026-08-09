@@ -225,6 +225,7 @@ EXPECTED_SCHEMA_MODES = {
     "observability-score": "serialization",
     "parsed-screening-output": "serialization",
     "pilot-a2-report": "serialization",
+    "pilot-a3-report": "serialization",
     "pilot-evidence-pack-summary": "serialization",
     "pilot-perception-artifact-receipt": "serialization",
     "pilot-perception-completion-manifest": "serialization",

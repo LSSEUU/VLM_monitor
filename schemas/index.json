@@ -1240,6 +1240,12 @@
       "name": "pilot-a2-report"
     },
     {
+      "file": "pilot-a3-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotA3Report",
+      "name": "pilot-a3-report"
+    },
+    {
       "file": "pilot-evidence-pack-summary.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.pilot.PilotEvidencePackSummary",

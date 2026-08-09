@@ -558,6 +558,19 @@ def test_openai_transport_failure_is_single_attempt_and_redacted(
     assert "secret endpoint" not in str(captured.value)
 
 
+def test_openai_client_preserves_typed_transport_failure(tmp_path: Path) -> None:
+    typed = VLMProviderError(
+        VLMProviderFailureCode.PROVIDER_OUTAGE,
+        VLMDeliveryCertainty.UNKNOWN,
+    )
+    transport = _Transport(failure=typed)
+    with SecureWorkspace(_root(tmp_path), 16384) as workspace:
+        _prepare_media(workspace)
+        with pytest.raises(VLMProviderError) as captured:
+            _client(workspace, transport).complete(_request())
+    assert captured.value is typed
+
+
 def test_prompt_registry_missing_or_manifest_mismatch_fails_before_transport(
     tmp_path: Path,
 ) -> None:

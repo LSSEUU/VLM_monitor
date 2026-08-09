@@ -5,7 +5,9 @@ from labcourt.services.m3_operations import (
     M3OperationsBoundaryCode,
     M3OperationsBoundaryError,
     M3OperationsService,
+    PilotA3OperationsService,
     open_m3_operations_service,
+    open_pilot_a3_operations_service,
 )
 from labcourt.services.m4_maintenance_recovery import (
     build_m4_hearing_model_response_recovery,
@@ -28,10 +30,12 @@ __all__ = [
     "M4OperationsBoundaryCode",
     "M4OperationsBoundaryError",
     "M4OperationsService",
+    "PilotA3OperationsService",
     "build_hearing_prompt_catalog",
     "build_m4_hearing_model_response_recovery",
     "build_maintenance_recovery_coordinator",
     "build_screening_prompt_catalog",
     "open_m3_operations_service",
     "open_m4_operations_service",
+    "open_pilot_a3_operations_service",
 ]
