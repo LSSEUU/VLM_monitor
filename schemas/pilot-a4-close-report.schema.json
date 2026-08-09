@@ -1,0 +1,164 @@
+{
+  "$defs": {
+    "AlertPolicyDisposition": {
+      "enum": [
+        "ENQUEUE",
+        "SUPPRESSED_MERGED",
+        "CLOSE_NO_ALERT"
+      ],
+      "title": "AlertPolicyDisposition",
+      "type": "string"
+    },
+    "M5CloseCaseOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alert Id"
+        },
+        "alert_policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Alert Policy Authority Id",
+          "type": "string"
+        },
+        "application_batch_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Application Batch Id"
+        },
+        "applied_citation_count": {
+          "default": 0,
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Applied Citation Count",
+          "type": "integer"
+        },
+        "automatic_precedent_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Automatic Precedent Authority Id",
+          "type": "string"
+        },
+        "automatic_precedent_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Automatic Precedent Id",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "closed_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Closed Revision",
+          "type": "integer"
+        },
+        "disposition": {
+          "$ref": "#/$defs/AlertPolicyDisposition"
+        },
+        "source_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Source Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "case_id",
+        "source_revision",
+        "closed_revision",
+        "disposition",
+        "alert_policy_authority_id",
+        "automatic_precedent_id",
+        "automatic_precedent_authority_id"
+      ],
+      "title": "M5CloseCaseOutcome",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-a4-close-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Run-scoped A4 closure result that cannot claim external alert delivery.",
+  "properties": {
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "delivery_mode": {
+      "const": "LOCAL_OUTBOX_ONLY",
+      "default": "LOCAL_OUTBOX_ONLY",
+      "title": "Delivery Mode",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "outcomes": {
+      "items": {
+        "$ref": "#/$defs/M5CloseCaseOutcome"
+      },
+      "maxItems": 10000,
+      "title": "Outcomes",
+      "type": "array"
+    },
+    "production_delivery_count": {
+      "const": 0,
+      "default": 0,
+      "title": "Production Delivery Count",
+      "type": "integer"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Report Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "pilot-a4-close-report-v1",
+      "default": "pilot-a4-close-report-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_count": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Selected Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "manifest_id",
+    "config_sha256",
+    "selected_count",
+    "outcomes",
+    "report_id"
+  ],
+  "title": "PilotA4CloseReport",
+  "type": "object"
+}
