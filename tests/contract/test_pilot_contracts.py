@@ -9,6 +9,7 @@ from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.pilot import (
     PilotA2Report,
     PilotA3Report,
+    PilotA4CloseReport,
     PilotEvidencePackSummary,
     PilotPerceptionArtifactReceipt,
     PilotPerceptionArtifactRole,
@@ -413,6 +414,50 @@ def test_a3_report_is_secret_free_content_bound_and_exported() -> None:
     payload["report_id"] = "0" * 64
     with pytest.raises(ValidationError, match="report_id"):
         PilotA3Report.model_validate(payload)
+
+
+def test_a4_close_report_is_zero_delivery_content_bound_and_exported() -> None:
+    from labcourt.contracts.alert_policy import AlertPolicyDisposition
+    from labcourt.contracts.m5_operations import M5CloseCaseOutcome
+
+    report = PilotA4CloseReport(
+        run_id="pilot-001",
+        manifest_id="1" * 64,
+        config_sha256="2" * 64,
+        selected_count=1,
+        outcomes=(
+            M5CloseCaseOutcome(
+                case_id="case-001",
+                source_revision=4,
+                closed_revision=5,
+                disposition=AlertPolicyDisposition.ENQUEUE,
+                alert_id="3" * 64,
+                alert_policy_authority_id="4" * 64,
+                automatic_precedent_id="5" * 64,
+                automatic_precedent_authority_id="6" * 64,
+            ),
+        ),
+    )
+
+    assert PilotA4CloseReport.model_validate_json(report.model_dump_json()) == report
+    assert report.delivery_mode == "LOCAL_OUTBOX_ONLY"
+    assert report.production_delivery_count == 0
+    assert "pilot-a4-close-report.schema.json" in expected_schema_files()
+
+    payload = report.model_dump(mode="python")
+    payload["report_id"] = "0" * 64
+    with pytest.raises(ValidationError, match="report_id"):
+        PilotA4CloseReport.model_validate(payload)
+
+    payload = report.model_dump(mode="python", exclude_computed_fields=True)
+    payload["production_delivery_count"] = 1
+    with pytest.raises(ValidationError):
+        PilotA4CloseReport.model_validate(payload)
+
+    payload = report.model_dump(mode="python", exclude_computed_fields=True)
+    payload["selected_count"] = 0
+    with pytest.raises(ValidationError, match="account"):
+        PilotA4CloseReport.model_validate(payload)
 
 
 def _artifact_receipt(

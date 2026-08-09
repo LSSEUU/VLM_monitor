@@ -1246,6 +1246,12 @@
       "name": "pilot-a3-report"
     },
     {
+      "file": "pilot-a4-close-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotA4CloseReport",
+      "name": "pilot-a4-close-report"
+    },
+    {
       "file": "pilot-evidence-pack-summary.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.pilot.PilotEvidencePackSummary",

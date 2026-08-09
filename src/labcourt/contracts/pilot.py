@@ -31,6 +31,7 @@ from labcourt.contracts.m3_operations import (
     M3ProcessCounts,
     M3ProcessDisposition,
 )
+from labcourt.contracts.m5_operations import M5CloseCaseOutcome, M5FinalizeCommandReport
 from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.paths import require_safe_relative_posix_path
 from labcourt.contracts.references import (
@@ -679,6 +680,60 @@ class PilotA3Report(ContractModel):
     def report_id(self) -> Sha256Hex:
         payload = self.model_dump(mode="json", exclude={"report_id"})
         return sha256_hex(["pilot-a3-report", 1, payload])
+
+
+class PilotA4CloseReport(ContractModel):
+    """Run-scoped A4 closure result that cannot claim external alert delivery."""
+
+    schema_version: Literal["pilot-a4-close-report-v1"] = "pilot-a4-close-report-v1"
+    run_id: ReferenceToken
+    manifest_id: Sha256Hex
+    config_sha256: Sha256Hex
+    delivery_mode: Literal["LOCAL_OUTBOX_ONLY"] = "LOCAL_OUTBOX_ONLY"
+    production_delivery_count: Literal[0] = 0
+    selected_count: int = Field(ge=0, le=10_000, strict=True)
+    outcomes: tuple[M5CloseCaseOutcome, ...] = Field(max_length=10_000)
+
+    @field_validator("run_id")
+    @classmethod
+    def validate_run_id(cls, value: str) -> str:
+        return require_portable_run_id(value, "pilot A4 run_id")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_report_id(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        if not isinstance(value, dict):
+            return handler(value)
+        payload = dict(value)
+        claimed_present = "report_id" in payload
+        claimed = payload.pop("report_id", None)
+        report = handler(payload)
+        if claimed_present and claimed != report.report_id:
+            raise ValueError("serialized report_id does not match pilot A4 close report")
+        return report
+
+    @model_validator(mode="after")
+    def validate_finalization_projection(self) -> PilotA4CloseReport:
+        finalization = M5FinalizeCommandReport(
+            run_id=self.run_id,
+            manifest_id=self.manifest_id,
+            config_sha256=self.config_sha256,
+            selected_count=self.selected_count,
+            outcomes=self.outcomes,
+        )
+        if finalization.outcomes != self.outcomes:
+            raise ValueError("pilot A4 close report differs from M5 finalization authority")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def report_id(self) -> Sha256Hex:
+        payload = self.model_dump(mode="json", exclude={"report_id"})
+        return sha256_hex(["pilot-a4-close-report", 1, payload])
 
 
 class PilotRunRequest(ContractModel):
