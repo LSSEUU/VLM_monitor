@@ -20,6 +20,7 @@ from labcourt.contracts.enums import (
     VerdictDecision,
 )
 from labcourt.contracts.evidence import EvidencePack
+from labcourt.contracts.m3_models import EvidenceCitation
 from labcourt.contracts.references import require_reference_token
 from labcourt.contracts.screening import ParsedScreeningOutput, ScreeningResult
 from labcourt.contracts.storage import ArtifactRef
@@ -228,11 +229,32 @@ def _validate_screening_pack_scope(
         raise ScreeningRouteError("screening absence authority conflicts with its evidence pack")
 
 
-def _stable_citation_refs(screening_result: ScreeningResult) -> tuple[ArtifactRef, ...]:
-    refs = {
-        citation.evidence_ref.sort_key: citation.evidence_ref
-        for citation in screening_result.parsed_output.evidence_citations
-    }
+def _verdict_citations(
+    screening_result: ScreeningResult,
+) -> tuple[EvidenceCitation, ...]:
+    """Add exact crop citations for typed observations not already cited.
+
+    The model still authors each observation and its crop ID.  LabCourt only
+    converts that strictly parsed, allowlist-checked reference into the formal
+    no-coordinate citation required by the procedural gate.  It never infers a
+    reference from prose or treats the model as evidence-existence authority.
+    """
+
+    citations = list(screening_result.parsed_output.evidence_citations)
+    cited_refs = {citation.evidence_ref.sort_key for citation in citations}
+    for observation in screening_result.parsed_output.frame_observations:
+        evidence_ref = ArtifactRef(kind=ArtifactKind.CROP, artifact_id=observation.crop_id)
+        if evidence_ref.sort_key in cited_refs:
+            continue
+        citations.append(EvidenceCitation(evidence_ref=evidence_ref))
+        cited_refs.add(evidence_ref.sort_key)
+    return tuple(sorted(citations, key=lambda citation: citation.sort_key))
+
+
+def _stable_citation_refs(
+    citations: tuple[EvidenceCitation, ...],
+) -> tuple[ArtifactRef, ...]:
+    refs = {citation.evidence_ref.sort_key: citation.evidence_ref for citation in citations}
     return tuple(refs[key] for key in sorted(refs))
 
 
@@ -307,8 +329,8 @@ def build_fast_verdict(
         raise ScreeningRouteError("an escalated screening cannot produce a fast verdict")
 
     verdict_policy = policy or FastVerdictPolicy()
-    citations = screening_result.parsed_output.evidence_citations
-    citation_refs = _stable_citation_refs(screening_result)
+    citations = _verdict_citations(screening_result)
+    citation_refs = _stable_citation_refs(citations)
 
     if screening_result.decision == ScreeningDecision.ESTABLISHED:
         decision = VerdictDecision.ESTABLISHED
