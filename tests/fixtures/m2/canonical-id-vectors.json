@@ -30,11 +30,11 @@
   },
   "manifest": {
     "fixture": "run-manifest-fake.json",
-    "expected_manifest_id": "aa4bdd2f9b995b13889398468bc6ae2cef01f329651b9cdb6ee7d641ff928c1c"
+    "expected_manifest_id": "dcec1d7ae85d9f35e5b7e906c0b1051637a72a5ff27e90f30e29a19344a5e61a"
   },
   "pack": {
-    "expected_pack_id": "c1f2aea756cdeb9150493ef717bb40bd38fcceda0f0f0f637cef16a4984d8e22",
-    "expected_pack_input_sha256": "34f92fea105bc3fe5824cc68428dfd9d390660c6dd235b2f29bdfc341fc87fde",
-    "expected_closure_input_sha256": "291c1ba16aebc0ffa7b364c2d61d3dbbe04d89110ceccb78d38447e894b7f610"
+    "expected_pack_id": "cb6428834031d6b429d2c081f4b7538cb0fe4b86e398a3e8807770cdf475acb0",
+    "expected_pack_input_sha256": "61a4d7c44db398508b490bc2718451baac36ef4a60cf675d737b1caed67a79b4",
+    "expected_closure_input_sha256": "e0fe4e0f42398dc82bca1e100febff865411e66864f58d89b254ac78f922d620"
   }
 }
