@@ -173,6 +173,29 @@ def test_insufficient_goggle_keypoints_fail_closed_without_face_fallback() -> No
     )
 
 
+def test_body_fallback_preserves_only_the_typed_head_anchor_and_stays_local() -> None:
+    frame = _rgb8_frame()
+    request = _goggle_request(frame).model_copy(
+        update={
+            "anchor_bbox": BBoxXYXY(x1=3, y1=2, x2=13, y2=10),
+            "keypoints": (),
+            "association_method": AssociationMethod.BODY_FALLBACK,
+        }
+    )
+
+    result = prepare_crop(frame, request)
+
+    receipt = result.prepared.privacy_receipt
+    assert receipt.fallback_used is True
+    assert receipt.media_access == MediaAccess.LOCAL_ONLY
+    assert receipt.reason_code == PrivacyReasonCode.BODY_FALLBACK_REGION_LOCAL_ONLY
+    assert receipt.preserved_regions == (BBoxXYXY(x1=1, y1=1, x2=11, y2=9),)
+    assert receipt.keypoints == ()
+    assert result.prepared.pixels != bytes(PRIVACY_FILL_RGB) * (
+        result.prepared.width * result.prepared.height
+    )
+
+
 def test_full_redaction_is_local_and_contains_no_source_pixels() -> None:
     frame = _rgb8_frame()
     request = CropRequest(

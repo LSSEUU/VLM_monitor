@@ -86,9 +86,9 @@ providers:
 zones:
   - zone_id: "hood-01"
     camera_id: "cam-01"
-    polygon: [[120, 90], [980, 90], [980, 700], [120, 700]]
+    polygon: [[120, 90], [980, 90], [980, 720], [120, 720]]
     risk_level: HIGH
-    required_ppe: [GOGGLES, LAB_COAT]
+    required_ppe: [GOGGLES]
     reminder_channel: "display-hood-01"
 
 l0:

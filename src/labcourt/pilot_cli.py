@@ -1,4 +1,4 @@
-"""v0.2 pilot command group and A0 fail-closed preflight boundary."""
+"""v0.2 pilot command group and fail-closed staged execution boundary."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from labcourt.contracts.config import AppConfig
 from labcourt.contracts.enums import VerdictDecision
 from labcourt.contracts.references import require_portable_run_id, require_reference_token
 from labcourt.exceptions import ContractViolation, LabCourtError
+from labcourt.services.pilot_evidence import run_pilot_a2
 from labcourt.services.pilot_operations import (
     PilotOperationsBoundaryCode,
     PilotOperationsBoundaryError,
@@ -41,39 +42,6 @@ def _load_config(config_path: Path, operation: str, json_output: bool) -> AppCon
         _pilot_boundary_error(json_output, operation, "CONFIG_INVALID")
 
 
-def _preflight(
-    *,
-    operation: str,
-    config_path: Path,
-    video_path: Path,
-    run_id: str,
-    resume: bool,
-    json_output: bool,
-) -> None:
-    config = _load_config(config_path, operation, json_output)
-    try:
-        request = build_pilot_run_request(
-            config=config,
-            run_id=run_id,
-            video_path=video_path,
-            project_root=Path.cwd(),
-            resume=resume,
-        )
-    except PilotOperationsBoundaryError as error:
-        _pilot_boundary_error(json_output, operation, error.code.value)
-    except (OSError, TypeError, ValueError):
-        _pilot_boundary_error(json_output, operation, "PREFLIGHT_BOUNDARY_ERROR")
-
-    if json_output:
-        typer.echo(canonical_json(request.model_dump(mode="json")))
-        return
-    typer.echo(
-        f"pilot {operation.lower()} preflight ready; run={request.run_id}; "
-        f"video_sha256={request.video_sha256}; cases<={request.max_cases}; "
-        "no detector or VLM was called"
-    )
-
-
 @pilot_app.command("run")
 def pilot_run(
     video: Annotated[Path, typer.Option("--video", dir_okay=False)],
@@ -84,15 +52,38 @@ def pilot_run(
     resume: Annotated[bool, typer.Option("--resume/--no-resume")] = True,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Validate and bind a local MP4 for the staged pilot (A0 preflight)."""
+    """Run real perception and stop after authoritative A2 evidence publication."""
 
-    _preflight(
-        operation="RUN",
-        config_path=config,
-        video_path=video,
-        run_id=run_id,
-        resume=resume,
-        json_output=json_output,
+    parsed = _load_config(config, "RUN", json_output)
+    try:
+        request = build_pilot_run_request(
+            config=parsed,
+            run_id=run_id,
+            video_path=video,
+            project_root=Path.cwd(),
+            resume=resume,
+        )
+        report = run_pilot_a2(
+            config=parsed,
+            request=request,
+            config_path=config,
+            project_root=Path.cwd(),
+        )
+    except PilotOperationsBoundaryError as error:
+        _pilot_boundary_error(json_output, "RUN", error.code.value)
+    except (LabCourtError, OSError, TypeError, ValueError):
+        _pilot_boundary_error(
+            json_output,
+            "RUN",
+            PilotOperationsBoundaryCode.EVIDENCE_FAILED.value,
+        )
+    if json_output:
+        typer.echo(canonical_json(report.model_dump(mode="json")))
+        return
+    typer.echo(
+        f"pilot evidence complete; state={report.state}; "
+        f"candidates={report.candidate_event_count}; "
+        f"packs={report.evidence_pack_count}; report_id={report.report_id}"
     )
 
 

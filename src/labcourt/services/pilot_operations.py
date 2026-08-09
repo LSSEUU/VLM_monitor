@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import cast
@@ -68,6 +69,7 @@ class PilotOperationsBoundaryCode(StrEnum):
     WORKSPACE_BOUNDARY_REJECTED = "WORKSPACE_BOUNDARY_REJECTED"
     STAGE_NOT_AVAILABLE = "STAGE_NOT_AVAILABLE"
     PERCEPTION_FAILED = "PERCEPTION_FAILED"
+    EVIDENCE_FAILED = "EVIDENCE_FAILED"
 
 
 class PilotOperationsBoundaryError(LabCourtError):
@@ -76,6 +78,17 @@ class PilotOperationsBoundaryError(LabCourtError):
     def __init__(self, code: PilotOperationsBoundaryCode) -> None:
         self.code = code
         super().__init__(code.value)
+
+
+@dataclass(frozen=True, slots=True)
+class CompletedPilotPerception:
+    """Fully verified A1 authority made available to the next pilot stage."""
+
+    report: PilotPerceptionReport
+    execution_manifest: PilotPerceptionExecutionManifest
+    stream_manifest: StreamManifest
+    bundles: tuple[FrameBundle, ...]
+    completion_manifest: PilotPerceptionCompletionManifest
 
 
 def require_pilot_config(config: AppConfig) -> None:
@@ -316,7 +329,7 @@ def _validate_completed_perception_artifacts(
     request: PilotRunRequest,
     expected_manifest: PilotPerceptionExecutionManifest,
     completion: PilotPerceptionCompletionManifest,
-) -> PilotPerceptionReport:
+) -> CompletedPilotPerception:
     try:
         payloads = _completed_artifact_payloads(
             workspace=workspace,
@@ -425,7 +438,13 @@ def _validate_completed_perception_artifacts(
         or report.track_count != len(tracks)
     ):
         raise ManifestMismatch("completed A1 report counts diverge from its FrameBundles")
-    return report
+    return CompletedPilotPerception(
+        report=report,
+        execution_manifest=execution,
+        stream_manifest=stream,
+        bundles=bundles,
+        completion_manifest=completion,
+    )
 
 
 class _CurrentFramePixels:
@@ -472,6 +491,40 @@ def _resume_perception_report(
         or completion.manifest_id != expected_manifest.manifest_id
     ):
         raise ManifestMismatch("persisted pilot perception completion does not match the request")
+    return _validate_completed_perception_artifacts(
+        workspace=workspace,
+        request=request,
+        expected_manifest=expected_manifest,
+        completion=completion,
+    ).report
+
+
+def load_completed_pilot_perception(
+    *,
+    workspace: SecureWorkspace,
+    config: AppConfig,
+    request: PilotRunRequest,
+) -> CompletedPilotPerception:
+    """Load A1 only through its completion seal and raw-response verification."""
+
+    if not isinstance(workspace, SecureWorkspace):
+        raise TypeError("workspace must be a SecureWorkspace")
+    expected_manifest = build_expected_perception_manifest(config)
+    completion_path = f"{request.run_id}/perception/completion-manifest.json"
+    try:
+        completion_snapshot = workspace.read_verified(completion_path)
+        completion = PilotPerceptionCompletionManifest.model_validate_json(
+            completion_snapshot.bytes
+        )
+    except (LabCourtError, ValidationError):
+        raise ManifestMismatch("completed pilot perception seal is unavailable") from None
+    if (
+        completion.run_id != request.run_id
+        or completion.config_sha256 != request.config_sha256
+        or completion.video_sha256 != request.video_sha256
+        or completion.manifest_id != expected_manifest.manifest_id
+    ):
+        raise ManifestMismatch("completed pilot perception seal does not match the request")
     return _validate_completed_perception_artifacts(
         workspace=workspace,
         request=request,

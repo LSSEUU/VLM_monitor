@@ -178,7 +178,7 @@ from labcourt.contracts.model_response_recovery import (
     ModelResponseRecoveryReason,
     ModelResponseRecoveryReport,
 )
-from labcourt.contracts.pilot import PilotRunRequest
+from labcourt.contracts.pilot import PilotA2Report, PilotEvidencePackSummary, PilotRunRequest
 from labcourt.contracts.precedents import Precedent
 from labcourt.contracts.projection_generation import (
     ProjectionArtifactKind,
@@ -390,6 +390,8 @@ __all__ = [
     "ObservationLabel",
     "ObservationSufficiency",
     "ParsedScreeningOutput",
+    "PilotA2Report",
+    "PilotEvidencePackSummary",
     "PilotRunRequest",
     "Precedent",
     "PrecedentApplication",

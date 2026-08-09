@@ -16,7 +16,7 @@ from pydantic import (
 
 from labcourt.contracts.base import ContractModel
 from labcourt.contracts.canonical import sha256_hex
-from labcourt.contracts.enums import ViolationType
+from labcourt.contracts.enums import ConfirmationPolicy, PrivacyPolicy, ViolationType
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.paths import require_safe_relative_posix_path
@@ -405,6 +405,117 @@ class PilotPerceptionReport(ContractModel):
         if self.track_count > self.person_count:
             raise ValueError("pilot track count cannot exceed person detections")
         return self
+
+
+class PilotEvidencePackSummary(ContractModel):
+    """Privacy-safe A2 projection of one authoritative EvidencePack."""
+
+    event_id: ReferenceToken
+    case_id: ReferenceToken
+    pack_id: ReferenceToken
+    violation_type: Literal[ViolationType.PPE_GOGGLES_MISSING]
+    confirmation_policy: Literal[ConfirmationPolicy.STRICT_CAUSAL]
+    complete: Literal[True]
+    closure_passed: Literal[True]
+    panorama_crop_count: int = Field(ge=0, strict=True)
+    subject_crop_count: int = Field(ge=0, strict=True)
+    focus_crop_count: int = Field(ge=0, strict=True)
+    temporal_crop_count: int = Field(ge=0, strict=True)
+    cloud_allowed_crop_count: int = Field(ge=0, strict=True)
+    local_only_crop_count: int = Field(ge=0, strict=True)
+    privacy_policy: Literal[PrivacyPolicy.PPE_PRESERVING_REDACTION]
+
+    @field_validator("event_id", "case_id", "pack_id")
+    @classmethod
+    def validate_references(cls, value: str) -> str:
+        return require_reference_token(value, "pilot A2 evidence reference")
+
+    @model_validator(mode="after")
+    def validate_crop_counts(self) -> PilotEvidencePackSummary:
+        crop_count = (
+            self.panorama_crop_count
+            + self.subject_crop_count
+            + self.focus_crop_count
+            + self.temporal_crop_count
+        )
+        if self.cloud_allowed_crop_count + self.local_only_crop_count != crop_count:
+            raise ValueError("pilot A2 media-access counts must equal total crop count")
+        if self.temporal_crop_count == 0:
+            raise ValueError("pilot A2 absence evidence requires temporal crops")
+        return self
+
+
+class PilotA2Report(ContractModel):
+    """Content-derived A2 result without L0 subject or trajectory persistence."""
+
+    schema_version: Literal["pilot-a2-report-v1"] = "pilot-a2-report-v1"
+    run_id: ReferenceToken
+    state: Literal["NO_CANDIDATE", "EVIDENCE_READY"]
+    config_sha256: Sha256Hex
+    video_sha256: Sha256Hex
+    perception_manifest_id: Sha256Hex
+    perception_completion_id: Sha256Hex
+    run_manifest_id: Sha256Hex
+    selected_rules: tuple[Literal[ViolationType.PPE_GOGGLES_MISSING], ...] = Field(
+        min_length=1,
+        max_length=1,
+    )
+    frames_processed: int = Field(gt=0, strict=True)
+    association_count: int = Field(ge=0, strict=True)
+    l0_reminder_count: int = Field(ge=0, strict=True)
+    suppression_count: int = Field(ge=0, strict=True)
+    candidate_event_count: int = Field(ge=0, strict=True)
+    evidence_pack_count: int = Field(ge=0, strict=True)
+    evidence_packs: tuple[PilotEvidencePackSummary, ...]
+    l0_persistence_policy: Literal["AGGREGATE_COUNT_ONLY_NO_SUBJECT_IDS"] = (
+        "AGGREGATE_COUNT_ONLY_NO_SUBJECT_IDS"
+    )
+
+    @field_validator("run_id")
+    @classmethod
+    def validate_run_id(cls, value: str) -> str:
+        return require_portable_run_id(value, "pilot A2 run_id")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_report_id(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        if not isinstance(value, dict):
+            return handler(value)
+        payload = dict(value)
+        claimed_present = "report_id" in payload
+        claimed = payload.pop("report_id", None)
+        report = handler(payload)
+        if claimed_present and claimed != report.report_id:
+            raise ValueError("serialized report_id does not match pilot A2 report")
+        return report
+
+    @model_validator(mode="after")
+    def validate_a2_result(self) -> PilotA2Report:
+        if self.selected_rules != (ViolationType.PPE_GOGGLES_MISSING,):
+            raise ValueError("pilot A2 supports exactly PPE_GOGGLES_MISSING")
+        if self.evidence_pack_count != len(self.evidence_packs):
+            raise ValueError("pilot A2 evidence_pack_count must equal its summaries")
+        if self.candidate_event_count != self.evidence_pack_count:
+            raise ValueError("pilot A2 candidates require one complete EvidencePack each")
+        expected_state = "EVIDENCE_READY" if self.evidence_pack_count else "NO_CANDIDATE"
+        if self.state != expected_state:
+            raise ValueError("pilot A2 state does not match its evidence count")
+        event_ids = tuple(item.event_id for item in self.evidence_packs)
+        case_ids = tuple(item.case_id for item in self.evidence_packs)
+        pack_ids = tuple(item.pack_id for item in self.evidence_packs)
+        if any(len(values) != len(set(values)) for values in (event_ids, case_ids, pack_ids)):
+            raise ValueError("pilot A2 evidence references must be unique")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def report_id(self) -> Sha256Hex:
+        payload = self.model_dump(mode="json", exclude={"report_id"})
+        return sha256_hex(["pilot-a2-report", 1, payload])
 
 
 class PilotRunRequest(ContractModel):
