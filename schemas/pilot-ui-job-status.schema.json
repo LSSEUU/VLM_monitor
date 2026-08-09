@@ -1,0 +1,111 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-ui-job-status.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_stage": {
+      "anyOf": [
+        {
+          "enum": [
+            "VIDEO",
+            "PERCEPTION",
+            "EVIDENCE",
+            "SCREENING",
+            "REPORT"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Active Stage"
+    },
+    "job_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Job Id"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason Code"
+    },
+    "report_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Report Id"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "schema_version": {
+      "const": "pilot-ui-job-status-v1",
+      "default": "pilot-ui-job-status-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "default": "IDLE",
+      "enum": [
+        "IDLE",
+        "RUNNING",
+        "SUCCEEDED",
+        "ATTENTION_REQUIRED",
+        "FAILED"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "video_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Video Id"
+    }
+  },
+  "title": "PilotUiJobStatus",
+  "type": "object"
+}

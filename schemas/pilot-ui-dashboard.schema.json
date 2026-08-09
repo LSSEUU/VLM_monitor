@@ -1,0 +1,737 @@
+{
+  "$defs": {
+    "AlertLevel": {
+      "enum": [
+        "ADVISORY",
+        "CONFIRMED",
+        "EMERGENCY"
+      ],
+      "title": "AlertLevel",
+      "type": "string"
+    },
+    "AppealStatus": {
+      "enum": [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "AppealStatus",
+      "type": "string"
+    },
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "PilotUiAlertView": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "final_decision": {
+          "$ref": "#/$defs/VerdictDecision"
+        },
+        "level": {
+          "$ref": "#/$defs/AlertLevel"
+        },
+        "production_action_prohibited": {
+          "const": true,
+          "default": true,
+          "title": "Production Action Prohibited",
+          "type": "boolean"
+        },
+        "recipients": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "title": "Recipients",
+          "type": "array"
+        },
+        "rescinded": {
+          "title": "Rescinded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alert_id",
+        "case_id",
+        "level",
+        "final_decision",
+        "recipients",
+        "rescinded"
+      ],
+      "title": "PilotUiAlertView",
+      "type": "object"
+    },
+    "PilotUiCaseSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AlertLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "alert_rescinded": {
+          "default": false,
+          "title": "Alert Rescinded",
+          "type": "boolean"
+        },
+        "appeal_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppealStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "end_time_millis": {
+          "exclusiveMinimum": 0,
+          "title": "End Time Millis",
+          "type": "integer"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/PilotUiEvidenceView"
+          },
+          "maxItems": 12,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "final_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerdictDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "human_review_required": {
+          "title": "Human Review Required",
+          "type": "boolean"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "screening_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScreeningDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "screening_probability": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Screening Probability"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "start_time_millis": {
+          "minimum": 0,
+          "title": "Start Time Millis",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        }
+      },
+      "required": [
+        "case_id",
+        "revision",
+        "status",
+        "violation_type",
+        "start_frame",
+        "end_frame_exclusive",
+        "start_time_millis",
+        "end_time_millis",
+        "human_review_required",
+        "evidence"
+      ],
+      "title": "PilotUiCaseSummary",
+      "type": "object"
+    },
+    "PilotUiEvidenceView": {
+      "additionalProperties": false,
+      "properties": {
+        "crop_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "integrity": {
+          "enum": [
+            "VERIFIED",
+            "MISSING",
+            "HASH_MISMATCH",
+            "NOT_AVAILABLE"
+          ],
+          "title": "Integrity",
+          "type": "string"
+        },
+        "media_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Url"
+        },
+        "role": {
+          "enum": [
+            "PANORAMA",
+            "SUBJECT",
+            "FOCUS",
+            "TEMPORAL"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "time_millis": {
+          "minimum": 0,
+          "title": "Time Millis",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "crop_id",
+        "role",
+        "frame_index",
+        "time_millis",
+        "integrity",
+        "width",
+        "height"
+      ],
+      "title": "PilotUiEvidenceView",
+      "type": "object"
+    },
+    "PilotUiRunOption": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_count": {
+          "minimum": 0,
+          "title": "Alert Count",
+          "type": "integer"
+        },
+        "case_count": {
+          "minimum": 0,
+          "title": "Case Count",
+          "type": "integer"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "INCOMPLETE",
+            "RUNNING",
+            "COMPLETE",
+            "ATTENTION_REQUIRED",
+            "INVALID"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "case_count",
+        "alert_count"
+      ],
+      "title": "PilotUiRunOption",
+      "type": "object"
+    },
+    "PilotUiStageProgress": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "enum": [
+            "VIDEO",
+            "PERCEPTION",
+            "EVIDENCE",
+            "SCREENING",
+            "REPORT"
+          ],
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "PENDING",
+            "IN_PROGRESS",
+            "COMPLETE",
+            "ATTENTION_REQUIRED",
+            "UNAVAILABLE"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "state",
+        "label",
+        "summary"
+      ],
+      "title": "PilotUiStageProgress",
+      "type": "object"
+    },
+    "PilotUiTimelineItem": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evidence_crop_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Crop Id"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "item_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Item Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "CASE_START",
+            "EVIDENCE",
+            "CASE_END"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "media_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Url"
+        },
+        "time_millis": {
+          "minimum": 0,
+          "title": "Time Millis",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "item_id",
+        "kind",
+        "case_id",
+        "frame_index",
+        "time_millis",
+        "label"
+      ],
+      "title": "PilotUiTimelineItem",
+      "type": "object"
+    },
+    "PilotUiVideoOption": {
+      "additionalProperties": false,
+      "properties": {
+        "display_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "matching_run_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Matching Run Ids",
+          "type": "array"
+        },
+        "relative_path": {
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "video_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Video Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "video_id",
+        "display_name",
+        "relative_path",
+        "size_bytes"
+      ],
+      "title": "PilotUiVideoOption",
+      "type": "object"
+    },
+    "ScreeningDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "ESCALATE"
+      ],
+      "title": "ScreeningDecision",
+      "type": "string"
+    },
+    "VerdictDecision": {
+      "enum": [
+        "ESTABLISHED",
+        "NOT_ESTABLISHED",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictDecision",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-ui-dashboard.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "alerts": {
+      "items": {
+        "$ref": "#/$defs/PilotUiAlertView"
+      },
+      "title": "Alerts",
+      "type": "array"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/PilotUiCaseSummary"
+      },
+      "title": "Cases",
+      "type": "array"
+    },
+    "disclaimer": {
+      "const": "用于安全辅助与记录，不直接作为处罚依据",
+      "default": "用于安全辅助与记录，不直接作为处罚依据",
+      "title": "Disclaimer",
+      "type": "string"
+    },
+    "duration_millis": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duration Millis"
+    },
+    "fps_den": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Fps Den"
+    },
+    "fps_num": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Fps Num"
+    },
+    "frame_count": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Frame Count"
+    },
+    "manifest_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Manifest Id"
+    },
+    "metrics_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Metrics Id"
+    },
+    "preview_kind": {
+      "enum": [
+        "NONE",
+        "SOURCE",
+        "DEBUG"
+      ],
+      "title": "Preview Kind",
+      "type": "string"
+    },
+    "preview_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Preview Url"
+    },
+    "production_delivery_count": {
+      "const": 0,
+      "default": 0,
+      "title": "Production Delivery Count",
+      "type": "integer"
+    },
+    "runs": {
+      "items": {
+        "$ref": "#/$defs/PilotUiRunOption"
+      },
+      "maxItems": 100,
+      "title": "Runs",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "pilot-ui-dashboard-v1",
+      "default": "pilot-ui-dashboard-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_run_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Selected Run Id"
+    },
+    "selected_video_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Selected Video Id"
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/$defs/PilotUiStageProgress"
+      },
+      "maxItems": 5,
+      "minItems": 5,
+      "title": "Stages",
+      "type": "array"
+    },
+    "timeline": {
+      "items": {
+        "$ref": "#/$defs/PilotUiTimelineItem"
+      },
+      "title": "Timeline",
+      "type": "array"
+    },
+    "videos": {
+      "items": {
+        "$ref": "#/$defs/PilotUiVideoOption"
+      },
+      "maxItems": 100,
+      "title": "Videos",
+      "type": "array"
+    }
+  },
+  "required": [
+    "videos",
+    "runs",
+    "stages",
+    "preview_kind",
+    "cases",
+    "timeline",
+    "alerts"
+  ],
+  "title": "PilotUiDashboard",
+  "type": "object"
+}

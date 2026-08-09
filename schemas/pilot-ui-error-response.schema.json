@@ -1,0 +1,29 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-ui-error-response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "reason_code": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "pilot-ui-error-v1",
+      "default": "pilot-ui-error-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "const": "FAILED",
+      "default": "FAILED",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reason_code"
+  ],
+  "title": "PilotUiErrorResponse",
+  "type": "object"
+}

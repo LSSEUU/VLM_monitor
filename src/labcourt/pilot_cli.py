@@ -14,6 +14,7 @@ from labcourt.contracts.config import AppConfig
 from labcourt.contracts.enums import VerdictDecision
 from labcourt.contracts.references import require_portable_run_id, require_reference_token
 from labcourt.exceptions import ContractViolation, LabCourtError
+from labcourt.pilot_ui_server import run_pilot_ui_server
 from labcourt.services.m3_operations import open_pilot_a3_operations_service
 from labcourt.services.pilot_a4 import (
     PilotA4ReviewError,
@@ -274,6 +275,32 @@ def pilot_review(
         f"decision={report.requested_decision}; appeal={report.resolution.appeal_id}; "
         f"index={report.index_path}; review_id={report.review_id}"
     )
+
+
+@pilot_app.command("ui")
+def pilot_ui(
+    config: Annotated[Path, typer.Option("--config", "-c", dir_okay=False)] = (
+        DEFAULT_PILOT_CONFIG
+    ),
+    port: Annotated[int, typer.Option("--port", min=1, max=65535)] = 8876,
+    open_browser: Annotated[bool, typer.Option("--open/--no-open")] = True,
+) -> None:
+    """Open the loopback-only graphical pilot console."""
+
+    _load_config(config, "UI", False)
+    typer.echo(f"LabCourt pilot UI: http://127.0.0.1:{port}/")
+    typer.echo("Press Ctrl+C to stop the local UI server.")
+    try:
+        run_pilot_ui_server(
+            project_root=Path.cwd(),
+            config_path=config,
+            port=port,
+            open_browser=open_browser,
+        )
+    except KeyboardInterrupt:
+        typer.echo("LabCourt pilot UI stopped.")
+    except (LabCourtError, OSError, TypeError, ValueError):
+        _pilot_boundary_error(False, "UI", "UI_SERVER_FAILED")
 
 
 def _validate_later_stage_boundary(

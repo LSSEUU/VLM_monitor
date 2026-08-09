@@ -25,11 +25,11 @@ RUNNER = CliRunner()
 def test_pilot_group_exposes_all_staged_commands() -> None:
     result = RUNNER.invoke(app, ["pilot", "--help"])
     assert result.exit_code == 0
-    for command in ("run", "perceive", "screen", "report", "review"):
+    for command in ("run", "perceive", "screen", "report", "review", "ui"):
         assert command in result.stdout
 
 
-@pytest.mark.parametrize("command", ("run", "perceive", "screen", "report", "review"))
+@pytest.mark.parametrize("command", ("run", "perceive", "screen", "report", "review", "ui"))
 def test_pilot_command_help_is_available(command: str) -> None:
     result = RUNNER.invoke(app, ["pilot", command, "--help"])
     assert result.exit_code == 0
