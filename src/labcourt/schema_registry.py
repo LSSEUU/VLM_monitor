@@ -304,6 +304,12 @@ from labcourt.contracts.pilot_report import (
     PilotA4ReviewReport,
     PilotLocalAlertDocument,
 )
+from labcourt.contracts.pilot_ui import (
+    PilotUiDashboard,
+    PilotUiErrorResponse,
+    PilotUiJobStartRequest,
+    PilotUiJobStatus,
+)
 from labcourt.contracts.precedents import Precedent
 from labcourt.contracts.projection_generation import (
     ProjectionCurrentPointer,
@@ -592,6 +598,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "pilot-perception-worker-response": PilotPerceptionWorkerResponse,
     "pilot-perception-worker-startup-failure": PilotPerceptionWorkerStartupFailure,
     "pilot-run-request": PilotRunRequest,
+    "pilot-ui-dashboard": PilotUiDashboard,
+    "pilot-ui-error-response": PilotUiErrorResponse,
+    "pilot-ui-job-start-request": PilotUiJobStartRequest,
+    "pilot-ui-job-status": PilotUiJobStatus,
     "precedent": Precedent,
     "precedent-lookup-query": PrecedentLookupQuery,
     "precedent-resolution": PrecedentResolution,
@@ -644,6 +654,7 @@ SCHEMA_VALIDATION_MODELS = {
     "pilot-perception-worker-response",
     "pilot-perception-worker-startup-failure",
     "pilot-run-request",
+    "pilot-ui-job-start-request",
     "prosecutor-model-payload",
     "screening-model-payload",
 }

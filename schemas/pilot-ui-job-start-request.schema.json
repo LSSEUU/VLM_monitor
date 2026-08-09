@@ -1,0 +1,28 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-ui-job-start-request.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "resume": {
+      "default": true,
+      "title": "Resume",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "video_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Video Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "video_id",
+    "run_id"
+  ],
+  "title": "PilotUiJobStartRequest",
+  "type": "object"
+}

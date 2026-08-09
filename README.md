@@ -21,6 +21,19 @@ M0 工程骨架、M1 确定性感知核心、M2 隐私证据包/可审计存储�
 - L0 软提醒不建案、不落盘、不保存轨迹。
 - 禁止人脸识别与跨摄像头 ReID。
 
+## v0.2 图形演示入口
+
+把已授权 MP4 放入 `inputs/` 后，在 Windows PowerShell 运行：
+
+```powershell
+.\.venv\Scripts\labcourt.exe pilot ui
+```
+
+浏览器会打开 `http://127.0.0.1:8876/`，集中展示视频选择、五阶段进度、视频预览、证据时间线、
+案件详情和本地告警。界面只监听本机，浏览器不接触模型密钥；已有完整运行可直接回放，不会
+再次调用 detector 或 VLM。详细说明见
+[`docs/pilot-quickstart.md`](docs/pilot-quickstart.md)。
+
 ## 开发命令
 
 支持 Python 3.11–3.12；本仓库的 `.python-version` 按规格固定为 3.11。依赖与命令由

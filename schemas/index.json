@@ -1372,6 +1372,30 @@
       "name": "pilot-run-request"
     },
     {
+      "file": "pilot-ui-dashboard.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_ui.PilotUiDashboard",
+      "name": "pilot-ui-dashboard"
+    },
+    {
+      "file": "pilot-ui-error-response.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_ui.PilotUiErrorResponse",
+      "name": "pilot-ui-error-response"
+    },
+    {
+      "file": "pilot-ui-job-start-request.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.pilot_ui.PilotUiJobStartRequest",
+      "name": "pilot-ui-job-start-request"
+    },
+    {
+      "file": "pilot-ui-job-status.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_ui.PilotUiJobStatus",
+      "name": "pilot-ui-job-status"
+    },
+    {
       "file": "precedent.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.precedents.Precedent",

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b1220">
+  <title>LabCourt · 视频安全审查台</title>
+  <link rel="stylesheet" href="/assets/app.css?v=1">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="LabCourt 视频安全审查台首页">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+          <rect x="4" y="4" width="32" height="32" rx="9"></rect>
+          <path d="M11 25h5l3-11 4 16 3-9h4"></path>
+        </svg>
+        <span><strong>LabCourt</strong><small>视频安全审查台</small></span>
+      </a>
+      <div class="topbar-state">
+        <span class="connection-dot" aria-hidden="true"></span>
+        <span>本地安全模式</span>
+        <span class="topbar-separator" aria-hidden="true"></span>
+        <span id="clock" class="data-text">--:--:--</span>
+      </div>
+    </header>
+
+    <main id="main-content" class="workspace" tabindex="-1">
+      <section class="intro-row" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">ALPHA 1 · OPERATOR CONSOLE</p>
+          <h1 id="page-title">从视频到告警，一条可核验的工作流</h1>
+          <p class="page-lead">选择本地视频开始分析，或打开已有运行查看证据与案件结果。</p>
+        </div>
+        <div id="authority-chip" class="authority-chip" title="当前展示数据的权威状态">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.8 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.7 7.5-9.5V6L12 3Z"></path><path d="m8.8 12 2.1 2.1 4.5-4.6"></path></svg>
+          <span><small>数据状态</small><strong id="authority-state">正在校验</strong></span>
+        </div>
+      </section>
+
+      <section class="control-card" aria-labelledby="launch-heading">
+        <div class="control-heading">
+          <div>
+            <p class="section-kicker">演示入口</p>
+            <h2 id="launch-heading">选择视频与运行</h2>
+          </div>
+          <p>模型密钥只从服务端环境读取，不进入浏览器。</p>
+        </div>
+        <div class="control-grid">
+          <label class="field" for="video-select">
+            <span>视频选择器</span>
+            <select id="video-select" aria-describedby="video-help"></select>
+            <small id="video-help">仅显示项目 inputs 目录内、通过边界检查的 MP4。</small>
+          </label>
+          <label class="field" for="run-select">
+            <span>已有运行</span>
+            <select id="run-select"></select>
+            <small>切换后读取已封存的案件与告警，不会重复调用模型。</small>
+          </label>
+          <label class="field" for="run-id-input">
+            <span>新运行编号</span>
+            <input id="run-id-input" type="text" maxlength="96" autocomplete="off" spellcheck="false">
+            <small>可直接使用自动生成的编号。</small>
+          </label>
+          <button id="start-button" class="primary-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5V7Z"></path></svg>
+            <span>开始完整分析</span>
+          </button>
+        </div>
+        <div id="run-feedback" class="run-feedback" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="progress-card" aria-labelledby="progress-heading">
+        <div class="section-title-row">
+          <div>
+            <p class="section-kicker">阶段进度</p>
+            <h2 id="progress-heading">当前工作流程</h2>
+          </div>
+          <span id="progress-summary" class="muted-pill">读取中</span>
+        </div>
+        <ol id="stage-list" class="stage-list" aria-label="视频分析阶段"></ol>
+      </section>
+
+      <div class="primary-grid">
+        <section class="panel video-panel" aria-labelledby="preview-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">视频预览</p>
+              <h2 id="preview-heading">现场画面</h2>
+            </div>
+            <span id="preview-badge" class="status-badge neutral">未选择</span>
+          </div>
+          <div class="video-stage">
+            <video id="video-player" controls preload="metadata" playsinline aria-label="当前分析视频预览"></video>
+            <div id="video-empty" class="video-empty">
+              <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="14" width="48" height="36" rx="8"></rect><path d="m27 25 14 7-14 7V25Z"></path></svg>
+              <strong>等待选择视频</strong>
+              <span>选择左上方的视频或已有运行。</span>
+            </div>
+            <div id="video-loading" class="video-loading" hidden><span></span>正在载入视频</div>
+          </div>
+          <dl class="video-meta">
+            <div><dt>时长</dt><dd id="meta-duration" class="data-text">—</dd></div>
+            <div><dt>帧率</dt><dd id="meta-fps" class="data-text">—</dd></div>
+            <div><dt>总帧数</dt><dd id="meta-frames" class="data-text">—</dd></div>
+            <div><dt>播放位置</dt><dd id="meta-current" class="data-text">00:00.000</dd></div>
+          </dl>
+          <p class="media-note"><span aria-hidden="true"></span>预览用于人工理解；客观计数、帧号和证据存在性均来自确定性代码与封存产物。</p>
+        </section>
+
+        <section class="panel case-panel" aria-labelledby="case-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">案件详情</p>
+              <h2 id="case-heading">审查结论</h2>
+            </div>
+            <span id="case-count" class="count-badge">0</span>
+          </div>
+          <div id="case-tabs" class="case-tabs" role="tablist" aria-label="案件列表"></div>
+          <div id="case-detail" class="case-detail"></div>
+        </section>
+      </div>
+
+      <div class="secondary-grid">
+        <section class="panel timeline-panel" aria-labelledby="timeline-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">证据时间线</p>
+              <h2 id="timeline-heading">从候选事件到关键帧</h2>
+            </div>
+            <span id="timeline-count" class="muted-pill">0 个节点</span>
+          </div>
+          <div id="timeline" class="timeline"></div>
+        </section>
+
+        <section class="panel alert-panel" aria-labelledby="alert-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">告警中心</p>
+              <h2 id="alert-heading">本地告警</h2>
+            </div>
+            <span id="alert-count" class="count-badge danger">0</span>
+          </div>
+          <div id="alert-list" class="alert-list"></div>
+          <div class="safety-boundary">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.8 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.7 7.5-9.5V6L12 3Z"></path></svg>
+            <p><strong>生产动作已禁用</strong><span>当前通道只写本地 JSON，不连接纪律或处罚系统。</span></p>
+          </div>
+        </section>
+      </div>
+
+      <footer class="footer-note">
+        <p id="disclaimer">用于安全辅助与记录，不直接作为处罚依据</p>
+        <p>LabCourt · REPLAY_LOCKED · 本地文件系统</p>
+      </footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="/assets/app.js?v=1" defer></script>
+</body>
+</html>

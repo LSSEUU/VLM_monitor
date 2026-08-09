@@ -1,89 +1,107 @@
 # LabCourt v0.2 Pilot 快速使用
 
-当前 A1 命令只做本地视频解码、人物/护目镜检测和单视频匿名跟踪，不调用 VLM，
-也不产生违规案件。A2 验收后才会把这些结果送入候选事件和证据链。
+LabCourt 已提供本地中文图形入口。普通演示者不需要理解命令行流水线；选择视频后，页面会把
+视频准备、视觉感知、证据构建、模型初审、案件与告警五个阶段连续展示出来。
 
-## 1. 准备三段视频
+## 1. 最简单的图形演示
 
-把已获授权的短 MP4 放入本项目的 `inputs/`，建议命名为：
+在项目根目录打开 PowerShell，运行：
 
-```text
-inputs/goggles-worn.mp4
-inputs/goggles-missing.mp4
-inputs/goggles-unclear.mp4
+```powershell
+.\.venv\Scripts\labcourt.exe pilot ui
 ```
 
-`inputs/`、`runs/`、模型权重和 `.env` 已被 Git 忽略。不要把 API Key 写入 YAML、
-文件名或命令参数；A1 完全不需要 API Key。
+也可以使用项目锁定环境：
 
-## 2. 一次性准备真实模型
+```powershell
+uv run --locked labcourt pilot ui
+```
 
-在项目根目录运行：
+命令会打开 `http://127.0.0.1:8876/`。页面只监听本机回环地址，不向局域网或互联网开放。
+演示结束后回到 PowerShell，按 `Ctrl+C` 停止服务。
+
+页面包含：
+
+- 视频选择器：只列出 `inputs/` 下通过边界检查的 MP4；
+- 阶段进度：显示五个阶段的等待、运行、完成或需关注状态；
+- 视频预览：优先播放经清单绑定的原始 H.264 视频；
+- 案件详情：展示结论、审核状态、模型建议和经过哈希复核的证据图；
+- 证据时间线：点击时间点可跳到原视频对应位置；
+- 告警中心：只展示本地告警及申诉状态，生产投递始终为 0。
+
+已有运行下拉框只显示可完整读取、且已有权威指标工件的运行。项目内部未完成目录不会冒充
+可演示结果。选择“仅预览所选视频”时不会创建案件，也不会调用模型。
+
+## 2. 准备一段视频
+
+把已获授权的短 MP4 放入项目的 `inputs/` 目录，例如：
+
+```text
+inputs/goggles-missing.mp4
+```
+
+刷新页面后即可在“视频选择器”中看到它。`inputs/`、`runs/`、模型权重和 `.env` 已被 Git
+忽略。不要把 API Key 写入 YAML、文件名、日志或命令参数，也不要放入未经授权的真人视频。
+
+当前示例运行 `a3-qwen-missing-20260809-v9` 已完成并可直接演示。要分析新视频：
+
+1. 选择视频；
+2. 使用自动生成的匿名运行号，或输入新的安全运行号；
+3. 点击“开始完整分析”；
+4. 等待五阶段进度完成，再查看案件、证据和告警。
+
+一次只允许一个后台分析任务。模型密钥只由本地服务从用户环境读取，永远不会进入浏览器。
+关闭或刷新浏览器不会中止已经启动的本地任务；重新打开页面可以继续查看状态。
+
+## 3. 首次运行真实视觉模型
+
+新机器需在项目根目录执行一次：
 
 ```powershell
 .\scripts\setup_perception_worker.ps1
 ```
 
-脚本会创建独立的 `.venv-perception/`，安装固定 CUDA/模型依赖，下载固定 revision
-的 Grounding DINO Tiny，并核对权重 SHA-256。最终必须看到 JSON 中的
+脚本会创建隔离的 `.venv-perception/`，安装固定 CUDA/模型依赖，下载固定 revision 的
+Grounding DINO Tiny 与姿态模型，并校验权重身份。最终必须看到 JSON 中的
 `"kind":"READY"`。脚本可重复运行，已下载内容会命中本地缓存。
 
-## 3. 分别运行感知
+完整 A5 新运行还需要用户环境中的模型 API 配置。图形入口不显示密钥，只显示脱敏的失败码。
+已有完整运行的查看和回放不需要再次调用 detector 或 VLM。
+
+## 4. 命令行等价入口
+
+图形入口最终调用的是同一个可恢复 A5 编排器。需要自动化时可运行：
 
 ```powershell
-uv run labcourt pilot perceive `
+uv run --locked labcourt pilot run `
   --config configs/pilot.yaml `
-  --video inputs/goggles-worn.mp4 `
-  --run-id goggles-worn-001 `
+  --video inputs/goggles-missing.mp4 `
+  --run-id goggles-missing-001 `
   --json
 ```
 
-对另外两段视频更换 `--video` 和 `--run-id`。成功输出包含：
+同一 `run-id` 和同一视频重复运行时，系统会验证运行清单、完成封印、证据、模型原始响应、
+案件和告警工件，再从可恢复阶段继续。已完成运行不会再次调用 detector 或 VLM。任何权威
+工件缺失、越界或哈希不一致都会失败关闭，不能被误报成“运行完成”。
 
-```text
-frames_processed, detection_count, person_count, goggles_count,
-track_count, provider_failures, manifest_id, preview_path
-```
+## 5. 数据边界
 
-同一 `run-id` 和同一视频重复运行时，系统会先验证完成封印、全部 A1 工件及逐帧 raw
-response，再读取已完成结果，不会再次调用 detector。任何已封印工件缺失或内容不一致都会
-失败关闭，不能被误报为“运行完成”。
+图形界面不是新的判定权威：
 
-## 4. 只需人工检查三件事
-
-打开输出中的 `preview_path`，检查：
-
-1. 人物框是否大致覆盖现场人员；
-2. 护目镜框是否大致落在眼部，不要把普通反光或背景物大量当成护目镜；
-3. 同一个人在连续画面中的 `t=<匿名编号>` 是否基本保持一致。
-
-然后告知项目维护者：视频分辨率、明显误检/漏检、track 跳变，以及真实高风险区域的
-多边形顶点。无需逐帧标注，也不要把真人姓名写入反馈。
-
-## 5. 工件位置
-
-```text
-runs/<run-id>/
-├── input/video-manifest.json
-├── perception/execution-manifest.json
-├── perception/frame-bundles.jsonl
-├── perception/frame-receipts.jsonl
-├── perception/report.json
-├── perception/completion-manifest.json
-├── raw/perception/*.json
-└── debug/perception-preview.mp4
-```
-
-预览是非权威调试文件，可能含真人画面；不得上传到未授权服务。权威感知数据通过
-`frame_id`、像素 SHA-256、模型 manifest 和 raw response receipt 相互绑定；
-`completion-manifest.json` 最后写入，并固定上述所有 A1 输出的路径、大小和 SHA-256。
+- 客观计数、时长、坐标和证据存在性来自确定性工件，不来自 VLM 文本；
+- VLM 只提供严格结构化的语义建议，案件结果仍走现有程序审查和申诉状态机；
+- 证据图片每次读取前重新核对 SHA-256，修改或缺失时拒绝显示；
+- 红框调试预览保留在 `runs/<run-id>/debug/`，不参与裁决；
+- 当前只有本地告警，没有生产 webhook、处分系统或外部通知；
+- 不做人脸识别，也不做跨摄像头身份关联。
 
 ## 6. 常见失败
 
-- `VIDEO_MISSING`：相对路径下没有该文件。
-- `VIDEO_PATH_INVALID`：必须使用项目内、以 `.mp4` 结尾的相对路径。
-- `PERCEPTION_FAILED`：解码器、隔离 worker、权重、CUDA、模型推理、跟踪或工件完整性
-  未形成可信结果。不要把它解释成“没有检测到人”。
+- `VIDEO_NOT_FOUND`：`inputs/` 中没有相应 MP4，或路径未通过安全边界检查；
+- `RUN_NOT_FOUND`：运行不存在，或不是可展示的完整运行；
+- `MEDIA_NOT_VERIFIED`：媒体缺失或内容哈希与权威工件不一致；
+- `JOB_ALREADY_RUNNING`：已有分析任务正在执行；
+- `PILOT_RUN_FAILED`：完整流水线产生了类型化失败，请到本地运行日志继续排查。
 
-若要重新测试已失败的运行，使用新的匿名 `run-id`；失败 raw response 会保留用于审计，
-不会被静默覆盖。
+若要重新测试已失败的运行，应使用新的匿名 `run-id`。失败原始响应会保留用于审计，不会被
+静默覆盖。当前 AI 生成样例只能证明工作流可运行，不能证明真实现场准确率、延迟或成本。
