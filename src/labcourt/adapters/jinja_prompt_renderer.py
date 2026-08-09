@@ -72,7 +72,31 @@ PROMPT_DEFINITIONS: Final = (
     ),
 )
 
-_DEFINITIONS_BY_ID: Final = {definition.prompt_id: definition for definition in PROMPT_DEFINITIONS}
+LEGACY_PROMPT_DEFINITIONS: Final = (
+    PromptDefinition(
+        prompt_id="screening_presence_v1",
+        filename="legacy/screening_presence_v1.jinja",
+        role=VlmRole.SCREENING,
+        variable_names=("evidence_json", "output_schema_json", "rules_json"),
+    ),
+    PromptDefinition(
+        prompt_id="screening_absence_v1",
+        filename="legacy/screening_absence_v1.jinja",
+        role=VlmRole.SCREENING,
+        variable_names=("evidence_json", "output_schema_json", "rules_json"),
+    ),
+    PromptDefinition(
+        prompt_id="screening_structure_repair_v1",
+        filename="screening_structure_repair_v1.jinja",
+        role=VlmRole.STRUCTURE_REPAIR,
+        variable_names=(
+            "original_response_json",
+            "output_schema_json",
+            "parse_defects_json",
+        ),
+    ),
+)
+
 _ALLOWED_AST_NODES: Final = (
     nodes.Template,
     nodes.Output,
@@ -230,16 +254,26 @@ class JinjaPromptCatalog:
         output_schema_json_by_prompt: Mapping[str, str],
         expected_bundle_sha256: Sha256Hex | None = None,
         template_root: Path | None = None,
+        definitions: tuple[PromptDefinition, ...] = PROMPT_DEFINITIONS,
     ) -> None:
         if jinja2.__version__ != "3.1.6":
             raise PromptRenderError(PromptRenderFailureCode.RENDERER_VERSION_MISMATCH)
         if template_root is not None and not template_root.is_absolute():
             raise PromptRenderError(PromptRenderFailureCode.TEMPLATE_ROOT_INVALID)
+        if (
+            not isinstance(definitions, tuple)
+            or not definitions
+            or any(not isinstance(item, PromptDefinition) for item in definitions)
+        ):
+            raise PromptRenderError(PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID)
+        definitions_by_id = {definition.prompt_id: definition for definition in definitions}
+        if len(definitions_by_id) != len(definitions):
+            raise PromptRenderError(PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID)
         try:
             schema_documents = dict(output_schema_json_by_prompt)
         except (RuntimeError, TypeError, ValueError):
             raise PromptRenderError(PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID) from None
-        if set(schema_documents) != set(_DEFINITIONS_BY_ID):
+        if set(schema_documents) != set(definitions_by_id):
             raise PromptRenderError(PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID)
         _require_canonical_json_values(
             schema_documents,
@@ -252,7 +286,7 @@ class JinjaPromptCatalog:
 
         loaded: dict[str, _LoadedTemplate] = {}
         templates: dict[str, Template] = {}
-        for definition in PROMPT_DEFINITIONS:
+        for definition in definitions:
             loaded_template, compiled_template = _load_template(
                 definition,
                 template_root=template_root,
@@ -269,7 +303,7 @@ class JinjaPromptCatalog:
                 "variable_names": list(definition.variable_names),
                 "renderer_version": RENDERER_VERSION,
             }
-            for definition in PROMPT_DEFINITIONS
+            for definition in definitions
         ]
         bundle_sha256 = sha256_hex(["prompt-bundle", 1, bundle_projection])
         if expected_bundle_sha256 is not None and expected_bundle_sha256 != bundle_sha256:
@@ -338,6 +372,7 @@ class JinjaPromptCatalog:
 
 
 __all__ = [
+    "LEGACY_PROMPT_DEFINITIONS",
     "MAX_PROMPT_JSON_DEPTH",
     "MAX_PROMPT_JSON_FIELDS",
     "MAX_PROMPT_STRING_CHARS",

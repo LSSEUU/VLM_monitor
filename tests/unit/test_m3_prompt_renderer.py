@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from labcourt.adapters.jinja_prompt_renderer import (
+    LEGACY_PROMPT_DEFINITIONS,
     MAX_PROMPT_JSON_DEPTH,
     MAX_PROMPT_JSON_FIELDS,
     MAX_PROMPT_VARIABLE_BYTES,
@@ -385,6 +386,23 @@ def test_prompt_renderer_golden_identities_are_frozen() -> None:
     )
     assert repair.rendered_prompt_sha256 == (
         "e8bf2502af701372c43277571e40ca5e218665516d5ef006a89eca7e0ffc2068"
+    )
+
+
+def test_legacy_prompt_assets_preserve_the_prior_bundle_identity() -> None:
+    catalog = JinjaPromptCatalog(
+        output_schema_json_by_prompt=_schema_documents(),
+        definitions=LEGACY_PROMPT_DEFINITIONS,
+    )
+
+    assert catalog.bundle_sha256 == (
+        "5a0c1df90ad96c57ded58c079a239b7ed01a1978ec255cc3ea7f8336dbfe0c31"
+    )
+    assert catalog.manifest("screening_presence_v1").template_sha256 == (
+        "d8a3f0d953dc6583dca3c5d26f3a94d895cf64285950622f05675fe13d7393a9"
+    )
+    assert catalog.manifest("screening_absence_v1").template_sha256 == (
+        "86d5272dc57d6c705e24c55a0191d4bffc4c147d10dbc3c3662e55d53ffe0531"
     )
 
 

@@ -39,6 +39,12 @@ from labcourt.ports.prompts import PromptCatalog, RenderedPrompt
 FROZEN_M3_PROMPT_BUNDLE_SHA256: Final = (
     "a2465fd6bcd0ef02834aeb0fb7ee6d9512ee2213515722e9a120caffd17c9e2a"
 )
+LEGACY_M3_PROMPT_BUNDLE_SHA256: Final = (
+    "b6a7e737fb9942b41e1b5027a694ec3ee9db55a9a6705b5988d5a806b99291d7"
+)
+SUPPORTED_M3_PROMPT_BUNDLE_SHA256S: Final = frozenset(
+    {FROZEN_M3_PROMPT_BUNDLE_SHA256, LEGACY_M3_PROMPT_BUNDLE_SHA256}
+)
 SCREENING_PRESENCE_PROMPT_ID: Final = "screening_presence_v1"
 SCREENING_ABSENCE_PROMPT_ID: Final = "screening_absence_v1"
 _CITABLE_NON_MEDIA_KINDS: Final = frozenset(
@@ -115,7 +121,7 @@ def _validate_authorities(
         "manifest_id": pack.manifest_id == run_manifest.manifest_id,
         "event.manifest_id": pack.event.manifest_id == run_manifest.manifest_id,
         "prompt_bundle_sha256": (
-            run_manifest.prompt_bundle_sha256 == FROZEN_M3_PROMPT_BUNDLE_SHA256
+            run_manifest.prompt_bundle_sha256 in SUPPORTED_M3_PROMPT_BUNDLE_SHA256S
             and catalog.bundle_sha256 == run_manifest.prompt_bundle_sha256
         ),
         "screening.component": model_manifest.component == "screening",
@@ -460,8 +466,10 @@ def prepare_screening_request(
 
 __all__ = [
     "FROZEN_M3_PROMPT_BUNDLE_SHA256",
+    "LEGACY_M3_PROMPT_BUNDLE_SHA256",
     "SCREENING_ABSENCE_PROMPT_ID",
     "SCREENING_PRESENCE_PROMPT_ID",
+    "SUPPORTED_M3_PROMPT_BUNDLE_SHA256S",
     "PreparedScreeningRequest",
     "prepare_screening_request",
 ]
