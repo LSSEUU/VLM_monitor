@@ -476,6 +476,18 @@
       "title": "Case Id",
       "type": "string"
     },
+    "enable_thinking": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Enable Thinking"
+    },
     "evidence_class": {
       "$ref": "#/$defs/EvidenceClass"
     },

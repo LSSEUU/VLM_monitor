@@ -404,6 +404,7 @@ def prepare_structure_repair_request(
         parse_defect_codes=defect_codes,
         temperature=original_request.temperature,
         seed=original_request.seed,
+        enable_thinking=original_request.enable_thinking,
         budget=budget,
         manifest_id=original_request.manifest_id,
     )

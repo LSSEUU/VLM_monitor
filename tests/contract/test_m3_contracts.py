@@ -173,6 +173,7 @@ def _request(
     violation_type: ViolationType = ViolationType.REAGENT_CONTAINER_OPEN,
     evidence_class: EvidenceClass = EvidenceClass.PRESENCE,
     allowed_evidence_refs: tuple[ArtifactRef, ...] | None = None,
+    enable_thinking: bool | None = None,
 ) -> VLMRequest:
     media = (_media(run_id=run_id),)
     return VLMRequest(
@@ -197,9 +198,22 @@ def _request(
         objective_summary={"duration_frames": 91},
         temperature=0.0,
         seed=7,
+        enable_thinking=enable_thinking,
         budget=_budget(),
         manifest_id=SHA_9,
     )
+
+
+def test_explicit_thinking_control_is_request_and_cache_bound_without_changing_default() -> None:
+    provider_default = _request()
+    disabled = _request(enable_thinking=False)
+
+    assert "enable_thinking" not in provider_default.request_projection()
+    assert disabled.request_projection()["enable_thinking"] is False
+    assert disabled.request_id != provider_default.request_id
+    assert disabled.request_sha256 != provider_default.request_sha256
+    assert disabled.cache_key != provider_default.cache_key
+    assert VLMRequest.model_validate_json(disabled.model_dump_json()) == disabled
 
 
 def _response(request: VLMRequest, *, content_sha256: str = EMPTY_SHA256) -> VLMResponse:

@@ -279,6 +279,18 @@
       "title": "Case Id",
       "type": "string"
     },
+    "enable_thinking": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Enable Thinking"
+    },
     "evidence_pack_id": {
       "pattern": "^[0-9a-f]{64}$",
       "title": "Evidence Pack Id",

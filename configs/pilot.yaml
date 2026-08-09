@@ -34,6 +34,7 @@ providers:
     api_key_env: LABCOURT_SCREENING_API_KEY
     timeout_seconds: 30
     cache_enabled: true
+    enable_thinking: false
     pricing_currency: CNY
     input_cost_per_million_tokens: 1.0
     output_cost_per_million_tokens: 10.0

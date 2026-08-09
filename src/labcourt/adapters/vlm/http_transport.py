@@ -258,9 +258,7 @@ def build_openai_compatible_transport(
         or profile.endpoint_env is None
         or profile.api_key_env is None
     ):
-        raise _configuration_failure(
-            OpenAICompatibleTransportConfigurationCode.PROFILE_UNSUPPORTED
-        )
+        raise _configuration_failure(OpenAICompatibleTransportConfigurationCode.PROFILE_UNSUPPORTED)
     deployment = os.environ if environment is None else environment
     endpoint = deployment.get(profile.endpoint_env)
     if endpoint is None or endpoint == "":
@@ -269,9 +267,7 @@ def build_openai_compatible_transport(
         )
     api_key = deployment.get(profile.api_key_env)
     if api_key is None or api_key == "":
-        raise _configuration_failure(
-            OpenAICompatibleTransportConfigurationCode.API_KEY_ENV_MISSING
-        )
+        raise _configuration_failure(OpenAICompatibleTransportConfigurationCode.API_KEY_ENV_MISSING)
     return StdlibOpenAICompatibleTransport(
         endpoint=endpoint,
         api_key=api_key,

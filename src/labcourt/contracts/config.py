@@ -441,6 +441,10 @@ class VlmProviderProfile(ContractModel):
     api_key_env: str | None = None
     timeout_seconds: StrictFloat = Field(gt=0, le=3_600)
     cache_enabled: Literal[True] = True
+    enable_thinking: StrictBool | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+    )
     pricing_currency: Literal["USD", "CNY"] = "USD"
     input_cost_per_million_tokens: StrictFloat = Field(
         default=0.0,
@@ -479,8 +483,8 @@ class VlmProviderProfile(ContractModel):
         }
         if http and not pricing_fields.issubset(self.model_fields_set):
             raise ValueError("HTTP profiles require explicit token pricing and currency")
-        if not http and (self.endpoint_env or self.api_key_env):
-            raise ValueError("in-process profiles cannot declare endpoint or API key variables")
+        if not http and (self.endpoint_env or self.api_key_env or self.enable_thinking is not None):
+            raise ValueError("in-process profiles cannot declare HTTP deployment controls")
         if self.provider == "fake" and (external or self.transport != ProviderTransport.IN_PROCESS):
             raise ValueError("the deterministic fake provider must run locally in-process")
         if not self.cache_enabled:

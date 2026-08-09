@@ -315,12 +315,7 @@ def _run_external_a2(
     )
     assert report.state == "EVIDENCE_READY"
     assert report.evidence_packs[0].cloud_allowed_crop_count == 3
-    database = (
-        project_root
-        / "runs"
-        / run_id
-        / config.storage.database_filename
-    )
+    database = project_root / "runs" / run_id / config.storage.database_filename
     with sqlite3.connect(database) as connection:
         row = connection.execute("SELECT pack_json FROM evidence_packs").fetchone()
     assert row is not None

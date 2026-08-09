@@ -450,6 +450,7 @@ def prepare_screening_request(
         objective_summary=objective_summary,
         temperature=run_manifest.decoding_parameters.temperature,
         seed=run_manifest.decoding_parameters.seed,
+        enable_thinking=profile.enable_thinking,
         budget=budget,
         backlog_retry_context=backlog_retry_context,
         manifest_id=run_manifest.manifest_id,

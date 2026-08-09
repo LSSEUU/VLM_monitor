@@ -173,8 +173,7 @@ def pilot_screen(
             f"report_id={report.report_id}"
         )
     if report.counts.deferred_to_backlog_cases or any(
-        outcome.status.value in {"ESCALATED", "REWORK_REQUIRED"}
-        for outcome in report.outcomes
+        outcome.status.value in {"ESCALATED", "REWORK_REQUIRED"} for outcome in report.outcomes
     ):
         raise typer.Exit(code=1)
 

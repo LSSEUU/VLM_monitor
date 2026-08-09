@@ -397,6 +397,8 @@ class OpenAICompatibleVLMClient:
         }
         if request.seed is not None:
             wire["seed"] = request.seed
+        if request.enable_thinking is not None:
+            wire["enable_thinking"] = request.enable_thinking
         return canonical_bytes(wire)
 
     @staticmethod
