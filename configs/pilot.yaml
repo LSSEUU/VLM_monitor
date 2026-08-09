@@ -239,7 +239,7 @@ screening:
   router_version: "screening-router-v1"
   conflict_policy_version: "strong-signal-v1"
   backlog_max_attempts: 3
-  timeout_seconds: 15.0
+  timeout_seconds: 30.0
   max_images: 8
   max_input_pixels: 16777216
   max_prompt_bytes: 524288
