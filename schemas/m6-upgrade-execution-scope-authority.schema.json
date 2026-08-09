@@ -2422,8 +2422,11 @@
           "type": "number"
         },
         "pricing_currency": {
-          "const": "USD",
           "default": "USD",
+          "enum": [
+            "USD",
+            "CNY"
+          ],
           "title": "Pricing Currency",
           "type": "string"
         },

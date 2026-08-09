@@ -441,7 +441,7 @@ class VlmProviderProfile(ContractModel):
     api_key_env: str | None = None
     timeout_seconds: StrictFloat = Field(gt=0, le=3_600)
     cache_enabled: Literal[True] = True
-    pricing_currency: Literal["USD"] = "USD"
+    pricing_currency: Literal["USD", "CNY"] = "USD"
     input_cost_per_million_tokens: StrictFloat = Field(
         default=0.0,
         ge=0,
@@ -478,7 +478,7 @@ class VlmProviderProfile(ContractModel):
             "output_cost_per_million_tokens",
         }
         if http and not pricing_fields.issubset(self.model_fields_set):
-            raise ValueError("HTTP profiles require explicit USD token pricing")
+            raise ValueError("HTTP profiles require explicit token pricing and currency")
         if not http and (self.endpoint_env or self.api_key_env):
             raise ValueError("in-process profiles cannot declare endpoint or API key variables")
         if self.provider == "fake" and (external or self.transport != ProviderTransport.IN_PROCESS):

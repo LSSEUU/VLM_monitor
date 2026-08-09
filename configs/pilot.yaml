@@ -22,6 +22,21 @@ storage:
   max_image_pixels: 100000000
 
 providers:
+  pilot-screening:
+    provider: alibaba-cloud-model-studio
+    model: "qwen3-vl-plus-2025-12-19"
+    revision: "2025-12-19"
+    quantization: null
+    execution_location: EXTERNAL
+    transport: HTTP
+    allow_full_frame: false
+    endpoint_env: LABCOURT_SCREENING_ENDPOINT
+    api_key_env: LABCOURT_SCREENING_API_KEY
+    timeout_seconds: 30
+    cache_enabled: true
+    pricing_currency: CNY
+    input_cost_per_million_tokens: 1.0
+    output_cost_per_million_tokens: 10.0
   fake-screening:
     provider: fake
     model: deterministic-screening
@@ -216,7 +231,7 @@ evidence:
   encoding_version: "png-v1"
 
 screening:
-  provider_profile: "fake-screening"
+  provider_profile: "pilot-screening"
   low_probability: 0.15
   high_probability: 0.88
   strong_signal_threshold: 0.50

@@ -132,7 +132,7 @@ class VlmCallBudget(FrozenContractModel):
         strict=True,
     )
     max_output_tokens: int = Field(gt=0, le=1_000_000, strict=True)
-    pricing_currency: Literal["USD"]
+    pricing_currency: Literal["USD", "CNY"]
     input_cost_per_million_tokens: StrictFloat = Field(
         ge=0,
         le=1_000_000,
@@ -170,12 +170,12 @@ class VlmCallBudget(FrozenContractModel):
         ) / Decimal(1_000_000)
 
     def estimate_cost(self, *, input_tokens: int, output_tokens: int) -> float:
-        """Price exact provider usage using the immutable request-bound USD rates."""
+        """Price exact provider usage using the immutable request-bound currency rates."""
 
         return float(self._estimated_cost_decimal(input_tokens, output_tokens))
 
     def allows_cost(self, *, input_tokens: int, output_tokens: int) -> bool:
-        """Return whether exact provider usage stays within this call's USD cap."""
+        """Return whether exact provider usage stays within this call's currency cap."""
 
         return self._estimated_cost_decimal(input_tokens, output_tokens) <= Decimal(
             str(self.max_estimated_cost)

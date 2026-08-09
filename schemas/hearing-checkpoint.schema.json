@@ -3292,7 +3292,10 @@
           "type": "number"
         },
         "pricing_currency": {
-          "const": "USD",
+          "enum": [
+            "USD",
+            "CNY"
+          ],
           "title": "Pricing Currency",
           "type": "string"
         },

@@ -777,6 +777,22 @@ def test_vlm_cost_budget_prices_exact_usage_and_is_fail_closed_at_the_boundary()
         budget.estimate_cost(input_tokens=True, output_tokens=0)  # type: ignore[arg-type]
 
 
+def test_vlm_cost_budget_preserves_cny_as_request_bound_cost_authority() -> None:
+    payload = _budget().model_dump(mode="json")
+    payload.update(
+        {
+            "pricing_currency": "CNY",
+            "input_cost_per_million_tokens": 1.0,
+            "output_cost_per_million_tokens": 10.0,
+        }
+    )
+
+    budget = VlmCallBudget.model_validate(payload)
+
+    assert budget.pricing_currency == "CNY"
+    assert budget.estimate_cost(input_tokens=1_000_000, output_tokens=100_000) == 2.0
+
+
 def test_request_whitelists_every_citable_namespace_and_exact_media_crops() -> None:
     allowed = (
         ArtifactRef(kind=ArtifactKind.CROP, artifact_id=SHA_4),
