@@ -1246,16 +1246,58 @@
       "name": "pilot-a3-report"
     },
     {
+      "file": "pilot-a4-case-view.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_report.PilotA4CaseView",
+      "name": "pilot-a4-case-view"
+    },
+    {
       "file": "pilot-a4-close-report.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.pilot.PilotA4CloseReport",
       "name": "pilot-a4-close-report"
     },
     {
+      "file": "pilot-a4-media-view.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_report.PilotA4MediaView",
+      "name": "pilot-a4-media-view"
+    },
+    {
+      "file": "pilot-a4-metrics.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_report.PilotA4Metrics",
+      "name": "pilot-a4-metrics"
+    },
+    {
+      "file": "pilot-a4-model-version.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_report.PilotA4ModelVersion",
+      "name": "pilot-a4-model-version"
+    },
+    {
+      "file": "pilot-a4-publication-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_report.PilotA4PublicationReport",
+      "name": "pilot-a4-publication-report"
+    },
+    {
+      "file": "pilot-a4-review-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_report.PilotA4ReviewReport",
+      "name": "pilot-a4-review-report"
+    },
+    {
       "file": "pilot-evidence-pack-summary.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.pilot.PilotEvidencePackSummary",
       "name": "pilot-evidence-pack-summary"
+    },
+    {
+      "file": "pilot-local-alert-document.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot_report.PilotLocalAlertDocument",
+      "name": "pilot-local-alert-document"
     },
     {
       "file": "pilot-perception-artifact-receipt.schema.json",

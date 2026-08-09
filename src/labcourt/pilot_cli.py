@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 from typing import Annotated, NoReturn
 
@@ -14,6 +15,11 @@ from labcourt.contracts.enums import VerdictDecision
 from labcourt.contracts.references import require_portable_run_id, require_reference_token
 from labcourt.exceptions import ContractViolation, LabCourtError
 from labcourt.services.m3_operations import open_pilot_a3_operations_service
+from labcourt.services.pilot_a4 import (
+    PilotA4ReviewError,
+    publish_pilot_run,
+    review_pilot_case,
+)
 from labcourt.services.pilot_evidence import run_pilot_a2
 from labcourt.services.pilot_operations import (
     PilotOperationsBoundaryCode,
@@ -186,15 +192,38 @@ def pilot_report(
     ),
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Publish an existing pilot run after reporting is enabled in A4."""
+    """Close eligible cases and publish an offline operator report with local alerts."""
 
-    _validate_later_stage_boundary(
-        operation="REPORT",
-        config_path=config,
-        run_id=run_id,
-        case_id=None,
-        json_output=json_output,
-    )
+    parsed = _load_config(config, "REPORT", json_output)
+    try:
+        controlled_run_id = require_portable_run_id(run_id, "pilot run_id")
+        runs_root = Path.cwd() / parsed.run.workspace
+        database = runs_root / controlled_run_id / parsed.storage.database_filename
+        report = publish_pilot_run(
+            config=parsed,
+            runs_root=runs_root,
+            database_path=database,
+            run_id=controlled_run_id,
+        )
+    except (LabCourtError, sqlite3.Error, OSError, TypeError, ValueError):
+        _pilot_boundary_error(json_output, "REPORT", "REPORTING_FAILED")
+    if json_output:
+        typer.echo(canonical_json(report.model_dump(mode="json")))
+    else:
+        typer.echo(
+            f"pilot report published; cases={report.metrics.case_count}; "
+            f"closed={report.metrics.closed_count}; "
+            f"local_alerts={report.metrics.verified_local_alert_count}; "
+            f"index={report.index_path}; publication_id={report.publication_id}"
+        )
+    if (
+        report.dispatch.retryable_failure_count
+        or report.dispatch.unknown_delivery_count
+        or report.dispatch.attention_required_count
+        or report.metrics.human_review_count
+        or report.metrics.unresolved_count
+    ):
+        raise typer.Exit(code=1)
 
 
 @pilot_app.command("review")
@@ -208,15 +237,37 @@ def pilot_review(
     ),
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Apply a human review through existing M5 authority after A4 is enabled."""
+    """Apply one explicit human decision through the existing M5 appeal authority."""
 
-    del decision, reason_file
-    _validate_later_stage_boundary(
-        operation="REVIEW",
-        config_path=config,
-        run_id=run_id,
-        case_id=case_id,
-        json_output=json_output,
+    parsed = _load_config(config, "REVIEW", json_output)
+    try:
+        controlled_run_id = require_portable_run_id(run_id, "pilot run_id")
+        controlled_case_id = require_reference_token(case_id, "pilot case_id")
+        if reason_file.stat().st_size > 8_192:
+            raise ValueError("pilot review reason file exceeds its input budget")
+        reason = reason_file.read_text(encoding="utf-8").strip()
+        runs_root = Path.cwd() / parsed.run.workspace
+        database = runs_root / controlled_run_id / parsed.storage.database_filename
+        report = review_pilot_case(
+            config=parsed,
+            runs_root=runs_root,
+            database_path=database,
+            run_id=controlled_run_id,
+            case_id=controlled_case_id,
+            decision=decision,
+            reason=reason,
+        )
+    except PilotA4ReviewError as error:
+        _pilot_boundary_error(json_output, "REVIEW", error.reason_code.value)
+    except (LabCourtError, OSError, UnicodeError, TypeError, ValueError):
+        _pilot_boundary_error(json_output, "REVIEW", "REVIEW_FAILED")
+    if json_output:
+        typer.echo(canonical_json(report.model_dump(mode="json")))
+        return
+    typer.echo(
+        f"pilot review complete; status={report.resolution.status}; "
+        f"decision={report.requested_decision}; appeal={report.resolution.appeal_id}; "
+        f"index={report.index_path}; review_id={report.review_id}"
     )
 
 

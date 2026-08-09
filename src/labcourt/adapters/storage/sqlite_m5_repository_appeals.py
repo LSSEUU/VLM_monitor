@@ -24,6 +24,7 @@ from labcourt.application.m5_dataset_retention import m5_dataset_retention_holds
 from labcourt.application.m5_embedding_integrity import (
     M5EmbeddingIntegrityError,
     build_m5_controlled_fake_embedding,
+    is_m5_controlled_fake_model_manifest,
 )
 from labcourt.application.m5_human_labels import build_m5_appeal_training_labels
 from labcourt.application.m5_training_history import (
@@ -1718,7 +1719,7 @@ class SQLiteM5AppealRepository(SQLiteM5RepositoryHost):
         manifest = self._load_run_manifest(connection, authority.run_id)
         embedding = authority.text_embedding
         if (
-            manifest.models["text_embedding"].provider != "fake"
+            not is_m5_controlled_fake_model_manifest(manifest.models["text_embedding"])
             or embedding is None
             or authority.visual_embeddings
         ):

@@ -13,6 +13,7 @@ from labcourt.application.m5_automatic_precedent import (
 from labcourt.application.m5_embedding_integrity import (
     M5EmbeddingIntegrityError,
     build_m5_controlled_fake_embedding,
+    is_m5_controlled_fake_model_manifest,
 )
 from labcourt.application.m5_precedents import (
     create_m5_precedent_authority,
@@ -101,7 +102,7 @@ def build_appeal_overturn_precedent(
         != manifest.models["visual_embedding"].model_manifest_id
     ):
         raise AppealPrecedentError(AppealPrecedentFailureCode.MANIFEST_MISMATCH)
-    if manifest.models["text_embedding"].provider != "fake":
+    if not is_m5_controlled_fake_model_manifest(manifest.models["text_embedding"]):
         raise AppealPrecedentError(AppealPrecedentFailureCode.EMBEDDING_PROVIDER_UNSUPPORTED)
 
     projection = _appeal_situation_projection(

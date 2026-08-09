@@ -81,9 +81,11 @@ def _review_report(authority: AppealVersionAuthority) -> M5AppealReviewCommandRe
     )
 
 
-def _resolution_report(
+def build_m5_appeal_resolution_report(
     intent: AppealResolutionSideEffectIntent,
 ) -> M5AppealResolutionCommandReport:
+    """Project a validated durable terminal intent into its stable command report."""
+
     authority = intent.appeal_authority
     appeal = authority.appeal
     predecessor = authority.previous_authority_sha256
@@ -261,7 +263,7 @@ class M5AppealOperationsCoordinator:
             durable_command = _resolution_command_from_receipt(receipt, current)
             if command != durable_command:
                 raise M5AppealOperationsError(M5AppealOperationsErrorCode.TERMINAL_COMMAND_CONFLICT)
-            return _resolution_report(receipt)
+            return build_m5_appeal_resolution_report(receipt)
 
         # Only a non-terminal authority may enter the FSM and capture fresh effects.
         resolve_appeal(current, command)
@@ -284,7 +286,7 @@ class M5AppealOperationsCoordinator:
         committed = self._repository.commit_resolution(intent)
         if committed != intent:
             raise M5AppealOperationsError(M5AppealOperationsErrorCode.COMMIT_RESULT_INVALID)
-        return _resolution_report(committed)
+        return build_m5_appeal_resolution_report(committed)
 
     def _load_current_by_id(
         self,
@@ -304,4 +306,5 @@ __all__ = [
     "M5AppealOperationsCoordinator",
     "M5AppealOperationsError",
     "M5AppealOperationsErrorCode",
+    "build_m5_appeal_resolution_report",
 ]

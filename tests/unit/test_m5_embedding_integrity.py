@@ -16,10 +16,11 @@ from labcourt.application.m5_embedding_integrity import (
     derive_m5_controlled_embedding_input_ref,
     derive_m5_controlled_fake_embedding,
     derive_m5_fake_sha256_signed_projection,
+    is_m5_controlled_fake_model_manifest,
     require_m5_fake_sha256_signed_projection,
 )
 from labcourt.contracts.m5_precedents import M5EmbeddingChannel
-from labcourt.contracts.manifests import RunManifest
+from labcourt.contracts.manifests import ModelManifest, RunManifest
 
 ROOT = Path(__file__).parents[2]
 
@@ -123,6 +124,45 @@ def test_controlled_fake_embedding_rejects_cross_channel_manifest() -> None:
             embedding_provider=DeterministicFakePrecedentEmbeddingProvider(),
         )
     assert raised.value.code == M5EmbeddingIntegrityErrorCode.MANIFEST_MISMATCH
+
+
+def test_exact_legacy_pilot_disabled_identity_is_a_replayable_fake_projection() -> None:
+    model = ModelManifest(
+        component="text_embedding",
+        provider="not-invoked",
+        model="pilot-a2-text_embedding-disabled",
+        revision="1.0.0",
+        weights_sha256=None,
+        license_id="no-weights",
+    )
+
+    assert is_m5_controlled_fake_model_manifest(model)
+    embedding = derive_m5_controlled_fake_embedding(
+        channel=M5EmbeddingChannel.TEXT,
+        situation_text="Legacy pilot closure remains offline and exactly replayable.",
+        model_manifest=model,
+    )
+    assert embedding.request.model_manifest_id == model.model_manifest_id
+
+
+def test_arbitrary_not_invoked_embedding_identity_remains_unsupported() -> None:
+    model = ModelManifest(
+        component="text_embedding",
+        provider="not-invoked",
+        model="uncontrolled-disabled-model",
+        revision="1.0.0",
+        weights_sha256=None,
+        license_id="no-weights",
+    )
+
+    assert not is_m5_controlled_fake_model_manifest(model)
+    with pytest.raises(M5EmbeddingIntegrityError) as raised:
+        derive_m5_controlled_fake_embedding(
+            channel=M5EmbeddingChannel.TEXT,
+            situation_text="This identity is outside the exact pilot compatibility profile.",
+            model_manifest=model,
+        )
+    assert raised.value.code == M5EmbeddingIntegrityErrorCode.PROVIDER_UNSUPPORTED
 
 
 @pytest.mark.parametrize(
