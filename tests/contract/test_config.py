@@ -59,6 +59,17 @@ def test_pilot_config_is_strict_and_does_not_claim_future_rules() -> None:
     assert pilot.perception.worker is not None
     assert pilot.perception.worker.local_files_only
     assert pilot.perception.worker.cache_enabled
+    assert pilot.screening.provider_profile == "pilot-screening"
+    screening_profile = pilot.providers[pilot.screening.provider_profile]
+    assert screening_profile.provider == "alibaba-cloud-model-studio"
+    assert screening_profile.model == "qwen3-vl-plus-2025-12-19"
+    assert screening_profile.revision == "2025-12-19"
+    assert screening_profile.pricing_currency == "CNY"
+    assert screening_profile.input_cost_per_million_tokens == 1.0
+    assert screening_profile.output_cost_per_million_tokens == 10.0
+    assert screening_profile.endpoint_env == "LABCOURT_SCREENING_ENDPOINT"
+    assert screening_profile.api_key_env == "LABCOURT_SCREENING_API_KEY"
+    assert not screening_profile.allow_full_frame
     assert (
         pilot.config_sha256 != load_config(PROJECT_ROOT / "configs" / "default.yaml").config_sha256
     )
@@ -341,6 +352,19 @@ def test_screening_budgets_are_strict_positive_and_bounded(
         type(config.screening).model_validate(payload)
 
 
+@pytest.mark.parametrize("currency", ["USD", "CNY"])
+def test_provider_token_pricing_accepts_supported_currencies(currency: str) -> None:
+    profile = load_config(PROJECT_ROOT / "configs" / "default.yaml").providers[
+        "fake-screening"
+    ]
+    payload = profile.model_dump(mode="json")
+    payload["pricing_currency"] = currency
+
+    resolved = type(profile).model_validate(payload)
+
+    assert resolved.pricing_currency == currency
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [
@@ -351,7 +375,7 @@ def test_screening_budgets_are_strict_positive_and_bounded(
         ("input_cost_per_million_tokens", 1_000_001.0),
     ],
 )
-def test_provider_token_pricing_is_non_negative_usd(
+def test_provider_token_pricing_is_supported_and_non_negative(
     field: str,
     value: object,
 ) -> None:
@@ -380,7 +404,7 @@ def test_http_provider_requires_explicit_token_pricing_and_currency() -> None:
         "output_cost_per_million_tokens",
     ):
         profile.pop(field)
-    with pytest.raises(ValidationError, match="explicit USD token pricing"):
+    with pytest.raises(ValidationError, match="explicit token pricing and currency"):
         type(config.providers["fake-screening"]).model_validate(profile)
 
     profile.update(
