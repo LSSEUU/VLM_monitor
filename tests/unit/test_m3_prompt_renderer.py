@@ -366,22 +366,22 @@ def test_prompt_renderer_golden_identities_are_frozen() -> None:
     )
 
     assert catalog.bundle_sha256 == (
-        "5a0c1df90ad96c57ded58c079a239b7ed01a1978ec255cc3ea7f8336dbfe0c31"
+        "f558542bf21ed4dc3d3ae1ca110d0a38971892a8e337e112de2251af6dbdd6a7"
     )
     assert presence.manifest.template_sha256 == (
-        "d8a3f0d953dc6583dca3c5d26f3a94d895cf64285950622f05675fe13d7393a9"
+        "67eb035ca6a48c355e8a46d86ab68b3af80d15726ff0ba30e0b73440a2ce5196"
     )
     assert absence.manifest.template_sha256 == (
-        "86d5272dc57d6c705e24c55a0191d4bffc4c147d10dbc3c3662e55d53ffe0531"
+        "bf40b36b5429f736c7da2cf397da8b3f78dd122bb63d9c020d8d7f7ca2df563a"
     )
     assert repair.manifest.template_sha256 == (
         "28012b491cb88426983b3e33b2452ceac1c2ba56f4d5d8b9104f3c73b0ab6477"
     )
     assert presence.rendered_prompt_sha256 == (
-        "7a287f0517f0446b25e06e7d416a3ecef03e8c2262363fcba50b5d331df4a9cb"
+        "3d629c215fe536a307a7885e2090206ce535529d7388204ea850825ca34969ac"
     )
     assert absence.rendered_prompt_sha256 == (
-        "5df13c2a680f6d809a603b1cc5b8fbaab91409626f0967ec03db3e52cf3b1e55"
+        "7067121a2e1d96cf2f0169439a7e94f9e95aea98e5a88611bc5368bdcb822898"
     )
     assert repair.rendered_prompt_sha256 == (
         "e8bf2502af701372c43277571e40ca5e218665516d5ef006a89eca7e0ffc2068"
@@ -399,3 +399,18 @@ def test_absence_prompt_freezes_missing_evidence_and_correction_semantics() -> N
     assert "non-detection is never evidence that PPE was not worn" in source
     assert "same authoritative subject track and alleged interval" in source
     assert "later correction does not prove PPE was worn" in source
+
+
+@pytest.mark.parametrize(
+    "filename",
+    ["screening_presence_v1.jinja", "screening_absence_v1.jinja"],
+)
+def test_screening_prompts_require_formal_citations_for_decisive_observations(
+    filename: str,
+) -> None:
+    source = (PROMPTS / filename).read_text(encoding="utf-8")
+    assert "Every WORN or NOT_WORN frame_observations item must have exactly one" in source
+    assert 'evidence_ref.kind="CROP"' in source
+    assert "artifact_id equal to that item's crop_id" in source
+    assert "bbox and coordinate_space null" in source
+    assert "Use an empty evidence_citations array only when every observation is UNCLEAR" in source
