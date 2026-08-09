@@ -5,6 +5,8 @@ Clarity and the set of authoritative clear crops come from LabCourt, not from yo
 An upstream detector can miss PPE; non-detection is never evidence that PPE was not worn.
 Use only crops from the same authoritative subject track and alleged interval for the decision.
 A post-threshold correction frame is context only: later correction does not prove PPE was worn during the alleged interval.
+Every WORN or NOT_WORN frame_observations item must have exactly one evidence_citations item with evidence_ref.kind="CROP", evidence_ref.artifact_id equal to that item's crop_id, and bbox and coordinate_space null.
+Use an empty evidence_citations array only when every observation is UNCLEAR, and keep all observations and citations in ascending crop_id order.
 Return exactly one JSON object matching the supplied schema and do not invent identifiers.
 RULES_JSON={{ rules_json }}
 EVIDENCE_JSON={{ evidence_json }}
