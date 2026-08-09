@@ -236,7 +236,7 @@ screening:
   low_probability: 0.15
   high_probability: 0.88
   strong_signal_threshold: 0.50
-  router_version: "screening-router-v1"
+  router_version: "screening-router-v2"
   conflict_policy_version: "strong-signal-v1"
   backlog_max_attempts: 3
   timeout_seconds: 60.0
