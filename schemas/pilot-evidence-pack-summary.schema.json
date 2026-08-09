@@ -1,0 +1,96 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/pilot-evidence-pack-summary.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Privacy-safe A2 projection of one authoritative EvidencePack.",
+  "properties": {
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "closure_passed": {
+      "const": true,
+      "title": "Closure Passed",
+      "type": "boolean"
+    },
+    "cloud_allowed_crop_count": {
+      "minimum": 0,
+      "title": "Cloud Allowed Crop Count",
+      "type": "integer"
+    },
+    "complete": {
+      "const": true,
+      "title": "Complete",
+      "type": "boolean"
+    },
+    "confirmation_policy": {
+      "const": "STRICT_CAUSAL",
+      "title": "Confirmation Policy",
+      "type": "string"
+    },
+    "event_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "focus_crop_count": {
+      "minimum": 0,
+      "title": "Focus Crop Count",
+      "type": "integer"
+    },
+    "local_only_crop_count": {
+      "minimum": 0,
+      "title": "Local Only Crop Count",
+      "type": "integer"
+    },
+    "pack_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "panorama_crop_count": {
+      "minimum": 0,
+      "title": "Panorama Crop Count",
+      "type": "integer"
+    },
+    "privacy_policy": {
+      "const": "PPE_PRESERVING_REDACTION",
+      "title": "Privacy Policy",
+      "type": "string"
+    },
+    "subject_crop_count": {
+      "minimum": 0,
+      "title": "Subject Crop Count",
+      "type": "integer"
+    },
+    "temporal_crop_count": {
+      "minimum": 0,
+      "title": "Temporal Crop Count",
+      "type": "integer"
+    },
+    "violation_type": {
+      "const": "PPE_GOGGLES_MISSING",
+      "title": "Violation Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "case_id",
+    "pack_id",
+    "violation_type",
+    "confirmation_policy",
+    "complete",
+    "closure_passed",
+    "panorama_crop_count",
+    "subject_crop_count",
+    "focus_crop_count",
+    "temporal_crop_count",
+    "cloud_allowed_crop_count",
+    "local_only_crop_count",
+    "privacy_policy"
+  ],
+  "title": "PilotEvidencePackSummary",
+  "type": "object"
+}

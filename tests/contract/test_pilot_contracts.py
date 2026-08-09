@@ -3,9 +3,11 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from labcourt.contracts.enums import ViolationType
+from labcourt.contracts.enums import ConfirmationPolicy, PrivacyPolicy, ViolationType
 from labcourt.contracts.manifests import ModelManifest
 from labcourt.contracts.pilot import (
+    PilotA2Report,
+    PilotEvidencePackSummary,
     PilotPerceptionArtifactReceipt,
     PilotPerceptionArtifactRole,
     PilotPerceptionCompletionManifest,
@@ -215,6 +217,95 @@ def test_perception_report_counts_are_self_consistent() -> None:
     payload["detection_count"] = 4
     with pytest.raises(ValidationError, match="label counts"):
         PilotPerceptionReport.model_validate(payload)
+
+
+def _evidence_summary() -> PilotEvidencePackSummary:
+    return PilotEvidencePackSummary(
+        event_id="event-001",
+        case_id="case-001",
+        pack_id="pack-001",
+        violation_type=ViolationType.PPE_GOGGLES_MISSING,
+        confirmation_policy=ConfirmationPolicy.STRICT_CAUSAL,
+        complete=True,
+        closure_passed=True,
+        panorama_crop_count=1,
+        subject_crop_count=1,
+        focus_crop_count=0,
+        temporal_crop_count=3,
+        cloud_allowed_crop_count=3,
+        local_only_crop_count=2,
+        privacy_policy=PrivacyPolicy.PPE_PRESERVING_REDACTION,
+    )
+
+
+def _a2_report(*, with_evidence: bool = True) -> PilotA2Report:
+    packs = (_evidence_summary(),) if with_evidence else ()
+    return PilotA2Report(
+        run_id="pilot-001",
+        state="EVIDENCE_READY" if with_evidence else "NO_CANDIDATE",
+        config_sha256="1" * 64,
+        video_sha256="2" * 64,
+        perception_manifest_id="3" * 64,
+        perception_completion_id="4" * 64,
+        run_manifest_id="5" * 64,
+        selected_rules=(ViolationType.PPE_GOGGLES_MISSING,),
+        frames_processed=241,
+        association_count=241,
+        l0_reminder_count=1,
+        suppression_count=0,
+        candidate_event_count=len(packs),
+        evidence_pack_count=len(packs),
+        evidence_packs=packs,
+    )
+
+
+def test_a2_report_is_content_derived_exported_and_has_no_subject_fields() -> None:
+    report = _a2_report()
+
+    assert PilotA2Report.model_validate_json(report.model_dump_json()) == report
+    assert "pilot-a2-report.schema.json" in expected_schema_files()
+    assert "pilot-evidence-pack-summary.schema.json" in expected_schema_files()
+    assert "track" not in report.model_dump_json()
+
+    payload = report.model_dump(mode="python")
+    payload["report_id"] = "0" * 64
+    with pytest.raises(ValidationError, match="report_id"):
+        PilotA2Report.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("state", "NO_CANDIDATE", "state"),
+        ("candidate_event_count", 0, "one complete EvidencePack"),
+        ("evidence_pack_count", 0, "summaries"),
+        ("selected_rules", [], "at least 1 item"),
+    ],
+)
+def test_a2_report_rejects_inconsistent_success(
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    payload = _a2_report().model_dump(mode="python", exclude_computed_fields=True)
+    payload[field] = value
+    with pytest.raises(ValidationError, match=message):
+        PilotA2Report.model_validate(payload)
+
+
+def test_a2_report_accepts_a_true_no_candidate_result() -> None:
+    report = _a2_report(with_evidence=False)
+
+    assert report.state == "NO_CANDIDATE"
+    assert report.evidence_packs == ()
+
+
+def test_a2_evidence_summary_rejects_media_access_count_drift() -> None:
+    payload = _evidence_summary().model_dump(mode="python")
+    payload["local_only_crop_count"] = 1
+
+    with pytest.raises(ValidationError, match="media-access counts"):
+        PilotEvidencePackSummary.model_validate(payload)
 
 
 def _artifact_receipt(

@@ -123,6 +123,17 @@ def _validated_bundles(
 
 def _validate_manifest(config: AppConfig, manifest: RunManifest) -> None:
     detector = manifest.models["detector"]
+    configured_detector = config.perception.detector_manifest
+    expected_detector_provider = (
+        configured_detector.provider
+        if configured_detector is not None
+        else config.perception.provider
+    )
+    expected_detector_model = (
+        configured_detector.model
+        if configured_detector is not None
+        else config.perception.detector.model_id
+    )
     checks = {
         "schema_version": manifest.schema_version == config.schema_version,
         "config_sha256": manifest.config_sha256 == config.config_sha256,
@@ -138,8 +149,9 @@ def _validate_manifest(config: AppConfig, manifest: RunManifest) -> None:
         "pixel_format": manifest.pixel_format == "RGB8",
         "pixel_hash_algorithm": manifest.pixel_hash_algorithm == "LCPIX1",
         "storage_boundary": manifest.storage_boundary == config.run.storage_boundary,
-        "detector.provider": detector.provider == config.perception.provider,
-        "detector.model": detector.model == config.perception.detector.model_id,
+        "detector.provider": detector.provider == expected_detector_provider,
+        "detector.model": detector.model == expected_detector_model,
+        "detector.manifest": configured_detector is None or detector == configured_detector,
     }
     mismatches = sorted(name for name, matches in checks.items() if not matches)
     if mismatches:

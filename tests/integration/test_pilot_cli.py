@@ -3,12 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import cast
 
 import pytest
 from typer.testing import CliRunner
 
 from labcourt.cli import app
-from labcourt.contracts.pilot import PilotPerceptionReport
+from labcourt.contracts.pilot import PilotA2Report, PilotPerceptionReport, PilotRunRequest
 
 PROJECT_ROOT = Path(__file__).parents[2]
 RUNNER = CliRunner()
@@ -27,7 +28,7 @@ def test_pilot_command_help_is_available(command: str) -> None:
     assert result.exit_code == 0
 
 
-def test_pilot_run_preflight_binds_the_verified_video_without_creating_a_run(
+def test_pilot_run_binds_the_verified_video_and_emits_the_a2_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -36,6 +37,32 @@ def test_pilot_run_preflight_binds_the_verified_video_without_creating_a_run(
     payload = b"bounded-pilot-mp4-fixture"
     (tmp_path / "inputs" / "demo.mp4").write_bytes(payload)
     monkeypatch.chdir(tmp_path)
+    expected: PilotA2Report | None = None
+
+    def _run_a2(**kwargs: object) -> PilotA2Report:
+        nonlocal expected
+        request = cast(PilotRunRequest, kwargs["request"])
+        assert request.video_sha256 == hashlib.sha256(payload).hexdigest()
+        expected = PilotA2Report(
+            run_id="pilot-001",
+            state="NO_CANDIDATE",
+            config_sha256=request.config_sha256,
+            video_sha256=request.video_sha256,
+            perception_manifest_id="a" * 64,
+            perception_completion_id="b" * 64,
+            run_manifest_id="c" * 64,
+            selected_rules=("PPE_GOGGLES_MISSING",),
+            frames_processed=4,
+            association_count=4,
+            l0_reminder_count=0,
+            suppression_count=0,
+            candidate_event_count=0,
+            evidence_pack_count=0,
+            evidence_packs=(),
+        )
+        return expected
+
+    monkeypatch.setattr("labcourt.pilot_cli.run_pilot_a2", _run_a2)
 
     result = RUNNER.invoke(
         app,
@@ -53,16 +80,8 @@ def test_pilot_run_preflight_binds_the_verified_video_without_creating_a_run(
     )
 
     assert result.exit_code == 0, result.output
-    report = json.loads(result.stdout)
-    assert report == {
-        "config_sha256": report["config_sha256"],
-        "max_cases": 20,
-        "resume": True,
-        "run_id": "pilot-001",
-        "selected_rules": ["PPE_GOGGLES_MISSING"],
-        "video_relative_path": "inputs/demo.mp4",
-        "video_sha256": hashlib.sha256(payload).hexdigest(),
-    }
+    assert expected is not None
+    assert json.loads(result.stdout) == expected.model_dump(mode="json")
     assert not (tmp_path / "runs" / "pilot-001").exists()
 
 

@@ -11,6 +11,7 @@ from PIL import Image
 
 from labcourt.contracts.detections import Keypoint
 from labcourt.contracts.enums import (
+    AssociationMethod,
     CropSource,
     MediaAccess,
     MediaAvailability,
@@ -247,6 +248,18 @@ def _merge_regions(regions: tuple[BBoxXYXY, ...]) -> tuple[BBoxXYXY, ...]:
 
 
 def _ppe_regions(request: CropRequest) -> tuple[BBoxXYXY, ...]:
+    if (
+        request.association_method == AssociationMethod.BODY_FALLBACK
+        and request.anchor_bbox is not None
+    ):
+        region = _local_box(
+            request.bbox,
+            x1=_decimal(request.anchor_bbox.x1),
+            y1=_decimal(request.anchor_bbox.y1),
+            x2_inclusive=_decimal(request.anchor_bbox.x2 - 1),
+            y2_inclusive=_decimal(request.anchor_bbox.y2 - 1),
+        )
+        return (region,) if region is not None else ()
     points = _visible_keypoints(request)
     if request.ppe_type == PpeType.GOGGLES:
         regions = _goggle_region(request, points)
@@ -324,7 +337,8 @@ def prepare_crop(
     else:
         original = _extract_rgb_crop(frame, request.bbox)
         regions = _ppe_regions(request)
-        fallback_used = not regions
+        body_fallback = request.association_method == AssociationMethod.BODY_FALLBACK
+        fallback_used = body_fallback or not regions
         transformed = _copy_preserved_regions(
             original,
             width=request.bbox.width,
@@ -334,9 +348,13 @@ def prepare_crop(
         )
         access = MediaAccess.LOCAL_ONLY if fallback_used else MediaAccess.CLOUD_ALLOWED
         reason = (
-            PrivacyReasonCode.KEYPOINTS_INSUFFICIENT_LOCAL_ONLY
-            if fallback_used
-            else PrivacyReasonCode.PPE_REGION_PRESERVED
+            PrivacyReasonCode.BODY_FALLBACK_REGION_LOCAL_ONLY
+            if body_fallback
+            else (
+                PrivacyReasonCode.KEYPOINTS_INSUFFICIENT_LOCAL_ONLY
+                if fallback_used
+                else PrivacyReasonCode.PPE_REGION_PRESERVED
+            )
         )
 
     receipt = PrivacyReceipt(

@@ -1234,6 +1234,18 @@
       "name": "parsed-screening-output"
     },
     {
+      "file": "pilot-a2-report.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotA2Report",
+      "name": "pilot-a2-report"
+    },
+    {
+      "file": "pilot-evidence-pack-summary.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.pilot.PilotEvidencePackSummary",
+      "name": "pilot-evidence-pack-summary"
+    },
+    {
       "file": "pilot-perception-artifact-receipt.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.pilot.PilotPerceptionArtifactReceipt",

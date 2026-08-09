@@ -1,0 +1,227 @@
+{
+  "$defs": {
+    "PilotEvidencePackSummary": {
+      "additionalProperties": false,
+      "description": "Privacy-safe A2 projection of one authoritative EvidencePack.",
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "closure_passed": {
+          "const": true,
+          "title": "Closure Passed",
+          "type": "boolean"
+        },
+        "cloud_allowed_crop_count": {
+          "minimum": 0,
+          "title": "Cloud Allowed Crop Count",
+          "type": "integer"
+        },
+        "complete": {
+          "const": true,
+          "title": "Complete",
+          "type": "boolean"
+        },
+        "confirmation_policy": {
+          "const": "STRICT_CAUSAL",
+          "title": "Confirmation Policy",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "focus_crop_count": {
+          "minimum": 0,
+          "title": "Focus Crop Count",
+          "type": "integer"
+        },
+        "local_only_crop_count": {
+          "minimum": 0,
+          "title": "Local Only Crop Count",
+          "type": "integer"
+        },
+        "pack_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Pack Id",
+          "type": "string"
+        },
+        "panorama_crop_count": {
+          "minimum": 0,
+          "title": "Panorama Crop Count",
+          "type": "integer"
+        },
+        "privacy_policy": {
+          "const": "PPE_PRESERVING_REDACTION",
+          "title": "Privacy Policy",
+          "type": "string"
+        },
+        "subject_crop_count": {
+          "minimum": 0,
+          "title": "Subject Crop Count",
+          "type": "integer"
+        },
+        "temporal_crop_count": {
+          "minimum": 0,
+          "title": "Temporal Crop Count",
+          "type": "integer"
+        },
+        "violation_type": {
+          "const": "PPE_GOGGLES_MISSING",
+          "title": "Violation Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "case_id",
+        "pack_id",
+        "violation_type",
+        "confirmation_policy",
+        "complete",
+        "closure_passed",
+        "panorama_crop_count",
+        "subject_crop_count",
+        "focus_crop_count",
+        "temporal_crop_count",
+        "cloud_allowed_crop_count",
+        "local_only_crop_count",
+        "privacy_policy"
+      ],
+      "title": "PilotEvidencePackSummary",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/pilot-a2-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Content-derived A2 result without L0 subject or trajectory persistence.",
+  "properties": {
+    "association_count": {
+      "minimum": 0,
+      "title": "Association Count",
+      "type": "integer"
+    },
+    "candidate_event_count": {
+      "minimum": 0,
+      "title": "Candidate Event Count",
+      "type": "integer"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "evidence_pack_count": {
+      "minimum": 0,
+      "title": "Evidence Pack Count",
+      "type": "integer"
+    },
+    "evidence_packs": {
+      "items": {
+        "$ref": "#/$defs/PilotEvidencePackSummary"
+      },
+      "title": "Evidence Packs",
+      "type": "array"
+    },
+    "frames_processed": {
+      "exclusiveMinimum": 0,
+      "title": "Frames Processed",
+      "type": "integer"
+    },
+    "l0_persistence_policy": {
+      "const": "AGGREGATE_COUNT_ONLY_NO_SUBJECT_IDS",
+      "default": "AGGREGATE_COUNT_ONLY_NO_SUBJECT_IDS",
+      "title": "L0 Persistence Policy",
+      "type": "string"
+    },
+    "l0_reminder_count": {
+      "minimum": 0,
+      "title": "L0 Reminder Count",
+      "type": "integer"
+    },
+    "perception_completion_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Perception Completion Id",
+      "type": "string"
+    },
+    "perception_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Perception Manifest Id",
+      "type": "string"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Report Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "run_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Run Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "pilot-a2-report-v1",
+      "default": "pilot-a2-report-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_rules": {
+      "items": {
+        "const": "PPE_GOGGLES_MISSING",
+        "type": "string"
+      },
+      "maxItems": 1,
+      "minItems": 1,
+      "title": "Selected Rules",
+      "type": "array"
+    },
+    "state": {
+      "enum": [
+        "NO_CANDIDATE",
+        "EVIDENCE_READY"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "suppression_count": {
+      "minimum": 0,
+      "title": "Suppression Count",
+      "type": "integer"
+    },
+    "video_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Video Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "state",
+    "config_sha256",
+    "video_sha256",
+    "perception_manifest_id",
+    "perception_completion_id",
+    "run_manifest_id",
+    "selected_rules",
+    "frames_processed",
+    "association_count",
+    "l0_reminder_count",
+    "suppression_count",
+    "candidate_event_count",
+    "evidence_pack_count",
+    "evidence_packs",
+    "report_id"
+  ],
+  "title": "PilotA2Report",
+  "type": "object"
+}

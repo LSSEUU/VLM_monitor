@@ -278,6 +278,8 @@ from labcourt.contracts.model_response_recovery import (
     ModelResponseRecoveryReport,
 )
 from labcourt.contracts.pilot import (
+    PilotA2Report,
+    PilotEvidencePackSummary,
     PilotPerceptionArtifactReceipt,
     PilotPerceptionCompletionManifest,
     PilotPerceptionExecutionManifest,
@@ -555,6 +557,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "model-response-recovery-report": ModelResponseRecoveryReport,
     "observability-score": ObservabilityScore,
     "parsed-screening-output": ParsedScreeningOutput,
+    "pilot-a2-report": PilotA2Report,
+    "pilot-evidence-pack-summary": PilotEvidencePackSummary,
     "pilot-perception-artifact-receipt": PilotPerceptionArtifactReceipt,
     "pilot-perception-completion-manifest": PilotPerceptionCompletionManifest,
     "pilot-perception-execution-manifest": PilotPerceptionExecutionManifest,

@@ -67,13 +67,17 @@ This three-video separation is configuration evidence only and makes no generali
 
 ## Remaining A1 owner decisions
 
-1. Review the three local contact sheets or preview videos and confirm that the box/track behavior
-   is acceptable for this sample check.
-2. Confirm the real high-risk polygon and risk level for `hood-01`. The current polygon
-   `[(120,90), (980,90), (980,700), (120,700)]` is an inherited design value and is not approved.
-3. Supply a short authorized capture from the intended physical camera before making a real-site
+1. Completed 2026-08-09: the project owner approved all three local previews for the A2 sample.
+2. Completed 2026-08-09: the project owner approved the displayed sample polygon. A deterministic
+   footpoint check then showed that its `y=700` lower edge excluded every person frame in the worn
+   and missing samples because the tracked boxes end at `y=720`. The implementation preserves the
+   approved left, top, and right edges and extends only the lower edge to the 720-pixel frame
+   boundary: `[(120,90), (980,90), (980,720), (120,720)]`. This yields 241 contiguous in-zone
+   frames for worn, 241 for missing, and 149 for unclear. The alpha1 zone is also narrowed to its
+   sole selected rule, `GOGGLES`; it no longer declares unsupported `LAB_COAT` detection authority.
+3. Still required before deployment: supply a short authorized capture from the intended physical
+   camera before making a real-site
    or deployment-readiness claim. The three AI-generated samples do not establish that claim.
 
-A2 engineering work remains gated only by decisions 1 and 2, even though the real-perception
-implementation and sample-video execution are functioning. Decision 3 is a later real-site and
-release gate, not a reason to block the sample-backed A2 implementation.
+A2 engineering work is now authorized. Decision 3 is a later real-site and release gate, not a
+reason to block the sample-backed implementation.

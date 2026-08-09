@@ -189,10 +189,21 @@ class PrivacyReceipt(FrozenContractModel):
             if self.fallback_used:
                 if self.media_access != MediaAccess.LOCAL_ONLY:
                     raise ValueError("privacy fallback media must remain local")
-                if self.reason_code != PrivacyReasonCode.KEYPOINTS_INSUFFICIENT_LOCAL_ONLY:
-                    raise ValueError("privacy fallback requires the insufficient-keypoints reason")
-                if self.preserved_regions:
-                    raise ValueError("privacy fallback cannot preserve an unverified region")
+                body_fallback = self.association_method == AssociationMethod.BODY_FALLBACK
+                expected_reason = (
+                    PrivacyReasonCode.BODY_FALLBACK_REGION_LOCAL_ONLY
+                    if body_fallback
+                    else PrivacyReasonCode.KEYPOINTS_INSUFFICIENT_LOCAL_ONLY
+                )
+                if self.reason_code != expected_reason:
+                    raise ValueError("privacy fallback reason does not match its authority")
+                if body_fallback:
+                    if not self.preserved_regions or self.keypoints:
+                        raise ValueError(
+                            "body fallback requires a local region without claimed keypoints"
+                        )
+                elif self.preserved_regions:
+                    raise ValueError("keypoint fallback cannot preserve an unverified region")
             else:
                 if self.reason_code != PrivacyReasonCode.PPE_REGION_PRESERVED:
                     raise ValueError("PPE-preserving output requires the preserved-region reason")
