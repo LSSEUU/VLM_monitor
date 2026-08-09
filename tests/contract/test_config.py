@@ -71,7 +71,7 @@ def test_pilot_config_is_strict_and_does_not_claim_future_rules() -> None:
     assert screening_profile.api_key_env == "LABCOURT_SCREENING_API_KEY"
     assert screening_profile.enable_thinking is False
     assert not screening_profile.allow_full_frame
-    assert pilot.screening.timeout_seconds == screening_profile.timeout_seconds == 30.0
+    assert pilot.screening.timeout_seconds == screening_profile.timeout_seconds == 60.0
     assert (
         pilot.config_sha256 != load_config(PROJECT_ROOT / "configs" / "default.yaml").config_sha256
     )
