@@ -295,6 +295,10 @@ from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
 )
+from labcourt.contracts.m8_notification_cards import (
+    M8NotificationWorkflowManifestAuthorityV1,
+    M8OfflineNotificationCardV1,
+)
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationChannelCapabilityAuthorityV1,
     M8NotificationDeliveryReceiptV1,
@@ -664,6 +668,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-notification-target-commit-receipt-v1": M8NotificationTargetCommitReceiptV1,
     "m8-notification-template-authority-v1": M8NotificationTemplateAuthorityV1,
     "m8-notification-transition-command-v1": M8NotificationTransitionCommandV1,
+    "m8-notification-workflow-manifest-authority-v1": (M8NotificationWorkflowManifestAuthorityV1),
+    "m8-offline-notification-card-v1": M8OfflineNotificationCardV1,
     "m8-operational-case-create-command-v1": M8OperationalCaseCreateCommandV1,
     "m8-operational-case-transition-command-v1": M8OperationalCaseTransitionCommandV1,
     "m8-operational-source": M8OperationalSource,

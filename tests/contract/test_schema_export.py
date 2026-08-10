@@ -236,6 +236,8 @@ EXPECTED_SCHEMA_MODES = {
     "m8-notification-target-commit-receipt-v1": "serialization",
     "m8-notification-template-authority-v1": "serialization",
     "m8-notification-transition-command-v1": "serialization",
+    "m8-notification-workflow-manifest-authority-v1": "serialization",
+    "m8-offline-notification-card-v1": "serialization",
     "m8-campus-location": "serialization",
     "m8-campus-topology-authority-v1": "serialization",
     "m8-campus-topology-commit-receipt-v1": "serialization",

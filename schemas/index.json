@@ -1348,6 +1348,18 @@
       "name": "m8-notification-transition-command-v1"
     },
     {
+      "file": "m8-notification-workflow-manifest-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_cards.M8NotificationWorkflowManifestAuthorityV1",
+      "name": "m8-notification-workflow-manifest-authority-v1"
+    },
+    {
+      "file": "m8-offline-notification-card-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_cards.M8OfflineNotificationCardV1",
+      "name": "m8-offline-notification-card-v1"
+    },
+    {
       "file": "m8-operational-case-audit-event-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_case_persistence.M8OperationalCaseAuditEventV1",
