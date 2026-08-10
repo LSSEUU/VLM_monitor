@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import UTC, datetime
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -18,12 +19,15 @@ from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
     M8ApiErrorResponseV1,
+    M8ApiKnowledgeQueryRequestV1,
     M8ApiPrincipalV1,
 )
+from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 
 SHA_A = "a" * 64
 SHA_B = "b" * 64
 SHA_C = "c" * 64
+BASE_TIME = datetime(2026, 8, 10, 9, 0, tzinfo=UTC)
 
 
 def _credential(
@@ -67,6 +71,16 @@ def _transition_request() -> M8ApiCaseTransitionRequestV1:
         ),
         explicit_human_confirmation=True,
         command_manifest_id=SHA_B,
+    )
+
+
+def _knowledge_query_request() -> M8ApiKnowledgeQueryRequestV1:
+    return M8ApiKnowledgeQueryRequestV1(
+        query_text="\u62a4\u76ee\u955c \u4f69\u6234",
+        locale="zh-CN",
+        as_of=BASE_TIME,
+        allowed_document_types=tuple(sorted(M8KnowledgeDocumentType, key=lambda item: item.value)),
+        max_citations=3,
     )
 
 
@@ -145,9 +159,42 @@ def test_transition_request_rejects_unstable_authorities_and_appeal_graft() -> N
         request.model_copy(update={"appeal_resolution": "UPHELD"})
 
 
+def test_knowledge_query_request_contains_intent_only_and_rejects_authority_grafts() -> None:
+    request = _knowledge_query_request()
+    payload = request.model_dump(mode="json")
+    assert "requester_actor_id" not in payload
+    assert "requester_actor_authority_id" not in payload
+    assert "catalog_authority_id" not in payload
+    assert "query_manifest_id" not in payload
+    assert request.client_actor_authority_permitted is False
+    assert request.client_catalog_authority_permitted is False
+    assert request.direct_case_decision_permitted is False
+
+    for forbidden_name in ("role", "catalog_authority_id", "query_manifest_id"):
+        forged = dict(payload)
+        forged[forbidden_name] = SHA_A
+        with pytest.raises(ValidationError, match="Extra inputs"):
+            M8ApiKnowledgeQueryRequestV1.model_validate(forged)
+
+
+def test_knowledge_query_request_requires_stable_type_scope_and_utc() -> None:
+    request = _knowledge_query_request()
+    with pytest.raises(ValidationError, match="unique and stable"):
+        request.model_copy(
+            update={
+                "allowed_document_types": (
+                    M8KnowledgeDocumentType.SOP,
+                    M8KnowledgeDocumentType.POLICY,
+                )
+            }
+        )
+    with pytest.raises(ValidationError, match="timezone-aware UTC"):
+        request.model_copy(update={"as_of": BASE_TIME.replace(tzinfo=None)})
+
+
 @pytest.mark.parametrize(
     "model",
-    (_catalog(), _transition_request()),
+    (_catalog(), _transition_request(), _knowledge_query_request()),
 )
 def test_m8_api_contracts_validate_as_serialization_schemas(model: BaseModel) -> None:
     schema = type(model).model_json_schema(mode="serialization")
@@ -162,6 +209,7 @@ def test_m8_api_schemas_are_registered_serialization_roots() -> None:
         "m8-api-credential-authority-v1": M8ApiCredentialAuthorityV1,
         "m8-api-credential-catalog-authority-v1": M8ApiCredentialCatalogAuthorityV1,
         "m8-api-error-response-v1": M8ApiErrorResponseV1,
+        "m8-api-knowledge-query-request-v1": M8ApiKnowledgeQueryRequestV1,
         "m8-api-principal-v1": M8ApiPrincipalV1,
     }
     assert {name: SCHEMA_MODELS[name] for name in expected} == expected

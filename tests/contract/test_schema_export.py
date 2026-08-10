@@ -220,6 +220,7 @@ EXPECTED_SCHEMA_MODES = {
     "m8-api-credential-authority-v1": "serialization",
     "m8-api-credential-catalog-authority-v1": "serialization",
     "m8-api-error-response-v1": "serialization",
+    "m8-api-knowledge-query-request-v1": "serialization",
     "m8-api-principal-v1": "serialization",
     "m8-notification-audit-event-v1": "serialization",
     "m8-notification-authority-v1": "serialization",

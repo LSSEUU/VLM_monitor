@@ -283,6 +283,7 @@ from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
     M8ApiErrorResponseV1,
+    M8ApiKnowledgeQueryRequestV1,
     M8ApiPrincipalV1,
 )
 from labcourt.contracts.m8_case_persistence import (
@@ -657,6 +658,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-api-credential-authority-v1": M8ApiCredentialAuthorityV1,
     "m8-api-credential-catalog-authority-v1": M8ApiCredentialCatalogAuthorityV1,
     "m8-api-error-response-v1": M8ApiErrorResponseV1,
+    "m8-api-knowledge-query-request-v1": M8ApiKnowledgeQueryRequestV1,
     "m8-api-principal-v1": M8ApiPrincipalV1,
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,

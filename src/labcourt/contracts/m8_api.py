@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from enum import StrEnum
 from typing import Literal, Self
 
@@ -24,6 +25,10 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseAction,
     M8OperationalCaseReasonCode,
     M8OperationalCaseStatus,
+)
+from labcourt.contracts.m8_knowledge import (
+    MAX_M8_KNOWLEDGE_CITATIONS,
+    M8KnowledgeDocumentType,
 )
 from labcourt.contracts.references import ReferenceToken, require_reference_token
 
@@ -316,6 +321,101 @@ class M8ApiCaseTransitionRequestV1(FrozenContractModel):
         )
 
 
+class M8ApiKnowledgeQueryRequestV1(FrozenContractModel):
+    """Knowledge query intent excluding actor, role, capability, catalog, and manifests."""
+
+    schema_version: Literal["m8-api-knowledge-query-request-v1"] = (
+        "m8-api-knowledge-query-request-v1"
+    )
+    query_text: str = Field(min_length=1, max_length=512, strict=True)
+    locale: ReferenceToken
+    as_of: datetime
+    allowed_document_types: tuple[M8KnowledgeDocumentType, ...] = Field(
+        min_length=1,
+        max_length=len(M8KnowledgeDocumentType),
+    )
+    max_citations: int = Field(gt=0, le=MAX_M8_KNOWLEDGE_CITATIONS, strict=True)
+
+    @field_validator("query_text")
+    @classmethod
+    def validate_query_text(cls, value: str) -> str:
+        if value != value.strip() or any(ord(character) < 32 for character in value):
+            raise ValueError("M8 API knowledge query must be trimmed printable text")
+        return value
+
+    @field_validator("locale")
+    @classmethod
+    def validate_locale(cls, value: str) -> str:
+        return require_reference_token(value, "M8 API knowledge locale")
+
+    @field_validator("as_of")
+    @classmethod
+    def validate_as_of(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() != timedelta(0):
+            raise ValueError("M8 API knowledge as_of must be timezone-aware UTC")
+        return value
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(
+            value,
+            (
+                "client_actor_authority_permitted",
+                "client_catalog_authority_permitted",
+                "direct_case_decision_permitted",
+                "knowledge_query_request_id",
+            ),
+        )
+        request = handler(payload)
+        _verify_computed_claims(request, claims)
+        return request
+
+    @model_validator(mode="after")
+    def validate_allowed_types(self) -> Self:
+        keys = tuple(item.value for item in self.allowed_document_types)
+        if keys != tuple(sorted(keys)) or len(keys) != len(set(keys)):
+            raise ValueError("M8 API knowledge document types must be unique and stable")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def client_actor_authority_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def client_catalog_authority_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def direct_case_decision_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def knowledge_query_request_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-api-knowledge-query-request",
+                1,
+                self.query_text,
+                self.locale,
+                self.as_of.isoformat(timespec="microseconds").replace("+00:00", "Z"),
+                [item.value for item in self.allowed_document_types],
+                self.max_citations,
+                self.client_actor_authority_permitted,
+                self.client_catalog_authority_permitted,
+                self.direct_case_decision_permitted,
+            ]
+        )
+
+
 class M8ApiErrorResponseV1(FrozenContractModel):
     schema_version: Literal["m8-api-error-response-v1"] = "m8-api-error-response-v1"
     reason_code: M8ApiErrorReason
@@ -329,5 +429,6 @@ __all__ = [
     "M8ApiCredentialCatalogAuthorityV1",
     "M8ApiErrorReason",
     "M8ApiErrorResponseV1",
+    "M8ApiKnowledgeQueryRequestV1",
     "M8ApiPrincipalV1",
 ]

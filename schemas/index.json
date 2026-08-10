@@ -1228,6 +1228,12 @@
       "name": "m8-api-error-response-v1"
     },
     {
+      "file": "m8-api-knowledge-query-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiKnowledgeQueryRequestV1",
+      "name": "m8-api-knowledge-query-request-v1"
+    },
+    {
       "file": "m8-api-principal-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_api.M8ApiPrincipalV1",
