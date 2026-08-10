@@ -14,8 +14,11 @@ M0 工程骨架、M1 确定性感知核心、M2 隐私证据包/可审计存储�
 
 M8 校园安全运营产品化现按
 [`docs/spec/labcourt-campus-operations-spec.md`](docs/spec/labcourt-campus-operations-spec.md)
-以 additive 方式推进，不修改上述冻结能力。M8.0 的校园拓扑与 camera/sensor 来源真实性契约
-已经完成；API、持久化、权限、通知、知识库和最小集成界面将在后续可验证切片中依次接入。
+以 additive 方式推进，不修改上述冻结能力。M8.0–M8.5 的拓扑/来源、人员权限、案件状态流、
+离线传感器、SQLite 权威记录、本机 API、通知闭环与版本化知识库已经完成；M8.6 的只读运营投影、
+稳定读取、服务端角色裁剪和 authenticated loopback API 也已完成后端验收。独立 UI 任务可直接消费
+`GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
+消防系统、身份平台、外部消息平台或公网生产部署已经就绪。
 
 ## 核心原则
 
