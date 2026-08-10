@@ -157,6 +157,18 @@ from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
 )
+from labcourt.contracts.m8_notification_lifecycle import M8NotificationTransitionCommandV1
+from labcourt.contracts.m8_notification_persistence import (
+    M8NotificationAuditEventV1,
+    M8NotificationCommitReceiptV1,
+    M8NotificationTargetCommitReceiptV1,
+)
+from labcourt.contracts.m8_notifications import (
+    M8NotificationChannelKind,
+    M8NotificationPlanAuthorityV1,
+    M8NotificationStatus,
+    M8NotificationTargetAuthorityV1,
+)
 from labcourt.contracts.m8_operations import (
     M8CampusTopologyAuthorityV1,
     M8OperationalSourceCatalogAuthorityV1,
@@ -396,6 +408,7 @@ from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
 )
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
+from labcourt.ports.m8_notification_repository import M8NotificationRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
 from labcourt.ports.m8_sensor_persistence_repository import M8SensorPersistenceRepository
 from labcourt.ports.m8_sensors import M8SensorAdapter
@@ -454,6 +467,71 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8NotificationRepository: {
+        "publish_target_authority": (
+            ("self", "target", "expected_prior_revision"),
+            {
+                "target": M8NotificationTargetAuthorityV1,
+                "expected_prior_revision": int | None,
+                "return": M8NotificationTargetCommitReceiptV1,
+            },
+        ),
+        "get_current_target_authority": (
+            ("self", "actor_id", "channel"),
+            {
+                "actor_id": str,
+                "channel": M8NotificationChannelKind,
+                "return": M8NotificationTargetCommitReceiptV1,
+            },
+        ),
+        "create_notification": (
+            ("self", "plan", "audit_manifest_id"),
+            {
+                "plan": M8NotificationPlanAuthorityV1,
+                "audit_manifest_id": str,
+                "return": M8NotificationCommitReceiptV1,
+            },
+        ),
+        "get_current_notification": (
+            ("self", "notification_id"),
+            {"notification_id": str, "return": M8NotificationCommitReceiptV1},
+        ),
+        "transition_notification": (
+            (
+                "self",
+                "command",
+                "raw_artifacts",
+                "raw_storage_manifest_id",
+                "audit_manifest_id",
+            ),
+            {
+                "command": M8NotificationTransitionCommandV1,
+                "raw_artifacts": tuple[bytes, ...],
+                "raw_storage_manifest_id": str,
+                "audit_manifest_id": str,
+                "return": M8NotificationCommitReceiptV1,
+            },
+        ),
+        "list_notifications_by_status": (
+            ("self", "status", "limit"),
+            {
+                "status": M8NotificationStatus,
+                "limit": int,
+                "return": tuple[M8NotificationCommitReceiptV1, ...],
+            },
+        ),
+        "list_notification_audit": (
+            ("self", "notification_id"),
+            {
+                "notification_id": str,
+                "return": tuple[M8NotificationAuditEventV1, ...],
+            },
+        ),
+        "read_raw_artifact": (
+            ("self", "raw_artifact_ref"),
+            {"raw_artifact_ref": str, "return": bytes},
+        ),
+    },
     M8RequestAuthenticator: {
         "authenticate": (
             ("self", "authorization_header"),

@@ -1312,6 +1312,12 @@
       "name": "m8-notification-plan-authority-v1"
     },
     {
+      "file": "m8-notification-raw-artifact-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationRawArtifactCommitReceiptV1",
+      "name": "m8-notification-raw-artifact-commit-receipt-v1"
+    },
+    {
       "file": "m8-notification-reply-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationReplyAuthorityV1",
@@ -1322,6 +1328,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_notifications.M8NotificationTargetAuthorityV1",
       "name": "m8-notification-target-authority-v1"
+    },
+    {
+      "file": "m8-notification-target-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationTargetCommitReceiptV1",
+      "name": "m8-notification-target-commit-receipt-v1"
     },
     {
       "file": "m8-notification-template-authority-v1.schema.json",

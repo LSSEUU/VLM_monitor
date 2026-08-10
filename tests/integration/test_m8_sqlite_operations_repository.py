@@ -119,7 +119,7 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
     operations_root = tmp_path / "isolated-operations"
     operations_root.mkdir()
     database = operations_root / "labcourt.sqlite3"
-    assert MigrationRunner(database, BUSY_TIMEOUT_MS, M8_MIGRATIONS).apply_all() == (1, 2, 3)
+    assert MigrationRunner(database, BUSY_TIMEOUT_MS, M8_MIGRATIONS).apply_all() == (1, 2, 3, 4)
     with sqlite3.connect(database) as connection:
         versions = connection.execute(
             "SELECT version, name FROM schema_migrations ORDER BY version"
@@ -132,6 +132,7 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
         (1, "m8_actor_case_authority"),
         (2, "m8_campus_inventory"),
         (3, "m8_sensor_cache"),
+        (4, "m8_notification_outbox"),
     ]
     assert tables == {
         "schema_migrations",
@@ -143,6 +144,10 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
         "m8_sensor_samples",
         "m8_sensor_poll_cache",
         "m8_sensor_poll_cache_samples",
+        "m8_notification_targets",
+        "m8_notification_raw_artifacts",
+        "m8_notification_versions",
+        "m8_notification_version_raw_artifacts",
     }
 
 

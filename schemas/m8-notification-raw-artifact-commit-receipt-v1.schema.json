@@ -1,0 +1,56 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-raw-artifact-commit-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Metadata receipt binding exact persisted channel/card/reply bytes.",
+  "properties": {
+    "commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Commit Receipt Id",
+      "type": "string"
+    },
+    "raw_artifact_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Raw Artifact Ref",
+      "type": "string"
+    },
+    "raw_artifact_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Artifact Sha256",
+      "type": "string"
+    },
+    "raw_artifact_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 1048576,
+      "title": "Raw Artifact Size Bytes",
+      "type": "integer"
+    },
+    "raw_storage_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Storage Manifest Id",
+      "type": "string"
+    },
+    "repository_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Repository Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-notification-raw-artifact-commit-receipt-v1",
+      "default": "m8-notification-raw-artifact-commit-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "raw_artifact_ref",
+    "raw_artifact_sha256",
+    "raw_artifact_size_bytes",
+    "raw_storage_manifest_id",
+    "repository_manifest_id",
+    "commit_receipt_id"
+  ],
+  "title": "M8NotificationRawArtifactCommitReceiptV1",
+  "type": "object"
+}

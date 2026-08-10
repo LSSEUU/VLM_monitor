@@ -5,7 +5,13 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Literal, Self
 
-from pydantic import Field, ModelWrapValidatorHandler, computed_field, model_validator
+from pydantic import (
+    Field,
+    ModelWrapValidatorHandler,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from labcourt.contracts.base import FrozenContractModel
 from labcourt.contracts.canonical import canonical_json, sha256_hex
@@ -18,14 +24,127 @@ from labcourt.contracts.m8_notification_lifecycle import (
 from labcourt.contracts.m8_notifications import (
     M8NotificationPlanAuthorityV1,
     M8NotificationStatus,
+    M8NotificationTargetAuthorityV1,
 )
+from labcourt.contracts.references import ReferenceToken, require_reference_token
 
 M8_NOTIFICATION_AUDIT_GENESIS_SHA256 = "0" * 64
+MAX_M8_NOTIFICATION_RAW_ARTIFACT_BYTES = 1024 * 1024
+MAX_M8_NOTIFICATION_RAW_ARTIFACTS_PER_TRANSITION = 2
 
 
 class M8NotificationAuditEventKind(StrEnum):
     NOTIFICATION_PLANNED = "NOTIFICATION_PLANNED"
     NOTIFICATION_TRANSITIONED = "NOTIFICATION_TRANSITIONED"
+
+
+class M8NotificationTargetCommitReceiptV1(FrozenContractModel):
+    """Append receipt for one persisted notification target revision."""
+
+    schema_version: Literal["m8-notification-target-commit-receipt-v1"] = (
+        "m8-notification-target-commit-receipt-v1"
+    )
+    target: M8NotificationTargetAuthorityV1
+    prior_target_authority_id: Sha256Hex | None = None
+    prior_document_sha256: Sha256Hex | None = None
+    repository_manifest_id: Sha256Hex
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(
+            value,
+            ("target_document_sha256", "commit_receipt_id"),
+        )
+        receipt = handler(payload)
+        _verify_computed_claims(receipt, claims)
+        return receipt
+
+    @model_validator(mode="after")
+    def validate_prior_shape(self) -> Self:
+        if self.target.authority_revision == 1:
+            if self.prior_target_authority_id is not None or self.prior_document_sha256 is not None:
+                raise ValueError(
+                    "M8 first notification target revision cannot declare prior authority"
+                )
+        elif self.prior_target_authority_id is None or self.prior_document_sha256 is None:
+            raise ValueError("M8 later notification target revision requires prior authority")
+        if (self.prior_target_authority_id is None) != (self.prior_document_sha256 is None):
+            raise ValueError("M8 notification target prior fields must be present together")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def target_document_sha256(self) -> Sha256Hex:
+        return sha256_hex(self.target.model_dump(mode="json"))
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def commit_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-notification-target-commit-receipt",
+                1,
+                self.target.target_authority_id,
+                self.target_document_sha256,
+                self.prior_target_authority_id,
+                self.prior_document_sha256,
+                self.repository_manifest_id,
+            ]
+        )
+
+
+class M8NotificationRawArtifactCommitReceiptV1(FrozenContractModel):
+    """Metadata receipt binding exact persisted channel/card/reply bytes."""
+
+    schema_version: Literal["m8-notification-raw-artifact-commit-receipt-v1"] = (
+        "m8-notification-raw-artifact-commit-receipt-v1"
+    )
+    raw_artifact_ref: ReferenceToken
+    raw_artifact_sha256: Sha256Hex
+    raw_artifact_size_bytes: int = Field(
+        gt=0,
+        le=MAX_M8_NOTIFICATION_RAW_ARTIFACT_BYTES,
+        strict=True,
+    )
+    raw_storage_manifest_id: Sha256Hex
+    repository_manifest_id: Sha256Hex
+
+    @field_validator("raw_artifact_ref")
+    @classmethod
+    def validate_raw_artifact_ref(cls, value: str) -> str:
+        return require_reference_token(value, "M8 notification raw artifact")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(value, ("commit_receipt_id",))
+        receipt = handler(payload)
+        _verify_computed_claims(receipt, claims)
+        return receipt
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def commit_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-notification-raw-artifact-commit-receipt",
+                1,
+                self.raw_artifact_ref,
+                self.raw_artifact_sha256,
+                self.raw_artifact_size_bytes,
+                self.raw_storage_manifest_id,
+                self.repository_manifest_id,
+            ]
+        )
 
 
 def _pop_computed_claims(
@@ -326,6 +445,9 @@ class M8NotificationCommitReceiptV1(FrozenContractModel):
         "m8-notification-commit-receipt-v1"
     )
     audit_event: M8NotificationAuditEventV1
+    raw_artifact_receipts: tuple[M8NotificationRawArtifactCommitReceiptV1, ...] = Field(
+        max_length=MAX_M8_NOTIFICATION_RAW_ARTIFACTS_PER_TRANSITION
+    )
     repository_manifest_id: Sha256Hex
 
     @model_validator(mode="wrap")
@@ -345,12 +467,51 @@ class M8NotificationCommitReceiptV1(FrozenContractModel):
                 "notification_document_sha256",
                 "audit_event_id",
                 "audit_event_sha256",
+                "raw_artifact_inventory_sha256",
+                "total_raw_artifact_size_bytes",
                 "commit_receipt_id",
             ),
         )
         receipt = handler(payload)
         _verify_computed_claims(receipt, claims)
         return receipt
+
+    @model_validator(mode="after")
+    def validate_raw_artifact_inventory(self) -> Self:
+        command = self.audit_event.transition_command
+        if command is None:
+            expected: tuple[tuple[str, str], ...] = ()
+        elif command.dispatch_result is not None:
+            request = command.dispatch_result.request
+            expected = (
+                (request.rendered_card_ref, request.rendered_card_sha256),
+                (
+                    command.dispatch_result.raw_response_ref,
+                    command.dispatch_result.raw_response_sha256,
+                ),
+            )
+        elif command.delivery_receipt is not None:
+            expected = (
+                (
+                    command.delivery_receipt.raw_response_ref,
+                    command.delivery_receipt.raw_response_sha256,
+                ),
+            )
+        elif command.reply is not None:
+            expected = ((command.reply.raw_reply_ref, command.reply.raw_reply_sha256),)
+        else:
+            expected = ()
+        observed = tuple(
+            (item.raw_artifact_ref, item.raw_artifact_sha256) for item in self.raw_artifact_receipts
+        )
+        if observed != expected or len({item[0] for item in observed}) != len(observed):
+            raise ValueError("M8 notification raw artifact receipts do not bind the command")
+        if any(
+            item.repository_manifest_id != self.repository_manifest_id
+            for item in self.raw_artifact_receipts
+        ):
+            raise ValueError("M8 notification raw artifact repository manifest conflicts")
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -389,6 +550,22 @@ class M8NotificationCommitReceiptV1(FrozenContractModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def raw_artifact_inventory_sha256(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-notification-raw-artifact-inventory",
+                1,
+                [item.commit_receipt_id for item in self.raw_artifact_receipts],
+            ]
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def total_raw_artifact_size_bytes(self) -> int:
+        return sum(item.raw_artifact_size_bytes for item in self.raw_artifact_receipts)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def commit_receipt_id(self) -> Sha256Hex:
         return sha256_hex(
             [
@@ -401,6 +578,8 @@ class M8NotificationCommitReceiptV1(FrozenContractModel):
                 self.notification_document_sha256,
                 self.audit_event_id,
                 self.audit_event_sha256,
+                self.raw_artifact_inventory_sha256,
+                self.total_raw_artifact_size_bytes,
                 self.repository_manifest_id,
             ]
         )
@@ -408,8 +587,12 @@ class M8NotificationCommitReceiptV1(FrozenContractModel):
 
 __all__ = [
     "M8_NOTIFICATION_AUDIT_GENESIS_SHA256",
+    "MAX_M8_NOTIFICATION_RAW_ARTIFACTS_PER_TRANSITION",
+    "MAX_M8_NOTIFICATION_RAW_ARTIFACT_BYTES",
     "M8NotificationAuditEventKind",
     "M8NotificationAuditEventV1",
     "M8NotificationAuthorityV1",
     "M8NotificationCommitReceiptV1",
+    "M8NotificationRawArtifactCommitReceiptV1",
+    "M8NotificationTargetCommitReceiptV1",
 ]

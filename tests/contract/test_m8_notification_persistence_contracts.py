@@ -24,6 +24,8 @@ from labcourt.contracts.m8_notification_persistence import (
     M8NotificationAuditEventV1,
     M8NotificationAuthorityV1,
     M8NotificationCommitReceiptV1,
+    M8NotificationRawArtifactCommitReceiptV1,
+    M8NotificationTargetCommitReceiptV1,
 )
 from labcourt.contracts.m8_notifications import (
     M8NotificationAudienceKind,
@@ -131,6 +133,7 @@ def _planned_receipt(
     )
     return M8NotificationCommitReceiptV1(
         audit_event=event,
+        raw_artifact_receipts=(),
         repository_manifest_id=SHA_C,
     )
 
@@ -158,8 +161,49 @@ def _queued_receipt(
     )
     return M8NotificationCommitReceiptV1(
         audit_event=event,
+        raw_artifact_receipts=(),
         repository_manifest_id=SHA_C,
     )
+
+
+def test_target_commit_receipt_requires_contiguous_prior_shape() -> None:
+    target_v1 = _plan().target
+    first = M8NotificationTargetCommitReceiptV1(
+        target=target_v1,
+        repository_manifest_id=SHA_C,
+    )
+    target_v2 = target_v1.model_copy(update={"authority_revision": 2, "active": False})
+    second = M8NotificationTargetCommitReceiptV1(
+        target=target_v2,
+        prior_target_authority_id=first.target.target_authority_id,
+        prior_document_sha256=first.target_document_sha256,
+        repository_manifest_id=SHA_C,
+    )
+
+    assert second.prior_target_authority_id == first.target.target_authority_id
+    assert len(second.target_document_sha256) == 64
+    assert len(second.commit_receipt_id) == 64
+    with pytest.raises(ValidationError, match="prior"):
+        M8NotificationTargetCommitReceiptV1(
+            target=target_v2,
+            repository_manifest_id=SHA_C,
+        )
+
+
+def test_raw_artifact_receipt_binds_hash_size_storage_and_repository_manifests() -> None:
+    receipt = M8NotificationRawArtifactCommitReceiptV1(
+        raw_artifact_ref="raw-notification-response-01",
+        raw_artifact_sha256=SHA_A,
+        raw_artifact_size_bytes=128,
+        raw_storage_manifest_id=SHA_B,
+        repository_manifest_id=SHA_C,
+    )
+    assert len(receipt.commit_receipt_id) == 64
+
+    payload = receipt.model_dump(mode="json")
+    payload["raw_artifact_size_bytes"] = True
+    with pytest.raises(ValidationError):
+        M8NotificationRawArtifactCommitReceiptV1.model_validate(payload)
 
 
 def test_planned_receipt_is_genesis_bound_and_content_addressed() -> None:
