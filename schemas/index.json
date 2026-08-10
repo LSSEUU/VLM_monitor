@@ -1258,6 +1258,12 @@
       "name": "m8-campus-topology-commit-receipt-v1"
     },
     {
+      "file": "m8-knowledge-answer-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeAnswerCommitReceiptV1",
+      "name": "m8-knowledge-answer-commit-receipt-v1"
+    },
+    {
       "file": "m8-knowledge-answer-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge.M8KnowledgeAnswerV1",
@@ -1270,6 +1276,12 @@
       "name": "m8-knowledge-catalog-authority-v1"
     },
     {
+      "file": "m8-knowledge-catalog-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeCatalogCommitReceiptV1",
+      "name": "m8-knowledge-catalog-commit-receipt-v1"
+    },
+    {
       "file": "m8-knowledge-citation-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge.M8KnowledgeCitationV1",
@@ -1280,6 +1292,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge.M8KnowledgeDocumentAuthorityV1",
       "name": "m8-knowledge-document-authority-v1"
+    },
+    {
+      "file": "m8-knowledge-document-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeDocumentCommitReceiptV1",
+      "name": "m8-knowledge-document-commit-receipt-v1"
     },
     {
       "file": "m8-knowledge-query-v1.schema.json",

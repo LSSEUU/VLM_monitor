@@ -302,6 +302,11 @@ from labcourt.contracts.m8_knowledge import (
     M8KnowledgeDocumentAuthorityV1,
     M8KnowledgeQueryV1,
 )
+from labcourt.contracts.m8_knowledge_persistence import (
+    M8KnowledgeAnswerCommitReceiptV1,
+    M8KnowledgeCatalogCommitReceiptV1,
+    M8KnowledgeDocumentCommitReceiptV1,
+)
 from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
     M8OfflineNotificationCardV1,
@@ -657,9 +662,12 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
     "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,
     "m8-knowledge-answer-v1": M8KnowledgeAnswerV1,
+    "m8-knowledge-answer-commit-receipt-v1": M8KnowledgeAnswerCommitReceiptV1,
     "m8-knowledge-catalog-authority-v1": M8KnowledgeCatalogAuthorityV1,
+    "m8-knowledge-catalog-commit-receipt-v1": M8KnowledgeCatalogCommitReceiptV1,
     "m8-knowledge-citation-v1": M8KnowledgeCitationV1,
     "m8-knowledge-document-authority-v1": M8KnowledgeDocumentAuthorityV1,
+    "m8-knowledge-document-commit-receipt-v1": M8KnowledgeDocumentCommitReceiptV1,
     "m8-knowledge-query-v1": M8KnowledgeQueryV1,
     "m8-actor-authority-v1": M8ActorAuthorityV1,
     "m8-actor-authority-commit-receipt-v1": M8ActorAuthorityCommitReceiptV1,
