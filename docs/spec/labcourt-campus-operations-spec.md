@@ -129,6 +129,10 @@ M8.2 固定禁止生命安全联动、认证消防声明和直接纪律处分。
 - 外部通知、真实设备、对象存储和身份提供方均通过端口；每个外部调用有 timeout、幂等、manifest、
   typed failure 和原始回执引用。
 - 最小集成界面只验证运营总览、来源标记、地图层级和关键工作流；视觉稿由独立 UI 任务负责。
+- M8.7 commissioning readiness 使用 authenticated loopback GET，只允许当前 active、in-scope
+  `OPERATIONS` authority 读取。评估时点由服务端 UTC clock 注入；响应复用完整 typed readiness
+  assessment，不返回 raw evidence bytes、secret 或 activation authority，并在读取期间 actor 换版时
+  fail closed。
 
 ## 8. 有序实现切片
 

@@ -28,9 +28,12 @@ from labcourt.contracts.m8_adapter_commissioning import (
     M8ProductionAdapterCandidateAuthorityV1,
     M8ProductionAdapterKind,
 )
+from labcourt.contracts.m8_api import M8ApiPrincipalV1
 from labcourt.contracts.m8_case_persistence import M8ActorAuthorityCommitReceiptV1
 from labcourt.exceptions import BudgetExceeded, ConcurrentModification, EvidenceMissing
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
+from labcourt.services.m8_commissioning_api import M8CommissioningApiService
+from labcourt.services.m8_operations_api import M8ApiServiceError, M8ApiServiceFailureCode
 
 SHA_A = "a" * 64
 SHA_B = "b" * 64
@@ -111,6 +114,16 @@ def _evidence(
         valid_through=reviewed_at + timedelta(days=30),
         simulated=kind == M8CommissioningEvidenceKind.OFFLINE_FALLBACK_DRILL,
         evidence_manifest_id=SHA_C,
+    )
+
+
+def _principal(actor_id: str) -> M8ApiPrincipalV1:
+    return M8ApiPrincipalV1(
+        actor_id=actor_id,
+        credential_id=f"credential-{actor_id}",
+        credential_authority_id=SHA_A,
+        credential_catalog_id=SHA_B,
+        authentication_manifest_id=SHA_C,
     )
 
 
@@ -362,3 +375,86 @@ def test_readiness_service_selects_latest_persisted_evidence_and_current_assesso
             operations_receipt.authority.actor_id,
             REVIEWED_AT + timedelta(hours=4),
         )
+
+
+def test_readiness_api_uses_server_clock_current_operations_and_has_no_side_effect(
+    repositories: tuple[
+        Path,
+        SQLiteM8OperationsRepository,
+        SQLiteM8AdapterCommissioningRepository,
+        M8ActorAuthorityCommitReceiptV1,
+        M8ActorAuthorityCommitReceiptV1,
+    ],
+) -> None:
+    _database, operations, repository, operations_receipt, safety_receipt = repositories
+    candidate = _candidate()
+    candidate_receipt = repository.register_candidate(
+        candidate,
+        operations_receipt.authority.actor_id,
+    )
+    assessed_at = REVIEWED_AT + timedelta(hours=1)
+    api = M8CommissioningApiService(
+        M8AdapterReadinessService(repository, operations, SHA_D),
+        operations,
+        clock=lambda: assessed_at,
+    )
+
+    assessment = api.readiness(
+        _principal(operations_receipt.authority.actor_id),
+        candidate.candidate_authority_id,
+    )
+    assert assessment.assessed_at == assessed_at
+    assert assessment.readiness == M8CommissioningReadiness.BLOCKED
+    assert assessment.production_activation_permitted is False
+    assert assessment.life_safety_action_permitted is False
+    assert repository.get_candidate(candidate.candidate_authority_id) == candidate_receipt
+    assert repository.list_candidate_evidence(candidate.candidate_authority_id, 1) == ()
+
+    with pytest.raises(M8ApiServiceError) as denied:
+        api.readiness(
+            _principal(safety_receipt.authority.actor_id),
+            candidate.candidate_authority_id,
+        )
+    assert denied.value.reason_code == M8ApiServiceFailureCode.FORBIDDEN
+
+
+def test_readiness_api_fails_closed_on_actor_race_and_invalid_server_clock(
+    repositories: tuple[
+        Path,
+        SQLiteM8OperationsRepository,
+        SQLiteM8AdapterCommissioningRepository,
+        M8ActorAuthorityCommitReceiptV1,
+        M8ActorAuthorityCommitReceiptV1,
+    ],
+) -> None:
+    _database, operations, repository, operations_receipt, _safety_receipt = repositories
+    candidate = _candidate()
+    repository.register_candidate(candidate, operations_receipt.authority.actor_id)
+
+    def racing_clock() -> datetime:
+        operations.publish_actor_authority(_actor(M8ActorRole.OPERATIONS, revision=2), 1)
+        return REVIEWED_AT + timedelta(hours=1)
+
+    racing_api = M8CommissioningApiService(
+        M8AdapterReadinessService(repository, operations, SHA_D),
+        operations,
+        clock=racing_clock,
+    )
+    with pytest.raises(M8ApiServiceError) as conflict:
+        racing_api.readiness(
+            _principal(operations_receipt.authority.actor_id),
+            candidate.candidate_authority_id,
+        )
+    assert conflict.value.reason_code == M8ApiServiceFailureCode.CONCURRENT_MODIFICATION
+
+    invalid_clock_api = M8CommissioningApiService(
+        M8AdapterReadinessService(repository, operations, SHA_D),
+        operations,
+        clock=lambda: REVIEWED_AT.replace(tzinfo=None),
+    )
+    with pytest.raises(M8ApiServiceError) as invalid_clock:
+        invalid_clock_api.readiness(
+            _principal(operations_receipt.authority.actor_id),
+            candidate.candidate_authority_id,
+        )
+    assert invalid_clock.value.reason_code == M8ApiServiceFailureCode.INTERNAL_FAILURE

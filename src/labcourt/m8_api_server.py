@@ -24,6 +24,7 @@ from labcourt.ports.m8_api_authentication import (
     M8AuthenticationFailureCode,
     M8RequestAuthenticator,
 )
+from labcourt.services.m8_commissioning_api import M8CommissioningApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_operations_api import (
     M8ApiServiceError,
@@ -46,12 +47,14 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         service: M8OperationsApiService,
         knowledge_service: M8KnowledgeApiService,
         projection_service: M8ProjectionApiService,
+        commissioning_service: M8CommissioningApiService,
         authenticator: M8RequestAuthenticator,
     ) -> None:
         super().__init__(server_address, M8ApiRequestHandler)
         self.api_service = service
         self.knowledge_service = knowledge_service
         self.projection_service = projection_service
+        self.commissioning_service = commissioning_service
         self.api_authenticator = authenticator
 
 
@@ -108,6 +111,20 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
             if len(segments) == 4 and segments[:3] == ("api", "m8", "sensor-polls"):
                 poll = self.server.api_service.sensor_poll(principal, segments[3])
                 self._json(HTTPStatus.OK, poll.model_dump(mode="json"))
+                return
+            if (
+                len(segments) == 5
+                and segments[:3] == ("api", "m8", "adapter-candidates")
+                and segments[4] == "readiness"
+            ):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                readiness = self.server.commissioning_service.readiness(
+                    principal,
+                    segments[3],
+                )
+                self._json(HTTPStatus.OK, readiness.model_dump(mode="json"))
                 return
             if len(segments) == 5 and segments[:4] == (
                 "api",
@@ -311,6 +328,7 @@ def build_m8_api_server(
     service: M8OperationsApiService,
     knowledge_service: M8KnowledgeApiService,
     projection_service: M8ProjectionApiService,
+    commissioning_service: M8CommissioningApiService,
     authenticator: M8RequestAuthenticator,
 ) -> M8ApiHttpServer:
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
@@ -321,6 +339,8 @@ def build_m8_api_server(
         raise TypeError("M8 API requires a knowledge service")
     if not isinstance(projection_service, M8ProjectionApiService):
         raise TypeError("M8 API requires a projection service")
+    if not isinstance(commissioning_service, M8CommissioningApiService):
+        raise TypeError("M8 API requires a commissioning service")
     if authenticator is None:
         raise TypeError("M8 API requires an explicit authenticator")
     return M8ApiHttpServer(
@@ -328,6 +348,7 @@ def build_m8_api_server(
         service=service,
         knowledge_service=knowledge_service,
         projection_service=projection_service,
+        commissioning_service=commissioning_service,
         authenticator=authenticator,
     )
 

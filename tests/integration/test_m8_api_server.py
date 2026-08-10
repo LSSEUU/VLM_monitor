@@ -5,13 +5,16 @@ import http.client
 import json
 import threading
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import cast
 
 import pytest
 
 from labcourt.adapters.m8_hashed_bearer_authenticator import M8HashedBearerAuthenticator
+from labcourt.adapters.storage.sqlite_m8_adapter_commissioning_repository import (
+    SQLiteM8AdapterCommissioningRepository,
+)
 from labcourt.adapters.storage.sqlite_m8_inventory_repository import SQLiteM8InventoryRepository
 from labcourt.adapters.storage.sqlite_m8_knowledge_repository import (
     SQLiteM8KnowledgeRepository,
@@ -36,6 +39,11 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseReasonCode,
     M8OperationalRiskLevel,
 )
+from labcourt.contracts.m8_adapter_commissioning import (
+    M8ExternalIdempotencyKey,
+    M8ProductionAdapterCandidateAuthorityV1,
+    M8ProductionAdapterKind,
+)
 from labcourt.contracts.m8_api import (
     M8ApiCaseTransitionRequestV1,
     M8ApiCredentialAuthorityV1,
@@ -55,6 +63,8 @@ from labcourt.contracts.m8_operations import (
 )
 from labcourt.m8_api_server import M8ApiHttpServer, build_m8_api_server
 from labcourt.ports.m8_api_authentication import M8AuthenticationError, M8RequestAuthenticator
+from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
+from labcourt.services.m8_commissioning_api import M8CommissioningApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_operations_api import M8OperationsApiService
 from labcourt.services.m8_operations_projection import M8OperationsProjectionService
@@ -117,6 +127,27 @@ def _source() -> M8OperationalSource:
         sensor_type=M8SensorType.SMOKE,
         adapter_id="m8-offline-sensor-simulator",
         manifest_id=SHA_B,
+    )
+
+
+def _adapter_candidate() -> M8ProductionAdapterCandidateAuthorityV1:
+    return M8ProductionAdapterCandidateAuthorityV1(
+        adapter_id="notification-adapter-candidate-01",
+        adapter_revision="revision-01",
+        adapter_kind=M8ProductionAdapterKind.EXTERNAL_NOTIFICATION,
+        provider_id="provider-not-yet-selected",
+        product_revision="product-not-yet-selected",
+        campus_id="campus-main",
+        scope_kind=M8ActorScopeKind.CAMPUS_WIDE,
+        scope_location_ids=(),
+        declared_license_id="license-review-required",
+        request_timeout_ms=5_000,
+        idempotency_key=M8ExternalIdempotencyKey.NOTIFICATION_ID,
+        network_required=True,
+        offline_fallback_adapter_id="local-offline-notification-fake",
+        offline_fallback_revision="offline-revision-01",
+        adapter_manifest_id=SHA_C,
+        offline_fallback_manifest_id=SHA_D,
     )
 
 
@@ -222,6 +253,12 @@ def api_server(
     operations = SQLiteM8OperationsRepository(database, BUSY_TIMEOUT_MS, SHA_A)
     for role in M8ActorRole:
         operations.publish_actor_authority(_actor(role), None)
+    commissioning_repository = SQLiteM8AdapterCommissioningRepository(
+        database,
+        BUSY_TIMEOUT_MS,
+        SHA_A,
+    )
+    commissioning_repository.register_candidate(_adapter_candidate(), "operations-01")
     case = _create_case(operations)
     sensors = SQLiteM8SensorPersistenceRepository(database, BUSY_TIMEOUT_MS, SHA_A)
     service = M8OperationsApiService(inventory, operations, sensors, SHA_D, SHA_E)
@@ -254,11 +291,17 @@ def api_server(
         SHA_C,
     )
     projection_service = M8ProjectionApiService(operations, projection_reader)
+    commissioning_service = M8CommissioningApiService(
+        M8AdapterReadinessService(commissioning_repository, operations, SHA_D),
+        operations,
+        clock=lambda: BASE_TIME + timedelta(hours=1),
+    )
     server = build_m8_api_server(
         port=0,
         service=service,
         knowledge_service=knowledge_service,
         projection_service=projection_service,
+        commissioning_service=commissioning_service,
         authenticator=M8HashedBearerAuthenticator(_credentials()),
     )
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -352,6 +395,7 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             service=server.api_service,
             knowledge_service=server.knowledge_service,
             projection_service=server.projection_service,
+            commissioning_service=server.commissioning_service,
             authenticator=cast(M8RequestAuthenticator, None),
         )
     with pytest.raises(TypeError, match="knowledge service"):
@@ -360,6 +404,7 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             service=server.api_service,
             knowledge_service=cast(M8KnowledgeApiService, None),
             projection_service=server.projection_service,
+            commissioning_service=server.commissioning_service,
             authenticator=server.api_authenticator,
         )
     with pytest.raises(TypeError, match="projection service"):
@@ -368,6 +413,16 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             service=server.api_service,
             knowledge_service=server.knowledge_service,
             projection_service=cast(M8ProjectionApiService, None),
+            commissioning_service=server.commissioning_service,
+            authenticator=server.api_authenticator,
+        )
+    with pytest.raises(TypeError, match="commissioning service"):
+        build_m8_api_server(
+            port=0,
+            service=server.api_service,
+            knowledge_service=server.knowledge_service,
+            projection_service=server.projection_service,
+            commissioning_service=cast(M8CommissioningApiService, None),
             authenticator=server.api_authenticator,
         )
 
@@ -489,6 +544,50 @@ def test_operations_projection_endpoint_applies_role_scope_server_side(
     assert denied["reason_code"] == "FORBIDDEN"  # type: ignore[index]
     assert operations.get_current_operational_case(emergency_case.case_id) == emergency_case
     assert operations.get_current_operational_case(general_case.case_id) == general_case
+
+
+def test_commissioning_readiness_endpoint_is_operations_only_and_read_only(
+    api_server: tuple[
+        M8ApiHttpServer, M8OperationalCaseCommitReceiptV1, SQLiteM8OperationsRepository
+    ],
+) -> None:
+    server, emergency_case, operations = api_server
+    candidate = _adapter_candidate()
+    path = f"/api/m8/adapter-candidates/{candidate.candidate_authority_id}/readiness"
+
+    status, readiness = _request(server, "GET", path, token=TOKENS["operations"])
+    assert status == 200
+    assert readiness["candidate"]["candidate_authority_id"] == candidate.candidate_authority_id  # type: ignore[index]
+    assert readiness["assessed_at"] == "2026-08-10T10:00:00Z"  # type: ignore[index]
+    assert readiness["readiness"] == "BLOCKED"  # type: ignore[index]
+    assert readiness["missing_evidence_kinds"] == [  # type: ignore[index]
+        "LICENSE_REVIEW",
+        "OFFLINE_FALLBACK_DRILL",
+        "SAFETY_REVIEW",
+        "SECURITY_REVIEW",
+        "SITE_ACCEPTANCE",
+    ]
+    assert readiness["production_activation_permitted"] is False  # type: ignore[index]
+    assert "artifact_bytes" not in str(readiness)
+
+    for role in ("leader", "safety", "student"):
+        status, denied = _request(server, "GET", path, token=TOKENS[role])
+        assert status == 403
+        assert denied["reason_code"] == "FORBIDDEN"  # type: ignore[index]
+
+    missing_path = f"/api/m8/adapter-candidates/{'f' * 64}/readiness"
+    status, missing = _request(server, "GET", missing_path, token=TOKENS["operations"])
+    assert status == 404
+    assert missing["reason_code"] == "RESOURCE_NOT_FOUND"  # type: ignore[index]
+    status, invalid_time = _request(
+        server,
+        "GET",
+        f"{path}?assessed_at=2026-08-10T09%3A00%3A00Z",
+        token=TOKENS["operations"],
+    )
+    assert status == 400
+    assert invalid_time["reason_code"] == "INVALID_REQUEST"  # type: ignore[index]
+    assert operations.get_current_operational_case(emergency_case.case_id) == emergency_case
 
 
 def test_http_transition_allows_safety_only_and_returns_concurrency_conflict(
