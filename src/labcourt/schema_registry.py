@@ -278,6 +278,12 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalCaseTransitionCommandV1,
 )
+from labcourt.contracts.m8_case_persistence import (
+    M8ActorAuthorityCommitReceiptV1,
+    M8OperationalCaseAuditEventV1,
+    M8OperationalCaseAuthorityV1,
+    M8OperationalCaseCommitReceiptV1,
+)
 from labcourt.contracts.m8_operations import (
     M8CampusLocation,
     M8CampusTopologyAuthorityV1,
@@ -595,8 +601,12 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
     "m8-actor-authority-v1": M8ActorAuthorityV1,
+    "m8-actor-authority-commit-receipt-v1": M8ActorAuthorityCommitReceiptV1,
     "m8-authority-reference": M8AuthorityReference,
     "m8-operational-case-audit-intent-v1": M8OperationalCaseAuditIntentV1,
+    "m8-operational-case-audit-event-v1": M8OperationalCaseAuditEventV1,
+    "m8-operational-case-authority-v1": M8OperationalCaseAuthorityV1,
+    "m8-operational-case-commit-receipt-v1": M8OperationalCaseCommitReceiptV1,
     "m8-operational-case-create-command-v1": M8OperationalCaseCreateCommandV1,
     "m8-operational-case-transition-command-v1": M8OperationalCaseTransitionCommandV1,
     "m8-operational-source": M8OperationalSource,

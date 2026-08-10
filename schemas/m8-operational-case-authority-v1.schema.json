@@ -1,0 +1,373 @@
+{
+  "$defs": {
+    "M8AuthorityReference": {
+      "additionalProperties": false,
+      "description": "Typed reference to source evidence or another persisted authority.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M8AuthorityReferenceKind"
+        },
+        "schema_version": {
+          "const": "m8-authority-reference-v1",
+          "default": "m8-authority-reference-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "authority_id",
+        "document_sha256"
+      ],
+      "title": "M8AuthorityReference",
+      "type": "object"
+    },
+    "M8AuthorityReferenceKind": {
+      "enum": [
+        "SOURCE_CATALOG",
+        "SENSOR_SIGNAL",
+        "VIDEO_EVENT",
+        "M0_CASE",
+        "USER_STATEMENT",
+        "NOTIFICATION_REPLY",
+        "EVIDENCE_PACK"
+      ],
+      "title": "M8AuthorityReferenceKind",
+      "type": "string"
+    },
+    "M8OperationalCaseCreateCommandV1": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "direct_disciplinary_action_permitted": {
+              "const": false
+            },
+            "human_verification_required": {
+              "const": true
+            },
+            "initial_status": {
+              "const": "PENDING_VERIFICATION"
+            }
+          }
+        },
+        {
+          "else": {
+            "properties": {
+              "display_badge": {
+                "const": "LIVE INPUT · PENDING VERIFICATION"
+              },
+              "simulation_disclosure_required": {
+                "const": false
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "simulated_source_ids": {
+                "minItems": 1
+              }
+            },
+            "required": [
+              "simulated_source_ids"
+            ]
+          },
+          "then": {
+            "properties": {
+              "display_badge": {
+                "const": "SIMULATED INPUT · PENDING VERIFICATION"
+              },
+              "simulation_disclosure_required": {
+                "const": true
+              }
+            }
+          }
+        }
+      ],
+      "description": "Automation request that can create only a pending-verification case.",
+      "properties": {
+        "automation_component_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Automation Component Id",
+          "type": "string"
+        },
+        "automation_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Automation Manifest Id",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "create_command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Create Command Id",
+          "type": "string"
+        },
+        "direct_disciplinary_action_permitted": {
+          "readOnly": true,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "display_badge": {
+          "readOnly": true,
+          "title": "Display Badge",
+          "type": "string"
+        },
+        "human_verification_required": {
+          "readOnly": true,
+          "title": "Human Verification Required",
+          "type": "boolean"
+        },
+        "initial_status": {
+          "$ref": "#/$defs/M8OperationalCaseStatus",
+          "readOnly": true
+        },
+        "location_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Location Id",
+          "type": "string"
+        },
+        "policy_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Manifest Id",
+          "type": "string"
+        },
+        "policy_rule_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Policy Rule Id",
+          "type": "string"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/M8OperationalRiskLevel"
+        },
+        "schema_version": {
+          "const": "m8-operational-case-create-command-v1",
+          "default": "m8-operational-case-create-command-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulated_source_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Simulated Source Ids",
+          "type": "array"
+        },
+        "simulation_disclosure_required": {
+          "readOnly": true,
+          "title": "Simulation Disclosure Required",
+          "type": "boolean"
+        },
+        "source_catalog_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Catalog Id",
+          "type": "string"
+        },
+        "source_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "trigger_authorities": {
+          "items": {
+            "$ref": "#/$defs/M8AuthorityReference"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Trigger Authorities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_catalog_id",
+        "location_id",
+        "risk_level",
+        "policy_rule_id",
+        "policy_manifest_id",
+        "source_ids",
+        "trigger_authorities",
+        "automation_component_id",
+        "automation_manifest_id",
+        "initial_status",
+        "human_verification_required",
+        "direct_disciplinary_action_permitted",
+        "simulation_disclosure_required",
+        "display_badge",
+        "case_id",
+        "create_command_id"
+      ],
+      "title": "M8OperationalCaseCreateCommandV1",
+      "type": "object"
+    },
+    "M8OperationalCaseStatus": {
+      "enum": [
+        "PENDING_VERIFICATION",
+        "CONFIRMED",
+        "REJECTED",
+        "EVIDENCE_REQUESTED",
+        "RESOLVED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "M8OperationalCaseStatus",
+      "type": "string"
+    },
+    "M8OperationalRiskLevel": {
+      "enum": [
+        "REMINDER",
+        "GENERAL",
+        "SEVERE",
+        "EMERGENCY"
+      ],
+      "title": "M8OperationalRiskLevel",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-operational-case-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One immutable version of an additive M8 operational Case.",
+  "properties": {
+    "case_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Case Authority Id",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Manifest Id",
+      "type": "string"
+    },
+    "case_version": {
+      "exclusiveMinimum": 0,
+      "title": "Case Version",
+      "type": "integer"
+    },
+    "create_command": {
+      "$ref": "#/$defs/M8OperationalCaseCreateCommandV1"
+    },
+    "last_actor_authority_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Actor Authority Id"
+    },
+    "last_transition_command_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Transition Command Id"
+    },
+    "location_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Location Id",
+      "type": "string"
+    },
+    "prior_case_document_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Case Document Sha256"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/M8OperationalRiskLevel",
+      "readOnly": true
+    },
+    "schema_version": {
+      "const": "m8-operational-case-authority-v1",
+      "default": "m8-operational-case-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_ids": {
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "readOnly": true,
+      "title": "Source Ids",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/M8OperationalCaseStatus"
+    },
+    "subject_actor_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Subject Actor Id"
+    }
+  },
+  "required": [
+    "create_command",
+    "case_version",
+    "status",
+    "case_manifest_id",
+    "case_id",
+    "location_id",
+    "risk_level",
+    "source_ids",
+    "case_authority_id"
+  ],
+  "title": "M8OperationalCaseAuthorityV1",
+  "type": "object"
+}

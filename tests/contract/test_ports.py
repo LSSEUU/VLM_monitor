@@ -142,6 +142,16 @@ from labcourt.contracts.m6_upgrade_pending_sample_commitment import (
     M6UpgradePendingSampleCommitmentAuthority,
 )
 from labcourt.contracts.m6_upgrade_physical import M6UpgradePhysicalArtifactRef
+from labcourt.contracts.m8_access_cases import (
+    M8ActorAuthorityV1,
+    M8OperationalCaseCreateCommandV1,
+    M8OperationalCaseTransitionCommandV1,
+)
+from labcourt.contracts.m8_case_persistence import (
+    M8ActorAuthorityCommitReceiptV1,
+    M8OperationalCaseAuditEventV1,
+    M8OperationalCaseCommitReceiptV1,
+)
 from labcourt.contracts.m8_sensor_signals import (
     M8SensorAdapterCapabilityAuthorityV1,
     M8SensorPollRequestV1,
@@ -371,6 +381,7 @@ from labcourt.ports.m6_upgrade_pending_sample_commitment import (
 from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
     M6UpgradeWholeSampleRecordBuilder,
 )
+from labcourt.ports.m8_operations_repository import M8OperationsRepository
 from labcourt.ports.m8_sensors import M8SensorAdapter
 from labcourt.ports.model_response_artifacts import (
     ModelResponseArtifactCandidate,
@@ -427,6 +438,56 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8OperationsRepository: {
+        "publish_actor_authority": (
+            ("self", "authority", "expected_prior_revision"),
+            {
+                "authority": M8ActorAuthorityV1,
+                "expected_prior_revision": int | None,
+                "return": M8ActorAuthorityCommitReceiptV1,
+            },
+        ),
+        "get_current_actor_authority": (
+            ("self", "actor_id"),
+            {"actor_id": str, "return": M8ActorAuthorityCommitReceiptV1},
+        ),
+        "create_operational_case": (
+            (
+                "self",
+                "command",
+                "subject_actor_id",
+                "case_manifest_id",
+                "audit_manifest_id",
+            ),
+            {
+                "command": M8OperationalCaseCreateCommandV1,
+                "subject_actor_id": str | None,
+                "case_manifest_id": str,
+                "audit_manifest_id": str,
+                "return": M8OperationalCaseCommitReceiptV1,
+            },
+        ),
+        "get_current_operational_case": (
+            ("self", "case_id"),
+            {"case_id": str, "return": M8OperationalCaseCommitReceiptV1},
+        ),
+        "transition_operational_case": (
+            ("self", "command", "case_manifest_id", "audit_manifest_id"),
+            {
+                "command": M8OperationalCaseTransitionCommandV1,
+                "case_manifest_id": str,
+                "audit_manifest_id": str,
+                "return": M8OperationalCaseCommitReceiptV1,
+            },
+        ),
+        "list_operational_case_audit": (
+            ("self", "case_id"),
+            {
+                "case_id": str,
+                "return": tuple[M8OperationalCaseAuditEventV1, ...],
+            },
+        ),
+    },
     M8SensorAdapter: {
         "capability_authority": (
             ("self",),

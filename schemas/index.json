@@ -1192,6 +1192,12 @@
       "name": "m6-upgrade-selected-case-audit-anchor"
     },
     {
+      "file": "m8-actor-authority-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_case_persistence.M8ActorAuthorityCommitReceiptV1",
+      "name": "m8-actor-authority-commit-receipt-v1"
+    },
+    {
       "file": "m8-actor-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_access_cases.M8ActorAuthorityV1",
@@ -1216,10 +1222,28 @@
       "name": "m8-campus-topology-authority-v1"
     },
     {
+      "file": "m8-operational-case-audit-event-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_case_persistence.M8OperationalCaseAuditEventV1",
+      "name": "m8-operational-case-audit-event-v1"
+    },
+    {
       "file": "m8-operational-case-audit-intent-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_access_cases.M8OperationalCaseAuditIntentV1",
       "name": "m8-operational-case-audit-intent-v1"
+    },
+    {
+      "file": "m8-operational-case-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_case_persistence.M8OperationalCaseAuthorityV1",
+      "name": "m8-operational-case-authority-v1"
+    },
+    {
+      "file": "m8-operational-case-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_case_persistence.M8OperationalCaseCommitReceiptV1",
+      "name": "m8-operational-case-commit-receipt-v1"
     },
     {
       "file": "m8-operational-case-create-command-v1.schema.json",
