@@ -157,6 +157,11 @@ from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
 )
+from labcourt.contracts.m8_knowledge import (
+    M8KnowledgeAnswerV1,
+    M8KnowledgeCatalogAuthorityV1,
+    M8KnowledgeQueryV1,
+)
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationChannelCapabilityAuthorityV1,
     M8NotificationDeliveryReceiptV1,
@@ -414,6 +419,7 @@ from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
 )
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
+from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
 from labcourt.ports.m8_notification_channel import M8NotificationChannelAdapter
 from labcourt.ports.m8_notification_repository import M8NotificationRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
@@ -474,6 +480,24 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8KnowledgeRetriever: {
+        "catalog_authority": (
+            ("self",),
+            {"return": M8KnowledgeCatalogAuthorityV1},
+        ),
+        "query": (
+            ("self", "request"),
+            {"request": M8KnowledgeQueryV1, "return": M8KnowledgeAnswerV1},
+        ),
+        "replay": (
+            ("self", "query_id"),
+            {"query_id": str, "return": M8KnowledgeAnswerV1},
+        ),
+        "read_content": (
+            ("self", "content_ref"),
+            {"content_ref": str, "return": bytes},
+        ),
+    },
     M8NotificationChannelAdapter: {
         "capability_authority": (
             ("self",),
