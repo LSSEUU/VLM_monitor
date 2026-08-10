@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "M8NotificationChannelKind": {
+      "enum": [
+        "DINGTALK",
+        "FEISHU",
+        "LOCAL_OFFLINE_FAKE",
+        "WECHAT_WORK"
+      ],
+      "title": "M8NotificationChannelKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-target-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned privacy-safe mapping from one actor to one delivery channel.",
+  "properties": {
+    "active": {
+      "title": "Active",
+      "type": "boolean"
+    },
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "authority_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Authority Revision",
+      "type": "integer"
+    },
+    "channel": {
+      "$ref": "#/$defs/M8NotificationChannelKind"
+    },
+    "display_badge": {
+      "readOnly": true,
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "external_subject_binding_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "External Subject Binding Sha256",
+      "type": "string"
+    },
+    "identity_provider_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Identity Provider Id",
+      "type": "string"
+    },
+    "inbound_response_supported": {
+      "title": "Inbound Response Supported",
+      "type": "boolean"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-notification-target-authority-v1",
+      "default": "m8-notification-target-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "simulated": {
+      "readOnly": true,
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "target_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Target Authority Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "actor_id",
+    "identity_provider_id",
+    "external_subject_binding_sha256",
+    "channel",
+    "authority_revision",
+    "active",
+    "inbound_response_supported",
+    "manifest_id",
+    "simulated",
+    "display_badge",
+    "target_authority_id"
+  ],
+  "title": "M8NotificationTargetAuthorityV1",
+  "type": "object"
+}

@@ -1,0 +1,112 @@
+{
+  "$defs": {
+    "M8NotificationChannelKind": {
+      "enum": [
+        "DINGTALK",
+        "FEISHU",
+        "LOCAL_OFFLINE_FAKE",
+        "WECHAT_WORK"
+      ],
+      "title": "M8NotificationChannelKind",
+      "type": "string"
+    },
+    "M8NotificationPurpose": {
+      "enum": [
+        "APPEAL_UPDATED",
+        "CASE_ACTION_REQUIRED",
+        "CASE_CREATED",
+        "CASE_UPDATED",
+        "DEVICE_ATTENTION_REQUIRED",
+        "ESCALATION",
+        "EVIDENCE_REQUESTED"
+      ],
+      "title": "M8NotificationPurpose",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-template-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned message-card template reference, never a Case decision rule.",
+  "properties": {
+    "allowed_channels": {
+      "items": {
+        "$ref": "#/$defs/M8NotificationChannelKind"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "title": "Allowed Channels",
+      "type": "array"
+    },
+    "allowed_purposes": {
+      "items": {
+        "$ref": "#/$defs/M8NotificationPurpose"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Allowed Purposes",
+      "type": "array"
+    },
+    "content_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Document Sha256",
+      "type": "string"
+    },
+    "effective_at": {
+      "format": "date-time",
+      "title": "Effective At",
+      "type": "string"
+    },
+    "locale": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Locale",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "ordinary_document_can_define_case_rule": {
+      "readOnly": true,
+      "title": "Ordinary Document Can Define Case Rule",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-notification-template-authority-v1",
+      "default": "m8-notification-template-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "template_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Template Authority Id",
+      "type": "string"
+    },
+    "template_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Template Id",
+      "type": "string"
+    },
+    "template_version": {
+      "exclusiveMinimum": 0,
+      "title": "Template Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "template_id",
+    "template_version",
+    "locale",
+    "effective_at",
+    "content_document_sha256",
+    "allowed_purposes",
+    "allowed_channels",
+    "manifest_id",
+    "ordinary_document_can_define_case_rule",
+    "template_authority_id"
+  ],
+  "title": "M8NotificationTemplateAuthorityV1",
+  "type": "object"
+}
