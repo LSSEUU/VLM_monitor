@@ -280,6 +280,61 @@ class M8ProductionAdapterCandidateAuthorityV1(FrozenContractModel):
         )
 
 
+class M8ProductionAdapterCandidateCommitReceiptV1(FrozenContractModel):
+    """Commit proof for a candidate registered by current in-scope operations authority."""
+
+    schema_version: Literal["m8-production-adapter-candidate-commit-receipt-v1"] = (
+        "m8-production-adapter-candidate-commit-receipt-v1"
+    )
+    candidate: M8ProductionAdapterCandidateAuthorityV1
+    registered_by_actor_receipt: M8ActorAuthorityCommitReceiptV1
+    repository_manifest_id: Sha256Hex
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(
+            value,
+            ("candidate_document_sha256", "commit_receipt_id"),
+        )
+        receipt = handler(payload)
+        _verify_computed_claims(receipt, claims)
+        return receipt
+
+    @model_validator(mode="after")
+    def validate_registrar(self) -> Self:
+        actor = self.registered_by_actor_receipt.authority
+        if actor.role != M8ActorRole.OPERATIONS or not _actor_covers_candidate(
+            self.registered_by_actor_receipt,
+            self.candidate,
+        ):
+            raise ValueError("M8 adapter candidate registration requires in-scope operations actor")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def candidate_document_sha256(self) -> Sha256Hex:
+        return sha256_hex(self.candidate.model_dump(mode="json"))
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def commit_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-production-adapter-candidate-commit-receipt",
+                1,
+                self.candidate.candidate_authority_id,
+                self.candidate_document_sha256,
+                self.registered_by_actor_receipt.commit_receipt_id,
+                self.repository_manifest_id,
+            ]
+        )
+
+
 class M8CommissioningEvidenceAuthorityV1(FrozenContractModel):
     """One human-attested evidence reference for an exact adapter candidate."""
 
@@ -588,5 +643,6 @@ __all__ = [
     "M8CommissioningReadiness",
     "M8ExternalIdempotencyKey",
     "M8ProductionAdapterCandidateAuthorityV1",
+    "M8ProductionAdapterCandidateCommitReceiptV1",
     "M8ProductionAdapterKind",
 ]

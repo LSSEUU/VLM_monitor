@@ -20,6 +20,7 @@ from labcourt.contracts.m8_adapter_commissioning import (
     M8CommissioningReadiness,
     M8ExternalIdempotencyKey,
     M8ProductionAdapterCandidateAuthorityV1,
+    M8ProductionAdapterCandidateCommitReceiptV1,
     M8ProductionAdapterKind,
 )
 from labcourt.contracts.m8_case_persistence import M8ActorAuthorityCommitReceiptV1
@@ -131,6 +132,16 @@ def _evidence(
     )
 
 
+def _candidate_receipt(
+    candidate: M8ProductionAdapterCandidateAuthorityV1 | None = None,
+) -> M8ProductionAdapterCandidateCommitReceiptV1:
+    return M8ProductionAdapterCandidateCommitReceiptV1(
+        candidate=candidate or _candidate(),
+        registered_by_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
+        repository_manifest_id=SHA_D,
+    )
+
+
 def _assessment(
     evidence: tuple[M8CommissioningEvidenceCommitReceiptV1, ...],
     *,
@@ -187,6 +198,25 @@ def test_evidence_requires_human_role_scope_and_real_site_review() -> None:
             update={
                 "reviewer_actor_receipt": _actor_receipt(
                     M8ActorRole.SAFETY_OFFICER,
+                    scope_location_ids=("room-physics-201",),
+                )
+            }
+        )
+
+
+def test_candidate_commit_receipt_requires_current_in_scope_operations_actor() -> None:
+    receipt = _candidate_receipt()
+    assert receipt.candidate_document_sha256
+    assert receipt.commit_receipt_id
+    with pytest.raises(ValidationError, match="in-scope operations actor"):
+        receipt.model_copy(
+            update={"registered_by_actor_receipt": _actor_receipt(M8ActorRole.SAFETY_OFFICER)}
+        )
+    with pytest.raises(ValidationError, match="in-scope operations actor"):
+        receipt.model_copy(
+            update={
+                "registered_by_actor_receipt": _actor_receipt(
+                    M8ActorRole.OPERATIONS,
                     scope_location_ids=("room-physics-201",),
                 )
             }
@@ -271,6 +301,7 @@ def test_assessment_rejects_candidate_graft_duplicate_and_future_evidence() -> N
     "model",
     (
         _candidate(),
+        _candidate_receipt(),
         _evidence(M8CommissioningEvidenceKind.LICENSE_REVIEW),
         _evidence(M8CommissioningEvidenceKind.LICENSE_REVIEW).evidence,
         _assessment((), candidate=_candidate()),
@@ -287,6 +318,7 @@ def test_commissioning_contracts_validate_as_serialization_schemas(model: BaseMo
     (
         (_candidate(), "production_activation_permitted"),
         (_candidate(), "candidate_authority_id"),
+        (_candidate_receipt(), "commit_receipt_id"),
         (
             _evidence(M8CommissioningEvidenceKind.LICENSE_REVIEW),
             "commit_receipt_id",
@@ -315,6 +347,9 @@ def test_commissioning_schemas_are_registered_serialization_roots() -> None:
         "m8-commissioning-evidence-authority-v1": M8CommissioningEvidenceAuthorityV1,
         "m8-commissioning-evidence-commit-receipt-v1": (M8CommissioningEvidenceCommitReceiptV1),
         "m8-production-adapter-candidate-authority-v1": (M8ProductionAdapterCandidateAuthorityV1),
+        "m8-production-adapter-candidate-commit-receipt-v1": (
+            M8ProductionAdapterCandidateCommitReceiptV1
+        ),
     }
     for schema_name, model in expected.items():
         assert SCHEMA_MODELS[schema_name] is model

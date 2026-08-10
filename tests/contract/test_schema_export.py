@@ -272,6 +272,7 @@ EXPECTED_SCHEMA_MODES = {
     "m8-projection-overview-v1": "serialization",
     "m8-projection-source-v1": "serialization",
     "m8-production-adapter-candidate-authority-v1": "serialization",
+    "m8-production-adapter-candidate-commit-receipt-v1": "serialization",
     "m8-sensor-adapter-capability-authority-v1": "serialization",
     "m8-sensor-poll-request-v1": "serialization",
     "m8-sensor-poll-result-v1": "serialization",
