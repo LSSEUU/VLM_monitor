@@ -140,6 +140,15 @@ def test_offline_channel_dispatches_delivers_and_replays_exact_raw_responses() -
     assert dispatched.accepted is True
     assert dispatched.real_delivery_confirmed is False
 
+    conflicting_request = request.model_copy(
+        update={"dispatched_at": request.dispatched_at + timedelta(seconds=1)}
+    )
+    with pytest.raises(M8NotificationChannelAdapterError) as idempotency_error:
+        adapter.dispatch(conflicting_request, card)
+    assert idempotency_error.value.reason_code == (
+        M8NotificationChannelAdapterFailureCode.REQUEST_MISMATCH
+    )
+
     occurred_at = BASE_TIME + timedelta(minutes=2)
     delivered = adapter.confirm_simulated_delivery(dispatched, occurred_at)
     assert adapter.confirm_simulated_delivery(dispatched, occurred_at) is delivered

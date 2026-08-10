@@ -49,6 +49,7 @@ class DeterministicOfflineNotificationChannel:
         self._capability = capability
         self._dispatches: dict[str, M8NotificationDispatchResultV1] = {}
         self._dispatch_cards: dict[str, bytes] = {}
+        self._idempotency_requests: dict[str, str] = {}
         self._deliveries: dict[str, M8NotificationDeliveryReceiptV1] = {}
         self._delivery_times: dict[str, datetime] = {}
         self._raw_responses: dict[str, bytes] = {}
@@ -87,6 +88,11 @@ class DeterministicOfflineNotificationChannel:
             )
 
         request_id = request.dispatch_request_id
+        prior_request_id = self._idempotency_requests.get(request.idempotency_key)
+        if prior_request_id is not None and prior_request_id != request_id:
+            raise M8NotificationChannelAdapterError(
+                M8NotificationChannelAdapterFailureCode.REQUEST_MISMATCH
+            )
         cached = self._dispatches.get(request_id)
         if cached is not None:
             if self._dispatch_cards.get(request_id) != rendered_card:
@@ -120,6 +126,7 @@ class DeterministicOfflineNotificationChannel:
         )
         self._store_raw(raw_response_ref, raw_response)
         self._dispatch_cards[request_id] = rendered_card
+        self._idempotency_requests[request.idempotency_key] = request_id
         self._dispatches[request_id] = result
         self._dispatch_generation_count += 1
         return result

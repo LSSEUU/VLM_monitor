@@ -7,6 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from labcourt.adapters.m8_offline_notification_channel import (
+    DeterministicOfflineNotificationChannel,
+)
 from labcourt.adapters.storage.sqlite_m8_notification_repository import (
     SQLiteM8NotificationRepository,
 )
@@ -24,6 +27,9 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalRiskLevel,
 )
 from labcourt.contracts.m8_case_persistence import M8OperationalCaseCommitReceiptV1
+from labcourt.contracts.m8_notification_cards import (
+    M8NotificationWorkflowManifestAuthorityV1,
+)
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationAction,
     M8NotificationChannelCapabilityAuthorityV1,
@@ -49,6 +55,7 @@ from labcourt.contracts.m8_notifications import (
     M8NotificationTemplateAuthorityV1,
 )
 from labcourt.exceptions import ConcurrentModification
+from labcourt.services.m8_notifications import M8NotificationService
 
 SHA_A = "a" * 64
 SHA_B = "b" * 64
@@ -116,6 +123,7 @@ def _plan(
     target: M8NotificationTargetAuthorityV1,
     *,
     planned_at: datetime = BASE_TIME,
+    requires_human_send_confirmation: bool = False,
 ) -> M8NotificationPlanAuthorityV1:
     authority = case.audit_event.case_authority
     return M8NotificationPlanAuthorityV1(
@@ -145,7 +153,7 @@ def _plan(
             response_timeout_seconds=3_600,
             max_delivery_attempts=3,
             escalation_roles=(M8ActorRole.SAFETY_OFFICER,),
-            requires_human_send_confirmation=False,
+            requires_human_send_confirmation=requires_human_send_confirmation,
             policy_manifest_id=SHA_C,
         ),
         planned_at=planned_at,
@@ -160,6 +168,31 @@ def _support(name: str) -> tuple[M8AuthorityReference, ...]:
             authority_id=name,
             document_sha256=SHA_E,
         ),
+    )
+
+
+def _channel_capability() -> M8NotificationChannelCapabilityAuthorityV1:
+    return M8NotificationChannelCapabilityAuthorityV1(
+        adapter_id="m8-local-message-fake",
+        adapter_revision="v1",
+        channel=M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,
+        request_timeout_ms=1_000,
+        network_required=False,
+        offline_capable=True,
+        simulated=True,
+        inbound_response_supported=True,
+        adapter_manifest_id=SHA_D,
+    )
+
+
+def _workflow() -> M8NotificationWorkflowManifestAuthorityV1:
+    return M8NotificationWorkflowManifestAuthorityV1(
+        card_renderer_manifest_id=SHA_A,
+        dispatch_request_manifest_id=SHA_B,
+        transition_command_manifest_id=SHA_C,
+        raw_storage_manifest_id=SHA_D,
+        audit_manifest_id=SHA_E,
+        workflow_manifest_id="f" * 64,
     )
 
 
@@ -471,3 +504,146 @@ def test_notification_raw_failure_rolls_back_and_storage_is_append_only(tmp_path
         )
     with pytest.raises(RepositoryIntegrityError, match="raw byte hash"):
         notifications.get_current_notification(sent.notification_id)
+
+
+def test_notification_service_runs_offline_card_to_reply_without_changing_case(
+    tmp_path: Path,
+) -> None:
+    operations, notifications, database = _repositories(tmp_path)
+    student = _student()
+    operations.publish_actor_authority(student, None)
+    case = operations.create_operational_case(
+        _create_command(),
+        student.actor_id,
+        SHA_D,
+        SHA_E,
+    )
+    channel = DeterministicOfflineNotificationChannel(_channel_capability())
+    service = M8NotificationService(notifications, operations, channel, _workflow())
+    target = _target()
+    service.publish_target(target, None)
+    planned = service.create_notification(_plan(case, target))
+
+    queued = service.queue_as_system(
+        planned.notification_id,
+        BASE_TIME + timedelta(minutes=1),
+        _support("notification-queue-policy-01"),
+    )
+    card, card_bytes = service.render_card(planned.notification_id)
+    assert card.simulated is True
+    assert b"SIMULATED" in card_bytes
+
+    sent = service.dispatch(
+        planned.notification_id,
+        _support("local-channel-capability-01"),
+    )
+    assert sent.status == M8NotificationStatus.SENT
+    assert (
+        service.dispatch(
+            planned.notification_id,
+            _support("local-channel-capability-01"),
+        )
+        == sent
+    )
+    assert sent.raw_artifact_receipts[0].raw_artifact_ref == card.raw_card_ref
+    assert notifications.read_raw_artifact(card.raw_card_ref) == card_bytes
+
+    delivered = service.confirm_simulated_delivery(
+        planned.notification_id,
+        BASE_TIME + timedelta(minutes=2),
+        _support("local-delivery-simulator-01"),
+    )
+    assert delivered.status == M8NotificationStatus.DELIVERED
+    assert (
+        service.confirm_simulated_delivery(
+            planned.notification_id,
+            BASE_TIME + timedelta(minutes=2),
+            _support("local-delivery-simulator-01"),
+        )
+        == delivered
+    )
+
+    raw_reply = b"I was replacing damaged goggles; please review the attached evidence."
+    responded = service.respond(
+        planned.notification_id,
+        student.actor_id,
+        M8NotificationReplyKind.EXPLANATION,
+        hashlib.sha256(raw_reply).hexdigest(),
+        raw_reply,
+        BASE_TIME + timedelta(minutes=3),
+        _support("student-explanation-01"),
+    )
+    assert responded.status == M8NotificationStatus.RESPONDED
+    assert responded.audit_event.transition_command is not None
+    reply = responded.audit_event.transition_command.reply
+    assert reply is not None
+    assert reply.case_transition_permitted is False
+    assert notifications.read_raw_artifact(reply.raw_reply_ref) == raw_reply
+    assert operations.get_current_operational_case(case.case_id) == case
+
+    reopened = SQLiteM8NotificationRepository(database, BUSY_TIMEOUT_MS, SHA_C)
+    assert reopened.get_current_notification(planned.notification_id) == responded
+    assert tuple(
+        event.event_sequence for event in reopened.list_notification_audit(planned.notification_id)
+    ) == (
+        1,
+        2,
+        3,
+        4,
+        5,
+    )
+    assert queued.status == M8NotificationStatus.QUEUED
+
+
+def test_notification_service_requires_safety_actor_when_send_policy_requires_human(
+    tmp_path: Path,
+) -> None:
+    operations, notifications, _ = _repositories(tmp_path)
+    student = _student()
+    safety = M8ActorAuthorityV1(
+        actor_id="safety-officer-01",
+        role=M8ActorRole.SAFETY_OFFICER,
+        scope_kind=M8ActorScopeKind.LOCATIONS,
+        scope_location_ids=("room-chem-301",),
+        identity_provider_id="campus-idp",
+        subject_binding_sha256=SHA_A,
+        authority_revision=1,
+        active=True,
+        manifest_id=SHA_B,
+    )
+    operations.publish_actor_authority(student, None)
+    operations.publish_actor_authority(safety, None)
+    case = operations.create_operational_case(
+        _create_command(),
+        student.actor_id,
+        SHA_D,
+        SHA_E,
+    )
+    service = M8NotificationService(
+        notifications,
+        operations,
+        DeterministicOfflineNotificationChannel(_channel_capability()),
+        _workflow(),
+    )
+    target = _target()
+    service.publish_target(target, None)
+    planned = service.create_notification(
+        _plan(case, target, requires_human_send_confirmation=True)
+    )
+
+    with pytest.raises(ConcurrentModification, match="human send confirmation"):
+        service.queue_as_system(
+            planned.notification_id,
+            BASE_TIME + timedelta(minutes=1),
+            _support("notification-queue-policy-01"),
+        )
+    queued = service.queue_as_actor(
+        planned.notification_id,
+        safety.actor_id,
+        BASE_TIME + timedelta(minutes=1),
+        _support("notification-human-confirmation-01"),
+    )
+    command = queued.audit_event.transition_command
+    assert command is not None
+    assert command.actor_authority == safety
+    assert command.explicit_human_confirmation is True
