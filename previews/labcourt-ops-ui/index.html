@@ -71,49 +71,54 @@
         </div>
       </header>
 
-      <div class="workbench-layout">
-        <div class="workbench-primary">
-          <section class="workbench-counts" aria-label="当前值守核心数量">
-            <div><span>事件数量</span><strong class="mono">03</strong><small><i class="dot danger"></i>含 1 项紧急模拟信号</small></div>
-            <div><span>设备数量</span><strong class="mono">16</strong><small><i class="dot attention"></i>15 在线 · 1 维护</small></div>
-          </section>
+      <section class="summary-strip" aria-label="当前值守摘要">
+        <div><span>紧急事件</span><strong class="mono danger-text">01</strong><small>模拟传感器信号</small></div>
+        <div><span>待人工确认</span><strong class="mono attention-text">02</strong><small>最早等待 4 分钟</small></div>
+        <div><span>积压案件</span><strong class="mono">01</strong><small>VLM 初审不可用</small></div>
+        <div><span>离线设备</span><strong class="mono">01</strong><small>温度探头维护中</small></div>
+        <div><span>机位状态</span><strong class="mono success-text">04 / 04</strong><small>模拟机位全部在线</small></div>
+      </section>
 
-          <section class="new-pending-section" aria-labelledby="new-pending-title">
-            <div class="section-title-row"><div><h2 id="new-pending-title">新增待处理</h2><p>尚未查看 · 点击打开快速抽屉</p></div><span id="new-pending-count" class="new-count mono" aria-live="polite">2 NEW</span></div>
-            <div id="new-pending-list" class="new-pending-list">
-              <button class="new-pending-card danger" type="button" data-event="sensor-emergency" data-new-event="sensor-emergency">
-                <span class="new-card-mark"><i class="dot danger"></i>紧急</span>
-                <span><b>温度与烟雾信号联动</b><small>化学实验区主操作台 · 可靠传感器模拟路径，不依赖 VLM</small></span>
-                <span class="new-card-data mono">78.4°C · SMK 0.82</span><time class="mono">14:32:14</time><span class="row-link">查看处置卡</span>
-              </button>
-              <button class="new-pending-card" type="button" data-event="goggles-case" data-new-event="goggles-case">
-                <span class="new-card-mark"><i class="dot attention"></i>一般</span>
-                <span><b>护目镜缺失案件候选</b><small class="mono">LC-2026-0810-014 · CAM-301-A · SIMULATED</small></span>
-                <span class="new-card-data">程序检查已通过，等待人工确认</span><time class="mono">04:12</time><span class="row-link">快速查看</span>
-              </button>
-            </div>
-            <p id="new-pending-empty" class="new-pending-empty" hidden>新增事项已全部查看，并入下方待处理队列。</p>
-          </section>
+      <button class="urgent-row" type="button" data-event="sensor-emergency">
+        <span class="severity-mark danger" aria-hidden="true"></span>
+        <span class="urgent-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Z"></path><path d="M12 9v4M12 17h.01"></path></svg></span>
+        <span><b>紧急 · 温度与烟雾信号联动</b><small>化学实验区主操作台 · 可靠传感器路径演示 · 不依赖 VLM</small></span>
+        <span class="signal-values mono"><b>78.4°C</b><b>SMK 0.82</b></span>
+        <time class="mono">14:32:14</time>
+        <span class="row-link">查看处置卡 →</span>
+      </button>
 
-          <section class="queue-section" aria-labelledby="queue-title">
-            <div class="section-title-row"><div><h2 id="queue-title">待处理队列</h2><p>按风险与等待时间排序 · SIMULATED</p></div><button class="text-button" type="button" data-route="cases">查看案件中心</button></div>
-            <div class="data-table queue-table" role="table" aria-label="待处理事项">
-              <div class="table-row table-head" role="row"><span role="columnheader">级别</span><span role="columnheader">事项</span><span role="columnheader">位置 / 来源</span><span role="columnheader">状态</span><span role="columnheader">等待</span><span role="columnheader"></span></div>
-              <button class="table-row newly-read" type="button" role="row" data-event="sensor-emergency" data-queue-event="sensor-emergency" hidden><span><i class="dot danger"></i>紧急</span><span><b>温度与烟雾信号联动</b><small class="mono">SENSOR-EVENT-032</small></span><span>主操作台 · 模拟传感器</span><span><i class="status-label attention">待处置</i></span><time class="mono">00:18</time><span class="row-link">快速查看</span></button>
-              <button class="table-row newly-read" type="button" role="row" data-event="goggles-case" data-queue-event="goggles-case" hidden><span><i class="dot attention"></i>一般</span><span><b>护目镜缺失案件候选</b><small class="mono">LC-2026-0810-014</small></span><span>化学实验区 · CAM-301-A</span><span><i class="status-label attention">待人工确认</i></span><time class="mono">04:12</time><span class="row-link">快速查看</span></button>
-              <button class="table-row" type="button" role="row" data-route="case"><span><i class="dot neutral"></i>复核</span><span><b>倾倒动作证据不足</b><small class="mono">LC-2026-0810-012</small></span><span>准备区 · CAM-303-B</span><span><i class="status-label">待补证</i></span><time class="mono">12:09</time><span class="row-link">进入案件</span></button>
-              <button class="table-row" type="button" role="row" data-placeholder="积压详情"><span><i class="dot neutral"></i>积压</span><span><b>初审提供方不可用</b><small class="mono">BACKLOG-SCREENING-03</small></span><span>本地模拟提供方</span><span><i class="status-label">自动重试</i></span><time class="mono">02:31</time><span class="row-link">查看状态</span></button>
-            </div>
-          </section>
-        </div>
+      <div class="workbench-grid">
+        <section class="panel" aria-labelledby="queue-title">
+          <div class="panel-header"><div><h2 id="queue-title">待处理队列</h2><span>按风险与等待时间排序 · SIMULATED</span></div><button class="text-button" type="button" data-route="cases">查看案件中心</button></div>
+          <div class="data-table queue-table" role="table" aria-label="待处理事项">
+            <div class="table-row table-head" role="row"><span role="columnheader">级别</span><span role="columnheader">事项</span><span role="columnheader">位置 / 来源</span><span role="columnheader">状态</span><span role="columnheader">等待</span><span role="columnheader"></span></div>
+            <button class="table-row" type="button" role="row" data-event="goggles-case"><span><i class="dot attention"></i>一般</span><span><b>护目镜缺失案件候选</b><small class="mono">LC-2026-0810-014</small></span><span>化学实验区 · CAM-301-A</span><span><i class="status-label attention">待人工确认</i></span><time class="mono">04:12</time><span class="row-link">快速查看</span></button>
+            <button class="table-row" type="button" role="row" data-route="case"><span><i class="dot neutral"></i>复核</span><span><b>倾倒动作证据不足</b><small class="mono">LC-2026-0810-012</small></span><span>准备区 · CAM-303-B</span><span><i class="status-label">待补证</i></span><time class="mono">12:09</time><span class="row-link">进入案件</span></button>
+            <button class="table-row" type="button" role="row" data-placeholder="积压详情"><span><i class="dot neutral"></i>积压</span><span><b>初审提供方不可用</b><small class="mono">BACKLOG-SCREENING-03</small></span><span>本地模拟提供方</span><span><i class="status-label">自动重试</i></span><time class="mono">02:31</time><span class="row-link">查看状态</span></button>
+          </div>
+        </section>
 
-        <aside class="workbench-aside" aria-label="值守辅助信息">
-          <section><div class="aside-heading"><h2>系统状态</h2><button class="text-button" type="button" data-placeholder="刷新状态">刷新</button></div><p class="aside-lead"><i class="dot success"></i><b>本地预览运行正常</b></p><p>安全信号旁路 <span class="mono success-text">READY</span><br>语义初审 <span class="mono attention-text">DEGRADED</span></p></section>
-          <section><h2>设备与积压</h2><dl class="plain-metrics"><div><dt>视频机位</dt><dd class="mono">04 / 04</dd></div><div><dt>安全信号</dt><dd class="mono">11 / 12</dd></div><div><dt>离线维护</dt><dd class="mono">01</dd></div><div><dt>初审积压</dt><dd class="mono">01</dd></div></dl><p class="aside-note">温度探头 <span class="mono">TS-301-03</span> 处于模拟维护状态。</p></section>
-          <section><h2>最近动态</h2><ol class="plain-activity"><li><time class="mono">14:31:51</time><span><b>案件等待人工确认</b><small>AI 建议未直接执行</small></span></li><li><time class="mono">14:29:20</time><span><b>值班员模拟接单</b><small>未产生真实通知</small></span></li><li><time class="mono">14:25:08</time><span><b>探头进入维护</b><small class="mono">TS-301-03</small></span></li></ol></section>
-          <section><h2>预览边界</h2><p>页面仅使用模拟数据，不连接生产告警、权限、摄像头、传感器或通知通道。</p><p>不使用人脸识别或跨摄像头 ReID；AI 只提供结构化建议，不直接定责。</p></section>
+        <aside class="panel compact-panel" aria-labelledby="health-title">
+          <div class="panel-header"><div><h2 id="health-title">系统与设备</h2><span>仅用于预览界面层级</span></div><button class="icon-button" type="button" data-placeholder="刷新状态" aria-label="刷新模拟状态"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"></path></svg></button></div>
+          <dl class="health-list">
+            <div><dt><i class="dot success"></i>视频机位</dt><dd><b class="mono">04 / 04</b><small>在线</small></dd></div>
+            <div><dt><i class="dot success"></i>安全信号总线</dt><dd><b class="mono">11 / 12</b><small>1 项维护</small></dd></div>
+            <div><dt><i class="dot attention"></i>语义初审</dt><dd><b class="mono">DEGRADED</b><small>可转人工</small></dd></div>
+            <div><dt><i class="dot success"></i>告警旁路</dt><dd><b class="mono">READY</b><small>不依赖 VLM</small></dd></div>
+          </dl>
+          <div class="principle-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.8 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.7 7.5-9.5V6L12 3Z"></path><path d="M9 12h6"></path></svg><span><b>预览边界</b><small>不连接生产告警、权限、摄像头或传感器。</small></span></div>
         </aside>
       </div>
+
+      <section class="panel activity-panel" aria-labelledby="activity-title">
+        <div class="panel-header"><div><h2 id="activity-title">最近动态</h2><span>来自案件、设备与通知模块的模拟记录</span></div></div>
+        <ol class="activity-list">
+          <li><time class="mono">14:31:51</time><i class="dot attention"></i><span><b>案件 LC-2026-0810-014 等待人工确认</b><small>程序检查 6 / 6 通过；AI 建议未直接执行。</small></span></li>
+          <li><time class="mono">14:29:20</time><i class="dot success"></i><span><b>安全提醒已由值班员接单</b><small>低风险动作模拟完成；未产生真实通知。</small></span></li>
+          <li><time class="mono">14:25:08</time><i class="dot neutral"></i><span><b>温度探头 TS-301-03 进入维护状态</b><small>设备离线已显示在值守摘要中。</small></span></li>
+        </ol>
+      </section>
     </section>
 
     <section id="cameras-view" class="page-view" aria-labelledby="cameras-title" hidden>
@@ -155,9 +160,11 @@
     <section id="case-view" class="page-view" aria-labelledby="case-title" hidden>
       <nav class="page-breadcrumb" aria-label="案件位置"><a href="#/cases">案件中心</a><span>/</span><strong class="mono">LC-2026-0810-014</strong></nav>
       <header class="case-header">
-        <div><div class="title-line"><h1 id="case-title" tabindex="-1">护目镜缺失案件</h1><span class="status-label attention">等待人工确认</span><span class="preview-badge">SIMULATED</span></div><p class="mono">LC-2026-0810-014 · CAM-LAB-301-A · TRACK T-07</p><p class="case-axiom">AI 提议 · 确定性代码守门 · 人工拥有最终裁量权 · 仅展示结构化依据与证据引用</p></div>
+        <div><div class="title-line"><h1 id="case-title" tabindex="-1">护目镜缺失案件</h1><span class="status-label attention">等待人工确认</span><span class="preview-badge">SIMULATED</span></div><p class="mono">LC-2026-0810-014 · CAM-LAB-301-A · TRACK T-07</p></div>
         <div class="header-actions"><button class="button secondary" type="button" data-placeholder="退回补证">退回补证</button><button class="button primary wide-action" type="button" data-confirm-action="生成安全提醒">确认生成安全提醒</button><button class="icon-button" type="button" data-placeholder="更多案件操作" aria-label="更多案件操作"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg></button></div>
       </header>
+
+      <div class="case-principle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.8 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.7 7.5-9.5V6L12 3Z"></path><path d="m8.8 12 2.1 2.1 4.5-4.6"></path></svg><span><b>AI 提议，代码守门，人工拥有最终裁量权。</b><small>仅显示结构化依据、证据引用与裁决摘要；不展示隐藏思维链。</small></span></div>
 
       <div class="case-tabs" role="tablist" aria-label="案件详情栏目">
         <button id="tab-overview" type="button" role="tab" aria-selected="true" aria-controls="panel-overview" data-case-tab="overview">概览</button>
@@ -169,34 +176,20 @@
       </div>
 
       <section id="panel-overview" class="case-tab-panel" role="tabpanel" aria-labelledby="tab-overview" data-tab-panel="overview">
-        <section class="case-progress" aria-labelledby="pipeline-title">
-          <button id="pipeline-toggle" class="case-progress-toggle" type="button" aria-expanded="false" aria-controls="pipeline-details">
-            <span><span class="progress-kicker" id="pipeline-title">案件处理进度</span><strong><i class="dot attention"></i>已完成 6 / 8 · 当前程序检查</strong></span>
-            <span class="progress-rail" aria-hidden="true"><i></i></span>
-            <span class="progress-action">展开完整链路 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"></path></svg></span>
-          </button>
-          <div id="pipeline-details" class="pipeline-details" hidden>
-            <ol class="pipeline-steps">
+        <section class="pipeline-section" aria-labelledby="pipeline-title">
+          <div class="section-heading"><div><h2 id="pipeline-title">案件处理进度</h2><span>案件专属流程 · 当前处于人工确认</span></div><strong><i class="dot attention"></i> 6 / 8 已完成</strong></div>
+          <ol class="pipeline-steps">
             <li class="done"><span>01</span><b>原始画面</b><small>证据源</small></li><li class="done"><span>02</span><b>目标识别</b><small>候选触发</small></li><li class="done"><span>03</span><b>关键帧裁剪</b><small>隐私最小化</small></li><li class="done"><span>04</span><b>证据包</b><small>引用闭包</small></li><li class="done"><span>05</span><b>VLM 初审</b><small>结构化建议</small></li><li class="done"><span>06</span><b>控辩会审</b><small>反证核对</small></li><li class="active"><span>07</span><b>程序检查</b><small>代码守门</small></li><li><span>08</span><b>告警 / 通知</b><small>人工确认</small></li>
-            </ol>
-            <p>流程只展示结构化状态与引用，不展示模型隐藏思维链。第 08 步必须由人工明确确认。</p>
-          </div>
+          </ol>
         </section>
 
         <div class="case-layout">
           <div class="case-main-column">
             <section class="flat-section" aria-labelledby="facts-title"><div class="section-heading"><div><h2 id="facts-title">客观事实</h2><span>由确定性代码或持久证据提供</span></div><span class="integrity-label">引用闭包已校验</span></div><dl class="facts-grid"><div><dt>涉嫌区间</dt><dd class="mono">5.0 秒</dd><small>由帧号计算</small></div><div><dt>清晰裁切</dt><dd class="mono">3 / 3</dd><small>同一单机位轨迹</small></div><div><dt>区域</dt><dd>高风险区</dd><small class="mono">ZONE-CHEM-01</small></div><div><dt>身份信息</dt><dd>未采集</dd><small>无脸识别 / 无 ReID</small></div></dl></section>
 
-            <section class="flat-section evidence-priority-section" aria-labelledby="evidence-preview-title">
-              <div class="section-heading"><div><h2 id="evidence-preview-title">关键证据</h2><span>先判断证据是否充分 · 持久化隐私处理版本</span></div><button class="text-button" type="button" data-open-tab="evidence">查看证据包</button></div>
-              <div class="evidence-stage">
-                <article id="evidence-main" class="evidence-frame evidence-main scene scene-a" aria-live="polite"><span id="evidence-main-label" class="evidence-label">全景 · FRAME 45812</span><div id="evidence-main-visual" class="focus-outline wide"></div><small id="evidence-main-time" class="mono">14:31:43.833 · CROP-7A</small></article>
-                <div id="evidence-thumbnails" class="evidence-thumbnails" aria-label="切换关键证据"></div>
-              </div>
-              <div class="evidence-caption"><span class="integrity-label">引用闭包已校验</span><div><h3 id="evidence-caption-title">全景上下文建立区域与时序</h3><p id="evidence-caption-copy">显示匿名轨迹进入高风险区后的第一张清晰全景；身份信息未采集，轨迹只在当前机位与当前 tracker epoch 内有效。</p></div></div>
-            </section>
+            <section class="flat-section" aria-labelledby="evidence-preview-title"><div class="section-heading"><div><h2 id="evidence-preview-title">关键证据</h2><span>仅展示持久化的隐私处理版本</span></div><button class="text-button" type="button" data-open-tab="evidence">查看全部证据</button></div><div class="evidence-strip"><article class="evidence-frame scene scene-a"><span class="evidence-label">全景 · FRAME 45812</span><div class="focus-outline wide"></div><small class="mono">14:31:43.833</small></article><article class="evidence-frame crop-head"><span class="evidence-label">PPE 区域 · FRAME 45865</span><div class="abstract-head" aria-hidden="true"><i></i><b></b></div><small class="mono">OBS 0.84 · LOCAL</small></article><article class="evidence-frame crop-head alternate"><span class="evidence-label">时序反证 · FRAME 45910</span><div class="abstract-head" aria-hidden="true"><i></i><b></b></div><small class="mono">OBS 0.79 · LOCAL</small></article></div></section>
 
-            <section class="flat-section decision-section" aria-labelledby="review-title"><div class="section-heading"><div><h2 id="review-title">结构化会审摘要</h2><span>简洁理由与证据引用 · 非隐藏思维链</span></div><span class="status-label attention">建议生成安全提醒</span></div><div class="decision-narrative"><article><span>01 · 初审建议</span><h3>涉嫌区间内未发现明确佩戴证据。</h3><p>引用 <span class="mono">CROP-7A、CROP-91、CROP-B4</span>；这是一项结构化建议，不是自动定责。</p></article><article><span>02 · 辩方检查</span><h3>已检查镜片反光和头部遮挡。</h3><p>未发现足以推翻当前建议的清晰反证；反证检查结果与引用一并保留。</p></article><article><span>03 · 裁决摘要</span><h3>证据支持生成安全提醒，仍待人工确认。</h3><p>建议仅用于安全提醒，不作人员处分结论；确认动作需二次确认。</p></article></div></section>
+            <section class="flat-section" aria-labelledby="review-title"><div class="section-heading"><div><h2 id="review-title">结构化裁决摘要</h2><span>非隐藏思维链</span></div><span class="status-label attention">建议生成安全提醒</span></div><div class="review-table"><div><span>初审建议</span><p><b>涉嫌区间内未发现明确佩戴证据。</b><small>引用 CROP-7A、CROP-91、CROP-B4。</small></p></div><div><span>辩方检查</span><p><b>已检查镜片反光和头部遮挡。</b><small>未发现足以推翻当前建议的清晰反证。</small></p></div><div><span>裁决摘要</span><p><b>证据支持生成安全提醒，仍待人工确认。</b><small>不作人员处分结论。</small></p></div></div></section>
           </div>
 
           <aside class="case-side-column">

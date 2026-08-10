@@ -15,11 +15,6 @@ const PREVIEW_DATA = Object.freeze({
     { id: "goggles-case", category: "case", level: "一般 · 案件候选", title: "护目镜缺失候选", location: "匿名轨迹 T-07 · 高风险区", time: "14:31:48", detail: "AI 初审建议 · 尚未直接定责", signals: [] },
     { id: "soft-reminder", category: "resolved", level: "已化解 · 软提醒", title: "进入风险区后已补戴", location: "仅实时提醒 · 未建案、未落盘", time: "14:28:09", detail: "L0 预防路径 · 不形成问责记录", signals: [] },
   ],
-  evidence: {
-    context: { frameClass: "scene scene-a", frame: "45812", ref: "CROP-7A", thumbLabel: "全景上下文", label: "全景 · FRAME 45812", time: "14:31:43.833 · CROP-7A", title: "全景上下文建立区域与时序", copy: "显示匿名轨迹进入高风险区后的第一张清晰全景；身份信息未采集，轨迹只在当前机位与当前 tracker epoch 内有效。", visual: "focus" },
-    ppe: { frameClass: "crop-head", frame: "45865", ref: "CROP-91", thumbLabel: "PPE 区域", label: "PPE 区域 · FRAME 45865", time: "14:31:46.041 · CROP-91", title: "最小裁切用于检查护目镜佩戴状态", copy: "仅保留完成 PPE 检查所需的头部区域。该观察用于形成候选建议，不作为身份识别、客观计数或直接定责来源。", visual: "head" },
-    counter: { frameClass: "crop-head alternate", frame: "45910", ref: "CROP-B4", thumbLabel: "时序反证", label: "时序反证 · FRAME 45910", time: "14:31:48.125 · CROP-B4", title: "后续时刻用于寻找可能被忽略的反证", copy: "复核涉嫌区间末端是否出现清晰佩戴证据，并记录镜片反光与遮挡检查结果；当前仍需人工作最终判断。", visual: "head" },
-  },
 });
 
 const elements = {
@@ -42,22 +37,12 @@ const elements = {
   agentInput: $("#agent-input"),
   confirmDialog: $("#confirm-dialog"),
   confirmActionName: $("#confirm-action-name"),
-  pipelineToggle: $("#pipeline-toggle"),
-  pipelineDetails: $("#pipeline-details"),
-  evidenceMain: $("#evidence-main"),
-  evidenceThumbnails: $("#evidence-thumbnails"),
-  evidenceCaptionTitle: $("#evidence-caption-title"),
-  evidenceCaptionCopy: $("#evidence-caption-copy"),
-  newPendingCount: $("#new-pending-count"),
-  newPendingEmpty: $("#new-pending-empty"),
   toast: $("#toast"),
 };
 
 let currentCameraId = PREVIEW_DATA.cameras[0].id;
 let drawerReturnFocus = null;
-let pendingReadEvent = null;
 let toastTimer = null;
-const unreadEvents = new Set(["sensor-emergency", "goggles-case"]);
 
 const drawerViews = {
   "goggles-case": `
@@ -201,54 +186,9 @@ function renderEvents(filter = "all") {
     </button>`).join("") || '<div class="placeholder-page"><p>当前筛选下没有模拟事件。</p></div>';
 }
 
-function syncUnreadItems() {
-  $$('[data-new-event]').forEach((card) => { card.hidden = !unreadEvents.has(card.dataset.newEvent); });
-  $$('[data-queue-event]').forEach((row) => { row.hidden = unreadEvents.has(row.dataset.queueEvent); });
-  const count = unreadEvents.size;
-  elements.newPendingCount.textContent = `${count} NEW`;
-  elements.newPendingCount.hidden = count === 0;
-  elements.newPendingEmpty.hidden = count !== 0;
-}
-
-function markEventRead(eventName) {
-  if (!eventName || !unreadEvents.delete(eventName)) return null;
-  syncUnreadItems();
-  const queueRow = $(`[data-queue-event="${eventName}"]`);
-  showToast(`已查看新增事项，并入待处理队列 · ${eventName === "sensor-emergency" ? "模拟传感器事件" : "模拟案件候选"}`);
-  return queueRow;
-}
-
-function selectEvidence(evidenceId) {
-  const evidence = PREVIEW_DATA.evidence[evidenceId];
-  if (!evidence) return;
-  elements.evidenceMain.className = `evidence-frame evidence-main ${evidence.frameClass}`;
-  const visual = evidence.visual === "head"
-    ? '<div class="abstract-head" aria-hidden="true"><i></i><b></b></div>'
-    : '<div class="focus-outline wide" aria-hidden="true"></div>';
-  elements.evidenceMain.innerHTML = `<span class="evidence-label">${escapeHtml(evidence.label)}</span>${visual}<small class="mono">${escapeHtml(evidence.time)}</small>`;
-  elements.evidenceCaptionTitle.textContent = evidence.title;
-  elements.evidenceCaptionCopy.textContent = evidence.copy;
-  elements.evidenceThumbnails.innerHTML = Object.entries(PREVIEW_DATA.evidence)
-    .filter(([id]) => id !== evidenceId)
-    .map(([id, item]) => {
-      const thumbVisual = item.visual === "head"
-        ? '<i class="abstract-head" aria-hidden="true"><i></i><b></b></i>'
-        : '<i class="focus-outline wide" aria-hidden="true"></i>';
-      return `<button class="evidence-thumb" type="button" data-evidence-id="${escapeHtml(id)}"><span class="evidence-frame ${escapeHtml(item.frameClass)}"><span class="evidence-label">${escapeHtml(item.frame)}</span>${thumbVisual}</span><span><b>${escapeHtml(item.thumbLabel)}</b><small class="mono">${escapeHtml(item.ref)}</small></span></button>`;
-    }).join("");
-}
-
-function togglePipeline() {
-  const expanded = elements.pipelineToggle.getAttribute("aria-expanded") === "true";
-  elements.pipelineToggle.setAttribute("aria-expanded", String(!expanded));
-  elements.pipelineDetails.hidden = expanded;
-  $(".progress-action", elements.pipelineToggle).childNodes[0].textContent = expanded ? "展开完整链路 " : "收起完整链路 ";
-}
-
 function openDrawer(eventName, trigger = document.activeElement) {
   elements.drawerContent.innerHTML = drawerViews[eventName] || drawerViews["goggles-case"];
   drawerReturnFocus = trigger instanceof HTMLElement ? trigger : null;
-  pendingReadEvent = trigger instanceof HTMLElement ? trigger.dataset.newEvent || null : null;
   elements.drawerScrim.hidden = false;
   window.requestAnimationFrame(() => {
     elements.drawerScrim.classList.add("visible");
@@ -261,13 +201,11 @@ function openDrawer(eventName, trigger = document.activeElement) {
 
 function closeDrawer(returnFocus = true) {
   if (!elements.drawer.classList.contains("open") && elements.drawer.getAttribute("aria-hidden") === "true") return;
-  const queueFocus = markEventRead(pendingReadEvent);
-  pendingReadEvent = null;
   elements.drawer.classList.remove("open");
   elements.drawerScrim.classList.remove("visible");
   elements.drawer.setAttribute("aria-hidden", "true");
   window.setTimeout(() => { elements.drawerScrim.hidden = true; }, 190);
-  if (returnFocus) (queueFocus || drawerReturnFocus)?.focus();
+  if (returnFocus) drawerReturnFocus?.focus();
 }
 
 function setAgentOpen(open) {
@@ -345,8 +283,6 @@ function bindEvents() {
     if (target.dataset.confirmAction) showConfirmation(target.dataset.confirmAction);
     if (target.dataset.openTab) activateCaseTab(target.dataset.openTab, true);
     if (target.dataset.cameraId) selectCamera(target.dataset.cameraId);
-    if (target.dataset.evidenceId) selectEvidence(target.dataset.evidenceId);
-    if (target.id === "pipeline-toggle") togglePipeline();
   });
 
   $("#theme-toggle").addEventListener("click", () => {
@@ -387,8 +323,6 @@ function bindEvents() {
 initializeTheme();
 renderCameraThumbnails();
 renderEvents();
-syncUnreadItems();
-selectEvidence("context");
 bindEvents();
 updateClock();
 window.setInterval(updateClock, 1000);
