@@ -162,6 +162,10 @@ from labcourt.contracts.m8_knowledge import (
     M8KnowledgeCatalogAuthorityV1,
     M8KnowledgeQueryV1,
 )
+from labcourt.contracts.m8_knowledge_persistence import (
+    M8KnowledgeAnswerCommitReceiptV1,
+    M8KnowledgeCatalogCommitReceiptV1,
+)
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationChannelCapabilityAuthorityV1,
     M8NotificationDeliveryReceiptV1,
@@ -420,6 +424,7 @@ from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
+from labcourt.ports.m8_knowledge_repository import M8KnowledgeRepository
 from labcourt.ports.m8_notification_channel import M8NotificationChannelAdapter
 from labcourt.ports.m8_notification_repository import M8NotificationRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
@@ -480,6 +485,40 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8KnowledgeRepository: {
+        "publish_catalog": (
+            (
+                "self",
+                "catalog",
+                "raw_contents",
+                "expected_prior_revision",
+                "raw_storage_manifest_id",
+            ),
+            {
+                "catalog": M8KnowledgeCatalogAuthorityV1,
+                "raw_contents": tuple[bytes, ...],
+                "expected_prior_revision": int | None,
+                "raw_storage_manifest_id": str,
+                "return": M8KnowledgeCatalogCommitReceiptV1,
+            },
+        ),
+        "get_current_catalog": (
+            ("self", "catalog_id"),
+            {"catalog_id": str, "return": M8KnowledgeCatalogCommitReceiptV1},
+        ),
+        "read_content": (
+            ("self", "content_ref"),
+            {"content_ref": str, "return": bytes},
+        ),
+        "commit_answer": (
+            ("self", "answer"),
+            {"answer": M8KnowledgeAnswerV1, "return": M8KnowledgeAnswerCommitReceiptV1},
+        ),
+        "get_answer": (
+            ("self", "query_id"),
+            {"query_id": str, "return": M8KnowledgeAnswerCommitReceiptV1},
+        ),
+    },
     M8KnowledgeRetriever: {
         "catalog_authority": (
             ("self",),
