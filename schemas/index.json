@@ -1204,6 +1204,12 @@
       "name": "m8-actor-authority-v1"
     },
     {
+      "file": "m8-adapter-readiness-assessment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8AdapterReadinessAssessmentV1",
+      "name": "m8-adapter-readiness-assessment-v1"
+    },
+    {
       "file": "m8-api-case-transition-request-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_api.M8ApiCaseTransitionRequestV1",
@@ -1262,6 +1268,18 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_inventory_persistence.M8CampusTopologyCommitReceiptV1",
       "name": "m8-campus-topology-commit-receipt-v1"
+    },
+    {
+      "file": "m8-commissioning-evidence-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8CommissioningEvidenceAuthorityV1",
+      "name": "m8-commissioning-evidence-authority-v1"
+    },
+    {
+      "file": "m8-commissioning-evidence-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8CommissioningEvidenceCommitReceiptV1",
+      "name": "m8-commissioning-evidence-commit-receipt-v1"
     },
     {
       "file": "m8-knowledge-answer-commit-receipt-v1.schema.json",
@@ -1484,6 +1502,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_projection_views.M8OperationsProjectionViewV1",
       "name": "m8-operations-projection-view-v1"
+    },
+    {
+      "file": "m8-production-adapter-candidate-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8ProductionAdapterCandidateAuthorityV1",
+      "name": "m8-production-adapter-candidate-authority-v1"
     },
     {
       "file": "m8-projection-map-node-v1.schema.json",

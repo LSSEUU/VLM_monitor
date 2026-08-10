@@ -278,6 +278,12 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalCaseTransitionCommandV1,
 )
+from labcourt.contracts.m8_adapter_commissioning import (
+    M8AdapterReadinessAssessmentV1,
+    M8CommissioningEvidenceAuthorityV1,
+    M8CommissioningEvidenceCommitReceiptV1,
+    M8ProductionAdapterCandidateAuthorityV1,
+)
 from labcourt.contracts.m8_api import (
     M8ApiCaseTransitionRequestV1,
     M8ApiCredentialAuthorityV1,
@@ -661,6 +667,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m6-upgrade-sample-execution-record": M6UpgradeSampleExecutionRecord,
     "m6-upgrade-sample-execution-record-v2": M6UpgradeSampleExecutionRecordV2,
     "model-cache-entry": ModelCacheEntry,
+    "m8-adapter-readiness-assessment-v1": M8AdapterReadinessAssessmentV1,
     "m8-api-case-transition-request-v1": M8ApiCaseTransitionRequestV1,
     "m8-api-credential-authority-v1": M8ApiCredentialAuthorityV1,
     "m8-api-credential-catalog-authority-v1": M8ApiCredentialCatalogAuthorityV1,
@@ -670,6 +677,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
     "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,
+    "m8-commissioning-evidence-authority-v1": M8CommissioningEvidenceAuthorityV1,
+    "m8-commissioning-evidence-commit-receipt-v1": (M8CommissioningEvidenceCommitReceiptV1),
     "m8-knowledge-answer-v1": M8KnowledgeAnswerV1,
     "m8-knowledge-answer-commit-receipt-v1": M8KnowledgeAnswerCommitReceiptV1,
     "m8-knowledge-catalog-authority-v1": M8KnowledgeCatalogAuthorityV1,
@@ -713,6 +722,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-projection-map-node-v1": M8ProjectionMapNodeV1,
     "m8-projection-overview-v1": M8ProjectionOverviewV1,
     "m8-projection-source-v1": M8ProjectionSourceV1,
+    "m8-production-adapter-candidate-authority-v1": (M8ProductionAdapterCandidateAuthorityV1),
     "m8-sensor-adapter-capability-authority-v1": M8SensorAdapterCapabilityAuthorityV1,
     "m8-sensor-poll-request-v1": M8SensorPollRequestV1,
     "m8-sensor-poll-result-v1": M8SensorPollResultV1,
