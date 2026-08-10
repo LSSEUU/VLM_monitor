@@ -23,12 +23,14 @@ from labcourt.contracts.m8_adapter_commissioning import (
     M8CommissioningEvidenceAuthorityV1,
     M8CommissioningEvidenceKind,
     M8CommissioningEvidenceOutcome,
+    M8CommissioningReadiness,
     M8ExternalIdempotencyKey,
     M8ProductionAdapterCandidateAuthorityV1,
     M8ProductionAdapterKind,
 )
 from labcourt.contracts.m8_case_persistence import M8ActorAuthorityCommitReceiptV1
 from labcourt.exceptions import BudgetExceeded, ConcurrentModification, EvidenceMissing
+from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
 
 SHA_A = "a" * 64
 SHA_B = "b" * 64
@@ -93,17 +95,20 @@ def _evidence(
     *,
     kind: M8CommissioningEvidenceKind = M8CommissioningEvidenceKind.SAFETY_REVIEW,
     artifact: bytes = ARTIFACT,
+    outcome: M8CommissioningEvidenceOutcome = M8CommissioningEvidenceOutcome.PASSED,
+    reviewed_at: datetime = REVIEWED_AT,
+    ref_suffix: str = "",
 ) -> M8CommissioningEvidenceAuthorityV1:
     return M8CommissioningEvidenceAuthorityV1(
         candidate=candidate,
         evidence_kind=kind,
-        outcome=M8CommissioningEvidenceOutcome.PASSED,
-        artifact_ref=f"artifact-{kind.value.lower().replace('_', '-')}",
+        outcome=outcome,
+        artifact_ref=f"artifact-{kind.value.lower().replace('_', '-')}{ref_suffix}",
         artifact_sha256=hashlib.sha256(artifact).hexdigest(),
         artifact_size_bytes=len(artifact),
         reviewer_actor_receipt=reviewer,
-        reviewed_at=REVIEWED_AT,
-        valid_through=REVIEWED_AT + timedelta(days=30),
+        reviewed_at=reviewed_at,
+        valid_through=reviewed_at + timedelta(days=30),
         simulated=kind == M8CommissioningEvidenceKind.OFFLINE_FALLBACK_DRILL,
         evidence_manifest_id=SHA_C,
     )
@@ -286,3 +291,74 @@ def test_corrupt_raw_artifact_and_repository_manifest_fail_closed(
         connection.close()
     with pytest.raises(RepositoryIntegrityError, match="index conflicts"):
         repository.read_artifact(evidence.artifact_ref)
+
+
+def test_readiness_service_selects_latest_persisted_evidence_and_current_assessor(
+    repositories: tuple[
+        Path,
+        SQLiteM8OperationsRepository,
+        SQLiteM8AdapterCommissioningRepository,
+        M8ActorAuthorityCommitReceiptV1,
+        M8ActorAuthorityCommitReceiptV1,
+    ],
+) -> None:
+    _database, operations, repository, operations_receipt, safety_receipt = repositories
+    candidate = _candidate()
+    repository.register_candidate(candidate, operations_receipt.authority.actor_id)
+    service = M8AdapterReadinessService(repository, operations, SHA_D)
+
+    empty = service.assess(
+        candidate.candidate_authority_id,
+        operations_receipt.authority.actor_id,
+        REVIEWED_AT + timedelta(minutes=1),
+    )
+    assert empty.readiness == M8CommissioningReadiness.BLOCKED
+    assert empty.production_activation_permitted is False
+
+    for kind in M8CommissioningEvidenceKind:
+        reviewer = (
+            operations_receipt
+            if kind
+            in {
+                M8CommissioningEvidenceKind.LICENSE_REVIEW,
+                M8CommissioningEvidenceKind.OFFLINE_FALLBACK_DRILL,
+                M8CommissioningEvidenceKind.SECURITY_REVIEW,
+            }
+            else safety_receipt
+        )
+        repository.commit_evidence(_evidence(candidate, reviewer, kind=kind), ARTIFACT, SHA_B)
+    ready = service.assess(
+        candidate.candidate_authority_id,
+        operations_receipt.authority.actor_id,
+        REVIEWED_AT + timedelta(hours=1),
+    )
+    assert ready.readiness == M8CommissioningReadiness.READY_FOR_HUMAN_ACTIVATION
+    assert ready.production_activation_permitted is False
+
+    later_failed = _evidence(
+        candidate,
+        operations_receipt,
+        kind=M8CommissioningEvidenceKind.LICENSE_REVIEW,
+        outcome=M8CommissioningEvidenceOutcome.FAILED,
+        reviewed_at=REVIEWED_AT + timedelta(hours=2),
+        ref_suffix="-later",
+    )
+    repository.commit_evidence(later_failed, ARTIFACT, SHA_B)
+    blocked = service.assess(
+        candidate.candidate_authority_id,
+        operations_receipt.authority.actor_id,
+        REVIEWED_AT + timedelta(hours=3),
+    )
+    assert blocked.readiness == M8CommissioningReadiness.BLOCKED
+    assert blocked.failed_evidence_kinds == (M8CommissioningEvidenceKind.LICENSE_REVIEW,)
+
+    operations.publish_actor_authority(
+        _actor(M8ActorRole.OPERATIONS, revision=2, active=False),
+        1,
+    )
+    with pytest.raises(ConcurrentModification, match="not authorized"):
+        service.assess(
+            candidate.candidate_authority_id,
+            operations_receipt.authority.actor_id,
+            REVIEWED_AT + timedelta(hours=4),
+        )
