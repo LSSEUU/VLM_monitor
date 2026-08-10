@@ -16,9 +16,12 @@ M8 校园安全运营产品化现按
 [`docs/spec/labcourt-campus-operations-spec.md`](docs/spec/labcourt-campus-operations-spec.md)
 以 additive 方式推进，不修改上述冻结能力。M8.0–M8.5 的拓扑/来源、人员权限、案件状态流、
 离线传感器、SQLite 权威记录、本机 API、通知闭环与版本化知识库已经完成；M8.6 的只读运营投影、
-稳定读取、服务端角色裁剪和 authenticated loopback API 也已完成后端验收。独立 UI 任务可直接消费
+稳定读取、服务端角色裁剪和 authenticated loopback API 也已完成后端验收。M8.7a 已完成六类生产
+adapter 的准入契约、append-only commissioning evidence、可重算 readiness 与双人 activation intent；
+它只建立人工启用前的 fail-closed 边界，不会自动激活或发起外部调用。独立 UI 任务可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
-消防系统、身份平台、外部消息平台或公网生产部署已经就绪。
+消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
+[`docs/m8-production-adapter-intake.md`](docs/m8-production-adapter-intake.md)。
 
 ## 核心原则
 
