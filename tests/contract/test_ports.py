@@ -152,6 +152,14 @@ from labcourt.contracts.m8_case_persistence import (
     M8OperationalCaseAuditEventV1,
     M8OperationalCaseCommitReceiptV1,
 )
+from labcourt.contracts.m8_inventory_persistence import (
+    M8CampusTopologyCommitReceiptV1,
+    M8OperationalSourceCatalogCommitReceiptV1,
+)
+from labcourt.contracts.m8_operations import (
+    M8CampusTopologyAuthorityV1,
+    M8OperationalSourceCatalogAuthorityV1,
+)
 from labcourt.contracts.m8_sensor_signals import (
     M8SensorAdapterCapabilityAuthorityV1,
     M8SensorPollRequestV1,
@@ -381,6 +389,7 @@ from labcourt.ports.m6_upgrade_pending_sample_commitment import (
 from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
     M6UpgradeWholeSampleRecordBuilder,
 )
+from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
 from labcourt.ports.m8_sensors import M8SensorAdapter
 from labcourt.ports.model_response_artifacts import (
@@ -438,6 +447,36 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8InventoryRepository: {
+        "publish_topology": (
+            ("self", "topology", "expected_prior_revision"),
+            {
+                "topology": M8CampusTopologyAuthorityV1,
+                "expected_prior_revision": int | None,
+                "return": M8CampusTopologyCommitReceiptV1,
+            },
+        ),
+        "get_current_topology": (
+            ("self", "campus_id"),
+            {"campus_id": str, "return": M8CampusTopologyCommitReceiptV1},
+        ),
+        "publish_source_catalog": (
+            ("self", "catalog", "expected_prior_revision"),
+            {
+                "catalog": M8OperationalSourceCatalogAuthorityV1,
+                "expected_prior_revision": int | None,
+                "return": M8OperationalSourceCatalogCommitReceiptV1,
+            },
+        ),
+        "get_current_source_catalog": (
+            ("self", "campus_id"),
+            {"campus_id": str, "return": M8OperationalSourceCatalogCommitReceiptV1},
+        ),
+        "get_source_catalog": (
+            ("self", "catalog_id"),
+            {"catalog_id": str, "return": M8OperationalSourceCatalogCommitReceiptV1},
+        ),
+    },
     M8OperationsRepository: {
         "publish_actor_authority": (
             ("self", "authority", "expected_prior_revision"),
