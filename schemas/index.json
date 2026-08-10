@@ -1246,6 +1246,48 @@
       "name": "m8-operational-source-catalog-authority-v1"
     },
     {
+      "file": "m8-sensor-adapter-capability-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorAdapterCapabilityAuthorityV1",
+      "name": "m8-sensor-adapter-capability-authority-v1"
+    },
+    {
+      "file": "m8-sensor-poll-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorPollRequestV1",
+      "name": "m8-sensor-poll-request-v1"
+    },
+    {
+      "file": "m8-sensor-poll-result-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorPollResultV1",
+      "name": "m8-sensor-poll-result-v1"
+    },
+    {
+      "file": "m8-sensor-risk-assessment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorRiskAssessmentV1",
+      "name": "m8-sensor-risk-assessment-v1"
+    },
+    {
+      "file": "m8-sensor-risk-policy-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorRiskPolicyAuthorityV1",
+      "name": "m8-sensor-risk-policy-authority-v1"
+    },
+    {
+      "file": "m8-sensor-sample.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorSample",
+      "name": "m8-sensor-sample"
+    },
+    {
+      "file": "m8-simulated-sensor-scenario-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SimulatedSensorScenarioAuthorityV1",
+      "name": "m8-simulated-sensor-scenario-authority-v1"
+    },
+    {
       "file": "maintenance-recovery-report.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.model_response_recovery.MaintenanceRecoveryReport",

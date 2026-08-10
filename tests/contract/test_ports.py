@@ -142,6 +142,11 @@ from labcourt.contracts.m6_upgrade_pending_sample_commitment import (
     M6UpgradePendingSampleCommitmentAuthority,
 )
 from labcourt.contracts.m6_upgrade_physical import M6UpgradePhysicalArtifactRef
+from labcourt.contracts.m8_sensor_signals import (
+    M8SensorAdapterCapabilityAuthorityV1,
+    M8SensorPollRequestV1,
+    M8SensorPollResultV1,
+)
 from labcourt.contracts.manifests import (
     ModelManifest,
     RunManifest,
@@ -366,6 +371,7 @@ from labcourt.ports.m6_upgrade_pending_sample_commitment import (
 from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
     M6UpgradeWholeSampleRecordBuilder,
 )
+from labcourt.ports.m8_sensors import M8SensorAdapter
 from labcourt.ports.model_response_artifacts import (
     ModelResponseArtifactCandidate,
     ModelResponseArtifactFileOps,
@@ -421,6 +427,27 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8SensorAdapter: {
+        "capability_authority": (
+            ("self",),
+            {"return": M8SensorAdapterCapabilityAuthorityV1},
+        ),
+        "poll": (
+            ("self", "request"),
+            {
+                "request": M8SensorPollRequestV1,
+                "return": M8SensorPollResultV1,
+            },
+        ),
+        "replay": (
+            ("self", "request_id"),
+            {"request_id": str, "return": M8SensorPollResultV1},
+        ),
+        "read_raw_signal": (
+            ("self", "raw_signal_ref"),
+            {"raw_signal_ref": str, "return": bytes},
+        ),
+    },
     AutomaticPrecedentVerifier: {
         "rebuild": (
             ("self", "case", "manifest", "alert_authority", "created_at"),

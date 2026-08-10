@@ -284,6 +284,15 @@ from labcourt.contracts.m8_operations import (
     M8OperationalSource,
     M8OperationalSourceCatalogAuthorityV1,
 )
+from labcourt.contracts.m8_sensor_signals import (
+    M8SensorAdapterCapabilityAuthorityV1,
+    M8SensorPollRequestV1,
+    M8SensorPollResultV1,
+    M8SensorRiskAssessmentV1,
+    M8SensorRiskPolicyAuthorityV1,
+    M8SensorSample,
+    M8SimulatedSensorScenarioAuthorityV1,
+)
 from labcourt.contracts.manifests import RunManifest, StreamManifest
 from labcourt.contracts.model_call_failures import ModelCallFailureAuthority
 from labcourt.contracts.model_response_recovery import (
@@ -592,6 +601,13 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-operational-case-transition-command-v1": M8OperationalCaseTransitionCommandV1,
     "m8-operational-source": M8OperationalSource,
     "m8-operational-source-catalog-authority-v1": M8OperationalSourceCatalogAuthorityV1,
+    "m8-sensor-adapter-capability-authority-v1": M8SensorAdapterCapabilityAuthorityV1,
+    "m8-sensor-poll-request-v1": M8SensorPollRequestV1,
+    "m8-sensor-poll-result-v1": M8SensorPollResultV1,
+    "m8-sensor-risk-assessment-v1": M8SensorRiskAssessmentV1,
+    "m8-sensor-risk-policy-authority-v1": M8SensorRiskPolicyAuthorityV1,
+    "m8-sensor-sample": M8SensorSample,
+    "m8-simulated-sensor-scenario-authority-v1": M8SimulatedSensorScenarioAuthorityV1,
     "model-call-failure-authority": ModelCallFailureAuthority,
     "model-parse-receipt": ModelParseReceipt,
     "model-response-recovery-report": ModelResponseRecoveryReport,

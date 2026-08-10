@@ -105,6 +105,17 @@ Agent 可以生成有来源的摘要、建议收件人、催办计划和回复�
 WATER_LEAK / EMERGENCY_BUTTON`。每条样本必须有严格 typed value、设备/来源/位置、source sequence、
 时间基准、质量、完整性 hash、manifest 和原始信号引用。适配器不得用自由文本猜测类型或单位。
 
+M8.2 固定实现全部七类来源。布尔传感器只接受 strict boolean；数值传感器使用整数定点单位
+`MILLI_CELSIUS / MILLI_PERCENT_LFL / MILLI_PPM`，禁止二进制浮点和自由文本单位。live sample 只接受
+UTC device timestamp，模拟 sample 只接受 `simulation_tick`，不得用本机墙钟补齐。每个 sample 绑定
+source catalog、完整 source authority、source sequence、quality、raw signal 相对引用及其字节 SHA-256、
+adapter input authority 和 adapter manifest，并派生内容身份。
+
+默认离线 adapter 不访问网络/GPU，不 sleep，按冻结 scenario 的 simulation tick 分页；相同 poll
+request 返回相同缓存结果，并可按 request ID 重放和回读 raw JSON。风险策略是独立、版本化、typed
+rule authority，普通知识文档不能进入该路径。风险评估最多建议建立 `PENDING_VERIFICATION` 案件；
+M8.2 固定禁止生命安全联动、认证消防声明和直接纪律处分。
+
 ## 6. 知识库
 
 知识类型为制度、SOP、历史判例、应急预案、设备资料和问答。检索回答必须带文档来源、版本、
@@ -163,3 +174,19 @@ WATER_LEAK / EMERGENCY_BUTTON`。每条样本必须有严格 typed value、设�
   不执行持久化写入。
 - 新增 schema 不改变 M0–M6 既有 schema 字节；聚焦 contract、schema check、Ruff、Mypy 与架构门
   全部通过后才可进入 M8.2。
+
+## 11. M8.2 完成门
+
+- 七类 sensor 都有闭合 type/unit/value 矩阵，strict bool 与整数定点值不能互相冒充；模拟与 live
+  时间字段互斥，来源真实性、manifest、source sequence 和 raw 引用不可伪造。
+- sensor adapter capability 固定支持的 mode/type、batch/timeout 上限、网络要求、离线与确定性重放
+  声明；poll request 必须与 source adapter/manifest 精确一致。
+- poll result 绑定精确 request、稳定递增的 sample inventory 和内容 hash；raw signal bytes 可按引用
+  回读并通过 SHA-256 验证。
+- 默认离线 simulator 对七类 sensor 均可运行，同一 request 命中确定性内存缓存；未知 replay/raw、
+  capability graft 和 source graft 转成 typed failure。
+- 默认 smoke fixture 从 inactive 变为 active，active sample 产生显著标注的 `EMERGENCY` 运营候选，
+  但只能建议待核实建案，且 `life_safety_action_permitted=false`、
+  `certified_fire_detection_claim_permitted=false`、`direct_disciplinary_action_permitted=false`。
+- 新增 schema 不改变 M0–M6 既有 schema 字节；聚焦 contract/unit/port、schema check、Ruff、Mypy 与
+  架构门全部通过后才可进入 M8.3。
