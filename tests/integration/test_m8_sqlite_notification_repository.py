@@ -523,6 +523,13 @@ def test_notification_service_runs_offline_card_to_reply_without_changing_case(
     target = _target()
     service.publish_target(target, None)
     planned = service.create_notification(_plan(case, target))
+    overdue_at = planned.audit_event.notification_authority.plan.response_due_at + timedelta(
+        seconds=5
+    )
+    assessment = service.assess_escalation(planned.notification_id, overdue_at)
+    assert assessment.notification_plan_recommended is True
+    assert assessment.routing_roles == (M8ActorRole.SAFETY_OFFICER,)
+    assert service.list_escalation_candidates(overdue_at, 10) == (assessment,)
 
     queued = service.queue_as_system(
         planned.notification_id,
@@ -580,6 +587,7 @@ def test_notification_service_runs_offline_card_to_reply_without_changing_case(
     assert reply.case_transition_permitted is False
     assert notifications.read_raw_artifact(reply.raw_reply_ref) == raw_reply
     assert operations.get_current_operational_case(case.case_id) == case
+    assert service.list_escalation_candidates(overdue_at, 10) == ()
 
     reopened = SQLiteM8NotificationRepository(database, BUSY_TIMEOUT_MS, SHA_C)
     assert reopened.get_current_notification(planned.notification_id) == responded

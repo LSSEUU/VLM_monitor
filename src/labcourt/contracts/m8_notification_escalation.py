@@ -124,9 +124,8 @@ class M8NotificationEscalationAssessmentV1(FrozenContractModel):
     def routing_roles(self) -> tuple[M8ActorRole, ...]:
         if self.outcome != M8NotificationEscalationOutcome.OVERDUE:
             return ()
-        policy = (
-            self.source_notification.audit_event.notification_authority.plan.escalation_policy
-        )
+        authority = self.source_notification.audit_event.notification_authority
+        policy = authority.plan.escalation_policy
         return policy.escalation_roles
 
     @computed_field  # type: ignore[prop-decorator]

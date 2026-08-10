@@ -11,6 +11,10 @@ from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
     M8OfflineNotificationCardV1,
 )
+from labcourt.contracts.m8_notification_escalation import (
+    M8NotificationEscalationAssessmentV1,
+    M8NotificationEscalationOutcome,
+)
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationAction,
     M8NotificationDispatchRequestV1,
@@ -62,6 +66,49 @@ class M8NotificationService:
         plan: M8NotificationPlanAuthorityV1,
     ) -> M8NotificationCommitReceiptV1:
         return self._notifications.create_notification(plan, self._workflow.audit_manifest_id)
+
+    def assess_escalation(
+        self,
+        notification_id: str,
+        evaluated_at: datetime,
+    ) -> M8NotificationEscalationAssessmentV1:
+        current = self._notifications.get_current_notification(notification_id)
+        return M8NotificationEscalationAssessmentV1(
+            source_notification=current,
+            evaluated_at=evaluated_at,
+            evaluator_manifest_id=self._workflow.workflow_manifest_id,
+        )
+
+    def list_escalation_candidates(
+        self,
+        evaluated_at: datetime,
+        limit: int,
+    ) -> tuple[M8NotificationEscalationAssessmentV1, ...]:
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 1000:
+            raise ValueError("M8 notification escalation limit must be from 1 through 1000")
+        candidates: list[M8NotificationEscalationAssessmentV1] = []
+        for status in (
+            M8NotificationStatus.PLANNED,
+            M8NotificationStatus.QUEUED,
+            M8NotificationStatus.SENT,
+            M8NotificationStatus.DELIVERED,
+            M8NotificationStatus.FAILED,
+        ):
+            for current in self._notifications.list_notifications_by_status(status, limit):
+                assessment = M8NotificationEscalationAssessmentV1(
+                    source_notification=current,
+                    evaluated_at=evaluated_at,
+                    evaluator_manifest_id=self._workflow.workflow_manifest_id,
+                )
+                if assessment.outcome == M8NotificationEscalationOutcome.OVERDUE:
+                    candidates.append(assessment)
+        candidates.sort(
+            key=lambda item: (
+                item.response_due_at,
+                item.source_notification.notification_id,
+            )
+        )
+        return tuple(candidates[:limit])
 
     def queue_as_system(
         self,
