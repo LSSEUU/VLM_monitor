@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f8fa">
+  <meta name="description" content="LabCourt 校园实验室安全运营平台纯前端 UI 预览">
+  <title>LabCourt · 校园实验室安全运营平台 · PREVIEW</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+
+  <header class="site-header">
+    <div class="preview-ribbon" role="status">
+      <strong>PREVIEW</strong>
+      <span>全部画面、案件、传感器与通知均为模拟数据</span>
+      <b>SIMULATED DATA</b>
+    </div>
+
+    <div class="product-bar">
+      <a class="brand" href="#/workbench" aria-label="LabCourt 值守工作台">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="brand-copy"><strong>LabCourt</strong><small>校园实验室安全运营平台</small></span>
+      </a>
+
+      <div class="scope-picker" aria-label="当前值守范围">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2M10 21v-3h4v3"></path></svg>
+        <span>江北校区</span><i>/</i><span>理工实验楼</span><i>/</i><strong>三层化学实验区</strong>
+      </div>
+
+      <div class="product-actions">
+        <span class="system-state"><i aria-hidden="true"></i>本地预览正常</span>
+        <time id="live-clock" class="mono clock">--:--:--</time>
+        <button class="icon-hit" type="button" data-placeholder="全局搜索" aria-label="搜索预览内容">
+          <span class="icon-face"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></span>
+        </button>
+        <button id="agent-toggle" class="icon-hit" type="button" aria-label="打开通知 Agent" aria-controls="agent-panel" aria-expanded="false">
+          <span class="icon-face"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z"></path><path d="M8 9h8M8 13h5"></path></svg><b>1</b></span>
+        </button>
+        <button id="theme-toggle" class="icon-hit" type="button" aria-label="切换浅色或深色模式" aria-pressed="false">
+          <span class="icon-face">
+            <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path></svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.4A8 8 0 0 1 9.6 3.5 8.5 8.5 0 1 0 20.5 14.4Z"></path></svg>
+          </span>
+        </button>
+        <button class="icon-hit" type="button" aria-label="预览管理员账户" data-placeholder="账户菜单"><span class="avatar-face">管</span></button>
+      </div>
+    </div>
+
+    <div class="module-bar">
+      <nav class="module-nav" aria-label="主导航">
+        <a href="#/workbench" data-nav="workbench"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"></path></svg>值守工作台</a>
+        <a href="#/cameras" data-nav="cameras"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="14" height="14" rx="2"></rect><path d="m17 10 4-2v8l-4-2M7 9h6M7 13h4"></path></svg>摄像头墙</a>
+        <a href="#/cases" data-nav="cases"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5V3h8v2M4 7h16v13H4zM9 12h6M9 16h4"></path></svg>案件中心<span class="nav-count">3</span></a>
+        <a href="#/map" data-nav="map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6ZM9 3v15M15 6v15"></path></svg>校园地图</a>
+        <a href="#/knowledge" data-nav="knowledge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16ZM20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"></path></svg>知识库</a>
+      </nav>
+      <button class="settings-link" type="button" data-placeholder="系统设置"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l-2.83 2.83a1.7 1.7 0 0 0-1.88-.34A1.7 1.7 0 0 0 14 20.93V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.4a1.7 1.7 0 0 0-1.88.34l-2.83-2.83A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l2.83-2.83A1.7 1.7 0 0 0 8.97 4.6 1.7 1.7 0 0 0 10 3.08V3h4v.08a1.7 1.7 0 0 0 1.03 1.52 1.7 1.7 0 0 0 1.88-.34l2.83 2.83A1.7 1.7 0 0 0 19.4 9 1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"></path></svg>设置</button>
+    </div>
+  </header>
+
+  <main id="main-content" class="main-content" tabindex="-1">
+    <section id="workbench-view" class="page-view" aria-labelledby="workbench-title" hidden>
+      <header class="page-header">
+        <div><p class="eyebrow">OPERATIONS / SHIFT</p><h1 id="workbench-title" tabindex="-1">值守工作台</h1><p>汇总需要值班安全员立即判断或跟进的跨模块事项。</p></div>
+        <div class="header-actions">
+          <label class="select-control"><span class="sr-only">值守范围</span><select><option>三层化学实验区</option><option>理工实验楼</option><option>江北校区</option></select></label>
+          <button class="button secondary" type="button" data-placeholder="交接记录">查看交接记录</button>
+        </div>
+      </header>
+
+      <section class="summary-strip" aria-label="当前值守摘要">
+        <div><span>紧急事件</span><strong class="mono danger-text">01</strong><small>模拟传感器信号</small></div>
+        <div><span>待人工确认</span><strong class="mono attention-text">02</strong><small>最早等待 4 分钟</small></div>
+        <div><span>积压案件</span><strong class="mono">01</strong><small>VLM 初审不可用</small></div>
+        <div><span>离线设备</span><strong class="mono">01</strong><small>温度探头维护中</small></div>
+        <div><span>机位状态</span><strong class="mono success-text">04 / 04</strong><small>模拟机位全部在线</small></div>
+      </section>
+
+      <button class="urgent-row" type="button" data-event="sensor-emergency">
+        <span class="severity-mark danger" aria-hidden="true"></span>
+        <span class="urgent-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Z"></path><path d="M12 9v4M12 17h.01"></path></svg></span>
+        <span><b>紧急 · 温度与烟雾信号联动</b><small>化学实验区主操作台 · 可靠传感器路径演示 · 不依赖 VLM</small></span>
+        <span class="signal-values mono"><b>78.4°C</b><b>SMK 0.82</b></span>
+        <time class="mono">14:32:14</time>
+        <span class="row-link">查看处置卡 →</span>
+      </button>
+
+      <div class="workbench-grid">
+        <section class="panel" aria-labelledby="queue-title">
+          <div class="panel-header"><div><h2 id="queue-title">待处理队列</h2><span>按风险与等待时间排序 · SIMULATED</span></div><button class="text-button" type="button" data-route="cases">查看案件中心</button></div>
+          <div class="data-table queue-table" role="table" aria-label="待处理事项">
+            <div class="table-row table-head" role="row"><span role="columnheader">级别</span><span role="columnheader">事项</span><span role="columnheader">位置 / 来源</span><span role="columnheader">状态</span><span role="columnheader">等待</span><span role="columnheader"></span></div>
+            <button class="table-row" type="button" role="row" data-event="goggles-case"><span><i class="dot attention"></i>一般</span><span><b>护目镜缺失案件候选</b><small class="mono">LC-2026-0810-014</small></span><span>化学实验区 · CAM-301-A</span><span><i class="status-label attention">待人工确认</i></span><time class="mono">04:12</time><span class="row-link">快速查看</span></button>
+            <button class="table-row" type="button" role="row" data-route="case"><span><i class="dot neutral"></i>复核</span><span><b>倾倒动作证据不足</b><small class="mono">LC-2026-0810-012</small></span><span>准备区 · CAM-303-B</span><span><i class="status-label">待补证</i></span><time class="mono">12:09</time><span class="row-link">进入案件</span></button>
+            <button class="table-row" type="button" role="row" data-placeholder="积压详情"><span><i class="dot neutral"></i>积压</span><span><b>初审提供方不可用</b><small class="mono">BACKLOG-SCREENING-03</small></span><span>本地模拟提供方</span><span><i class="status-label">自动重试</i></span><time class="mono">02:31</time><span class="row-link">查看状态</span></button>
+          </div>
+        </section>
+
+        <aside class="panel compact-panel" aria-labelledby="health-title">
+          <div class="panel-header"><div><h2 id="health-title">系统与设备</h2><span>仅用于预览界面层级</span></div><button class="icon-button" type="button" data-placeholder="刷新状态" aria-label="刷新模拟状态"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"></path></svg></button></div>
+          <dl class="health-list">
+            <div><dt><i class="dot success"></i>视频机位</dt><dd><b class="mono">04 / 04</b><small>在线</small></dd></div>
+            <div><dt><i class="dot success"></i>安全信号总线</dt><dd><b class="mono">11 / 12</b><small>1 项维护</small></dd></div>
+            <div><dt><i class="dot attention"></i>语义初审</dt><dd><b class="mono">DEGRADED</b><small>可转人工</small></dd></div>
+            <div><dt><i class="dot success"></i>告警旁路</dt><dd><b class="mono">READY</b><small>不依赖 VLM</small></dd></div>
+          </dl>
+          <div class="principle-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.8 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.7 7.5-9.5V6L12 3Z"></path><path d="M9 12h6"></path></svg><span><b>预览边界</b><small>不连接生产告警、权限、摄像头或传感器。</small></span></div>
+        </aside>
+      </div>
+
+      <section class="panel activity-panel" aria-labelledby="activity-title">
+        <div class="panel-header"><div><h2 id="activity-title">最近动态</h2><span>来自案件、设备与通知模块的模拟记录</span></div></div>
+        <ol class="activity-list">
+          <li><time class="mono">14:31:51</time><i class="dot attention"></i><span><b>案件 LC-2026-0810-014 等待人工确认</b><small>程序检查 6 / 6 通过；AI 建议未直接执行。</small></span></li>
+          <li><time class="mono">14:29:20</time><i class="dot success"></i><span><b>安全提醒已由值班员接单</b><small>低风险动作模拟完成；未产生真实通知。</small></span></li>
+          <li><time class="mono">14:25:08</time><i class="dot neutral"></i><span><b>温度探头 TS-301-03 进入维护状态</b><small>设备离线已显示在值守摘要中。</small></span></li>
+        </ol>
+      </section>
+    </section>
+
+    <section id="cameras-view" class="page-view" aria-labelledby="cameras-title" hidden>
+      <header class="page-header">
+        <div><p class="eyebrow">LIVE / CAMERA WALL</p><h1 id="cameras-title" tabindex="-1">摄像头墙</h1><p>查看单一区域内的模拟机位、可靠传感器信号与实时事件。</p></div>
+        <div class="header-actions camera-filters">
+          <label class="select-control"><span class="sr-only">楼层</span><select><option>三层 · 化学实验区</option><option>二层 · 材料实验区</option></select></label>
+          <label class="select-control"><span class="sr-only">画面布局</span><select><option>主画面 + 3 机位</option><option>四宫格</option></select></label>
+          <button class="icon-button" type="button" data-placeholder="全屏预览" aria-label="全屏预览"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg></button>
+        </div>
+      </header>
+
+      <section class="camera-statusbar" aria-label="摄像头墙状态">
+        <span><i class="dot success"></i><b>4 路模拟机位在线</b></span><span class="mono">CAM GROUP · CHEM-3F</span><span>无真实人员 · 无人脸识别 · 无跨摄像头 ReID</span><span class="push-right"><b>事件</b> 3 条</span>
+      </section>
+
+      <div class="camera-layout">
+        <section class="camera-panel" aria-labelledby="camera-main-title">
+          <div class="panel-header camera-toolbar"><div><h2 id="camera-main-title">实验区实时画面</h2><span id="main-camera-meta" class="mono">CAM-LAB-301-A · 1080P · 24 FPS</span></div><div class="toolbar-actions"><button class="small-toggle active" type="button">目标框</button><button class="small-toggle" type="button" data-placeholder="区域叠加">区域</button></div></div>
+          <div class="camera-grid">
+            <article id="main-camera" class="main-camera scene scene-a" data-camera="CAM-LAB-301-A">
+              <div class="scene-architecture" aria-hidden="true"><span class="window-block w1"></span><span class="window-block w2"></span><span class="bench bench-a"></span><span class="bench bench-b"></span><span class="hood hood-a"></span><span class="hood hood-b"></span><span class="person-shape person-one"></span><span class="person-shape person-two"></span><span class="track-box"><b>T-07</b><small>单机位匿名轨迹</small></span><span class="zone-line"></span></div>
+              <div class="camera-overlay top"><span class="preview-badge">PREVIEW · SIMULATED</span><span><i class="live-pulse"></i>LIVE</span></div>
+              <div class="camera-overlay bottom"><div><strong id="main-camera-name">化学实验区 · 主操作台</strong><span id="main-camera-id" class="mono">CAM-LAB-301-A</span></div><time id="main-camera-time" class="mono">14:32:18.240</time></div>
+            </article>
+            <div id="camera-thumbnails" class="camera-thumbnails" aria-label="其他模拟机位"></div>
+          </div>
+          <div class="camera-footnote"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.8 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.7 7.5-9.5V6L12 3Z"></path><path d="M9 12h6"></path></svg>轨迹仅在当前机位、当前 tracker epoch 内有效</span><span>模拟画面 · 不构成真实安全性能证明</span></div>
+        </section>
+
+        <aside class="event-panel" aria-labelledby="event-title">
+          <div class="panel-header event-toolbar"><div><h2 id="event-title">实时事件</h2><span>最新在前 · SIMULATED</span></div><label class="select-control compact-select"><span class="sr-only">事件筛选</span><select id="event-filter"><option value="all">全部</option><option value="emergency">紧急</option><option value="case">案件候选</option></select></label></div>
+          <div id="event-list" class="event-list"></div>
+          <button class="panel-footer-link" type="button" data-placeholder="全部事件">查看全部事件 <span>→</span></button>
+        </aside>
+      </div>
+    </section>
+
+    <section id="case-view" class="page-view" aria-labelledby="case-title" hidden>
+      <nav class="page-breadcrumb" aria-label="案件位置"><a href="#/cases">案件中心</a><span>/</span><strong class="mono">LC-2026-0810-014</strong></nav>
+      <header class="case-header">
+        <div><div class="title-line"><h1 id="case-title" tabindex="-1">护目镜缺失案件</h1><span class="status-label attention">等待人工确认</span><span class="preview-badge">SIMULATED</span></div><p class="mono">LC-2026-0810-014 · CAM-LAB-301-A · TRACK T-07</p></div>
+        <div class="header-actions"><button class="button secondary" type="button" data-placeholder="退回补证">退回补证</button><button class="button primary wide-action" type="button" data-confirm-action="生成安全提醒">确认生成安全提醒</button><button class="icon-button" type="button" data-placeholder="更多案件操作" aria-label="更多案件操作"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg></button></div>
+      </header>
+
+      <div class="case-principle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.8 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.7 7.5-9.5V6L12 3Z"></path><path d="m8.8 12 2.1 2.1 4.5-4.6"></path></svg><span><b>AI 提议，代码守门，人工拥有最终裁量权。</b><small>仅显示结构化依据、证据引用与裁决摘要；不展示隐藏思维链。</small></span></div>
+
+      <div class="case-tabs" role="tablist" aria-label="案件详情栏目">
+        <button id="tab-overview" type="button" role="tab" aria-selected="true" aria-controls="panel-overview" data-case-tab="overview">概览</button>
+        <button id="tab-evidence" type="button" role="tab" aria-selected="false" aria-controls="panel-evidence" data-case-tab="evidence" tabindex="-1">证据 <span>3</span></button>
+        <button id="tab-hearing" type="button" role="tab" aria-selected="false" aria-controls="panel-hearing" data-case-tab="hearing" tabindex="-1">会审</button>
+        <button id="tab-procedure" type="button" role="tab" aria-selected="false" aria-controls="panel-procedure" data-case-tab="procedure" tabindex="-1">程序检查</button>
+        <button id="tab-notice" type="button" role="tab" aria-selected="false" aria-controls="panel-notice" data-case-tab="notice" tabindex="-1">通知与申诉</button>
+        <button id="tab-audit" type="button" role="tab" aria-selected="false" aria-controls="panel-audit" data-case-tab="audit" tabindex="-1">审计日志</button>
+      </div>
+
+      <section id="panel-overview" class="case-tab-panel" role="tabpanel" aria-labelledby="tab-overview" data-tab-panel="overview">
+        <section class="pipeline-section" aria-labelledby="pipeline-title">
+          <div class="section-heading"><div><h2 id="pipeline-title">案件处理进度</h2><span>案件专属流程 · 当前处于人工确认</span></div><strong><i class="dot attention"></i> 6 / 8 已完成</strong></div>
+          <ol class="pipeline-steps">
+            <li class="done"><span>01</span><b>原始画面</b><small>证据源</small></li><li class="done"><span>02</span><b>目标识别</b><small>候选触发</small></li><li class="done"><span>03</span><b>关键帧裁剪</b><small>隐私最小化</small></li><li class="done"><span>04</span><b>证据包</b><small>引用闭包</small></li><li class="done"><span>05</span><b>VLM 初审</b><small>结构化建议</small></li><li class="done"><span>06</span><b>控辩会审</b><small>反证核对</small></li><li class="active"><span>07</span><b>程序检查</b><small>代码守门</small></li><li><span>08</span><b>告警 / 通知</b><small>人工确认</small></li>
+          </ol>
+        </section>
+
+        <div class="case-layout">
+          <div class="case-main-column">
+            <section class="flat-section" aria-labelledby="facts-title"><div class="section-heading"><div><h2 id="facts-title">客观事实</h2><span>由确定性代码或持久证据提供</span></div><span class="integrity-label">引用闭包已校验</span></div><dl class="facts-grid"><div><dt>涉嫌区间</dt><dd class="mono">5.0 秒</dd><small>由帧号计算</small></div><div><dt>清晰裁切</dt><dd class="mono">3 / 3</dd><small>同一单机位轨迹</small></div><div><dt>区域</dt><dd>高风险区</dd><small class="mono">ZONE-CHEM-01</small></div><div><dt>身份信息</dt><dd>未采集</dd><small>无脸识别 / 无 ReID</small></div></dl></section>
+
+            <section class="flat-section" aria-labelledby="evidence-preview-title"><div class="section-heading"><div><h2 id="evidence-preview-title">关键证据</h2><span>仅展示持久化的隐私处理版本</span></div><button class="text-button" type="button" data-open-tab="evidence">查看全部证据</button></div><div class="evidence-strip"><article class="evidence-frame scene scene-a"><span class="evidence-label">全景 · FRAME 45812</span><div class="focus-outline wide"></div><small class="mono">14:31:43.833</small></article><article class="evidence-frame crop-head"><span class="evidence-label">PPE 区域 · FRAME 45865</span><div class="abstract-head" aria-hidden="true"><i></i><b></b></div><small class="mono">OBS 0.84 · LOCAL</small></article><article class="evidence-frame crop-head alternate"><span class="evidence-label">时序反证 · FRAME 45910</span><div class="abstract-head" aria-hidden="true"><i></i><b></b></div><small class="mono">OBS 0.79 · LOCAL</small></article></div></section>
+
+            <section class="flat-section" aria-labelledby="review-title"><div class="section-heading"><div><h2 id="review-title">结构化裁决摘要</h2><span>非隐藏思维链</span></div><span class="status-label attention">建议生成安全提醒</span></div><div class="review-table"><div><span>初审建议</span><p><b>涉嫌区间内未发现明确佩戴证据。</b><small>引用 CROP-7A、CROP-91、CROP-B4。</small></p></div><div><span>辩方检查</span><p><b>已检查镜片反光和头部遮挡。</b><small>未发现足以推翻当前建议的清晰反证。</small></p></div><div><span>裁决摘要</span><p><b>证据支持生成安全提醒，仍待人工确认。</b><small>不作人员处分结论。</small></p></div></div></section>
+          </div>
+
+          <aside class="case-side-column">
+            <section class="side-section"><h2>当前状态</h2><dl class="metadata-list"><div><dt>案件状态</dt><dd><span class="status-label attention">等待人工确认</span></dd></div><div><dt>告警等级</dt><dd>建议级</dd></div><div><dt>程序检查</dt><dd class="success-text">6 / 6 通过</dd></div><div><dt>申诉状态</dt><dd>尚未生成记录</dd></div></dl><button class="button primary wide-action full-width" type="button" data-confirm-action="生成安全提醒">确认生成安全提醒</button><button class="button secondary full-width" type="button" data-placeholder="退回补证">退回补充证据</button><small class="action-footnote">预览中不会产生真实通知或纪律动作。</small></section>
+            <section class="side-section"><div class="section-heading"><div><h2>制度引用</h2></div><button class="text-button" type="button" data-placeholder="知识库原文">查看来源</button></div><span class="source-kind">模拟制度</span><h3>《化学实验室个人防护示例规范》</h3><p>高风险化学操作区域应按区域要求佩戴护目镜。</p><dl class="metadata-list compact"><div><dt>条目</dt><dd class="mono">4.2</dd></div><div><dt>版本</dt><dd class="mono">v3.2</dd></div><div><dt>生效日期</dt><dd class="mono">2026-03-01</dd></div><div><dt>来源 ID</dt><dd class="mono">KB-PPE-004</dd></div></dl></section>
+            <section class="side-section"><h2>案件元数据</h2><dl class="metadata-list compact"><div><dt>创建来源</dt><dd>候选事件</dd></div><div><dt>证据类别</dt><dd class="mono">ABSENCE</dd></div><div><dt>轨迹范围</dt><dd>单机位 / 单 epoch</dd></div><div><dt>数据标识</dt><dd class="mono">SIMULATED</dd></div></dl></section>
+          </aside>
+        </div>
+      </section>
+
+      <section id="panel-evidence" class="case-tab-panel" role="tabpanel" aria-labelledby="tab-evidence" data-tab-panel="evidence" hidden><div class="tab-grid"><section class="flat-section"><div class="section-heading"><div><h2>证据包 · 3 个关键时刻</h2><span>隐私处理版本 · SIMULATED</span></div><span class="integrity-label">HASH VERIFIED</span></div><div class="evidence-detail-list"><div><div class="evidence-frame scene scene-a"><span class="evidence-label">FRAME 45812</span></div><dl><dt>全景上下文</dt><dd>进入高风险区后的第一张清晰全景。</dd><dd class="mono">14:31:43.833 · CROP-7A</dd></dl></div><div><div class="evidence-frame crop-head"><span class="evidence-label">FRAME 45865</span><div class="abstract-head"><i></i><b></b></div></div><dl><dt>PPE 头部裁切</dt><dd>用于判断护目镜佩戴状态的最小区域。</dd><dd class="mono">14:31:46.041 · CROP-91</dd></dl></div><div><div class="evidence-frame crop-head alternate"><span class="evidence-label">FRAME 45910</span><div class="abstract-head"><i></i><b></b></div></div><dl><dt>时序反证检查</dt><dd>检查涉嫌区间内是否存在被忽略的佩戴证据。</dd><dd class="mono">14:31:48.125 · CROP-B4</dd></dl></div></div></section><aside class="side-section"><h2>证据包校验</h2><ul class="check-list"><li><i>✓</i><span><b>3 个引用均存在</b><small>未发现断链工件</small></span></li><li><i>✓</i><span><b>裁切坐标有效</b><small>由确定性代码核对</small></span></li><li><i>✓</i><span><b>隐私版本一致</b><small class="mono">PPE_REDACTION_V2</small></span></li></ul></aside></div></section>
+
+      <section id="panel-hearing" class="case-tab-panel" role="tabpanel" aria-labelledby="tab-hearing" data-tab-panel="hearing" hidden><section class="flat-section"><div class="section-heading"><div><h2>控辩会审记录</h2><span>仅展示结构化主张、引用与简洁理由</span></div><span class="status-label">第 1 轮完成</span></div><div class="hearing-list"><article><span class="role-label prosecution">初审 / 控方</span><div><h3>涉嫌区间内未发现明确佩戴证据</h3><p>三张清晰裁切均标记为未佩戴候选。</p><small>引用：CROP-7A · CROP-91 · CROP-B4</small></div></article><article><span class="role-label defense">辩方检查</span><div><h3>要求排除镜片反光与头部遮挡</h3><p>重点复核 FRAME 45865 与 FRAME 45910。</p><small>辩点 DEF-01 已被裁决摘要回应</small></div></article><article><span class="role-label judge">裁决摘要</span><div><h3>支持生成安全提醒，仍待人工确认</h3><p>现有证据回应了反光与遮挡问题；不作人员处分结论。</p><small>适用模拟制度 KB-PPE-004</small></div></article></div></section></section>
+
+      <section id="panel-procedure" class="case-tab-panel" role="tabpanel" aria-labelledby="tab-procedure" data-tab-panel="procedure" hidden><section class="flat-section"><div class="section-heading"><div><h2>确定性程序检查</h2><span>纯代码守门 · 零模型自由裁量</span></div><span class="status-label success">6 / 6 通过</span></div><div class="procedure-table"><div><span class="mono">01</span><b>结构合规</b><p>字段、枚举和必填项有效。</p><i class="status-label success">通过</i></div><div><span class="mono">02</span><b>证据落地</b><p>3 个引用均存在且坐标合法。</p><i class="status-label success">通过</i></div><div><span class="mono">03</span><b>制度引用</b><p>版本、条目与生效日期匹配。</p><i class="status-label success">通过</i></div><div><span class="mono">04</span><b>逻辑一致</b><p>辩方反证已逐项回应。</p><i class="status-label success">通过</i></div><div><span class="mono">05</span><b>客观事实</b><p>帧号、区间与区域由代码核对。</p><i class="status-label success">通过</i></div><div><span class="mono">06</span><b>观测充分</b><p>3 张清晰时序裁切满足示例门槛。</p><i class="status-label success">通过</i></div></div></section></section>
+
+      <section id="panel-notice" class="case-tab-panel" role="tabpanel" aria-labelledby="tab-notice" data-tab-panel="notice" hidden><div class="tab-grid"><section class="flat-section"><div class="section-heading"><div><h2>通知与人工动作</h2><span>所有内容均为预览，不产生真实外部副作用</span></div></div><div class="notice-action-row"><div><span class="status-label attention">待确认</span><div><b>生成建议级安全提醒</b><small>接收对象：本区域值班安全员 · 模拟路由</small></div></div><button class="button primary wide-action" type="button" data-confirm-action="生成安全提醒">检查并确认</button></div><div class="notice-action-row"><div><span class="status-label">未开始</span><div><b>申诉流程</b><small>仅在案件结案且存在提醒记录后开放。</small></div></div><button class="button secondary" type="button" disabled>当前不可用</button></div></section><aside class="side-section"><h2>风险动作规则</h2><p>接单、到场等低风险动作可直接模拟执行；确认违规、撤销、结案等动作必须先显示系统解析结果，再进行二次确认。</p><button class="button secondary full-width" type="button" data-open-agent>打开通知 Agent</button></aside></div></section>
+
+      <section id="panel-audit" class="case-tab-panel" role="tabpanel" aria-labelledby="tab-audit" data-tab-panel="audit" hidden><section class="flat-section"><div class="section-heading"><div><h2>案件审计日志</h2><span>模拟记录 · 时间仅用于界面展示，案件时长仍以帧号为准</span></div></div><ol class="audit-list"><li><time class="mono">14:31:43.833</time><span class="audit-kind">EVENT</span><div><b>候选事件形成</b><small>缺失型窗口达到示例阈值。</small></div></li><li><time class="mono">14:31:44.128</time><span class="audit-kind">EVIDENCE</span><div><b>证据包引用闭包完成</b><small>3 个持久化裁切通过校验。</small></div></li><li><time class="mono">14:31:47.620</time><span class="audit-kind">MODEL</span><div><b>Fake VLM 初审完成</b><small>原始响应引用已记录；此页不展示隐藏思维链。</small></div></li><li><time class="mono">14:31:50.410</time><span class="audit-kind">GATE</span><div><b>程序检查 6 / 6 通过</b><small>案件进入人工确认。</small></div></li></ol></section></section>
+    </section>
+
+    <section id="placeholder-view" class="page-view" aria-labelledby="placeholder-title" hidden>
+      <div class="placeholder-page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"></path></svg><p class="eyebrow">PREVIEW SCOPE</p><h1 id="placeholder-title" tabindex="-1">模块预留</h1><p id="placeholder-copy">该模块将在逐页确认内容后继续打磨。</p><button class="button secondary" type="button" data-route="workbench">返回值守工作台</button></div>
+    </section>
+  </main>
+
+  <div id="drawer-scrim" class="scrim" hidden></div>
+  <aside id="event-drawer" class="drawer" aria-labelledby="drawer-title" aria-hidden="true">
+    <div class="drawer-header"><div><p class="eyebrow">QUICK EVENT</p><h2 id="drawer-title">事件快速查看</h2></div><button class="icon-button" type="button" data-close-drawer aria-label="关闭事件抽屉"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></div>
+    <div id="drawer-content" class="drawer-content"></div>
+  </aside>
+
+  <aside id="agent-panel" class="agent-panel" aria-labelledby="agent-title" aria-hidden="true">
+    <div class="agent-header"><div class="agent-mark">A</div><div><h2 id="agent-title">通知 Agent</h2><span><i class="dot success"></i>本地模拟会话</span></div><button class="icon-button" type="button" data-close-agent aria-label="关闭通知 Agent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></div>
+    <div id="agent-messages" class="agent-messages" aria-live="polite"><div class="agent-message"><small>通知 Agent · SIMULATED</small><p>护目镜案件正在等待人工确认。你可以回复“已接单”，或要求我生成明确的高风险动作卡。</p><span>未连接企业微信、钉钉或生产告警。</span></div></div>
+    <form id="agent-form" class="agent-form"><label class="sr-only" for="agent-input">回复通知 Agent</label><input id="agent-input" autocomplete="off" placeholder="回复，例如：已接单"><button type="submit" aria-label="发送模拟回复"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7Z"></path><path d="M22 2 11 13"></path></svg></button></form>
+  </aside>
+
+  <dialog id="confirm-dialog" class="confirm-dialog">
+    <form method="dialog"><div class="dialog-icon" aria-hidden="true">!</div><p class="eyebrow">EXPLICIT CONFIRMATION</p><h2>确认模拟动作</h2><p>系统已把自然语言或页面操作解析为明确动作。请核对后再继续。</p><dl class="dialog-summary"><div><dt>动作</dt><dd id="confirm-action-name">生成安全提醒</dd></div><div><dt>对象</dt><dd class="mono">LC-2026-0810-014</dd></div><div><dt>影响</dt><dd>仅更新纯前端模拟状态</dd></div></dl><p class="dialog-warning">PREVIEW · 不会发送真实通知、确认违规或关闭案件</p><div class="dialog-actions"><button class="button secondary" type="submit" value="cancel">取消</button><button class="button primary wide-action" type="submit" value="confirm">确认模拟执行</button></div></form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
