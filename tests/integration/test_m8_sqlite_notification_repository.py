@@ -7,6 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from labcourt.adapters.m8_offline_feishu_conformance_adapter import (
+    DeterministicOfflineFeishuConformanceAdapter,
+)
 from labcourt.adapters.m8_offline_notification_channel import (
     DeterministicOfflineNotificationChannel,
 )
@@ -26,7 +29,17 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalRiskLevel,
 )
+from labcourt.contracts.m8_adapter_commissioning import (
+    M8ExternalIdempotencyKey,
+    M8ProductionAdapterCandidateAuthorityV1,
+    M8ProductionAdapterKind,
+)
 from labcourt.contracts.m8_case_persistence import M8OperationalCaseCommitReceiptV1
+from labcourt.contracts.m8_feishu_notification import (
+    M8FeishuAdapterProfileV1,
+    M8FeishuConformanceOutcome,
+    M8FeishuRecipientBindingAuthorityV1,
+)
 from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
 )
@@ -55,6 +68,7 @@ from labcourt.contracts.m8_notifications import (
     M8NotificationTemplateAuthorityV1,
 )
 from labcourt.exceptions import ConcurrentModification
+from labcourt.services.m8_feishu_preflight import M8FeishuPreflightService
 from labcourt.services.m8_notifications import M8NotificationService
 
 SHA_A = "a" * 64
@@ -105,12 +119,21 @@ def _create_command() -> M8OperationalCaseCreateCommandV1:
     )
 
 
-def _target(*, revision: int = 1, active: bool = True) -> M8NotificationTargetAuthorityV1:
+def _target(
+    *,
+    revision: int = 1,
+    active: bool = True,
+    channel: M8NotificationChannelKind = M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,
+) -> M8NotificationTargetAuthorityV1:
     return M8NotificationTargetAuthorityV1(
         actor_id="student-01",
-        identity_provider_id="labcourt-local-fake",
+        identity_provider_id=(
+            "labcourt-local-fake"
+            if channel == M8NotificationChannelKind.LOCAL_OFFLINE_FAKE
+            else "campus-idp"
+        ),
         external_subject_binding_sha256=SHA_A,
-        channel=M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,
+        channel=channel,
         authority_revision=revision,
         active=active,
         inbound_response_supported=True,
@@ -144,7 +167,7 @@ def _plan(
             effective_at=BASE_TIME - timedelta(days=1),
             content_document_sha256=SHA_B,
             allowed_purposes=(M8NotificationPurpose.CASE_CREATED,),
-            allowed_channels=(M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,),
+            allowed_channels=(target.channel,),
             manifest_id=SHA_C,
         ),
         escalation_policy=M8NotificationEscalationPolicyAuthorityV1(
@@ -193,6 +216,33 @@ def _workflow() -> M8NotificationWorkflowManifestAuthorityV1:
         raw_storage_manifest_id=SHA_D,
         audit_manifest_id=SHA_E,
         workflow_manifest_id="f" * 64,
+    )
+
+
+def _feishu_profile() -> M8FeishuAdapterProfileV1:
+    candidate = M8ProductionAdapterCandidateAuthorityV1(
+        adapter_id="m8-feishu-tenant-app",
+        adapter_revision="im-v1-2026-04-10",
+        adapter_kind=M8ProductionAdapterKind.EXTERNAL_NOTIFICATION,
+        provider_id="feishu-open-platform",
+        product_revision="tenant-custom-app-im-v1",
+        campus_id="campus-main",
+        scope_kind=M8ActorScopeKind.CAMPUS_WIDE,
+        scope_location_ids=(),
+        declared_license_id="feishu-open-platform-terms-review",
+        request_timeout_ms=5_000,
+        idempotency_key=M8ExternalIdempotencyKey.NOTIFICATION_ID,
+        network_required=True,
+        offline_fallback_adapter_id="m8-local-message-fake",
+        offline_fallback_revision="v1",
+        adapter_manifest_id=SHA_D,
+        offline_fallback_manifest_id=SHA_E,
+    )
+    return M8FeishuAdapterProfileV1(
+        candidate=candidate,
+        credential_bundle_reference_id="secret-feishu-campus-main",
+        app_id_sha256=SHA_B,
+        profile_manifest_id=SHA_C,
     )
 
 
@@ -656,3 +706,57 @@ def test_notification_service_requires_safety_actor_when_send_policy_requires_hu
     assert command is not None
     assert command.actor_authority == safety
     assert command.explicit_human_confirmation is True
+
+
+def test_feishu_preflight_reads_current_sqlite_outbox_without_marking_sent(
+    tmp_path: Path,
+) -> None:
+    operations, notifications, _database = _repositories(tmp_path)
+    student = _student()
+    operations.publish_actor_authority(student, None)
+    case = operations.create_operational_case(
+        _create_command(),
+        student.actor_id,
+        SHA_D,
+        SHA_E,
+    )
+    target = _target(channel=M8NotificationChannelKind.FEISHU)
+    notifications.publish_target_authority(target, None)
+    planned = notifications.create_notification(_plan(case, target), SHA_E)
+    queued = notifications.transition_notification(
+        _queue(planned),
+        (),
+        SHA_D,
+        SHA_E,
+    )
+    profile = _feishu_profile()
+    binding = M8FeishuRecipientBindingAuthorityV1(
+        target=target,
+        profile_id=profile.profile_id,
+        receive_id_reference="feishu-open-id-student-01",
+        receive_id_sha256=target.external_subject_binding_sha256,
+        mapping_revision=1,
+        active=True,
+        mapping_manifest_id=SHA_C,
+    )
+    adapter = DeterministicOfflineFeishuConformanceAdapter(
+        profile,
+        M8FeishuConformanceOutcome.SUCCESS,
+        SHA_D,
+    )
+    service = M8FeishuPreflightService(notifications, adapter, _workflow(), SHA_E)
+    result = service.conform(queued.notification_id, binding)
+
+    assert result.preflight.notification_request.source_notification_authority_sha256 == (
+        queued.notification_document_sha256
+    )
+    assert result.preflight.recipient_binding == binding
+    assert result.provider_acceptance_simulated is True
+    assert result.real_send_confirmed is False
+    assert result.notification_transition_permitted is False
+    raw = service.read_raw_response(result.raw_response_ref)
+    assert hashlib.sha256(raw).hexdigest() == result.raw_response_sha256
+    assert b'"simulated":true' in raw
+    assert notifications.get_current_notification(queued.notification_id) == queued
+    assert queued.status == M8NotificationStatus.QUEUED
+    assert queued.raw_artifact_receipts == ()

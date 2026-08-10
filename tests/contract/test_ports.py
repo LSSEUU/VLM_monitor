@@ -159,6 +159,11 @@ from labcourt.contracts.m8_case_persistence import (
     M8OperationalCaseAuditEventV1,
     M8OperationalCaseCommitReceiptV1,
 )
+from labcourt.contracts.m8_feishu_notification import (
+    M8FeishuAdapterProfileV1,
+    M8FeishuCardDispatchPreflightV1,
+    M8FeishuConformanceResultV1,
+)
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
@@ -432,6 +437,7 @@ from labcourt.ports.m8_adapter_commissioning_repository import (
     M8AdapterCommissioningRepository,
 )
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
+from labcourt.ports.m8_feishu_notification_adapter import M8FeishuConformanceAdapter
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
 from labcourt.ports.m8_knowledge_repository import M8KnowledgeRepository
@@ -496,6 +502,28 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8FeishuConformanceAdapter: {
+        "profile_authority": (
+            ("self",),
+            {"return": M8FeishuAdapterProfileV1},
+        ),
+        "conform": (
+            ("self", "preflight", "rendered_card"),
+            {
+                "preflight": M8FeishuCardDispatchPreflightV1,
+                "rendered_card": bytes,
+                "return": M8FeishuConformanceResultV1,
+            },
+        ),
+        "replay": (
+            ("self", "preflight_id"),
+            {"preflight_id": str, "return": M8FeishuConformanceResultV1},
+        ),
+        "read_raw_response": (
+            ("self", "raw_response_ref"),
+            {"raw_response_ref": str, "return": bytes},
+        ),
+    },
     M8AdapterCommissioningRepository: {
         "register_candidate": (
             ("self", "candidate", "registrar_actor_id"),

@@ -300,6 +300,13 @@ from labcourt.contracts.m8_case_persistence import (
     M8OperationalCaseAuthorityV1,
     M8OperationalCaseCommitReceiptV1,
 )
+from labcourt.contracts.m8_feishu_notification import (
+    M8FeishuAdapterProfileV1,
+    M8FeishuCardDispatchPreflightV1,
+    M8FeishuConformanceResultV1,
+    M8FeishuNotificationCardV1,
+    M8FeishuRecipientBindingAuthorityV1,
+)
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
@@ -682,6 +689,11 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,
     "m8-commissioning-evidence-authority-v1": M8CommissioningEvidenceAuthorityV1,
     "m8-commissioning-evidence-commit-receipt-v1": (M8CommissioningEvidenceCommitReceiptV1),
+    "m8-feishu-adapter-profile-v1": M8FeishuAdapterProfileV1,
+    "m8-feishu-card-dispatch-preflight-v1": M8FeishuCardDispatchPreflightV1,
+    "m8-feishu-conformance-result-v1": M8FeishuConformanceResultV1,
+    "m8-feishu-notification-card-v1": M8FeishuNotificationCardV1,
+    "m8-feishu-recipient-binding-authority-v1": M8FeishuRecipientBindingAuthorityV1,
     "m8-knowledge-answer-v1": M8KnowledgeAnswerV1,
     "m8-knowledge-answer-commit-receipt-v1": M8KnowledgeAnswerCommitReceiptV1,
     "m8-knowledge-catalog-authority-v1": M8KnowledgeCatalogAuthorityV1,

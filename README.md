@@ -20,7 +20,9 @@ M8 校园安全运营产品化现按
 adapter 的准入契约、append-only commissioning evidence、可重算 readiness 与双人 activation intent；
 它只建立人工启用前的 fail-closed 边界，不会自动激活或发起外部调用。M8.7b 另以
 `GET /api/m8/adapter-candidates/{candidate_authority_id}/readiness` 向当前运维角色提供服务端时点的
-只读准入状态，不返回原始评审工件或凭据。独立 UI 任务可直接消费
+只读准入状态，不返回原始评审工件或凭据。M8.7c 已选择飞书企业自建应用并完成厂商专用卡片、
+`open_id` binding、`uuid` 去重、typed failure/raw response 与 SQLite outbox 的全离线 preflight；模拟
+provider 接受不会把通知推进到 `SENT`。独立 UI 任务可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
 [`docs/m8-production-adapter-intake.md`](docs/m8-production-adapter-intake.md)。

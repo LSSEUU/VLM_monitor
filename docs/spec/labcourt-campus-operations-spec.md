@@ -149,6 +149,13 @@ M8.2 固定禁止生命安全联动、认证消防声明和直接纪律处分。
 8. **M8.7 真实适配器与现场验证**：RTSP、物理传感器、OIDC、消息平台、监控/灾备；每项必须有
    许可证/安全评审、现场证据和可回退的离线 fake。
 
+M8.7 首接消息平台选择飞书企业自建应用。发送边界固定使用应用身份 `tenant_access_token`、
+`POST /open-apis/im/v1/messages?receive_id_type=open_id`、`msg_type=interactive` 和 provider `uuid`；
+`uuid` 从 LabCourt notification ID 确定性派生且不超过 50 字符。首个子切片只生成厂商专用 preflight
+authority 与显著模拟的离线 conformance response，不读取 app secret、不获取 token、不访问网络，且
+不能生成可提交到通知状态机的真实发送结果。只有 provider-specific contract、commissioning、双人
+activation、secret-store runtime binding 和真实沙箱证据全部通过后，才可增加实际 HTTP transport。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

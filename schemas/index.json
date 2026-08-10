@@ -1288,6 +1288,36 @@
       "name": "m8-commissioning-evidence-commit-receipt-v1"
     },
     {
+      "file": "m8-feishu-adapter-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuAdapterProfileV1",
+      "name": "m8-feishu-adapter-profile-v1"
+    },
+    {
+      "file": "m8-feishu-card-dispatch-preflight-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuCardDispatchPreflightV1",
+      "name": "m8-feishu-card-dispatch-preflight-v1"
+    },
+    {
+      "file": "m8-feishu-conformance-result-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuConformanceResultV1",
+      "name": "m8-feishu-conformance-result-v1"
+    },
+    {
+      "file": "m8-feishu-notification-card-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuNotificationCardV1",
+      "name": "m8-feishu-notification-card-v1"
+    },
+    {
+      "file": "m8-feishu-recipient-binding-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuRecipientBindingAuthorityV1",
+      "name": "m8-feishu-recipient-binding-authority-v1"
+    },
+    {
       "file": "m8-knowledge-answer-commit-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeAnswerCommitReceiptV1",
