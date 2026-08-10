@@ -1480,6 +1480,12 @@
       "name": "m8-operations-projection-v1"
     },
     {
+      "file": "m8-operations-projection-view-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projection_views.M8OperationsProjectionViewV1",
+      "name": "m8-operations-projection-view-v1"
+    },
+    {
       "file": "m8-projection-map-node-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_projections.M8ProjectionMapNodeV1",

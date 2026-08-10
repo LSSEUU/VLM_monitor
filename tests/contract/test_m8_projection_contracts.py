@@ -4,7 +4,11 @@ import pytest
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ValidationError
 
+from labcourt.application.m8_projection_view_workflow import build_operations_projection_view
 from labcourt.contracts.m8_access_cases import (
+    M8ActorAuthorityV1,
+    M8ActorRole,
+    M8ActorScopeKind,
     M8AuthorityReference,
     M8AuthorityReferenceKind,
     M8OperationalCaseCreateCommandV1,
@@ -13,6 +17,7 @@ from labcourt.contracts.m8_access_cases import (
 )
 from labcourt.contracts.m8_case_persistence import (
     M8_AUDIT_GENESIS_SHA256,
+    M8ActorAuthorityCommitReceiptV1,
     M8OperationalCaseAuditEventV1,
     M8OperationalCaseAuthorityV1,
     M8OperationalCaseCommitReceiptV1,
@@ -29,6 +34,10 @@ from labcourt.contracts.m8_operations import (
     M8OperationalSourceCatalogAuthorityV1,
     M8OperationalSourceMode,
     M8SensorType,
+)
+from labcourt.contracts.m8_projection_views import (
+    M8OperationsProjectionViewV1,
+    M8ProjectionViewKind,
 )
 from labcourt.contracts.m8_projections import (
     M8OperationsProjectionV1,
@@ -116,11 +125,12 @@ def _case(
     catalog_id: str,
     *,
     source_id: str = "sensor-simulated-smoke-01",
+    risk_level: M8OperationalRiskLevel = M8OperationalRiskLevel.EMERGENCY,
 ) -> M8OperationalCaseCommitReceiptV1:
     command = M8OperationalCaseCreateCommandV1(
         source_catalog_id=catalog_id,
         location_id="room-chem-301",
-        risk_level=M8OperationalRiskLevel.EMERGENCY,
+        risk_level=risk_level,
         policy_rule_id="simulated-smoke-active-emergency-v1",
         policy_manifest_id=SHA_A,
         source_ids=(source_id,),
@@ -170,6 +180,33 @@ def _projection(*, include_case: bool = True) -> M8OperationsProjectionV1:
     )
 
 
+def _actor_receipt(role: M8ActorRole) -> M8ActorAuthorityCommitReceiptV1:
+    if role == M8ActorRole.STUDENT:
+        scope = M8ActorScopeKind.SELF_ONLY
+        locations: tuple[str, ...] = ()
+    elif role == M8ActorRole.SAFETY_OFFICER:
+        scope = M8ActorScopeKind.LOCATIONS
+        locations = ("room-chem-301",)
+    else:
+        scope = M8ActorScopeKind.CAMPUS_WIDE
+        locations = ()
+    actor = M8ActorAuthorityV1(
+        actor_id=f"{role.value.lower()}-01",
+        role=role,
+        scope_kind=scope,
+        scope_location_ids=locations,
+        identity_provider_id="campus-idp",
+        subject_binding_sha256=SHA_A,
+        authority_revision=1,
+        active=True,
+        manifest_id=SHA_B,
+    )
+    return M8ActorAuthorityCommitReceiptV1(
+        authority=actor,
+        repository_manifest_id=SHA_C,
+    )
+
+
 def test_projection_derives_truthful_overview_map_and_source_state() -> None:
     projection = _projection()
     source = projection.sources[0]
@@ -203,6 +240,107 @@ def test_projection_rejects_incomplete_audit_and_cross_catalog_cases() -> None:
         )
 
 
+def test_projection_view_enforces_closed_role_scope_and_read_only_flags() -> None:
+    projection = _projection()
+    leader = M8OperationsProjectionViewV1(
+        viewer_actor_receipt=_actor_receipt(M8ActorRole.LEADER),
+        source_projection_id=projection.projection_id,
+        visible_projection=projection,
+    )
+    assert leader.view_kind == M8ProjectionViewKind.LEADER_GLOBAL_MAJOR
+    assert leader.projection_write_permitted is False
+    assert leader.case_action_permitted is False
+    assert leader.direct_disciplinary_action_permitted is False
+
+    operations_projection = _projection(include_case=False)
+    operations = M8OperationsProjectionViewV1(
+        viewer_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
+        source_projection_id=projection.projection_id,
+        visible_projection=operations_projection,
+    )
+    assert operations.view_kind == M8ProjectionViewKind.OPERATIONS_DEVICES
+
+    with pytest.raises(ValidationError, match="students cannot access"):
+        M8OperationsProjectionViewV1(
+            viewer_actor_receipt=_actor_receipt(M8ActorRole.STUDENT),
+            source_projection_id=projection.projection_id,
+            visible_projection=projection,
+        )
+
+
+def test_projection_view_rejects_leader_general_case_and_operations_case_graft() -> None:
+    projection = _projection()
+    general = _case(
+        projection.source_catalog_receipt.catalog.catalog_id,
+        risk_level=M8OperationalRiskLevel.GENERAL,
+    )
+    general_projection = projection.model_copy(
+        update={
+            "current_cases": (general,),
+            "case_audit_events": (general.audit_event,),
+        }
+    )
+    with pytest.raises(ValidationError, match="only major Cases"):
+        M8OperationsProjectionViewV1(
+            viewer_actor_receipt=_actor_receipt(M8ActorRole.LEADER),
+            source_projection_id=projection.projection_id,
+            visible_projection=general_projection,
+        )
+    with pytest.raises(ValidationError, match="cannot expose Case"):
+        M8OperationsProjectionViewV1(
+            viewer_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
+            source_projection_id=projection.projection_id,
+            visible_projection=projection,
+        )
+
+
+def test_projection_view_rejects_serialized_authority_forgery() -> None:
+    projection = _projection()
+    view = M8OperationsProjectionViewV1(
+        viewer_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+        source_projection_id=projection.projection_id,
+        visible_projection=projection,
+    )
+    payload = view.model_dump(mode="json")
+    payload["view_id"] = "0" * 64
+    with pytest.raises(ValidationError, match="view_id"):
+        M8OperationsProjectionViewV1.model_validate(payload)
+
+
+def test_projection_view_builder_filters_cases_without_mutating_source_cut() -> None:
+    projection = _projection()
+    emergency = projection.current_cases[0]
+    general = _case(
+        projection.source_catalog_receipt.catalog.catalog_id,
+        risk_level=M8OperationalRiskLevel.GENERAL,
+    )
+    mixed = projection.model_copy(
+        update={
+            "current_cases": tuple(sorted((emergency, general), key=lambda item: item.case_id)),
+            "case_audit_events": tuple(
+                sorted(
+                    (emergency.audit_event, general.audit_event),
+                    key=lambda item: (item.case_authority.case_id, item.event_sequence),
+                )
+            ),
+        }
+    )
+
+    safety = build_operations_projection_view(
+        mixed,
+        _actor_receipt(M8ActorRole.SAFETY_OFFICER),
+    )
+    leader = build_operations_projection_view(mixed, _actor_receipt(M8ActorRole.LEADER))
+    operations = build_operations_projection_view(mixed, _actor_receipt(M8ActorRole.OPERATIONS))
+
+    assert safety.visible_projection == mixed
+    assert leader.visible_projection.current_cases == (emergency,)
+    assert leader.visible_projection.case_audit_events == (emergency.audit_event,)
+    assert operations.visible_projection.current_cases == ()
+    assert operations.visible_projection.case_audit_events == ()
+    assert mixed.current_cases == tuple(sorted((emergency, general), key=lambda item: item.case_id))
+
+
 @pytest.mark.parametrize(
     "field",
     (
@@ -229,6 +367,11 @@ def test_projection_rejects_serialized_computed_forgery(field: str) -> None:
         _projection().sources[0],
         _projection().overview,
         _projection().map_nodes[0],
+        M8OperationsProjectionViewV1(
+            viewer_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+            source_projection_id=_projection().projection_id,
+            visible_projection=_projection(),
+        ),
     ),
 )
 def test_projection_contracts_validate_as_serialization_schemas(model: BaseModel) -> None:
@@ -242,6 +385,7 @@ def test_projection_schemas_are_registered_serialization_roots() -> None:
 
     expected = {
         "m8-operations-projection-v1": M8OperationsProjectionV1,
+        "m8-operations-projection-view-v1": M8OperationsProjectionViewV1,
         "m8-projection-map-node-v1": M8ProjectionMapNodeV1,
         "m8-projection-overview-v1": M8ProjectionOverviewV1,
         "m8-projection-source-v1": M8ProjectionSourceV1,

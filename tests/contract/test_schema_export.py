@@ -264,6 +264,7 @@ EXPECTED_SCHEMA_MODES = {
     "m8-operational-source-catalog-authority-v1": "serialization",
     "m8-operational-source-catalog-commit-receipt-v1": "serialization",
     "m8-operations-projection-v1": "serialization",
+    "m8-operations-projection-view-v1": "serialization",
     "m8-projection-map-node-v1": "serialization",
     "m8-projection-overview-v1": "serialization",
     "m8-projection-source-v1": "serialization",
