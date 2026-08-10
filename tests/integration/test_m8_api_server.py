@@ -16,6 +16,9 @@ from labcourt.adapters.storage.sqlite_m8_inventory_repository import SQLiteM8Inv
 from labcourt.adapters.storage.sqlite_m8_knowledge_repository import (
     SQLiteM8KnowledgeRepository,
 )
+from labcourt.adapters.storage.sqlite_m8_notification_repository import (
+    SQLiteM8NotificationRepository,
+)
 from labcourt.adapters.storage.sqlite_m8_operations_repository import SQLiteM8OperationsRepository
 from labcourt.adapters.storage.sqlite_m8_sensor_persistence_repository import (
     SQLiteM8SensorPersistenceRepository,
@@ -54,6 +57,8 @@ from labcourt.m8_api_server import M8ApiHttpServer, build_m8_api_server
 from labcourt.ports.m8_api_authentication import M8AuthenticationError, M8RequestAuthenticator
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_operations_api import M8OperationsApiService
+from labcourt.services.m8_operations_projection import M8OperationsProjectionService
+from labcourt.services.m8_projection_api import M8ProjectionApiService
 
 SHA_A = "a" * 64
 SHA_B = "b" * 64
@@ -240,10 +245,20 @@ def api_server(
         SHA_E,
         bundle.adapter_manifest_id,
     )
+    notification_repository = SQLiteM8NotificationRepository(database, BUSY_TIMEOUT_MS, SHA_A)
+    projection_reader = M8OperationsProjectionService(
+        inventory,
+        operations,
+        sensors,
+        notification_repository,
+        SHA_C,
+    )
+    projection_service = M8ProjectionApiService(operations, projection_reader)
     server = build_m8_api_server(
         port=0,
         service=service,
         knowledge_service=knowledge_service,
+        projection_service=projection_service,
         authenticator=M8HashedBearerAuthenticator(_credentials()),
     )
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -336,6 +351,7 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             port=0,
             service=server.api_service,
             knowledge_service=server.knowledge_service,
+            projection_service=server.projection_service,
             authenticator=cast(M8RequestAuthenticator, None),
         )
     with pytest.raises(TypeError, match="knowledge service"):
@@ -343,6 +359,15 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             port=0,
             service=server.api_service,
             knowledge_service=cast(M8KnowledgeApiService, None),
+            projection_service=server.projection_service,
+            authenticator=server.api_authenticator,
+        )
+    with pytest.raises(TypeError, match="projection service"):
+        build_m8_api_server(
+            port=0,
+            service=server.api_service,
+            knowledge_service=server.knowledge_service,
+            projection_service=cast(M8ProjectionApiService, None),
             authenticator=server.api_authenticator,
         )
 
@@ -425,6 +450,45 @@ def test_leader_cannot_read_non_major_case(
     )
     assert status == 403
     assert body["reason_code"] == "FORBIDDEN"  # type: ignore[index]
+
+
+def test_operations_projection_endpoint_applies_role_scope_server_side(
+    api_server: tuple[
+        M8ApiHttpServer, M8OperationalCaseCommitReceiptV1, SQLiteM8OperationsRepository
+    ],
+) -> None:
+    server, emergency_case, operations = api_server
+    general_case = _create_case(operations, risk_level=M8OperationalRiskLevel.GENERAL)
+    path = "/api/m8/campuses/campus-main/operations-projection"
+
+    status, safety = _request(server, "GET", path, token=TOKENS["safety"])
+    assert status == 200
+    assert safety["view_kind"] == "SAFETY_FULL"  # type: ignore[index]
+    assert len(safety["visible_projection"]["current_cases"]) == 2  # type: ignore[arg-type,index]
+
+    status, leader = _request(server, "GET", path, token=TOKENS["leader"])
+    assert status == 200
+    assert leader["view_kind"] == "LEADER_GLOBAL_MAJOR"  # type: ignore[index]
+    leader_cases = leader["visible_projection"]["current_cases"]  # type: ignore[index]
+    assert len(leader_cases) == 1  # type: ignore[arg-type]
+    assert leader_cases[0]["case_id"] == emergency_case.case_id  # type: ignore[index]
+
+    status, device_view = _request(server, "GET", path, token=TOKENS["operations"])
+    assert status == 200
+    assert device_view["view_kind"] == "OPERATIONS_DEVICES"  # type: ignore[index]
+    visible = device_view["visible_projection"]  # type: ignore[index]
+    assert visible["current_cases"] == []  # type: ignore[index]
+    assert visible["case_audit_events"] == []  # type: ignore[index]
+    assert visible["current_notifications"] == []  # type: ignore[index]
+    assert visible["notification_audit_events"] == []  # type: ignore[index]
+    assert visible["sources"][0]["display_badge"] == "SIMULATED · SENSOR"  # type: ignore[index]
+    assert visible["sources"][0]["simulated"] is True  # type: ignore[index]
+
+    status, denied = _request(server, "GET", path, token=TOKENS["student"])
+    assert status == 403
+    assert denied["reason_code"] == "FORBIDDEN"  # type: ignore[index]
+    assert operations.get_current_operational_case(emergency_case.case_id) == emergency_case
+    assert operations.get_current_operational_case(general_case.case_id) == general_case
 
 
 def test_http_transition_allows_safety_only_and_returns_concurrency_conflict(
@@ -517,6 +581,14 @@ def test_http_rejects_actor_authority_graft_and_inactive_persisted_actor(
         server,
         "GET",
         "/api/m8/campuses/campus-main/topology",
+        token=TOKENS["safety"],
+    )
+    assert status == 403
+    assert body["reason_code"] == "FORBIDDEN"  # type: ignore[index]
+    status, body = _request(
+        server,
+        "GET",
+        "/api/m8/campuses/campus-main/operations-projection",
         token=TOKENS["safety"],
     )
     assert status == 403

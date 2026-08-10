@@ -30,6 +30,7 @@ from labcourt.services.m8_operations_api import (
     M8ApiServiceFailureCode,
     M8OperationsApiService,
 )
+from labcourt.services.m8_projection_api import M8ProjectionApiService
 
 _MAX_REQUEST_BYTES = 64 * 1024
 
@@ -44,11 +45,13 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         *,
         service: M8OperationsApiService,
         knowledge_service: M8KnowledgeApiService,
+        projection_service: M8ProjectionApiService,
         authenticator: M8RequestAuthenticator,
     ) -> None:
         super().__init__(server_address, M8ApiRequestHandler)
         self.api_service = service
         self.knowledge_service = knowledge_service
+        self.projection_service = projection_service
         self.api_authenticator = authenticator
 
 
@@ -79,6 +82,13 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                 if segments[4] == "sources":
                     source_catalog = self.server.api_service.source_catalog(principal, segments[3])
                     self._json(HTTPStatus.OK, source_catalog.model_dump(mode="json"))
+                    return
+                if segments[4] == "operations-projection":
+                    projection = self.server.projection_service.projection(
+                        principal,
+                        segments[3],
+                    )
+                    self._json(HTTPStatus.OK, projection.model_dump(mode="json"))
                     return
             if len(segments) == 4 and segments[:3] == ("api", "m8", "cases"):
                 case = self.server.api_service.case(principal, segments[3])
@@ -300,6 +310,7 @@ def build_m8_api_server(
     port: int,
     service: M8OperationsApiService,
     knowledge_service: M8KnowledgeApiService,
+    projection_service: M8ProjectionApiService,
     authenticator: M8RequestAuthenticator,
 ) -> M8ApiHttpServer:
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
@@ -308,12 +319,15 @@ def build_m8_api_server(
         raise TypeError("M8 API requires an operations service")
     if not isinstance(knowledge_service, M8KnowledgeApiService):
         raise TypeError("M8 API requires a knowledge service")
+    if not isinstance(projection_service, M8ProjectionApiService):
+        raise TypeError("M8 API requires a projection service")
     if authenticator is None:
         raise TypeError("M8 API requires an explicit authenticator")
     return M8ApiHttpServer(
         ("127.0.0.1", port),
         service=service,
         knowledge_service=knowledge_service,
+        projection_service=projection_service,
         authenticator=authenticator,
     )
 
