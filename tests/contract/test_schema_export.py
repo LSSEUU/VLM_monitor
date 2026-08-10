@@ -223,6 +223,7 @@ EXPECTED_SCHEMA_MODES = {
     "m8-api-knowledge-query-request-v1": "serialization",
     "m8-api-principal-v1": "serialization",
     "m8-notification-audit-event-v1": "serialization",
+    "m8-adapter-activation-intent-v1": "serialization",
     "m8-adapter-readiness-assessment-v1": "serialization",
     "m8-commissioning-evidence-authority-v1": "serialization",
     "m8-commissioning-evidence-commit-receipt-v1": "serialization",

@@ -1204,6 +1204,12 @@
       "name": "m8-actor-authority-v1"
     },
     {
+      "file": "m8-adapter-activation-intent-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8AdapterActivationIntentV1",
+      "name": "m8-adapter-activation-intent-v1"
+    },
+    {
       "file": "m8-adapter-readiness-assessment-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8AdapterReadinessAssessmentV1",

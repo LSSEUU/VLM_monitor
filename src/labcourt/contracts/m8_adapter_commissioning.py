@@ -24,6 +24,7 @@ from labcourt.contracts.references import ReferenceToken, require_reference_toke
 
 MAX_M8_COMMISSIONING_EVIDENCE_BYTES = 16 * 1024 * 1024
 MAX_M8_PRODUCTION_ADAPTER_TIMEOUT_MS = 120_000
+MAX_M8_RUNTIME_CONFIG_BYTES = 1024 * 1024
 
 
 class M8ProductionAdapterKind(StrEnum):
@@ -632,9 +633,171 @@ class M8AdapterReadinessAssessmentV1(FrozenContractModel):
         )
 
 
+class M8AdapterActivationIntentV1(FrozenContractModel):
+    """Dual-human intent to persist activation; it cannot call the adapter itself."""
+
+    schema_version: Literal["m8-adapter-activation-intent-v1"] = "m8-adapter-activation-intent-v1"
+    readiness_assessment: M8AdapterReadinessAssessmentV1
+    operations_actor_receipt: M8ActorAuthorityCommitReceiptV1
+    safety_actor_receipt: M8ActorAuthorityCommitReceiptV1
+    runtime_config_ref: ReferenceToken
+    runtime_config_sha256: Sha256Hex
+    runtime_config_size_bytes: int = Field(
+        gt=0,
+        le=MAX_M8_RUNTIME_CONFIG_BYTES,
+        strict=True,
+    )
+    credential_reference_id: ReferenceToken | None = None
+    requested_at: datetime
+    operations_explicit_confirmation: Literal[True] = True
+    safety_explicit_confirmation: Literal[True] = True
+    secret_material_embedded: Literal[False] = False
+    activation_manifest_id: Sha256Hex
+
+    @field_validator("runtime_config_ref")
+    @classmethod
+    def validate_runtime_config_ref(cls, value: str) -> str:
+        return require_reference_token(value, "M8 adapter runtime config")
+
+    @field_validator("credential_reference_id")
+    @classmethod
+    def validate_credential_reference(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return require_reference_token(value, "M8 adapter credential reference")
+
+    @field_validator("requested_at")
+    @classmethod
+    def validate_requested_at(cls, value: datetime) -> datetime:
+        return _require_utc(value, "adapter activation requested_at")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(
+            value,
+            (
+                "activation_commit_permitted",
+                "external_call_permitted",
+                "automatic_activation_permitted",
+                "life_safety_action_permitted",
+                "direct_disciplinary_action_permitted",
+                "face_recognition_permitted",
+                "cross_camera_reidentification_permitted",
+                "activation_intent_id",
+            ),
+        )
+        intent = handler(payload)
+        _verify_computed_claims(intent, claims)
+        return intent
+
+    @model_validator(mode="after")
+    def validate_dual_human_gate(self) -> Self:
+        assessment = self.readiness_assessment
+        candidate = assessment.candidate
+        if assessment.readiness != M8CommissioningReadiness.READY_FOR_HUMAN_ACTIVATION:
+            raise ValueError("M8 adapter activation requires complete current readiness")
+        operations_actor = self.operations_actor_receipt.authority
+        safety_actor = self.safety_actor_receipt.authority
+        if operations_actor.role != M8ActorRole.OPERATIONS or not _actor_covers_candidate(
+            self.operations_actor_receipt,
+            candidate,
+        ):
+            raise ValueError("M8 adapter activation requires in-scope operations confirmation")
+        if safety_actor.role != M8ActorRole.SAFETY_OFFICER or not _actor_covers_candidate(
+            self.safety_actor_receipt,
+            candidate,
+        ):
+            raise ValueError("M8 adapter activation requires in-scope safety confirmation")
+        if operations_actor.actor_id == safety_actor.actor_id:
+            raise ValueError("M8 adapter activation requires two distinct human actors")
+        evidence_repository_manifests = {
+            item.repository_manifest_id for item in assessment.evidence
+        }
+        if evidence_repository_manifests != {
+            self.operations_actor_receipt.repository_manifest_id
+        } or evidence_repository_manifests != {self.safety_actor_receipt.repository_manifest_id}:
+            raise ValueError("M8 adapter activation authorities cross repository manifests")
+        if candidate.network_required and self.credential_reference_id is None:
+            raise ValueError("M8 network adapter activation requires a secret-store reference")
+        if self.requested_at < assessment.assessed_at:
+            raise ValueError("M8 adapter activation cannot predate readiness assessment")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def activation_commit_permitted(self) -> bool:
+        return True
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def external_call_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def automatic_activation_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def life_safety_action_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def direct_disciplinary_action_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def face_recognition_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def cross_camera_reidentification_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def activation_intent_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-adapter-activation-intent",
+                1,
+                self.readiness_assessment.assessment_id,
+                self.operations_actor_receipt.commit_receipt_id,
+                self.safety_actor_receipt.commit_receipt_id,
+                self.runtime_config_ref,
+                self.runtime_config_sha256,
+                self.runtime_config_size_bytes,
+                self.credential_reference_id,
+                _canonical_utc(self.requested_at),
+                self.operations_explicit_confirmation,
+                self.safety_explicit_confirmation,
+                self.secret_material_embedded,
+                self.activation_manifest_id,
+                self.activation_commit_permitted,
+                self.external_call_permitted,
+                self.automatic_activation_permitted,
+                self.life_safety_action_permitted,
+                self.direct_disciplinary_action_permitted,
+                self.face_recognition_permitted,
+                self.cross_camera_reidentification_permitted,
+            ]
+        )
+
+
 __all__ = [
     "MAX_M8_COMMISSIONING_EVIDENCE_BYTES",
     "MAX_M8_PRODUCTION_ADAPTER_TIMEOUT_MS",
+    "MAX_M8_RUNTIME_CONFIG_BYTES",
+    "M8AdapterActivationIntentV1",
     "M8AdapterReadinessAssessmentV1",
     "M8CommissioningEvidenceAuthorityV1",
     "M8CommissioningEvidenceCommitReceiptV1",

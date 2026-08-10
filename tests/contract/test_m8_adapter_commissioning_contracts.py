@@ -12,6 +12,7 @@ from labcourt.contracts.m8_access_cases import (
     M8ActorScopeKind,
 )
 from labcourt.contracts.m8_adapter_commissioning import (
+    M8AdapterActivationIntentV1,
     M8AdapterReadinessAssessmentV1,
     M8CommissioningEvidenceAuthorityV1,
     M8CommissioningEvidenceCommitReceiptV1,
@@ -128,7 +129,7 @@ def _evidence(
             evidence_manifest_id=SHA_D,
         ),
         artifact_storage_manifest_id=SHA_A,
-        repository_manifest_id=SHA_B,
+        repository_manifest_id=SHA_C,
     )
 
 
@@ -154,6 +155,23 @@ def _assessment(
         assessor_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
         assessed_at=ASSESSED_AT,
         assessment_manifest_id=SHA_D,
+    )
+
+
+def _activation_intent() -> M8AdapterActivationIntentV1:
+    candidate = _candidate()
+    evidence = tuple(_evidence(kind, candidate=candidate) for kind in M8CommissioningEvidenceKind)
+    assessment = _assessment(evidence, candidate=candidate)
+    return M8AdapterActivationIntentV1(
+        readiness_assessment=assessment,
+        operations_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
+        safety_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+        runtime_config_ref="runtime-config-rtsp-01",
+        runtime_config_sha256=SHA_A,
+        runtime_config_size_bytes=128,
+        credential_reference_id="secret-store-rtsp-01",
+        requested_at=ASSESSED_AT + timedelta(minutes=1),
+        activation_manifest_id=SHA_D,
     )
 
 
@@ -265,6 +283,33 @@ def test_complete_readiness_still_requires_separate_human_activation() -> None:
     assert assessment.direct_disciplinary_action_permitted is False
 
 
+def test_activation_intent_requires_dual_humans_and_never_calls_adapter() -> None:
+    intent = _activation_intent()
+    assert intent.activation_commit_permitted is True
+    assert intent.external_call_permitted is False
+    assert intent.automatic_activation_permitted is False
+    assert intent.life_safety_action_permitted is False
+    assert intent.direct_disciplinary_action_permitted is False
+    assert intent.face_recognition_permitted is False
+    assert intent.cross_camera_reidentification_permitted is False
+    assert intent.secret_material_embedded is False
+
+    with pytest.raises(ValidationError, match="secret-store reference"):
+        intent.model_copy(update={"credential_reference_id": None})
+    with pytest.raises(ValidationError, match="safety confirmation"):
+        intent.model_copy(update={"safety_actor_receipt": _actor_receipt(M8ActorRole.OPERATIONS)})
+    with pytest.raises(ValidationError, match="complete current readiness"):
+        intent.model_copy(
+            update={
+                "readiness_assessment": _assessment(
+                    (), candidate=intent.readiness_assessment.candidate
+                )
+            }
+        )
+    with pytest.raises(ValidationError, match="cannot predate"):
+        intent.model_copy(update={"requested_at": ASSESSED_AT - timedelta(seconds=1)})
+
+
 def test_assessment_rejects_candidate_graft_duplicate_and_future_evidence() -> None:
     candidate = _candidate()
     license_evidence = _evidence(
@@ -302,6 +347,7 @@ def test_assessment_rejects_candidate_graft_duplicate_and_future_evidence() -> N
     (
         _candidate(),
         _candidate_receipt(),
+        _activation_intent(),
         _evidence(M8CommissioningEvidenceKind.LICENSE_REVIEW),
         _evidence(M8CommissioningEvidenceKind.LICENSE_REVIEW).evidence,
         _assessment((), candidate=_candidate()),
@@ -319,6 +365,8 @@ def test_commissioning_contracts_validate_as_serialization_schemas(model: BaseMo
         (_candidate(), "production_activation_permitted"),
         (_candidate(), "candidate_authority_id"),
         (_candidate_receipt(), "commit_receipt_id"),
+        (_activation_intent(), "external_call_permitted"),
+        (_activation_intent(), "activation_intent_id"),
         (
             _evidence(M8CommissioningEvidenceKind.LICENSE_REVIEW),
             "commit_receipt_id",
@@ -343,6 +391,7 @@ def test_commissioning_contracts_reject_computed_claim_forgery(
 
 def test_commissioning_schemas_are_registered_serialization_roots() -> None:
     expected = {
+        "m8-adapter-activation-intent-v1": M8AdapterActivationIntentV1,
         "m8-adapter-readiness-assessment-v1": M8AdapterReadinessAssessmentV1,
         "m8-commissioning-evidence-authority-v1": M8CommissioningEvidenceAuthorityV1,
         "m8-commissioning-evidence-commit-receipt-v1": (M8CommissioningEvidenceCommitReceiptV1),

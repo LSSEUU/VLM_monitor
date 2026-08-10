@@ -279,6 +279,7 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseTransitionCommandV1,
 )
 from labcourt.contracts.m8_adapter_commissioning import (
+    M8AdapterActivationIntentV1,
     M8AdapterReadinessAssessmentV1,
     M8CommissioningEvidenceAuthorityV1,
     M8CommissioningEvidenceCommitReceiptV1,
@@ -668,6 +669,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m6-upgrade-sample-execution-record": M6UpgradeSampleExecutionRecord,
     "m6-upgrade-sample-execution-record-v2": M6UpgradeSampleExecutionRecordV2,
     "model-cache-entry": ModelCacheEntry,
+    "m8-adapter-activation-intent-v1": M8AdapterActivationIntentV1,
     "m8-adapter-readiness-assessment-v1": M8AdapterReadinessAssessmentV1,
     "m8-api-case-transition-request-v1": M8ApiCaseTransitionRequestV1,
     "m8-api-credential-authority-v1": M8ApiCredentialAuthorityV1,
