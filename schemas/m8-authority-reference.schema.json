@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "M8AuthorityReferenceKind": {
+      "enum": [
+        "SOURCE_CATALOG",
+        "SENSOR_SIGNAL",
+        "VIDEO_EVENT",
+        "M0_CASE",
+        "USER_STATEMENT",
+        "NOTIFICATION_REPLY",
+        "EVIDENCE_PACK"
+      ],
+      "title": "M8AuthorityReferenceKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-authority-reference.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed reference to source evidence or another persisted authority.",
+  "properties": {
+    "authority_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Authority Id",
+      "type": "string"
+    },
+    "document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Document Sha256",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/M8AuthorityReferenceKind"
+    },
+    "schema_version": {
+      "const": "m8-authority-reference-v1",
+      "default": "m8-authority-reference-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "authority_id",
+    "document_sha256"
+  ],
+  "title": "M8AuthorityReference",
+  "type": "object"
+}

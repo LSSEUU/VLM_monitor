@@ -1,0 +1,888 @@
+{
+  "$defs": {
+    "M8ActorAuthorityV1": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "LEADER"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "properties": {
+              "capabilities": {
+                "const": [
+                  "VIEW_GLOBAL_OVERVIEW",
+                  "VIEW_MAJOR_EVENTS",
+                  "VIEW_AUDIT"
+                ]
+              },
+              "scope_kind": {
+                "const": "CAMPUS_WIDE"
+              },
+              "scope_location_ids": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "SAFETY_OFFICER"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "else": {
+                  "properties": {
+                    "scope_location_ids": {
+                      "maxItems": 0
+                    }
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "scope_kind": {
+                      "const": "LOCATIONS"
+                    }
+                  },
+                  "required": [
+                    "scope_kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "scope_location_ids": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "capabilities": {
+                "const": [
+                  "VIEW_GLOBAL_OVERVIEW",
+                  "VIEW_MAJOR_EVENTS",
+                  "VIEW_AUDIT",
+                  "CONFIRM_CASE",
+                  "REJECT_CASE",
+                  "REQUEST_CASE_EVIDENCE",
+                  "RETURN_CASE_TO_VERIFICATION",
+                  "RESOLVE_CASE",
+                  "RESOLVE_APPEAL",
+                  "MANAGE_RULES"
+                ]
+              },
+              "scope_kind": {
+                "enum": [
+                  "CAMPUS_WIDE",
+                  "LOCATIONS"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "STUDENT"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "properties": {
+              "capabilities": {
+                "const": [
+                  "VIEW_OWN_CASE",
+                  "SUBMIT_EXPLANATION",
+                  "SUBMIT_APPEAL"
+                ]
+              },
+              "scope_kind": {
+                "const": "SELF_ONLY"
+              },
+              "scope_location_ids": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "OPERATIONS"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "else": {
+                  "properties": {
+                    "scope_location_ids": {
+                      "maxItems": 0
+                    }
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "scope_kind": {
+                      "const": "LOCATIONS"
+                    }
+                  },
+                  "required": [
+                    "scope_kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "scope_location_ids": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "capabilities": {
+                "const": [
+                  "MANAGE_DEVICES",
+                  "VIEW_DEVICE_HEALTH"
+                ]
+              },
+              "scope_kind": {
+                "enum": [
+                  "CAMPUS_WIDE",
+                  "LOCATIONS"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "description": "Versioned actor role, scope, and derived capability authority.",
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "actor_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Actor Authority Id",
+          "type": "string"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "authority_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Authority Revision",
+          "type": "integer"
+        },
+        "capabilities": {
+          "items": {
+            "$ref": "#/$defs/M8Capability"
+          },
+          "readOnly": true,
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "identity_provider_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Identity Provider Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/M8ActorRole"
+        },
+        "schema_version": {
+          "const": "m8-actor-authority-v1",
+          "default": "m8-actor-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope_kind": {
+          "$ref": "#/$defs/M8ActorScopeKind"
+        },
+        "scope_location_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "title": "Scope Location Ids",
+          "type": "array"
+        },
+        "subject_binding_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Subject Binding Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_id",
+        "role",
+        "scope_kind",
+        "identity_provider_id",
+        "subject_binding_sha256",
+        "authority_revision",
+        "active",
+        "manifest_id",
+        "capabilities",
+        "actor_authority_id"
+      ],
+      "title": "M8ActorAuthorityV1",
+      "type": "object"
+    },
+    "M8ActorRole": {
+      "enum": [
+        "LEADER",
+        "SAFETY_OFFICER",
+        "STUDENT",
+        "OPERATIONS"
+      ],
+      "title": "M8ActorRole",
+      "type": "string"
+    },
+    "M8ActorScopeKind": {
+      "enum": [
+        "CAMPUS_WIDE",
+        "LOCATIONS",
+        "SELF_ONLY"
+      ],
+      "title": "M8ActorScopeKind",
+      "type": "string"
+    },
+    "M8AppealResolution": {
+      "enum": [
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "M8AppealResolution",
+      "type": "string"
+    },
+    "M8AuthorityReference": {
+      "additionalProperties": false,
+      "description": "Typed reference to source evidence or another persisted authority.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M8AuthorityReferenceKind"
+        },
+        "schema_version": {
+          "const": "m8-authority-reference-v1",
+          "default": "m8-authority-reference-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "authority_id",
+        "document_sha256"
+      ],
+      "title": "M8AuthorityReference",
+      "type": "object"
+    },
+    "M8AuthorityReferenceKind": {
+      "enum": [
+        "SOURCE_CATALOG",
+        "SENSOR_SIGNAL",
+        "VIDEO_EVENT",
+        "M0_CASE",
+        "USER_STATEMENT",
+        "NOTIFICATION_REPLY",
+        "EVIDENCE_PACK"
+      ],
+      "title": "M8AuthorityReferenceKind",
+      "type": "string"
+    },
+    "M8Capability": {
+      "enum": [
+        "VIEW_GLOBAL_OVERVIEW",
+        "VIEW_MAJOR_EVENTS",
+        "VIEW_AUDIT",
+        "CONFIRM_CASE",
+        "REJECT_CASE",
+        "REQUEST_CASE_EVIDENCE",
+        "RETURN_CASE_TO_VERIFICATION",
+        "RESOLVE_CASE",
+        "RESOLVE_APPEAL",
+        "MANAGE_RULES",
+        "VIEW_OWN_CASE",
+        "SUBMIT_EXPLANATION",
+        "SUBMIT_APPEAL",
+        "MANAGE_DEVICES",
+        "VIEW_DEVICE_HEALTH"
+      ],
+      "title": "M8Capability",
+      "type": "string"
+    },
+    "M8OperationalCaseAction": {
+      "enum": [
+        "CONFIRM",
+        "REJECT",
+        "REQUEST_EVIDENCE",
+        "RETURN_TO_VERIFICATION",
+        "RESOLVE",
+        "SUBMIT_APPEAL",
+        "RESOLVE_APPEAL"
+      ],
+      "title": "M8OperationalCaseAction",
+      "type": "string"
+    },
+    "M8OperationalCaseReasonCode": {
+      "enum": [
+        "VERIFIED_VIOLATION",
+        "FALSE_POSITIVE",
+        "NOT_ACTIONABLE",
+        "MORE_EVIDENCE_REQUIRED",
+        "EVIDENCE_RECEIVED",
+        "HAZARD_CLEARED",
+        "CORRECTIVE_ACTION_COMPLETED",
+        "SUBJECT_DISPUTE",
+        "APPEAL_UPHELD",
+        "APPEAL_OVERTURNED"
+      ],
+      "title": "M8OperationalCaseReasonCode",
+      "type": "string"
+    },
+    "M8OperationalCaseStatus": {
+      "enum": [
+        "PENDING_VERIFICATION",
+        "CONFIRMED",
+        "REJECTED",
+        "EVIDENCE_REQUESTED",
+        "RESOLVED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "M8OperationalCaseStatus",
+      "type": "string"
+    },
+    "M8OperationalCaseTransitionCommandV1": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "direct_disciplinary_action_permitted": {
+              "const": false
+            },
+            "explicit_human_confirmation": {
+              "const": true
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "CONFIRM"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "appeal_resolution": {
+                "type": "null"
+              },
+              "reason_code": {
+                "enum": [
+                  "VERIFIED_VIOLATION"
+                ]
+              },
+              "required_capability": {
+                "const": "CONFIRM_CASE"
+              },
+              "source_status": {
+                "enum": [
+                  "PENDING_VERIFICATION"
+                ]
+              },
+              "target_status": {
+                "const": "CONFIRMED"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "REJECT"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "appeal_resolution": {
+                "type": "null"
+              },
+              "reason_code": {
+                "enum": [
+                  "FALSE_POSITIVE",
+                  "NOT_ACTIONABLE"
+                ]
+              },
+              "required_capability": {
+                "const": "REJECT_CASE"
+              },
+              "source_status": {
+                "enum": [
+                  "PENDING_VERIFICATION"
+                ]
+              },
+              "target_status": {
+                "const": "REJECTED"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "REQUEST_EVIDENCE"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "appeal_resolution": {
+                "type": "null"
+              },
+              "reason_code": {
+                "enum": [
+                  "MORE_EVIDENCE_REQUIRED"
+                ]
+              },
+              "required_capability": {
+                "const": "REQUEST_CASE_EVIDENCE"
+              },
+              "source_status": {
+                "enum": [
+                  "PENDING_VERIFICATION"
+                ]
+              },
+              "target_status": {
+                "const": "EVIDENCE_REQUESTED"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "RETURN_TO_VERIFICATION"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "appeal_resolution": {
+                "type": "null"
+              },
+              "reason_code": {
+                "enum": [
+                  "EVIDENCE_RECEIVED"
+                ]
+              },
+              "required_capability": {
+                "const": "RETURN_CASE_TO_VERIFICATION"
+              },
+              "source_status": {
+                "enum": [
+                  "EVIDENCE_REQUESTED"
+                ]
+              },
+              "target_status": {
+                "const": "PENDING_VERIFICATION"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "RESOLVE"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "appeal_resolution": {
+                "type": "null"
+              },
+              "reason_code": {
+                "enum": [
+                  "HAZARD_CLEARED",
+                  "CORRECTIVE_ACTION_COMPLETED"
+                ]
+              },
+              "required_capability": {
+                "const": "RESOLVE_CASE"
+              },
+              "source_status": {
+                "enum": [
+                  "CONFIRMED"
+                ]
+              },
+              "target_status": {
+                "const": "RESOLVED"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "SUBMIT_APPEAL"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "appeal_resolution": {
+                "type": "null"
+              },
+              "reason_code": {
+                "enum": [
+                  "SUBJECT_DISPUTE"
+                ]
+              },
+              "required_capability": {
+                "const": "SUBMIT_APPEAL"
+              },
+              "source_status": {
+                "enum": [
+                  "CONFIRMED",
+                  "RESOLVED"
+                ]
+              },
+              "target_status": {
+                "const": "APPEALED"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "RESOLVE_APPEAL"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "appeal_resolution": {
+                "enum": [
+                  "UPHELD",
+                  "OVERTURNED"
+                ]
+              },
+              "reason_code": {
+                "enum": [
+                  "APPEAL_UPHELD",
+                  "APPEAL_OVERTURNED"
+                ]
+              },
+              "required_capability": {
+                "const": "RESOLVE_APPEAL"
+              },
+              "source_status": {
+                "enum": [
+                  "APPEALED"
+                ]
+              },
+              "target_status": {
+                "const": "APPEAL_RESOLVED"
+              }
+            }
+          }
+        }
+      ],
+      "description": "Explicit human intent for one authorized operational-case transition.",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/M8OperationalCaseAction"
+        },
+        "actor_authority": {
+          "$ref": "#/$defs/M8ActorAuthorityV1"
+        },
+        "appeal_resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8AppealResolution"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_location_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Location Id",
+          "type": "string"
+        },
+        "command_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Command Id",
+          "type": "string"
+        },
+        "command_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Command Manifest Id",
+          "type": "string"
+        },
+        "direct_disciplinary_action_permitted": {
+          "readOnly": true,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "explicit_human_confirmation": {
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "reason_code": {
+          "$ref": "#/$defs/M8OperationalCaseReasonCode"
+        },
+        "reason_summary": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Reason Summary",
+          "type": "string"
+        },
+        "required_capability": {
+          "$ref": "#/$defs/M8Capability",
+          "readOnly": true
+        },
+        "schema_version": {
+          "const": "m8-operational-case-transition-command-v1",
+          "default": "m8-operational-case-transition-command-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Authority Sha256",
+          "type": "string"
+        },
+        "source_case_version": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Version",
+          "type": "integer"
+        },
+        "source_status": {
+          "$ref": "#/$defs/M8OperationalCaseStatus"
+        },
+        "subject_actor_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Actor Id"
+        },
+        "supporting_authorities": {
+          "items": {
+            "$ref": "#/$defs/M8AuthorityReference"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Supporting Authorities",
+          "type": "array"
+        },
+        "target_case_version": {
+          "readOnly": true,
+          "title": "Target Case Version",
+          "type": "integer"
+        },
+        "target_status": {
+          "$ref": "#/$defs/M8OperationalCaseStatus",
+          "readOnly": true
+        }
+      },
+      "required": [
+        "case_id",
+        "source_case_version",
+        "source_case_authority_sha256",
+        "source_status",
+        "case_location_id",
+        "action",
+        "reason_code",
+        "reason_summary",
+        "supporting_authorities",
+        "actor_authority",
+        "explicit_human_confirmation",
+        "command_manifest_id",
+        "target_status",
+        "required_capability",
+        "target_case_version",
+        "direct_disciplinary_action_permitted",
+        "command_id"
+      ],
+      "title": "M8OperationalCaseTransitionCommandV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-operational-case-audit-intent-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Audit-ready binding for a validated transition command; it performs no write.",
+  "properties": {
+    "actor_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Actor Authority Id",
+      "type": "string"
+    },
+    "after_case_version": {
+      "readOnly": true,
+      "title": "After Case Version",
+      "type": "integer"
+    },
+    "after_status": {
+      "$ref": "#/$defs/M8OperationalCaseStatus",
+      "readOnly": true
+    },
+    "audit_intent_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Audit Intent Id",
+      "type": "string"
+    },
+    "audit_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Manifest Id",
+      "type": "string"
+    },
+    "before_case_version": {
+      "readOnly": true,
+      "title": "Before Case Version",
+      "type": "integer"
+    },
+    "before_status": {
+      "$ref": "#/$defs/M8OperationalCaseStatus",
+      "readOnly": true
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "readOnly": true,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "command": {
+      "$ref": "#/$defs/M8OperationalCaseTransitionCommandV1"
+    },
+    "schema_version": {
+      "const": "m8-operational-case-audit-intent-v1",
+      "default": "m8-operational-case-audit-intent-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "supporting_authority_inventory_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Supporting Authority Inventory Sha256",
+      "type": "string"
+    },
+    "transition_command_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Transition Command Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "command",
+    "audit_manifest_id",
+    "case_id",
+    "before_case_version",
+    "after_case_version",
+    "before_status",
+    "after_status",
+    "actor_authority_id",
+    "transition_command_id",
+    "supporting_authority_inventory_sha256",
+    "audit_intent_id"
+  ],
+  "title": "M8OperationalCaseAuditIntentV1",
+  "type": "object"
+}

@@ -271,6 +271,13 @@ from labcourt.contracts.m6_upgrade_pending_sample_commitment import (
     M6UpgradePendingSampleCommitmentAuthority,
 )
 from labcourt.contracts.m6_upgrade_physical import M6UpgradePhysicalArtifactRef
+from labcourt.contracts.m8_access_cases import (
+    M8ActorAuthorityV1,
+    M8AuthorityReference,
+    M8OperationalCaseAuditIntentV1,
+    M8OperationalCaseCreateCommandV1,
+    M8OperationalCaseTransitionCommandV1,
+)
 from labcourt.contracts.m8_operations import (
     M8CampusLocation,
     M8CampusTopologyAuthorityV1,
@@ -578,6 +585,11 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "model-cache-entry": ModelCacheEntry,
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
+    "m8-actor-authority-v1": M8ActorAuthorityV1,
+    "m8-authority-reference": M8AuthorityReference,
+    "m8-operational-case-audit-intent-v1": M8OperationalCaseAuditIntentV1,
+    "m8-operational-case-create-command-v1": M8OperationalCaseCreateCommandV1,
+    "m8-operational-case-transition-command-v1": M8OperationalCaseTransitionCommandV1,
     "m8-operational-source": M8OperationalSource,
     "m8-operational-source-catalog-authority-v1": M8OperationalSourceCatalogAuthorityV1,
     "model-call-failure-authority": ModelCallFailureAuthority,

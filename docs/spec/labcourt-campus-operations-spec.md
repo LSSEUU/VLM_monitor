@@ -37,7 +37,8 @@ M8 把已经完成的离线案件核心扩展为“实验室先做深、全校�
 | `OPERATIONS` | 管理设备、适配器和健康状态；不能作案件实体裁决 |
 
 服务到服务身份与人员角色分离。任何权限判断都必须消费持久化 actor/capability authority，不能
-相信客户端自报角色。M8.0 不实现账号体系；该边界由 M8.1 契约化。
+相信客户端自报角色。M8.1 已冻结 actor authority 的角色、作用域、版本、active 状态与派生
+capability；M8.3 必须从持久化 authority 解引用，不能接受客户端自报的嵌套 authority 作为事实。
 
 ## 3. 运营对象与状态
 
@@ -68,11 +69,14 @@ PENDING_VERIFICATION
   -> CONFIRMED | REJECTED | EVIDENCE_REQUESTED
 EVIDENCE_REQUESTED -> PENDING_VERIFICATION
 CONFIRMED -> RESOLVED
-任一允许状态 -> APPEALED -> APPEAL_RESOLVED
+CONFIRMED | RESOLVED -> APPEALED -> APPEAL_RESOLVED
 ```
 
-每次迁移必须绑定 actor、capability、前后版本 hash、原因、证据/信号引用和审计序列。Agent 不拥有
-关键迁移 capability。
+每个迁移命令必须绑定 actor、capability、源版本及 authority hash、目标版本、原因和证据/信号引用；
+M8.3 的提交回执还必须绑定结果版本、结果 authority hash 和审计序列。Agent 不拥有关键迁移
+capability。自动化 create command 的唯一初态是 `PENDING_VERIFICATION`，并固定
+`human_verification_required=true`、`direct_disciplinary_action_permitted=false`；所有迁移命令都固定
+`explicit_human_confirmation=true` 和 `direct_disciplinary_action_permitted=false`。
 
 ## 4. 通知闭环
 
@@ -142,3 +146,20 @@ WATER_LEAK / EMERGENCY_BUTTON`。每条样本必须有严格 typed value、设�
 - 模拟源、摄像头和无认证 live sensor 均不能声明 `life_safety_eligible=true`。
 - 所有新契约严格拒绝 extra、bool 冒充整数、开放字符串枚举和伪造 computed identity。
 - `pytest` 聚焦门、schema check、Ruff、Mypy 与架构依赖检查通过。
+
+## 10. M8.1 完成门
+
+- 四类 actor 的 capability 必须由闭合角色矩阵派生，客户端不能提交或扩大 capability。
+- `LEADER` 只能只读全局/重大事件/审计；`OPERATIONS` 只能管理设备和查看健康状态，二者均无
+  运营案件迁移 capability。
+- `SAFETY_OFFICER` 的案件动作受 active authority 与校园/地点作用域共同约束；`STUDENT` 只能为
+  `subject_actor_id` 与本人 actor ID 一致的案件提交申诉。
+- 案件动作、来源状态、目标状态、reason code、appeal resolution 和 required capability 使用闭合
+  矩阵；错误状态、原因、角色、作用域或人工确认一律 fail closed。
+- 自动化只产生待核实 create command；模拟来源从 source inventory 派生显著 badge，不能静默
+  变成 live，也不能直接产生纪律处分。
+- transition command 使用源版本与源 authority hash，并派生下一版本和内容寻址 ID；audit intent
+  绑定动作、前后状态/版本、actor authority、supporting authority inventory 和 manifest，但自身
+  不执行持久化写入。
+- 新增 schema 不改变 M0–M6 既有 schema 字节；聚焦 contract、schema check、Ruff、Mypy 与架构门
+  全部通过后才可进入 M8.2。
