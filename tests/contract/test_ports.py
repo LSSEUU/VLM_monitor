@@ -157,7 +157,13 @@ from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
 )
-from labcourt.contracts.m8_notification_lifecycle import M8NotificationTransitionCommandV1
+from labcourt.contracts.m8_notification_lifecycle import (
+    M8NotificationChannelCapabilityAuthorityV1,
+    M8NotificationDeliveryReceiptV1,
+    M8NotificationDispatchRequestV1,
+    M8NotificationDispatchResultV1,
+    M8NotificationTransitionCommandV1,
+)
 from labcourt.contracts.m8_notification_persistence import (
     M8NotificationAuditEventV1,
     M8NotificationCommitReceiptV1,
@@ -408,6 +414,7 @@ from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
 )
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
+from labcourt.ports.m8_notification_channel import M8NotificationChannelAdapter
 from labcourt.ports.m8_notification_repository import M8NotificationRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
 from labcourt.ports.m8_sensor_persistence_repository import M8SensorPersistenceRepository
@@ -467,6 +474,46 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8NotificationChannelAdapter: {
+        "capability_authority": (
+            ("self",),
+            {"return": M8NotificationChannelCapabilityAuthorityV1},
+        ),
+        "dispatch": (
+            ("self", "request", "rendered_card"),
+            {
+                "request": M8NotificationDispatchRequestV1,
+                "rendered_card": bytes,
+                "return": M8NotificationDispatchResultV1,
+            },
+        ),
+        "confirm_simulated_delivery": (
+            ("self", "dispatch_result", "occurred_at"),
+            {
+                "dispatch_result": M8NotificationDispatchResultV1,
+                "occurred_at": datetime,
+                "return": M8NotificationDeliveryReceiptV1,
+            },
+        ),
+        "replay_dispatch": (
+            ("self", "dispatch_request_id"),
+            {
+                "dispatch_request_id": str,
+                "return": M8NotificationDispatchResultV1,
+            },
+        ),
+        "replay_delivery": (
+            ("self", "dispatch_result_id"),
+            {
+                "dispatch_result_id": str,
+                "return": M8NotificationDeliveryReceiptV1,
+            },
+        ),
+        "read_raw_response": (
+            ("self", "raw_response_ref"),
+            {"raw_response_ref": str, "return": bytes},
+        ),
+    },
     M8NotificationRepository: {
         "publish_target_authority": (
             ("self", "target", "expected_prior_revision"),
