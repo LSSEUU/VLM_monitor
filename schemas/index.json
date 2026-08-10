@@ -1300,6 +1300,12 @@
       "name": "m8-notification-dispatch-result-v1"
     },
     {
+      "file": "m8-notification-escalation-assessment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_escalation.M8NotificationEscalationAssessmentV1",
+      "name": "m8-notification-escalation-assessment-v1"
+    },
+    {
       "file": "m8-notification-escalation-policy-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_notifications.M8NotificationEscalationPolicyAuthorityV1",

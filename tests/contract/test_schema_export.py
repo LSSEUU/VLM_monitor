@@ -229,6 +229,7 @@ EXPECTED_SCHEMA_MODES = {
     "m8-notification-dispatch-request-v1": "serialization",
     "m8-notification-dispatch-result-v1": "serialization",
     "m8-notification-escalation-policy-authority-v1": "serialization",
+    "m8-notification-escalation-assessment-v1": "serialization",
     "m8-notification-plan-authority-v1": "serialization",
     "m8-notification-reply-authority-v1": "serialization",
     "m8-notification-raw-artifact-commit-receipt-v1": "serialization",

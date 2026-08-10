@@ -299,6 +299,9 @@ from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
     M8OfflineNotificationCardV1,
 )
+from labcourt.contracts.m8_notification_escalation import (
+    M8NotificationEscalationAssessmentV1,
+)
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationChannelCapabilityAuthorityV1,
     M8NotificationDeliveryReceiptV1,
@@ -661,6 +664,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-notification-dispatch-request-v1": M8NotificationDispatchRequestV1,
     "m8-notification-dispatch-result-v1": M8NotificationDispatchResultV1,
     "m8-notification-escalation-policy-authority-v1": (M8NotificationEscalationPolicyAuthorityV1),
+    "m8-notification-escalation-assessment-v1": M8NotificationEscalationAssessmentV1,
     "m8-notification-plan-authority-v1": M8NotificationPlanAuthorityV1,
     "m8-notification-reply-authority-v1": M8NotificationReplyAuthorityV1,
     "m8-notification-raw-artifact-commit-receipt-v1": (M8NotificationRawArtifactCommitReceiptV1),
