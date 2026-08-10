@@ -1204,6 +1204,36 @@
       "name": "m8-actor-authority-v1"
     },
     {
+      "file": "m8-api-case-transition-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiCaseTransitionRequestV1",
+      "name": "m8-api-case-transition-request-v1"
+    },
+    {
+      "file": "m8-api-credential-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiCredentialAuthorityV1",
+      "name": "m8-api-credential-authority-v1"
+    },
+    {
+      "file": "m8-api-credential-catalog-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiCredentialCatalogAuthorityV1",
+      "name": "m8-api-credential-catalog-authority-v1"
+    },
+    {
+      "file": "m8-api-error-response-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiErrorResponseV1",
+      "name": "m8-api-error-response-v1"
+    },
+    {
+      "file": "m8-api-principal-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiPrincipalV1",
+      "name": "m8-api-principal-v1"
+    },
+    {
       "file": "m8-authority-reference.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_access_cases.M8AuthorityReference",

@@ -1,0 +1,51 @@
+{
+  "$defs": {
+    "M8ApiErrorReason": {
+      "enum": [
+        "AUTHENTICATION_REQUIRED",
+        "INVALID_CREDENTIAL",
+        "FORBIDDEN",
+        "RESOURCE_NOT_FOUND",
+        "CONCURRENT_MODIFICATION",
+        "INVALID_REQUEST",
+        "METHOD_NOT_ALLOWED",
+        "LOCAL_HOST_REQUIRED",
+        "INTERNAL_FAILURE"
+      ],
+      "title": "M8ApiErrorReason",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-api-error-response-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "reason_code": {
+      "$ref": "#/$defs/M8ApiErrorReason"
+    },
+    "request_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Id"
+    },
+    "schema_version": {
+      "const": "m8-api-error-response-v1",
+      "default": "m8-api-error-response-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reason_code"
+  ],
+  "title": "M8ApiErrorResponseV1",
+  "type": "object"
+}

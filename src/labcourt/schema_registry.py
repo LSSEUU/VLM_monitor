@@ -278,6 +278,13 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalCaseTransitionCommandV1,
 )
+from labcourt.contracts.m8_api import (
+    M8ApiCaseTransitionRequestV1,
+    M8ApiCredentialAuthorityV1,
+    M8ApiCredentialCatalogAuthorityV1,
+    M8ApiErrorResponseV1,
+    M8ApiPrincipalV1,
+)
 from labcourt.contracts.m8_case_persistence import (
     M8ActorAuthorityCommitReceiptV1,
     M8OperationalCaseAuditEventV1,
@@ -606,6 +613,11 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m6-upgrade-sample-execution-record": M6UpgradeSampleExecutionRecord,
     "m6-upgrade-sample-execution-record-v2": M6UpgradeSampleExecutionRecordV2,
     "model-cache-entry": ModelCacheEntry,
+    "m8-api-case-transition-request-v1": M8ApiCaseTransitionRequestV1,
+    "m8-api-credential-authority-v1": M8ApiCredentialAuthorityV1,
+    "m8-api-credential-catalog-authority-v1": M8ApiCredentialCatalogAuthorityV1,
+    "m8-api-error-response-v1": M8ApiErrorResponseV1,
+    "m8-api-principal-v1": M8ApiPrincipalV1,
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
     "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,

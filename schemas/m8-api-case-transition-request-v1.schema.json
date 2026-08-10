@@ -1,0 +1,210 @@
+{
+  "$defs": {
+    "M8AppealResolution": {
+      "enum": [
+        "UPHELD",
+        "OVERTURNED"
+      ],
+      "title": "M8AppealResolution",
+      "type": "string"
+    },
+    "M8AuthorityReference": {
+      "additionalProperties": false,
+      "description": "Typed reference to source evidence or another persisted authority.",
+      "properties": {
+        "authority_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Authority Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M8AuthorityReferenceKind"
+        },
+        "schema_version": {
+          "const": "m8-authority-reference-v1",
+          "default": "m8-authority-reference-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "authority_id",
+        "document_sha256"
+      ],
+      "title": "M8AuthorityReference",
+      "type": "object"
+    },
+    "M8AuthorityReferenceKind": {
+      "enum": [
+        "SOURCE_CATALOG",
+        "SENSOR_SIGNAL",
+        "VIDEO_EVENT",
+        "M0_CASE",
+        "USER_STATEMENT",
+        "NOTIFICATION_REPLY",
+        "EVIDENCE_PACK"
+      ],
+      "title": "M8AuthorityReferenceKind",
+      "type": "string"
+    },
+    "M8OperationalCaseAction": {
+      "enum": [
+        "CONFIRM",
+        "REJECT",
+        "REQUEST_EVIDENCE",
+        "RETURN_TO_VERIFICATION",
+        "RESOLVE",
+        "SUBMIT_APPEAL",
+        "RESOLVE_APPEAL"
+      ],
+      "title": "M8OperationalCaseAction",
+      "type": "string"
+    },
+    "M8OperationalCaseReasonCode": {
+      "enum": [
+        "VERIFIED_VIOLATION",
+        "FALSE_POSITIVE",
+        "NOT_ACTIONABLE",
+        "MORE_EVIDENCE_REQUIRED",
+        "EVIDENCE_RECEIVED",
+        "HAZARD_CLEARED",
+        "CORRECTIVE_ACTION_COMPLETED",
+        "SUBJECT_DISPUTE",
+        "APPEAL_UPHELD",
+        "APPEAL_OVERTURNED"
+      ],
+      "title": "M8OperationalCaseReasonCode",
+      "type": "string"
+    },
+    "M8OperationalCaseStatus": {
+      "enum": [
+        "PENDING_VERIFICATION",
+        "CONFIRMED",
+        "REJECTED",
+        "EVIDENCE_REQUESTED",
+        "RESOLVED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "M8OperationalCaseStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-api-case-transition-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Human transition input deliberately excluding actor role/capability authority.",
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/M8OperationalCaseAction"
+    },
+    "appeal_resolution": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8AppealResolution"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "case_location_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Location Id",
+      "type": "string"
+    },
+    "command_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Command Manifest Id",
+      "type": "string"
+    },
+    "direct_disciplinary_action_permitted": {
+      "readOnly": true,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "explicit_human_confirmation": {
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "reason_code": {
+      "$ref": "#/$defs/M8OperationalCaseReasonCode"
+    },
+    "reason_summary": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Reason Summary",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-api-case-transition-request-v1",
+      "default": "m8-api-case-transition-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_case_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Case Authority Sha256",
+      "type": "string"
+    },
+    "source_case_version": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Version",
+      "type": "integer"
+    },
+    "source_status": {
+      "$ref": "#/$defs/M8OperationalCaseStatus"
+    },
+    "subject_actor_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Subject Actor Id"
+    },
+    "supporting_authorities": {
+      "items": {
+        "$ref": "#/$defs/M8AuthorityReference"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Supporting Authorities",
+      "type": "array"
+    },
+    "transition_request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Transition Request Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_case_version",
+    "source_case_authority_sha256",
+    "source_status",
+    "case_location_id",
+    "action",
+    "reason_code",
+    "reason_summary",
+    "supporting_authorities",
+    "explicit_human_confirmation",
+    "command_manifest_id",
+    "direct_disciplinary_action_permitted",
+    "transition_request_id"
+  ],
+  "title": "M8ApiCaseTransitionRequestV1",
+  "type": "object"
+}
