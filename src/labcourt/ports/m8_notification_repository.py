@@ -56,6 +56,11 @@ class M8NotificationRepository(Protocol):
         limit: int,
     ) -> tuple[M8NotificationCommitReceiptV1, ...]: ...
 
+    def list_current_notifications(
+        self,
+        limit: int,
+    ) -> tuple[M8NotificationCommitReceiptV1, ...]: ...
+
     def list_notification_audit(
         self,
         notification_id: str,

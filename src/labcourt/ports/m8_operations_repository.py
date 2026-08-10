@@ -41,6 +41,11 @@ class M8OperationsRepository(Protocol):
         case_id: str,
     ) -> M8OperationalCaseCommitReceiptV1: ...
 
+    def list_current_operational_cases(
+        self,
+        limit: int,
+    ) -> tuple[M8OperationalCaseCommitReceiptV1, ...]: ...
+
     def transition_operational_case(
         self,
         command: M8OperationalCaseTransitionCommandV1,

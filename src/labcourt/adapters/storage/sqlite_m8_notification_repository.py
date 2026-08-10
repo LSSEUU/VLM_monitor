@@ -39,7 +39,7 @@ from labcourt.contracts.m8_notifications import (
     M8NotificationTargetAuthorityV1,
 )
 from labcourt.contracts.references import require_reference_token
-from labcourt.exceptions import ConcurrentModification, EvidenceMissing
+from labcourt.exceptions import BudgetExceeded, ConcurrentModification, EvidenceMissing
 
 from .sqlite_m8_operations_repository import M8_MIGRATIONS
 from .sqlite_repository import (
@@ -431,6 +431,29 @@ class SQLiteM8NotificationRepository:
                 """,
                 (status.value, limit),
             ).fetchall()
+            return tuple(self._load_notification_row(connection, row) for row in rows)
+
+    def list_current_notifications(
+        self,
+        limit: int,
+    ) -> tuple[M8NotificationCommitReceiptV1, ...]:
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 20_000:
+            raise ValueError("M8 current notification limit must be from 1 through 20000")
+        with self._read() as connection:
+            rows = connection.execute(
+                """
+                SELECT current.* FROM m8_notification_versions AS current
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM m8_notification_versions AS newer
+                    WHERE newer.notification_id = current.notification_id
+                      AND newer.notification_version > current.notification_version
+                )
+                ORDER BY current.notification_id LIMIT ?
+                """,
+                (limit + 1,),
+            ).fetchall()
+            if len(rows) > limit:
+                raise BudgetExceeded("M8 current notification inventory exceeds the limit")
             return tuple(self._load_notification_row(connection, row) for row in rows)
 
     def list_notification_audit(

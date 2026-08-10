@@ -24,6 +24,11 @@ class M8SensorPersistenceRepository(Protocol):
 
     def get_sample(self, sample_id: str) -> M8SensorSampleCommitReceiptV1: ...
 
+    def list_latest_sensor_samples(
+        self,
+        limit: int,
+    ) -> tuple[M8SensorSampleCommitReceiptV1, ...]: ...
+
     def read_raw_signal(self, raw_signal_ref: str) -> bytes: ...
 
 

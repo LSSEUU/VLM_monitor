@@ -27,7 +27,7 @@ from labcourt.contracts.m8_case_persistence import (
     M8OperationalCaseCommitReceiptV1,
 )
 from labcourt.contracts.references import require_reference_token
-from labcourt.exceptions import ConcurrentModification, EvidenceMissing
+from labcourt.exceptions import BudgetExceeded, ConcurrentModification, EvidenceMissing
 
 from .sqlite_repository import (
     MigrationRunner,
@@ -275,6 +275,29 @@ class SQLiteM8OperationsRepository:
             if row is None:
                 raise EvidenceMissing("M8 operational Case was not found")
             return self._load_case_row(row)
+
+    def list_current_operational_cases(
+        self,
+        limit: int,
+    ) -> tuple[M8OperationalCaseCommitReceiptV1, ...]:
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 10_000:
+            raise ValueError("M8 current Case limit must be from 1 through 10000")
+        with self._read() as connection:
+            rows = connection.execute(
+                """
+                SELECT current.* FROM m8_operational_case_versions AS current
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM m8_operational_case_versions AS newer
+                    WHERE newer.case_id = current.case_id
+                      AND newer.case_version > current.case_version
+                )
+                ORDER BY current.case_id LIMIT ?
+                """,
+                (limit + 1,),
+            ).fetchall()
+            if len(rows) > limit:
+                raise BudgetExceeded("M8 current Case inventory exceeds the requested limit")
+            return tuple(self._load_case_row(row) for row in rows)
 
     def transition_operational_case(
         self,

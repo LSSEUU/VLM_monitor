@@ -188,6 +188,7 @@ from labcourt.contracts.m8_operations import (
     M8CampusTopologyAuthorityV1,
     M8OperationalSourceCatalogAuthorityV1,
 )
+from labcourt.contracts.m8_projections import M8OperationsProjectionV1
 from labcourt.contracts.m8_sensor_persistence import (
     M8SensorPollCacheCommitReceiptV1,
     M8SensorSampleCommitReceiptV1,
@@ -428,6 +429,7 @@ from labcourt.ports.m8_knowledge_repository import M8KnowledgeRepository
 from labcourt.ports.m8_notification_channel import M8NotificationChannelAdapter
 from labcourt.ports.m8_notification_repository import M8NotificationRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
+from labcourt.ports.m8_projection_reader import M8OperationsProjectionReader
 from labcourt.ports.m8_sensor_persistence_repository import M8SensorPersistenceRepository
 from labcourt.ports.m8_sensors import M8SensorAdapter
 from labcourt.ports.model_response_artifacts import (
@@ -630,6 +632,10 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
                 "return": tuple[M8NotificationCommitReceiptV1, ...],
             },
         ),
+        "list_current_notifications": (
+            ("self", "limit"),
+            {"limit": int, "return": tuple[M8NotificationCommitReceiptV1, ...]},
+        ),
         "list_notification_audit": (
             ("self", "notification_id"),
             {
@@ -649,6 +655,12 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
                 "authorization_header": str | None,
                 "return": M8ApiPrincipalV1,
             },
+        ),
+    },
+    M8OperationsProjectionReader: {
+        "current_projection": (
+            ("self", "campus_id"),
+            {"campus_id": str, "return": M8OperationsProjectionV1},
         ),
     },
     M8InventoryRepository: {
@@ -714,6 +726,10 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
             ("self", "case_id"),
             {"case_id": str, "return": M8OperationalCaseCommitReceiptV1},
         ),
+        "list_current_operational_cases": (
+            ("self", "limit"),
+            {"limit": int, "return": tuple[M8OperationalCaseCommitReceiptV1, ...]},
+        ),
         "transition_operational_case": (
             ("self", "command", "case_manifest_id", "audit_manifest_id"),
             {
@@ -755,6 +771,10 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
         "get_sample": (
             ("self", "sample_id"),
             {"sample_id": str, "return": M8SensorSampleCommitReceiptV1},
+        ),
+        "list_latest_sensor_samples": (
+            ("self", "limit"),
+            {"limit": int, "return": tuple[M8SensorSampleCommitReceiptV1, ...]},
         ),
         "read_raw_signal": (
             ("self", "raw_signal_ref"),

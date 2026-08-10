@@ -434,6 +434,7 @@ def test_notification_lifecycle_is_atomic_idempotent_and_restart_safe(tmp_path: 
     )
     assert reopened.list_notifications_by_status(M8NotificationStatus.RESPONDED, 10) == (responded,)
     assert reopened.list_notifications_by_status(M8NotificationStatus.SENT, 10) == ()
+    assert reopened.list_current_notifications(10) == (responded,)
 
 
 def test_notification_rejects_stale_target_actor_and_source_fences(tmp_path: Path) -> None:

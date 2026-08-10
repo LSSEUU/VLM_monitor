@@ -164,6 +164,7 @@ def test_sensor_repository_atomically_persists_reloads_and_replays_exact_raw_byt
     assert reopened.get_poll_cache(result.request.request_id) == receipt
     sample_receipt = receipt.sample_receipts[0]
     assert reopened.get_sample(sample_receipt.sample.sample_id) == sample_receipt
+    assert reopened.list_latest_sensor_samples(10) == (sample_receipt,)
     assert reopened.read_raw_signal(sample_receipt.sample.raw_signal_ref) == raw[0]
 
 

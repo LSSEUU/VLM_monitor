@@ -205,6 +205,7 @@ def test_repository_persists_idempotent_actor_create_transition_and_audit_chain(
     )
     assert reopened.get_current_actor_authority(actor.actor_id) == actor_receipt
     assert reopened.get_current_operational_case(created.case_id) == resolved
+    assert reopened.list_current_operational_cases(10) == (resolved,)
     audit = reopened.list_operational_case_audit(created.case_id)
     assert tuple(event.event_sequence for event in audit) == (1, 2, 3)
     assert audit[1].prior_audit_event_sha256 == audit[0].audit_event_sha256

@@ -24,7 +24,7 @@ from labcourt.contracts.m8_sensor_persistence import (
 )
 from labcourt.contracts.m8_sensor_signals import M8SensorPollResultV1
 from labcourt.contracts.references import require_reference_token
-from labcourt.exceptions import ConcurrentModification, EvidenceMissing
+from labcourt.exceptions import BudgetExceeded, ConcurrentModification, EvidenceMissing
 
 from .sqlite_m8_operations_repository import M8_MIGRATIONS
 from .sqlite_repository import (
@@ -265,6 +265,32 @@ class SQLiteM8SensorPersistenceRepository:
             receipt = self._load_sample_row(row)
             self._read_raw_row(connection, receipt.sample.raw_signal_ref, receipt)
             return receipt
+
+    def list_latest_sensor_samples(
+        self,
+        limit: int,
+    ) -> tuple[M8SensorSampleCommitReceiptV1, ...]:
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 20_000:
+            raise ValueError("M8 latest sensor sample limit must be from 1 through 20000")
+        with self._read() as connection:
+            rows = connection.execute(
+                """
+                SELECT current.* FROM m8_sensor_samples AS current
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM m8_sensor_samples AS newer
+                    WHERE newer.source_id = current.source_id
+                      AND newer.source_sequence > current.source_sequence
+                )
+                ORDER BY current.source_id LIMIT ?
+                """,
+                (limit + 1,),
+            ).fetchall()
+            if len(rows) > limit:
+                raise BudgetExceeded("M8 latest sensor sample inventory exceeds the limit")
+            receipts = tuple(self._load_sample_row(row) for row in rows)
+            for receipt in receipts:
+                self._read_raw_row(connection, receipt.sample.raw_signal_ref, receipt)
+            return receipts
 
     def read_raw_signal(self, raw_signal_ref: str) -> bytes:
         _validate_raw_signal_ref(raw_signal_ref)
