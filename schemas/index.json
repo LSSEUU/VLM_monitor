@@ -1474,6 +1474,30 @@
       "name": "m8-operational-source-catalog-commit-receipt-v1"
     },
     {
+      "file": "m8-operations-projection-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projections.M8OperationsProjectionV1",
+      "name": "m8-operations-projection-v1"
+    },
+    {
+      "file": "m8-projection-map-node-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projections.M8ProjectionMapNodeV1",
+      "name": "m8-projection-map-node-v1"
+    },
+    {
+      "file": "m8-projection-overview-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projections.M8ProjectionOverviewV1",
+      "name": "m8-projection-overview-v1"
+    },
+    {
+      "file": "m8-projection-source-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projections.M8ProjectionSourceV1",
+      "name": "m8-projection-source-v1"
+    },
+    {
       "file": "m8-sensor-adapter-capability-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_sensor_signals.M8SensorAdapterCapabilityAuthorityV1",

@@ -342,6 +342,12 @@ from labcourt.contracts.m8_operations import (
     M8OperationalSource,
     M8OperationalSourceCatalogAuthorityV1,
 )
+from labcourt.contracts.m8_projections import (
+    M8OperationsProjectionV1,
+    M8ProjectionMapNodeV1,
+    M8ProjectionOverviewV1,
+    M8ProjectionSourceV1,
+)
 from labcourt.contracts.m8_sensor_persistence import (
     M8SensorPollCacheCommitReceiptV1,
     M8SensorSampleCommitReceiptV1,
@@ -701,6 +707,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-operational-source": M8OperationalSource,
     "m8-operational-source-catalog-authority-v1": M8OperationalSourceCatalogAuthorityV1,
     "m8-operational-source-catalog-commit-receipt-v1": (M8OperationalSourceCatalogCommitReceiptV1),
+    "m8-operations-projection-v1": M8OperationsProjectionV1,
+    "m8-projection-map-node-v1": M8ProjectionMapNodeV1,
+    "m8-projection-overview-v1": M8ProjectionOverviewV1,
+    "m8-projection-source-v1": M8ProjectionSourceV1,
     "m8-sensor-adapter-capability-authority-v1": M8SensorAdapterCapabilityAuthorityV1,
     "m8-sensor-poll-request-v1": M8SensorPollRequestV1,
     "m8-sensor-poll-result-v1": M8SensorPollResultV1,
