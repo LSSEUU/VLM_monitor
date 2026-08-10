@@ -1258,10 +1258,28 @@
       "name": "m8-campus-topology-commit-receipt-v1"
     },
     {
+      "file": "m8-notification-audit-event-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationAuditEventV1",
+      "name": "m8-notification-audit-event-v1"
+    },
+    {
+      "file": "m8-notification-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationAuthorityV1",
+      "name": "m8-notification-authority-v1"
+    },
+    {
       "file": "m8-notification-channel-capability-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationChannelCapabilityAuthorityV1",
       "name": "m8-notification-channel-capability-authority-v1"
+    },
+    {
+      "file": "m8-notification-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationCommitReceiptV1",
+      "name": "m8-notification-commit-receipt-v1"
     },
     {
       "file": "m8-notification-delivery-receipt-v1.schema.json",

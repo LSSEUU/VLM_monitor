@@ -303,6 +303,11 @@ from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationReplyAuthorityV1,
     M8NotificationTransitionCommandV1,
 )
+from labcourt.contracts.m8_notification_persistence import (
+    M8NotificationAuditEventV1,
+    M8NotificationAuthorityV1,
+    M8NotificationCommitReceiptV1,
+)
 from labcourt.contracts.m8_notifications import (
     M8NotificationEscalationPolicyAuthorityV1,
     M8NotificationPlanAuthorityV1,
@@ -642,7 +647,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-operational-case-audit-event-v1": M8OperationalCaseAuditEventV1,
     "m8-operational-case-authority-v1": M8OperationalCaseAuthorityV1,
     "m8-operational-case-commit-receipt-v1": M8OperationalCaseCommitReceiptV1,
+    "m8-notification-audit-event-v1": M8NotificationAuditEventV1,
+    "m8-notification-authority-v1": M8NotificationAuthorityV1,
     "m8-notification-channel-capability-authority-v1": (M8NotificationChannelCapabilityAuthorityV1),
+    "m8-notification-commit-receipt-v1": M8NotificationCommitReceiptV1,
     "m8-notification-delivery-receipt-v1": M8NotificationDeliveryReceiptV1,
     "m8-notification-dispatch-request-v1": M8NotificationDispatchRequestV1,
     "m8-notification-dispatch-result-v1": M8NotificationDispatchResultV1,
