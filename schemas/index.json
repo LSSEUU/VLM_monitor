@@ -1222,6 +1222,12 @@
       "name": "m8-campus-topology-authority-v1"
     },
     {
+      "file": "m8-campus-topology-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_inventory_persistence.M8CampusTopologyCommitReceiptV1",
+      "name": "m8-campus-topology-commit-receipt-v1"
+    },
+    {
       "file": "m8-operational-case-audit-event-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_case_persistence.M8OperationalCaseAuditEventV1",
@@ -1268,6 +1274,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_operations.M8OperationalSourceCatalogAuthorityV1",
       "name": "m8-operational-source-catalog-authority-v1"
+    },
+    {
+      "file": "m8-operational-source-catalog-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_inventory_persistence.M8OperationalSourceCatalogCommitReceiptV1",
+      "name": "m8-operational-source-catalog-commit-receipt-v1"
     },
     {
       "file": "m8-sensor-adapter-capability-authority-v1.schema.json",

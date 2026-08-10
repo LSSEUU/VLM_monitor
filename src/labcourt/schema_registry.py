@@ -284,6 +284,10 @@ from labcourt.contracts.m8_case_persistence import (
     M8OperationalCaseAuthorityV1,
     M8OperationalCaseCommitReceiptV1,
 )
+from labcourt.contracts.m8_inventory_persistence import (
+    M8CampusTopologyCommitReceiptV1,
+    M8OperationalSourceCatalogCommitReceiptV1,
+)
 from labcourt.contracts.m8_operations import (
     M8CampusLocation,
     M8CampusTopologyAuthorityV1,
@@ -600,6 +604,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "model-cache-entry": ModelCacheEntry,
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
+    "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,
     "m8-actor-authority-v1": M8ActorAuthorityV1,
     "m8-actor-authority-commit-receipt-v1": M8ActorAuthorityCommitReceiptV1,
     "m8-authority-reference": M8AuthorityReference,
@@ -611,6 +616,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-operational-case-transition-command-v1": M8OperationalCaseTransitionCommandV1,
     "m8-operational-source": M8OperationalSource,
     "m8-operational-source-catalog-authority-v1": M8OperationalSourceCatalogAuthorityV1,
+    "m8-operational-source-catalog-commit-receipt-v1": (M8OperationalSourceCatalogCommitReceiptV1),
     "m8-sensor-adapter-capability-authority-v1": M8SensorAdapterCapabilityAuthorityV1,
     "m8-sensor-poll-request-v1": M8SensorPollRequestV1,
     "m8-sensor-poll-result-v1": M8SensorPollResultV1,
