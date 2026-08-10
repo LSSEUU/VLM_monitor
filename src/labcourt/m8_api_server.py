@@ -16,6 +16,7 @@ from labcourt.contracts.m8_api import (
     M8ApiCaseTransitionRequestV1,
     M8ApiErrorReason,
     M8ApiErrorResponseV1,
+    M8ApiKnowledgeQueryRequestV1,
 )
 from labcourt.exceptions import ContractViolation
 from labcourt.ports.m8_api_authentication import (
@@ -23,6 +24,7 @@ from labcourt.ports.m8_api_authentication import (
     M8AuthenticationFailureCode,
     M8RequestAuthenticator,
 )
+from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_operations_api import (
     M8ApiServiceError,
     M8ApiServiceFailureCode,
@@ -41,10 +43,12 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         server_address: tuple[str, int],
         *,
         service: M8OperationsApiService,
+        knowledge_service: M8KnowledgeApiService,
         authenticator: M8RequestAuthenticator,
     ) -> None:
         super().__init__(server_address, M8ApiRequestHandler)
         self.api_service = service
+        self.knowledge_service = knowledge_service
         self.api_authenticator = authenticator
 
 
@@ -73,8 +77,8 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                     self._json(HTTPStatus.OK, topology.model_dump(mode="json"))
                     return
                 if segments[4] == "sources":
-                    catalog = self.server.api_service.source_catalog(principal, segments[3])
-                    self._json(HTTPStatus.OK, catalog.model_dump(mode="json"))
+                    source_catalog = self.server.api_service.source_catalog(principal, segments[3])
+                    self._json(HTTPStatus.OK, source_catalog.model_dump(mode="json"))
                     return
             if len(segments) == 4 and segments[:3] == ("api", "m8", "cases"):
                 case = self.server.api_service.case(principal, segments[3])
@@ -94,6 +98,24 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
             if len(segments) == 4 and segments[:3] == ("api", "m8", "sensor-polls"):
                 poll = self.server.api_service.sensor_poll(principal, segments[3])
                 self._json(HTTPStatus.OK, poll.model_dump(mode="json"))
+                return
+            if len(segments) == 5 and segments[:4] == (
+                "api",
+                "m8",
+                "knowledge",
+                "catalogs",
+            ):
+                catalog = self.server.knowledge_service.current_catalog(principal, segments[4])
+                self._json(HTTPStatus.OK, catalog.model_dump(mode="json"))
+                return
+            if len(segments) == 5 and segments[:4] == (
+                "api",
+                "m8",
+                "knowledge",
+                "answers",
+            ):
+                answer = self.server.knowledge_service.answer(principal, segments[4])
+                self._json(HTTPStatus.OK, answer.model_dump(mode="json"))
                 return
             self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
         except M8AuthenticationError as error:
@@ -121,6 +143,21 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                 self.headers.get("Authorization")
             )
             segments = self._segments()
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "knowledge", "catalogs")
+                and segments[5] == "queries"
+            ):
+                knowledge_request = M8ApiKnowledgeQueryRequestV1.model_validate_json(
+                    self._json_body()
+                )
+                answer_value = self.server.knowledge_service.query(
+                    principal,
+                    segments[4],
+                    knowledge_request,
+                )
+                self._json(HTTPStatus.OK, answer_value.model_dump(mode="json"))
+                return
             if not (
                 len(segments) == 5
                 and segments[:3] == ("api", "m8", "cases")
@@ -128,9 +165,13 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
             ):
                 self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
                 return
-            request = M8ApiCaseTransitionRequestV1.model_validate_json(self._json_body())
-            value = self.server.api_service.transition_case(principal, segments[3], request)
-            self._json(HTTPStatus.OK, value.model_dump(mode="json"))
+            transition_request = M8ApiCaseTransitionRequestV1.model_validate_json(self._json_body())
+            case_value = self.server.api_service.transition_case(
+                principal,
+                segments[3],
+                transition_request,
+            )
+            self._json(HTTPStatus.OK, case_value.model_dump(mode="json"))
         except M8AuthenticationError as error:
             self._authentication_error(error)
         except M8ApiServiceError as error:
@@ -191,6 +232,10 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
             M8ApiServiceFailureCode.INVALID_REQUEST: (
                 HTTPStatus.BAD_REQUEST,
                 M8ApiErrorReason.INVALID_REQUEST,
+            ),
+            M8ApiServiceFailureCode.INTERNAL_FAILURE: (
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                M8ApiErrorReason.INTERNAL_FAILURE,
             ),
         }
         status, reason = mapping[error.reason_code]
@@ -254,17 +299,21 @@ def build_m8_api_server(
     *,
     port: int,
     service: M8OperationsApiService,
+    knowledge_service: M8KnowledgeApiService,
     authenticator: M8RequestAuthenticator,
 ) -> M8ApiHttpServer:
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
         raise ValueError("M8 API port must be from zero through 65535")
     if not isinstance(service, M8OperationsApiService):
         raise TypeError("M8 API requires an operations service")
+    if not isinstance(knowledge_service, M8KnowledgeApiService):
+        raise TypeError("M8 API requires a knowledge service")
     if authenticator is None:
         raise TypeError("M8 API requires an explicit authenticator")
     return M8ApiHttpServer(
         ("127.0.0.1", port),
         service=service,
+        knowledge_service=knowledge_service,
         authenticator=authenticator,
     )
 

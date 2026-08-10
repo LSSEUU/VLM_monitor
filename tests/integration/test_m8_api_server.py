@@ -5,6 +5,7 @@ import http.client
 import json
 import threading
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
@@ -12,10 +13,14 @@ import pytest
 
 from labcourt.adapters.m8_hashed_bearer_authenticator import M8HashedBearerAuthenticator
 from labcourt.adapters.storage.sqlite_m8_inventory_repository import SQLiteM8InventoryRepository
+from labcourt.adapters.storage.sqlite_m8_knowledge_repository import (
+    SQLiteM8KnowledgeRepository,
+)
 from labcourt.adapters.storage.sqlite_m8_operations_repository import SQLiteM8OperationsRepository
 from labcourt.adapters.storage.sqlite_m8_sensor_persistence_repository import (
     SQLiteM8SensorPersistenceRepository,
 )
+from labcourt.application.m8_knowledge_demo import build_offline_knowledge_demo_bundle
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.m8_access_cases import (
     M8ActorAuthorityV1,
@@ -32,8 +37,10 @@ from labcourt.contracts.m8_api import (
     M8ApiCaseTransitionRequestV1,
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
+    M8ApiKnowledgeQueryRequestV1,
 )
 from labcourt.contracts.m8_case_persistence import M8OperationalCaseCommitReceiptV1
+from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 from labcourt.contracts.m8_operations import (
     M8CampusLocation,
     M8CampusLocationKind,
@@ -45,6 +52,7 @@ from labcourt.contracts.m8_operations import (
 )
 from labcourt.m8_api_server import M8ApiHttpServer, build_m8_api_server
 from labcourt.ports.m8_api_authentication import M8AuthenticationError, M8RequestAuthenticator
+from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_operations_api import M8OperationsApiService
 
 SHA_A = "a" * 64
@@ -53,6 +61,7 @@ SHA_C = "c" * 64
 SHA_D = "d" * 64
 SHA_E = "e" * 64
 BUSY_TIMEOUT_MS = 5_000
+BASE_TIME = datetime(2026, 8, 10, 9, 0, tzinfo=UTC)
 TOKENS = {
     "leader": "labcourt-test-leader-token",
     "operations": "labcourt-test-operations-token",
@@ -211,9 +220,30 @@ def api_server(
     case = _create_case(operations)
     sensors = SQLiteM8SensorPersistenceRepository(database, BUSY_TIMEOUT_MS, SHA_A)
     service = M8OperationsApiService(inventory, operations, sensors, SHA_D, SHA_E)
+    bundle = build_offline_knowledge_demo_bundle(
+        generated_at=BASE_TIME,
+        document_manifest_id=SHA_A,
+        catalog_manifest_id=SHA_B,
+        adapter_manifest_id=SHA_C,
+    )
+    knowledge_repository = SQLiteM8KnowledgeRepository(database, BUSY_TIMEOUT_MS, SHA_A)
+    contents = bundle.content_map()
+    knowledge_repository.publish_catalog(
+        bundle.catalog,
+        tuple(contents[document.content_ref] for document in bundle.catalog.documents),
+        None,
+        SHA_D,
+    )
+    knowledge_service = M8KnowledgeApiService(
+        knowledge_repository,
+        operations,
+        SHA_E,
+        bundle.adapter_manifest_id,
+    )
     server = build_m8_api_server(
         port=0,
         service=service,
+        knowledge_service=knowledge_service,
         authenticator=M8HashedBearerAuthenticator(_credentials()),
     )
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -282,6 +312,16 @@ def _transition_payload(
     return request.model_dump(mode="json")
 
 
+def _knowledge_query_payload() -> dict[str, object]:
+    return M8ApiKnowledgeQueryRequestV1(
+        query_text="\u62a4\u76ee\u955c \u4f69\u6234",
+        locale="zh-CN",
+        as_of=BASE_TIME,
+        allowed_document_types=tuple(sorted(M8KnowledgeDocumentType, key=lambda item: item.value)),
+        max_citations=3,
+    ).model_dump(mode="json")
+
+
 def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
     api_server: tuple[
         M8ApiHttpServer, M8OperationalCaseCommitReceiptV1, SQLiteM8OperationsRepository
@@ -295,7 +335,15 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
         build_m8_api_server(
             port=0,
             service=server.api_service,
+            knowledge_service=server.knowledge_service,
             authenticator=cast(M8RequestAuthenticator, None),
+        )
+    with pytest.raises(TypeError, match="knowledge service"):
+        build_m8_api_server(
+            port=0,
+            service=server.api_service,
+            knowledge_service=cast(M8KnowledgeApiService, None),
+            authenticator=server.api_authenticator,
         )
 
     status, body = _request(server, "GET", "/api/m8/campuses/campus-main/topology")
@@ -497,3 +545,93 @@ def test_sensor_poll_endpoint_denies_leader_but_allows_operations_lookup(
     )
     assert status == 404
     assert body["reason_code"] == "RESOURCE_NOT_FOUND"  # type: ignore[index]
+
+
+def test_knowledge_api_resolves_current_authorities_and_replays_own_answer(
+    api_server: tuple[
+        M8ApiHttpServer, M8OperationalCaseCommitReceiptV1, SQLiteM8OperationsRepository
+    ],
+) -> None:
+    server, case, _operations = api_server
+    catalog_id = "campus-safety-knowledge"
+    status, body = _request(
+        server,
+        "GET",
+        f"/api/m8/knowledge/catalogs/{catalog_id}",
+        token=TOKENS["student"],
+    )
+    assert status == 200
+    assert body["catalog"]["catalog_revision"] == 1  # type: ignore[index]
+
+    status, body = _request(
+        server,
+        "POST",
+        f"/api/m8/knowledge/catalogs/{catalog_id}/queries",
+        token=TOKENS["student"],
+        payload=_knowledge_query_payload(),
+    )
+    assert status == 200
+    answer = body["answer"]  # type: ignore[index]
+    assert answer["query"]["requester_actor_id"] == "student-01"  # type: ignore[index]
+    assert answer["network_used"] is False  # type: ignore[index]
+    assert answer["model_used"] is False  # type: ignore[index]
+    assert answer["case_transition_permitted"] is False  # type: ignore[index]
+    assert len(answer["citations"]) >= 1  # type: ignore[arg-type,index]
+    query_id = str(body["query_id"])  # type: ignore[index]
+
+    status, replay = _request(
+        server,
+        "GET",
+        f"/api/m8/knowledge/answers/{query_id}",
+        token=TOKENS["student"],
+    )
+    assert status == 200
+    assert replay == body
+    status, denied = _request(
+        server,
+        "GET",
+        f"/api/m8/knowledge/answers/{query_id}",
+        token=TOKENS["safety"],
+    )
+    assert status == 403
+    assert denied["reason_code"] == "FORBIDDEN"  # type: ignore[index]
+    assert _operations.get_current_operational_case(case.case_id) == case
+
+
+def test_knowledge_api_rejects_authority_grafts_missing_catalog_and_inactive_actor(
+    api_server: tuple[
+        M8ApiHttpServer, M8OperationalCaseCommitReceiptV1, SQLiteM8OperationsRepository
+    ],
+) -> None:
+    server, _case, operations = api_server
+    payload = _knowledge_query_payload()
+    payload["requester_actor_id"] = "leader-01"
+    status, body = _request(
+        server,
+        "POST",
+        "/api/m8/knowledge/catalogs/campus-safety-knowledge/queries",
+        token=TOKENS["student"],
+        payload=payload,
+    )
+    assert status == 400
+    assert body["reason_code"] == "INVALID_REQUEST"  # type: ignore[index]
+
+    status, body = _request(
+        server,
+        "GET",
+        "/api/m8/knowledge/catalogs/missing-catalog",
+        token=TOKENS["student"],
+    )
+    assert status == 404
+    assert body["reason_code"] == "RESOURCE_NOT_FOUND"  # type: ignore[index]
+
+    operations.publish_actor_authority(_actor(M8ActorRole.STUDENT, revision=2, active=False), 1)
+    status, body = _request(
+        server,
+        "POST",
+        "/api/m8/knowledge/catalogs/campus-safety-knowledge/queries",
+        token=TOKENS["student"],
+        payload=_knowledge_query_payload(),
+    )
+    assert status == 403
+    assert body["reason_code"] == "FORBIDDEN"  # type: ignore[index]
