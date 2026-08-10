@@ -1192,6 +1192,30 @@
       "name": "m6-upgrade-selected-case-audit-anchor"
     },
     {
+      "file": "m8-campus-location.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_operations.M8CampusLocation",
+      "name": "m8-campus-location"
+    },
+    {
+      "file": "m8-campus-topology-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_operations.M8CampusTopologyAuthorityV1",
+      "name": "m8-campus-topology-authority-v1"
+    },
+    {
+      "file": "m8-operational-source.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_operations.M8OperationalSource",
+      "name": "m8-operational-source"
+    },
+    {
+      "file": "m8-operational-source-catalog-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_operations.M8OperationalSourceCatalogAuthorityV1",
+      "name": "m8-operational-source-catalog-authority-v1"
+    },
+    {
       "file": "maintenance-recovery-report.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.model_response_recovery.MaintenanceRecoveryReport",

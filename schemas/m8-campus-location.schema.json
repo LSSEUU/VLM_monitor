@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "M8CampusLocationKind": {
+      "enum": [
+        "CAMPUS",
+        "BUILDING",
+        "FLOOR",
+        "ROOM"
+      ],
+      "title": "M8CampusLocationKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-campus-location.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One stable node in the campus/building/floor/room hierarchy.",
+  "properties": {
+    "display_name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Display Name",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/M8CampusLocationKind"
+    },
+    "location_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Location Id",
+      "type": "string"
+    },
+    "parent_location_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Parent Location Id"
+    },
+    "schema_version": {
+      "const": "m8-campus-location-v1",
+      "default": "m8-campus-location-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "location_id",
+    "kind",
+    "parent_location_id",
+    "display_name"
+  ],
+  "title": "M8CampusLocation",
+  "type": "object"
+}

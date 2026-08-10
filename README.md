@@ -12,6 +12,11 @@ M0 工程骨架、M1 确定性感知核心、M2 隐私证据包/可审计存储�
 历史训练数据集闭环均已完成并冻结。M6 的 0014/V3 恢复链、CLOSED `REPLAY_LOCKED`
 回归发布、隐私安全静态报告与 16 场景完整离线 demo 也已完成全量门禁并冻结。
 
+M8 校园安全运营产品化现按
+[`docs/spec/labcourt-campus-operations-spec.md`](docs/spec/labcourt-campus-operations-spec.md)
+以 additive 方式推进，不修改上述冻结能力。M8.0 的校园拓扑与 camera/sensor 来源真实性契约
+已经完成；API、持久化、权限、通知、知识库和最小集成界面将在后续可验证切片中依次接入。
+
 ## 核心原则
 
 - 安全底线不依赖 VLM。

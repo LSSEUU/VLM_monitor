@@ -271,6 +271,12 @@ from labcourt.contracts.m6_upgrade_pending_sample_commitment import (
     M6UpgradePendingSampleCommitmentAuthority,
 )
 from labcourt.contracts.m6_upgrade_physical import M6UpgradePhysicalArtifactRef
+from labcourt.contracts.m8_operations import (
+    M8CampusLocation,
+    M8CampusTopologyAuthorityV1,
+    M8OperationalSource,
+    M8OperationalSourceCatalogAuthorityV1,
+)
 from labcourt.contracts.manifests import RunManifest, StreamManifest
 from labcourt.contracts.model_call_failures import ModelCallFailureAuthority
 from labcourt.contracts.model_response_recovery import (
@@ -570,6 +576,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m6-upgrade-sample-execution-record": M6UpgradeSampleExecutionRecord,
     "m6-upgrade-sample-execution-record-v2": M6UpgradeSampleExecutionRecordV2,
     "model-cache-entry": ModelCacheEntry,
+    "m8-campus-location": M8CampusLocation,
+    "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
+    "m8-operational-source": M8OperationalSource,
+    "m8-operational-source-catalog-authority-v1": M8OperationalSourceCatalogAuthorityV1,
     "model-call-failure-authority": ModelCallFailureAuthority,
     "model-parse-receipt": ModelParseReceipt,
     "model-response-recovery-report": ModelResponseRecoveryReport,

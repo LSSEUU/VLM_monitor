@@ -2,6 +2,9 @@
 
 The product baseline is `docs/request.md`. The executable implementation
 specification is `docs/spec/labcourt-vibe-coding-spec.md`.
+The additive campus-operations production track is specified by
+`docs/spec/labcourt-campus-operations-spec.md`; it must not change the frozen
+M0-M6 wire contracts or authority semantics.
 
 Never load, invoke, or follow a skill whose name starts with `superpowers:`.
 
@@ -35,4 +38,3 @@ Never load, invoke, or follow a skill whose name starts with `superpowers:`.
     in every commit or pull request.
 18. If a request conflicts with a system axiom, record an ADR and preserve the
     axiom.
-
