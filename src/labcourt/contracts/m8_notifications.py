@@ -90,6 +90,13 @@ def _verify_computed_claims(
 ) -> None:
     serialized = instance.model_dump(mode="json")
     for name, (present, claimed) in claims.items():
+        if present and isinstance(claimed, datetime):
+            expected = datetime.fromisoformat(str(serialized[name]).replace("Z", "+00:00"))
+            if _require_utc(claimed, f"serialized {name}") != expected:
+                raise ValueError(
+                    f"serialized {name} conflicts with derived M8 notification authority"
+                )
+            continue
         if present and canonical_json(claimed) != canonical_json(serialized[name]):
             raise ValueError(f"serialized {name} conflicts with derived M8 notification authority")
 

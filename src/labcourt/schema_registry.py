@@ -295,6 +295,14 @@ from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
 )
+from labcourt.contracts.m8_notification_lifecycle import (
+    M8NotificationChannelCapabilityAuthorityV1,
+    M8NotificationDeliveryReceiptV1,
+    M8NotificationDispatchRequestV1,
+    M8NotificationDispatchResultV1,
+    M8NotificationReplyAuthorityV1,
+    M8NotificationTransitionCommandV1,
+)
 from labcourt.contracts.m8_notifications import (
     M8NotificationEscalationPolicyAuthorityV1,
     M8NotificationPlanAuthorityV1,
@@ -634,10 +642,16 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-operational-case-audit-event-v1": M8OperationalCaseAuditEventV1,
     "m8-operational-case-authority-v1": M8OperationalCaseAuthorityV1,
     "m8-operational-case-commit-receipt-v1": M8OperationalCaseCommitReceiptV1,
+    "m8-notification-channel-capability-authority-v1": (M8NotificationChannelCapabilityAuthorityV1),
+    "m8-notification-delivery-receipt-v1": M8NotificationDeliveryReceiptV1,
+    "m8-notification-dispatch-request-v1": M8NotificationDispatchRequestV1,
+    "m8-notification-dispatch-result-v1": M8NotificationDispatchResultV1,
     "m8-notification-escalation-policy-authority-v1": (M8NotificationEscalationPolicyAuthorityV1),
     "m8-notification-plan-authority-v1": M8NotificationPlanAuthorityV1,
+    "m8-notification-reply-authority-v1": M8NotificationReplyAuthorityV1,
     "m8-notification-target-authority-v1": M8NotificationTargetAuthorityV1,
     "m8-notification-template-authority-v1": M8NotificationTemplateAuthorityV1,
+    "m8-notification-transition-command-v1": M8NotificationTransitionCommandV1,
     "m8-operational-case-create-command-v1": M8OperationalCaseCreateCommandV1,
     "m8-operational-case-transition-command-v1": M8OperationalCaseTransitionCommandV1,
     "m8-operational-source": M8OperationalSource,

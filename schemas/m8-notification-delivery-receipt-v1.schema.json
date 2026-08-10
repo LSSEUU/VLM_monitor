@@ -1,0 +1,148 @@
+{
+  "$defs": {
+    "M8NotificationChannelFailureCode": {
+      "enum": [
+        "CHANNEL_REJECTED",
+        "CHANNEL_TIMEOUT",
+        "CHANNEL_UNAVAILABLE",
+        "DELIVERY_REJECTED",
+        "RECEIPT_INVALID",
+        "UNKNOWN_DELIVERY"
+      ],
+      "title": "M8NotificationChannelFailureCode",
+      "type": "string"
+    },
+    "M8NotificationChannelKind": {
+      "enum": [
+        "DINGTALK",
+        "FEISHU",
+        "LOCAL_OFFLINE_FAKE",
+        "WECHAT_WORK"
+      ],
+      "title": "M8NotificationChannelKind",
+      "type": "string"
+    },
+    "M8NotificationDeliveryDisposition": {
+      "enum": [
+        "DELIVERED",
+        "FAILED"
+      ],
+      "title": "M8NotificationDeliveryDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-delivery-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Provider delivery/failure event, distinct from dispatch acceptance.",
+  "properties": {
+    "case_transition_permitted": {
+      "readOnly": true,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "channel": {
+      "$ref": "#/$defs/M8NotificationChannelKind"
+    },
+    "delivery_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Delivery Receipt Id",
+      "type": "string"
+    },
+    "dispatch_result_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dispatch Result Id",
+      "type": "string"
+    },
+    "disposition": {
+      "$ref": "#/$defs/M8NotificationDeliveryDisposition"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8NotificationChannelFailureCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "notification_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Notification Id",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "provider_delivery_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Provider Delivery Id"
+    },
+    "raw_response_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "raw_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Response Sha256",
+      "type": "string"
+    },
+    "real_delivery_confirmed": {
+      "readOnly": true,
+      "title": "Real Delivery Confirmed",
+      "type": "boolean"
+    },
+    "receipt_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Receipt Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-notification-delivery-receipt-v1",
+      "default": "m8-notification-delivery-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "target_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Target Authority Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "notification_id",
+    "dispatch_result_id",
+    "target_authority_id",
+    "channel",
+    "disposition",
+    "occurred_at",
+    "raw_response_ref",
+    "raw_response_sha256",
+    "simulated",
+    "receipt_manifest_id",
+    "real_delivery_confirmed",
+    "case_transition_permitted",
+    "delivery_receipt_id"
+  ],
+  "title": "M8NotificationDeliveryReceiptV1",
+  "type": "object"
+}
