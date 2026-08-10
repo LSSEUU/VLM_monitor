@@ -147,6 +147,12 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalCaseTransitionCommandV1,
 )
+from labcourt.contracts.m8_adapter_commissioning import (
+    M8CommissioningEvidenceAuthorityV1,
+    M8CommissioningEvidenceCommitReceiptV1,
+    M8ProductionAdapterCandidateAuthorityV1,
+    M8ProductionAdapterCandidateCommitReceiptV1,
+)
 from labcourt.contracts.m8_api import M8ApiPrincipalV1
 from labcourt.contracts.m8_case_persistence import (
     M8ActorAuthorityCommitReceiptV1,
@@ -422,6 +428,9 @@ from labcourt.ports.m6_upgrade_pending_sample_commitment import (
 from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
     M6UpgradeWholeSampleRecordBuilder,
 )
+from labcourt.ports.m8_adapter_commissioning_repository import (
+    M8AdapterCommissioningRepository,
+)
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
@@ -487,6 +496,51 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8AdapterCommissioningRepository: {
+        "register_candidate": (
+            ("self", "candidate", "registrar_actor_id"),
+            {
+                "candidate": M8ProductionAdapterCandidateAuthorityV1,
+                "registrar_actor_id": str,
+                "return": M8ProductionAdapterCandidateCommitReceiptV1,
+            },
+        ),
+        "get_candidate": (
+            ("self", "candidate_authority_id"),
+            {
+                "candidate_authority_id": str,
+                "return": M8ProductionAdapterCandidateCommitReceiptV1,
+            },
+        ),
+        "commit_evidence": (
+            ("self", "evidence", "artifact_bytes", "artifact_storage_manifest_id"),
+            {
+                "evidence": M8CommissioningEvidenceAuthorityV1,
+                "artifact_bytes": bytes,
+                "artifact_storage_manifest_id": str,
+                "return": M8CommissioningEvidenceCommitReceiptV1,
+            },
+        ),
+        "get_evidence": (
+            ("self", "evidence_authority_id"),
+            {
+                "evidence_authority_id": str,
+                "return": M8CommissioningEvidenceCommitReceiptV1,
+            },
+        ),
+        "list_candidate_evidence": (
+            ("self", "candidate_authority_id", "limit"),
+            {
+                "candidate_authority_id": str,
+                "limit": int,
+                "return": tuple[M8CommissioningEvidenceCommitReceiptV1, ...],
+            },
+        ),
+        "read_artifact": (
+            ("self", "artifact_ref"),
+            {"artifact_ref": str, "return": bytes},
+        ),
+    },
     M8KnowledgeRepository: {
         "publish_catalog": (
             (
