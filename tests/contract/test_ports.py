@@ -160,6 +160,10 @@ from labcourt.contracts.m8_operations import (
     M8CampusTopologyAuthorityV1,
     M8OperationalSourceCatalogAuthorityV1,
 )
+from labcourt.contracts.m8_sensor_persistence import (
+    M8SensorPollCacheCommitReceiptV1,
+    M8SensorSampleCommitReceiptV1,
+)
 from labcourt.contracts.m8_sensor_signals import (
     M8SensorAdapterCapabilityAuthorityV1,
     M8SensorPollRequestV1,
@@ -391,6 +395,7 @@ from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
 )
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
+from labcourt.ports.m8_sensor_persistence_repository import M8SensorPersistenceRepository
 from labcourt.ports.m8_sensors import M8SensorAdapter
 from labcourt.ports.model_response_artifacts import (
     ModelResponseArtifactCandidate,
@@ -525,6 +530,36 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
                 "case_id": str,
                 "return": tuple[M8OperationalCaseAuditEventV1, ...],
             },
+        ),
+    },
+    M8SensorPersistenceRepository: {
+        "commit_poll_result": (
+            (
+                "self",
+                "result",
+                "raw_signals",
+                "raw_storage_manifest_id",
+                "cache_manifest_id",
+            ),
+            {
+                "result": M8SensorPollResultV1,
+                "raw_signals": tuple[bytes, ...],
+                "raw_storage_manifest_id": str,
+                "cache_manifest_id": str,
+                "return": M8SensorPollCacheCommitReceiptV1,
+            },
+        ),
+        "get_poll_cache": (
+            ("self", "request_id"),
+            {"request_id": str, "return": M8SensorPollCacheCommitReceiptV1},
+        ),
+        "get_sample": (
+            ("self", "sample_id"),
+            {"sample_id": str, "return": M8SensorSampleCommitReceiptV1},
+        ),
+        "read_raw_signal": (
+            ("self", "raw_signal_ref"),
+            {"raw_signal_ref": str, "return": bytes},
         ),
     },
     M8SensorAdapter: {
