@@ -310,11 +310,9 @@ class M8OperationsProjectionV1(FrozenContractModel):
         known_sources = {item.source_id for item in catalog.sources}
         for receipt in self.current_cases:
             authority = receipt.audit_event.case_authority
-            if (
-                authority.location_id not in known_locations
-                or authority.create_command.source_catalog_id != catalog.catalog_id
-                or not set(authority.source_ids).issubset(known_sources)
-            ):
+            if authority.location_id not in known_locations or not set(
+                authority.source_ids
+            ).issubset(known_sources):
                 raise ValueError("M8 projection Case is outside the topology or source catalog")
         self._validate_case_audit_closure()
 

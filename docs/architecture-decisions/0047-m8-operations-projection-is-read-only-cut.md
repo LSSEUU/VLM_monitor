@@ -21,8 +21,9 @@
 4. `display_badge` 与 `simulated` 直接继承 source authority。仅目录配置不得声称实时在线；模拟样本不得声称
    认证消防检测。只有组织认证且 emergency-enabled 的 live sensor 加上持久化 live sample，投影才允许保留
    已冻结的 certification claim。
-5. current Case 必须属于 exact topology/source catalog；Case 和 notification audit 必须从序号 1 连续闭合到
-   current receipt。投影不接受断链、跨目录或孤立通知。
+5. current Case 保留其创建时的 source catalog ID，并允许跨越不移除其地点/来源的 catalog revision；它的地点与
+   source IDs 必须仍存在于 current topology/catalog。Case 和 notification audit 必须从序号 1 连续闭合到
+   current receipt。投影不接受断链、已移除来源或孤立通知。
 6. 投影固定 `read_only=true`、`case_transition_permitted=false` 和
    `direct_disciplinary_action_permitted=false`，不写回任何 authority。
 

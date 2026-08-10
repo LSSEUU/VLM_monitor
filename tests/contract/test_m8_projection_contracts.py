@@ -112,15 +112,19 @@ def _inventory() -> tuple[
     return topology_receipt, catalog_receipt
 
 
-def _case(catalog_id: str) -> M8OperationalCaseCommitReceiptV1:
+def _case(
+    catalog_id: str,
+    *,
+    source_id: str = "sensor-simulated-smoke-01",
+) -> M8OperationalCaseCommitReceiptV1:
     command = M8OperationalCaseCreateCommandV1(
         source_catalog_id=catalog_id,
         location_id="room-chem-301",
         risk_level=M8OperationalRiskLevel.EMERGENCY,
         policy_rule_id="simulated-smoke-active-emergency-v1",
         policy_manifest_id=SHA_A,
-        source_ids=("sensor-simulated-smoke-01",),
-        simulated_source_ids=("sensor-simulated-smoke-01",),
+        source_ids=(source_id,),
+        simulated_source_ids=(source_id,),
         trigger_authorities=(
             M8AuthorityReference(
                 kind=M8AuthorityReferenceKind.SENSOR_SIGNAL,
@@ -189,7 +193,7 @@ def test_projection_rejects_incomplete_audit_and_cross_catalog_cases() -> None:
     with pytest.raises(ValidationError, match="audit does not close"):
         projection.model_copy(update={"case_audit_events": ()})
 
-    invalid_case = _case(SHA_A)
+    invalid_case = _case(SHA_A, source_id="removed-sensor-01")
     with pytest.raises(ValidationError, match="outside the topology or source catalog"):
         projection.model_copy(
             update={
