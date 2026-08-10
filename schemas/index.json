@@ -1288,6 +1288,12 @@
       "name": "m8-sensor-adapter-capability-authority-v1"
     },
     {
+      "file": "m8-sensor-poll-cache-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_persistence.M8SensorPollCacheCommitReceiptV1",
+      "name": "m8-sensor-poll-cache-commit-receipt-v1"
+    },
+    {
       "file": "m8-sensor-poll-request-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_sensor_signals.M8SensorPollRequestV1",
@@ -1316,6 +1322,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_sensor_signals.M8SensorSample",
       "name": "m8-sensor-sample"
+    },
+    {
+      "file": "m8-sensor-sample-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_persistence.M8SensorSampleCommitReceiptV1",
+      "name": "m8-sensor-sample-commit-receipt-v1"
     },
     {
       "file": "m8-simulated-sensor-scenario-authority-v1.schema.json",

@@ -294,6 +294,10 @@ from labcourt.contracts.m8_operations import (
     M8OperationalSource,
     M8OperationalSourceCatalogAuthorityV1,
 )
+from labcourt.contracts.m8_sensor_persistence import (
+    M8SensorPollCacheCommitReceiptV1,
+    M8SensorSampleCommitReceiptV1,
+)
 from labcourt.contracts.m8_sensor_signals import (
     M8SensorAdapterCapabilityAuthorityV1,
     M8SensorPollRequestV1,
@@ -620,9 +624,11 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-sensor-adapter-capability-authority-v1": M8SensorAdapterCapabilityAuthorityV1,
     "m8-sensor-poll-request-v1": M8SensorPollRequestV1,
     "m8-sensor-poll-result-v1": M8SensorPollResultV1,
+    "m8-sensor-poll-cache-commit-receipt-v1": M8SensorPollCacheCommitReceiptV1,
     "m8-sensor-risk-assessment-v1": M8SensorRiskAssessmentV1,
     "m8-sensor-risk-policy-authority-v1": M8SensorRiskPolicyAuthorityV1,
     "m8-sensor-sample": M8SensorSample,
+    "m8-sensor-sample-commit-receipt-v1": M8SensorSampleCommitReceiptV1,
     "m8-simulated-sensor-scenario-authority-v1": M8SimulatedSensorScenarioAuthorityV1,
     "model-call-failure-authority": ModelCallFailureAuthority,
     "model-parse-receipt": ModelParseReceipt,
