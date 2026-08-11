@@ -77,6 +77,8 @@ M8.7f13 已增加显式 `outbox-run-one`：一次只消费一条 current `QUEUED
 重试 transport 完成 claim→call fence→send→SQLite completion。provider acceptance 只推进通知状态，仍明确
 `real_delivery_confirmed=false`；围栏后的未知结果不得自动重试。`--check` 会验证同一输入但不 claim、不联网、
 不发送，真实联调必须先通过该模式。
+个人 Demo 产品装配已新增 `labcourt demo bootstrap`：它通过既有仓库幂等生成四层校园、四角色、模拟烟雾
+raw signal、紧急待核实案件和运营投影，供后续本机 API 与独立 UI 任务消费；bootstrap 本身不执行案件迁移。
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
@@ -105,6 +107,11 @@ M8.7f13 已增加显式 `outbox-run-one`：一次只消费一条 current `QUEUED
 [`docs/pilot-quickstart.md`](docs/pilot-quickstart.md)。
 
 ## 开发命令
+
+完整校园运营 Demo 数据可先双击 `labcourt-demo-bootstrap.cmd`。它在被 Git 忽略的
+`.labcourt-local/labcourt-demo/` 中幂等初始化 SQLite、校园四层拓扑、四角色、模拟烟雾原始信号、紧急
+`PENDING_VERIFICATION` 案件及只读运营投影；不会联网、调用模型、发送消息或执行案件迁移。详见
+[`docs/m8-personal-demo.md`](docs/m8-personal-demo.md)。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

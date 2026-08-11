@@ -1720,6 +1720,18 @@
       "name": "m8-operations-projection-view-v1"
     },
     {
+      "file": "m8-personal-demo-actor-binding-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoActorBindingV1",
+      "name": "m8-personal-demo-actor-binding-v1"
+    },
+    {
+      "file": "m8-personal-demo-bootstrap-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoBootstrapReceiptV1",
+      "name": "m8-personal-demo-bootstrap-receipt-v1"
+    },
+    {
       "file": "m8-production-adapter-candidate-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8ProductionAdapterCandidateAuthorityV1",

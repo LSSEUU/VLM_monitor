@@ -295,6 +295,11 @@ poll result 与紧急 advisory assessment，卡片必须显示 `PERSONAL DEMO`�
 待核实案件“建议”与人工核实要求。它不得接受正式 case/notification authority，不得写 SQLite 或把建议
 推进为案件状态；发送仍需先无网络 check，再由操作者输入 `SEND`，回执沿用单次调用和不确认真实送达语义。
 
+产品演示装配必须与飞书连通探针分离。默认 bootstrap 可幂等提交固定的四层演示拓扑、四角色 authority、
+离线烟雾 raw signal/poll cache、一个 `EMERGENCY` 的 `PENDING_VERIFICATION` 案件和稳定运营投影，并输出
+content-addressed typed receipt。bootstrap 自身不得执行案件迁移、通知迁移、模型调用或网络调用；后续本机
+API 必须从该 SQLite authority 解引用角色和案件，不能用 bootstrap 摘要替代持久化事实。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

@@ -1,0 +1,45 @@
+{
+  "$defs": {
+    "M8ActorRole": {
+      "enum": [
+        "LEADER",
+        "SAFETY_OFFICER",
+        "STUDENT",
+        "OPERATIONS"
+      ],
+      "title": "M8ActorRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-actor-binding-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Actor Commit Receipt Id",
+      "type": "string"
+    },
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/M8ActorRole"
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-actor-binding-v1",
+      "default": "m8-personal-demo-actor-binding-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "actor_id",
+    "role",
+    "actor_commit_receipt_id"
+  ],
+  "title": "M8PersonalDemoActorBindingV1",
+  "type": "object"
+}

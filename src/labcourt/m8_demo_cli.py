@@ -1,0 +1,78 @@
+"""Windows-friendly command boundary for the persisted M8 personal demo."""
+
+from __future__ import annotations
+
+import json
+import sqlite3
+from pathlib import Path
+from typing import Annotated, NoReturn
+
+import typer
+
+from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
+from labcourt.exceptions import LabCourtError
+
+
+def _fail(error: Exception) -> NoReturn:
+    typer.echo(f"M8 personal demo bootstrap failed: {type(error).__name__}", err=True)
+    raise typer.Exit(code=2)
+
+
+def _write_exact(path: Path, content: bytes) -> None:
+    if path.exists():
+        if not path.is_file() or path.read_bytes() != content:
+            raise ValueError("M8 personal demo artifact conflicts with the persisted authority")
+        return
+    path.write_bytes(content)
+
+
+def register_m8_demo_commands(root: typer.Typer) -> None:
+    demo = typer.Typer(help="Reproducible offline M8 campus-operations product demo.")
+    root.add_typer(demo, name="demo")
+
+    @demo.command("bootstrap")
+    def bootstrap(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+            database = output / "labcourt.sqlite3"
+            run = bootstrap_m8_personal_demo(database)
+            receipt_path = output / "bootstrap-receipt.json"
+            projection_path = output / "operations-projection.json"
+            _write_exact(
+                receipt_path,
+                (run.receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+            _write_exact(
+                projection_path,
+                (run.projection.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "bootstrap_receipt_id": run.receipt.bootstrap_receipt_id,
+            "campus_id": run.receipt.campus_id,
+            "case_id": run.receipt.case_id,
+            "case_status": run.receipt.case_status.value,
+            "database": str(database.resolve()),
+            "display_badge": run.receipt.display_badge,
+            "operations_projection_id": run.receipt.operations_projection_id,
+            "pending_verification_case_count": (run.receipt.pending_verification_case_count),
+            "projection": str(projection_path.resolve()),
+            "risk_level": run.receipt.risk_level.value,
+            "simulated": run.receipt.simulated,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO initialized: "
+                "SIMULATED EMERGENCY case is PENDING_VERIFICATION"
+            )
+
+
+__all__ = ["register_m8_demo_commands"]
