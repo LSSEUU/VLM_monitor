@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from labcourt.contracts.m8_access_cases import M8ActorRole
+from labcourt.contracts.m8_access_cases import M8ActorRole, M8AppealResolution
 from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
@@ -23,6 +23,7 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoNotificationReceiptV1,
     M8PersonalDemoPpeCaseReceiptV1,
     M8PersonalDemoPpeNotificationReceiptV1,
+    M8PersonalDemoPpeOutcomeNotificationReceiptV1,
     M8PersonalDemoRecordedMediaReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
@@ -103,6 +104,9 @@ def test_personal_demo_schemas_are_exported() -> None:
     )
     assert SCHEMA_MODELS["m8-personal-demo-ppe-notification-receipt-v1"] is (
         M8PersonalDemoPpeNotificationReceiptV1
+    )
+    assert SCHEMA_MODELS["m8-personal-demo-ppe-outcome-notification-receipt-v1"] is (
+        M8PersonalDemoPpeOutcomeNotificationReceiptV1
     )
 
 
@@ -321,5 +325,33 @@ def test_ppe_notification_receipt_is_queued_for_student_without_case_power() -> 
     assert receipt.direct_disciplinary_action_permitted is False
     assert (
         M8PersonalDemoPpeNotificationReceiptV1.model_validate_json(receipt.model_dump_json())
+        == receipt
+    )
+
+
+def test_ppe_outcome_receipt_binds_terminal_appeal_without_case_power() -> None:
+    receipt = M8PersonalDemoPpeOutcomeNotificationReceiptV1(
+        ppe_case_receipt_id="1" * 64,
+        case_id="2" * 64,
+        source_case_version=5,
+        source_case_authority_sha256="3" * 64,
+        appeal_resolution=M8AppealResolution.OVERTURNED,
+        target_commit_receipt_id="4" * 64,
+        target_authority_id="5" * 64,
+        notification_id="6" * 64,
+        notification_commit_receipt_id="7" * 64,
+        routed_at=datetime(2026, 8, 11, 10, 0, tzinfo=UTC),
+        offline_card_id="8" * 64,
+        notification_manifest_id="9" * 64,
+    )
+
+    assert receipt.source_case_status.value == "APPEAL_RESOLVED"
+    assert receipt.appeal_resolution == M8AppealResolution.OVERTURNED
+    assert receipt.case_transition_permitted is False
+    assert receipt.direct_disciplinary_action_permitted is False
+    assert (
+        M8PersonalDemoPpeOutcomeNotificationReceiptV1.model_validate_json(
+            receipt.model_dump_json()
+        )
         == receipt
     )

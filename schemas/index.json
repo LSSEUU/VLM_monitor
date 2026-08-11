@@ -1780,6 +1780,12 @@
       "name": "m8-personal-demo-ppe-notification-receipt-v1"
     },
     {
+      "file": "m8-personal-demo-ppe-outcome-notification-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoPpeOutcomeNotificationReceiptV1",
+      "name": "m8-personal-demo-ppe-outcome-notification-receipt-v1"
+    },
+    {
       "file": "m8-personal-demo-recorded-media-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoRecordedMediaReceiptV1",

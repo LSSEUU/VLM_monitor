@@ -19,7 +19,11 @@ from labcourt.adapters.storage.sqlite_m8_operations_repository import (
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m3_models import require_bounded_public_text
-from labcourt.contracts.m8_access_cases import M8ActorRole, M8OperationalCaseStatus
+from labcourt.contracts.m8_access_cases import (
+    M8ActorRole,
+    M8OperationalCaseAction,
+    M8OperationalCaseStatus,
+)
 from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
     M8OfflineNotificationCardV1,
@@ -42,6 +46,7 @@ from labcourt.contracts.m8_notifications import (
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoPpeCaseReceiptV1,
     M8PersonalDemoPpeNotificationReceiptV1,
+    M8PersonalDemoPpeOutcomeNotificationReceiptV1,
 )
 from labcourt.services.m8_notifications import M8NotificationService
 
@@ -50,6 +55,8 @@ _PLANNED_AT = datetime(2026, 8, 11, 10, 0, tzinfo=UTC)
 _ROUTED_AT = _PLANNED_AT + timedelta(seconds=1)
 _DELIVERED_AT = _ROUTED_AT + timedelta(seconds=2)
 _RESPONDED_AT = _DELIVERED_AT + timedelta(seconds=1)
+_OUTCOME_PLANNED_AT = _PLANNED_AT + timedelta(minutes=10)
+_OUTCOME_ROUTED_AT = _OUTCOME_PLANNED_AT + timedelta(seconds=1)
 
 
 def _manifest(name: str) -> Sha256Hex:
@@ -100,9 +107,30 @@ def _student_target() -> M8NotificationTargetAuthorityV1:
     )
 
 
+def _student_outcome_target() -> M8NotificationTargetAuthorityV1:
+    return M8NotificationTargetAuthorityV1(
+        actor_id="student-demo",
+        identity_provider_id="labcourt-local-fake",
+        external_subject_binding_sha256=_manifest(
+            "labcourt-personal-demo-student-local-message"
+        ),
+        channel=M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,
+        authority_revision=2,
+        active=True,
+        inbound_response_supported=False,
+        manifest_id=_manifest("labcourt-personal-demo-student-outcome-target-v1"),
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class M8PersonalDemoPpeNotificationRun:
     receipt: M8PersonalDemoPpeNotificationReceiptV1
+    card: M8OfflineNotificationCardV1
+
+
+@dataclass(frozen=True, slots=True)
+class M8PersonalDemoPpeOutcomeNotificationRun:
+    receipt: M8PersonalDemoPpeOutcomeNotificationReceiptV1
     card: M8OfflineNotificationCardV1
 
 
@@ -345,9 +373,116 @@ def respond_m8_personal_demo_ppe_notification(
     return committed
 
 
+def route_m8_personal_demo_ppe_outcome_notification(
+    database_path: Path,
+    ppe_receipt: M8PersonalDemoPpeCaseReceiptV1,
+) -> M8PersonalDemoPpeOutcomeNotificationRun:
+    """Queue an acknowledgement-only student card for the final appeal result."""
+
+    if not isinstance(ppe_receipt, M8PersonalDemoPpeCaseReceiptV1):
+        raise TypeError("M8 personal Demo PPE outcome requires a typed PPE Case receipt")
+    bootstrap = bootstrap_m8_personal_demo(database_path)
+    repository_manifest_id = bootstrap.projection.topology_receipt.repository_manifest_id
+    operations = SQLiteM8OperationsRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    case = operations.get_current_operational_case(ppe_receipt.case_id)
+    authority = case.audit_event.case_authority
+    intent = case.audit_event.transition_intent
+    command = intent.command if intent is not None else None
+    if (
+        case.status != M8OperationalCaseStatus.APPEAL_RESOLVED
+        or authority.subject_actor_id != "student-demo"
+        or authority.create_command.source_ids != (ppe_receipt.source_id,)
+        or command is None
+        or command.action != M8OperationalCaseAction.RESOLVE_APPEAL
+        or command.appeal_resolution is None
+    ):
+        raise ValueError("M8 personal Demo PPE outcome requires final appeal authority")
+    notifications = SQLiteM8NotificationRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    service = M8NotificationService(notifications, operations, _channel(), _workflow())
+    target = _student_outcome_target()
+    target_commit = service.publish_target(target, 1)
+    plan = M8NotificationPlanAuthorityV1(
+        case_id=case.case_id,
+        case_version=case.case_version,
+        case_authority_sha256=case.case_document_sha256,
+        case_status=case.status,
+        case_subject_actor_id=authority.subject_actor_id,
+        risk_level=authority.risk_level,
+        location_id=authority.location_id,
+        purpose=M8NotificationPurpose.CASE_UPDATED,
+        audience=M8NotificationAudienceKind.CASE_SUBJECT,
+        target=target,
+        template=M8NotificationTemplateAuthorityV1(
+            template_id="ppe-appeal-outcome-student-card",
+            template_version=1,
+            locale="zh-CN",
+            effective_at=_OUTCOME_PLANNED_AT - timedelta(days=1),
+            content_document_sha256=_manifest(
+                f"labcourt-personal-demo-ppe-outcome-{command.appeal_resolution.value.lower()}"
+            ),
+            allowed_purposes=(M8NotificationPurpose.CASE_UPDATED,),
+            allowed_channels=(M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,),
+            manifest_id=_manifest("labcourt-personal-demo-ppe-outcome-template-v1"),
+        ),
+        escalation_policy=M8NotificationEscalationPolicyAuthorityV1(
+            policy_rule_id="ppe-outcome-delivery-personal-demo-v1",
+            risk_level=authority.risk_level,
+            response_timeout_seconds=86_400,
+            max_delivery_attempts=1,
+            escalation_roles=(M8ActorRole.SAFETY_OFFICER,),
+            requires_human_send_confirmation=False,
+            policy_manifest_id=_manifest(
+                "labcourt-personal-demo-ppe-outcome-notification-policy-v1"
+            ),
+        ),
+        planned_at=_OUTCOME_PLANNED_AT,
+        notification_manifest_id=_manifest(
+            "labcourt-personal-demo-ppe-outcome-notification-plan-v1"
+        ),
+    )
+    service.create_notification(plan)
+    current = notifications.get_current_notification(plan.notification_id)
+    if current.status == M8NotificationStatus.PLANNED:
+        current = service.queue_as_system(
+            plan.notification_id,
+            _OUTCOME_ROUTED_AT,
+            authority.create_command.trigger_authorities,
+        )
+    if current.status != M8NotificationStatus.QUEUED or current.notification_version != 2:
+        raise ValueError("M8 personal Demo PPE outcome advanced past QUEUED")
+    card, _card_bytes = service.render_card(plan.notification_id)
+    receipt = M8PersonalDemoPpeOutcomeNotificationReceiptV1(
+        ppe_case_receipt_id=ppe_receipt.ppe_case_receipt_id,
+        case_id=case.case_id,
+        source_case_version=case.case_version,
+        source_case_authority_sha256=case.case_document_sha256,
+        appeal_resolution=command.appeal_resolution,
+        target_commit_receipt_id=target_commit.commit_receipt_id,
+        target_authority_id=target.target_authority_id,
+        notification_id=current.notification_id,
+        notification_commit_receipt_id=current.commit_receipt_id,
+        routed_at=_OUTCOME_ROUTED_AT,
+        offline_card_id=card.card_id,
+        notification_manifest_id=_manifest(
+            "labcourt-personal-demo-ppe-outcome-routing-receipt-v1"
+        ),
+    )
+    return M8PersonalDemoPpeOutcomeNotificationRun(receipt=receipt, card=card)
+
+
 __all__ = [
     "M8PersonalDemoPpeNotificationRun",
+    "M8PersonalDemoPpeOutcomeNotificationRun",
     "deliver_m8_personal_demo_ppe_notification",
     "respond_m8_personal_demo_ppe_notification",
     "route_m8_personal_demo_ppe_notification",
+    "route_m8_personal_demo_ppe_outcome_notification",
 ]

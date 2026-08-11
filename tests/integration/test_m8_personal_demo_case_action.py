@@ -23,6 +23,7 @@ from labcourt.application.m8_personal_demo_ppe_notification import (
     deliver_m8_personal_demo_ppe_notification,
     respond_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_notification,
+    route_m8_personal_demo_ppe_outcome_notification,
 )
 from labcourt.application.m8_personal_demo_student_appeal import (
     execute_m8_personal_demo_student_appeal,
@@ -233,6 +234,19 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         assert resolution.receipt.status.value == "APPEAL_RESOLVED"
         assert resolution.receipt.audit_event.transition_intent is not None
         assert resolution.request.direct_disciplinary_action_permitted is False
+
+        outcome = route_m8_personal_demo_ppe_outcome_notification(
+            root / "labcourt.sqlite3",
+            ppe,
+        )
+        outcome_replay = route_m8_personal_demo_ppe_outcome_notification(
+            root / "labcourt.sqlite3",
+            ppe,
+        )
+        assert outcome_replay == outcome
+        assert outcome.receipt.appeal_resolution == M8AppealResolution.UPHELD
+        assert outcome.receipt.notification_status.value == "QUEUED"
+        assert outcome.card.available_actions == ()
         assert appeal.request.action.value == "SUBMIT_APPEAL"
         assert appeal.request.reason_code.value == "SUBJECT_DISPUTE"
         assert appeal.request.explicit_human_confirmation is True

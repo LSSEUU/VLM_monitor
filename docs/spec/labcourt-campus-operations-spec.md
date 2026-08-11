@@ -432,3 +432,7 @@ notification authority 必须进入既有 reply authority、raw artifact 与 aud
 提交 closed `UPHELD | OVERTURNED` resolution、匹配 reason code、理由与 explicit human confirmation。
 成功后的 `APPEAL_RESOLVED` 是该申诉路径的 terminal closed status；不得为了展示“结案”而绕过冻结状态
 矩阵追加 `APPEAL_RESOLVED -> RESOLVED`，也不得把 appeal resolution 解释为自动处分依据。
+
+申诉结案结果必须创建新的 student outcome notification，不得改写首次确认卡或回复记录。additive typed
+route receipt 必须绑定 exact `APPEAL_RESOLVED` Case version/hash、closed appeal resolution 与 revisioned
+student target；结果卡 target 必须关闭 inbound response，路由只到 `QUEUED`，不声称送达且不得迁移案件。

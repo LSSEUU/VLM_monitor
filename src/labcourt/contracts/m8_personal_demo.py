@@ -13,6 +13,7 @@ from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m8_access_cases import (
     M8ActorRole,
+    M8AppealResolution,
     M8OperationalCaseStatus,
     M8OperationalRiskLevel,
 )
@@ -736,6 +737,110 @@ class M8PersonalDemoPpeNotificationReceiptV1(FrozenContractModel):
         )
 
 
+class M8PersonalDemoPpeOutcomeNotificationReceiptV1(FrozenContractModel):
+    """Queued student outcome card bound to a terminal PPE appeal authority."""
+
+    schema_version: Literal["m8-personal-demo-ppe-outcome-notification-receipt-v1"] = (
+        "m8-personal-demo-ppe-outcome-notification-receipt-v1"
+    )
+    ppe_case_receipt_id: Sha256Hex
+    case_id: Sha256Hex
+    source_case_version: int = Field(gt=3, strict=True)
+    source_case_authority_sha256: Sha256Hex
+    source_case_status: Literal[M8OperationalCaseStatus.APPEAL_RESOLVED] = (
+        M8OperationalCaseStatus.APPEAL_RESOLVED
+    )
+    appeal_resolution: M8AppealResolution
+    target_commit_receipt_id: Sha256Hex
+    target_authority_id: Sha256Hex
+    target_actor_id: Literal["student-demo"] = "student-demo"
+    purpose: Literal[M8NotificationPurpose.CASE_UPDATED] = M8NotificationPurpose.CASE_UPDATED
+    audience: Literal[M8NotificationAudienceKind.CASE_SUBJECT] = (
+        M8NotificationAudienceKind.CASE_SUBJECT
+    )
+    channel: Literal[M8NotificationChannelKind.LOCAL_OFFLINE_FAKE] = (
+        M8NotificationChannelKind.LOCAL_OFFLINE_FAKE
+    )
+    notification_id: Sha256Hex
+    notification_version: Literal[2] = 2
+    notification_commit_receipt_id: Sha256Hex
+    notification_status: Literal[M8NotificationStatus.QUEUED] = M8NotificationStatus.QUEUED
+    routed_at: datetime
+    offline_card_id: Sha256Hex
+    display_badge: Literal["SIMULATED 路 APPEAL OUTCOME CARD"] = (
+        "SIMULATED 路 APPEAL OUTCOME CARD"
+    )
+    simulated: Literal[True] = True
+    network_used: Literal[False] = False
+    model_used: Literal[False] = False
+    real_delivery_confirmed: Literal[False] = False
+    case_transition_permitted: Literal[False] = False
+    direct_disciplinary_action_permitted: Literal[False] = False
+    notification_manifest_id: Sha256Hex
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_computed_claim(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        claimed: object | None = None
+        present = False
+        if isinstance(value, dict):
+            payload = dict(value)
+            present = "ppe_outcome_notification_receipt_id" in payload
+            claimed = payload.pop("ppe_outcome_notification_receipt_id", None)
+            value = payload
+        receipt = handler(value)
+        if present and canonical_json(claimed) != canonical_json(
+            receipt.ppe_outcome_notification_receipt_id
+        ):
+            raise ValueError("serialized PPE outcome receipt ID conflicts with authority")
+        return receipt
+
+    @model_validator(mode="after")
+    def validate_routed_at(self) -> Self:
+        if self.routed_at.tzinfo is None or self.routed_at.utcoffset() != timedelta(0):
+            raise ValueError("M8 personal Demo PPE outcome routed_at must be UTC")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def ppe_outcome_notification_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-personal-demo-ppe-outcome-notification-receipt",
+                1,
+                self.ppe_case_receipt_id,
+                self.case_id,
+                self.source_case_version,
+                self.source_case_authority_sha256,
+                self.source_case_status,
+                self.appeal_resolution,
+                self.target_commit_receipt_id,
+                self.target_authority_id,
+                self.target_actor_id,
+                self.purpose,
+                self.audience,
+                self.channel,
+                self.notification_id,
+                self.notification_version,
+                self.notification_commit_receipt_id,
+                self.notification_status,
+                self.routed_at.isoformat(timespec="microseconds"),
+                self.offline_card_id,
+                self.simulated,
+                self.network_used,
+                self.model_used,
+                self.real_delivery_confirmed,
+                self.case_transition_permitted,
+                self.direct_disciplinary_action_permitted,
+                self.notification_manifest_id,
+            ]
+        )
+
+
 __all__ = [
     "M8PersonalDemoActorBindingV1",
     "M8PersonalDemoBootstrapReceiptV1",
@@ -745,5 +850,6 @@ __all__ = [
     "M8PersonalDemoNotificationReceiptV1",
     "M8PersonalDemoPpeCaseReceiptV1",
     "M8PersonalDemoPpeNotificationReceiptV1",
+    "M8PersonalDemoPpeOutcomeNotificationReceiptV1",
     "M8PersonalDemoRecordedMediaReceiptV1",
 ]

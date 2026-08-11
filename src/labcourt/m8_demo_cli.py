@@ -31,6 +31,7 @@ from labcourt.application.m8_personal_demo_ppe_notification import (
     deliver_m8_personal_demo_ppe_notification,
     respond_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_notification,
+    route_m8_personal_demo_ppe_outcome_notification,
 )
 from labcourt.application.m8_personal_demo_student_appeal import (
     M8PersonalDemoStudentAppealError,
@@ -656,6 +657,47 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO PPE appeal resolved and Case closed: "
                 f"{resolution.value} / {run.receipt.status.value}"
+            )
+
+    @demo.command("ppe-outcome-notification-route")
+    def ppe_outcome_notification_route(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            ppe = M8PersonalDemoPpeCaseReceiptV1.model_validate_json(
+                (output / "ppe-case-receipt.json").read_bytes()
+            )
+            run = route_m8_personal_demo_ppe_outcome_notification(
+                output / "labcourt.sqlite3",
+                ppe,
+            )
+            _write_exact(
+                output / "ppe-outcome-notification-route-receipt.json",
+                (run.receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+            _write_exact(
+                output / "ppe-outcome-student-card.json",
+                (run.card.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "appeal_resolution": run.receipt.appeal_resolution.value,
+            "available_actions": [action.value for action in run.card.available_actions],
+            "case_id": run.receipt.case_id,
+            "notification_id": run.receipt.notification_id,
+            "notification_status": run.receipt.notification_status.value,
+            "student_actor_id": run.receipt.target_actor_id,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO PPE appeal outcome queued for student: "
+                f"{run.receipt.appeal_resolution.value}"
             )
 
     @demo.command("ppe-notification-deliver")
