@@ -319,6 +319,8 @@ from labcourt.contracts.m8_feishu_inbound import (
 )
 from labcourt.contracts.m8_feishu_inbound_activation import (
     M8FeishuInboundSandboxActivationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationStatusV1,
     M8FeishuInboundSandboxRuntimeConfigV1,
 )
 from labcourt.contracts.m8_feishu_inbound_reply import (
@@ -738,6 +740,12 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     ),
     "m8-feishu-inbound-sandbox-activation-commit-receipt-v1": (
         M8FeishuInboundSandboxActivationCommitReceiptV1
+    ),
+    "m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1": (
+        M8FeishuInboundSandboxActivationRevocationCommitReceiptV1
+    ),
+    "m8-feishu-inbound-sandbox-activation-status-v1": (
+        M8FeishuInboundSandboxActivationStatusV1
     ),
     "m8-feishu-inbound-sandbox-runtime-config-v1": (
         M8FeishuInboundSandboxRuntimeConfigV1

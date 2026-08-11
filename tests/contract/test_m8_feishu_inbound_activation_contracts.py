@@ -11,7 +11,10 @@ from labcourt.contracts.m8_access_cases import M8ActorRole
 from labcourt.contracts.m8_adapter_commissioning import M8AdapterActivationIntentV1
 from labcourt.contracts.m8_feishu_inbound import M8FeishuInboundWebhookProfileV1
 from labcourt.contracts.m8_feishu_inbound_activation import (
+    M8FeishuInboundRevocationReason,
     M8FeishuInboundSandboxActivationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationStatusV1,
     M8FeishuInboundSandboxRuntimeConfigV1,
     m8_feishu_inbound_runtime_config_bytes,
 )
@@ -83,6 +86,34 @@ def _receipt() -> M8FeishuInboundSandboxActivationCommitReceiptV1:
         activation_revision=1,
         committed_at=BASE_TIME + timedelta(hours=4),
         runtime_config_storage_manifest_id=SHA_B,
+        repository_manifest_id=SHA_C,
+    )
+
+
+def _revocation() -> M8FeishuInboundSandboxActivationRevocationCommitReceiptV1:
+    return M8FeishuInboundSandboxActivationRevocationCommitReceiptV1(
+        activation_receipt=_receipt(),
+        revoked_by_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+        reason=M8FeishuInboundRevocationReason.MANUAL_SAFETY_STOP,
+        reason_ref="feishu-inbound-stop-drill-01",
+        revoked_at=BASE_TIME + timedelta(hours=5),
+        revocation_manifest_id=SHA_E,
+        repository_manifest_id=SHA_C,
+    )
+
+
+def _status(
+    *,
+    revocation: M8FeishuInboundSandboxActivationRevocationCommitReceiptV1 | None = None,
+) -> M8FeishuInboundSandboxActivationStatusV1:
+    assessed_at = BASE_TIME + timedelta(hours=6 if revocation is not None else 5)
+    return M8FeishuInboundSandboxActivationStatusV1(
+        activation_receipt=_receipt(),
+        revocation_receipt=revocation,
+        current_operations_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
+        current_safety_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+        current_readiness_assessment=_assessment(assessed_at=assessed_at),
+        assessed_at=assessed_at,
         repository_manifest_id=SHA_C,
     )
 
@@ -179,7 +210,53 @@ def test_serialized_activation_claim_cannot_open_production_ingress() -> None:
         M8FeishuInboundSandboxActivationCommitReceiptV1.model_validate(payload)
 
 
-@pytest.mark.parametrize("model", (_config(), _receipt()))
+def test_revocation_is_immediate_single_human_kill_switch() -> None:
+    revocation = _revocation()
+
+    assert revocation.activation_state == "REVOKED"
+    assert revocation.sandbox_external_ingress_permitted is False
+    assert revocation.production_external_ingress_permitted is False
+    assert revocation.automatic_reactivation_permitted is False
+
+    with pytest.raises(ValidationError, match="operations or safety"):
+        revocation.model_copy(
+            update={"revoked_by_actor_receipt": _actor_receipt(M8ActorRole.LEADER)}
+        )
+    with pytest.raises(ValidationError, match="cannot predate activation"):
+        revocation.model_copy(update={"revoked_at": BASE_TIME})
+
+
+def test_status_recomputes_current_humans_commissioning_and_revocation() -> None:
+    active = _status()
+    assert active.activation_state == "SANDBOX_INBOUND_ACTIVE"
+    assert active.human_authority_current is True
+    assert active.commissioning_current is True
+    assert active.sandbox_external_ingress_permitted is True
+    assert active.url_challenge_permitted is True
+    assert active.business_event_ingress_permitted is True
+
+    revoked = _status(revocation=_revocation())
+    assert revoked.activation_state == "REVOKED"
+    assert revoked.sandbox_external_ingress_permitted is False
+
+    invalidated = active.model_copy(
+        update={
+            "current_safety_actor_receipt": _actor_receipt(
+                M8ActorRole.SAFETY_OFFICER,
+                actor_suffix="02",
+            )
+        }
+    )
+    assert invalidated.activation_state == "INVALIDATED"
+    assert invalidated.human_authority_current is False
+    assert invalidated.sandbox_external_ingress_permitted is False
+
+    stale_commissioning = active.model_copy(update={"current_readiness_assessment": None})
+    assert stale_commissioning.activation_state == "INVALIDATED"
+    assert stale_commissioning.commissioning_current is False
+
+
+@pytest.mark.parametrize("model", (_config(), _receipt(), _revocation(), _status()))
 def test_inbound_activation_contracts_validate_as_serialization_schemas(
     model: BaseModel,
 ) -> None:
@@ -195,6 +272,12 @@ def test_inbound_activation_schemas_are_registered() -> None:
     expected = {
         "m8-feishu-inbound-sandbox-activation-commit-receipt-v1": (
             M8FeishuInboundSandboxActivationCommitReceiptV1
+        ),
+        "m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1": (
+            M8FeishuInboundSandboxActivationRevocationCommitReceiptV1
+        ),
+        "m8-feishu-inbound-sandbox-activation-status-v1": (
+            M8FeishuInboundSandboxActivationStatusV1
         ),
         "m8-feishu-inbound-sandbox-runtime-config-v1": (
             M8FeishuInboundSandboxRuntimeConfigV1

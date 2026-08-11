@@ -50,7 +50,8 @@ exact outbound provider receipt 授权学生普通说明，并在同一 SQLite �
 明确返回入口未激活。仓库仍未开放公网 webhook、
 保存真实学生自由文本或取得真实飞书租户验证证据。M8.7f6 已冻结 sandbox 公网回调配置与双人 activation
 commit：精确绑定 callback URL/TLS/profile/commissioning/current actor，配置本身仍不开放入口，commit 也不允许
-自动启动、生产入口、回复提交或案件动作。独立 UI 任务
+自动启动、生产入口、回复提交或案件动作；当前状态会重算人员与 commissioning authority，并支持当前运维或
+安全负责人单人 kill switch，撤销后不得自动重启。独立 UI 任务
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
