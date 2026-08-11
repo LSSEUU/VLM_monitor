@@ -32,7 +32,8 @@ resolver 与固定 `open.feishu.cn`、系统 CA、单次 POST、0 自动重试�
 仍不装配它，也尚无真实租户调用证据。M8.7e3a 已冻结通用 dispatch claim/call fence/completion：并发
 worker 不得共享调用权，call fence 后崩溃必须待对账而不能自动重试；M8.7e3b 已用 migration 0008 和
 SQLite repository 实现 source-version 唯一 claim、one-shot fence 及 completion/notification 原子提交。
-真实 Feishu runner 仍未装配。独立 UI 任务
+M8.7e4a 进一步冻结 Feishu outbox run 组合回执，防止跨 preflight/activation/send/completion 拼接，同时保持
+provider acceptance 不等于真实送达。真实 Feishu runner 仍未装配。独立 UI 任务
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见

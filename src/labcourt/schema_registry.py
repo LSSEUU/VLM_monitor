@@ -313,6 +313,7 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuNotificationCardV1,
     M8FeishuRecipientBindingAuthorityV1,
 )
+from labcourt.contracts.m8_feishu_outbox import M8FeishuSandboxOutboxRunReceiptV1
 from labcourt.contracts.m8_feishu_transport import (
     M8FeishuSandboxSendReceiptV1,
     M8FeishuTokenAcquisitionReceiptV1,
@@ -715,6 +716,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
         M8FeishuSandboxActivationRevocationCommitReceiptV1
     ),
     "m8-feishu-sandbox-activation-status-v1": M8FeishuSandboxActivationStatusV1,
+    "m8-feishu-sandbox-outbox-run-receipt-v1": M8FeishuSandboxOutboxRunReceiptV1,
     "m8-feishu-sandbox-runtime-config-v1": M8FeishuSandboxRuntimeConfigV1,
     "m8-feishu-sandbox-send-receipt-v1": M8FeishuSandboxSendReceiptV1,
     "m8-feishu-token-acquisition-receipt-v1": M8FeishuTokenAcquisitionReceiptV1,

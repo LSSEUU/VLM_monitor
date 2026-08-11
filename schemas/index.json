@@ -1336,6 +1336,12 @@
       "name": "m8-feishu-sandbox-activation-status-v1"
     },
     {
+      "file": "m8-feishu-sandbox-outbox-run-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_outbox.M8FeishuSandboxOutboxRunReceiptV1",
+      "name": "m8-feishu-sandbox-outbox-run-receipt-v1"
+    },
+    {
       "file": "m8-feishu-sandbox-runtime-config-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxRuntimeConfigV1",
