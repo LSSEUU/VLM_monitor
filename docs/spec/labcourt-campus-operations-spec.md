@@ -180,6 +180,11 @@ authority。只有该 commit 可授权 allowlist 内的 sandbox call，生产发
 verification、exact path、单次 `POST`、0 自动重试和 256 KiB response 上限。环境缺值、hash drift、TLS
 失败、timeout 与超界 response 必须转换为 typed failure；默认应用 wiring 不得实例化该 live transport。
 
+外部通知 runner 必须在调用前持久化 exact `QUEUED` version/attempt 的独占 claim，并在真正跨越调用边界
+前追加 one-shot call fence。claim 到期不得自动接管；call fence 后缺少 completion 必须进入
+`RECONCILIATION_REQUIRED`，禁止盲目重试。provider result、raw artifacts 与 notification `SENT`/`FAILED`
+transition 必须原子提交；该流程不允许改变 Case 或形成纪律处分。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

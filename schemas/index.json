@@ -1432,6 +1432,30 @@
       "name": "m8-notification-delivery-receipt-v1"
     },
     {
+      "file": "m8-notification-dispatch-call-fence-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_dispatch_claims.M8NotificationDispatchCallFenceReceiptV1",
+      "name": "m8-notification-dispatch-call-fence-receipt-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-claim-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_dispatch_claims.M8NotificationDispatchClaimReceiptV1",
+      "name": "m8-notification-dispatch-claim-receipt-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-claim-status-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_dispatch_claims.M8NotificationDispatchClaimStatusV1",
+      "name": "m8-notification-dispatch-claim-status-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-completion-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_dispatch_claims.M8NotificationDispatchCompletionReceiptV1",
+      "name": "m8-notification-dispatch-completion-receipt-v1"
+    },
+    {
       "file": "m8-notification-dispatch-request-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationDispatchRequestV1",

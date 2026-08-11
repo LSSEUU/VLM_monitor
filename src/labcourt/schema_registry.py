@@ -337,6 +337,12 @@ from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
     M8OfflineNotificationCardV1,
 )
+from labcourt.contracts.m8_notification_dispatch_claims import (
+    M8NotificationDispatchCallFenceReceiptV1,
+    M8NotificationDispatchClaimReceiptV1,
+    M8NotificationDispatchClaimStatusV1,
+    M8NotificationDispatchCompletionReceiptV1,
+)
 from labcourt.contracts.m8_notification_escalation import (
     M8NotificationEscalationAssessmentV1,
 )
@@ -732,6 +738,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-notification-channel-capability-authority-v1": (M8NotificationChannelCapabilityAuthorityV1),
     "m8-notification-commit-receipt-v1": M8NotificationCommitReceiptV1,
     "m8-notification-delivery-receipt-v1": M8NotificationDeliveryReceiptV1,
+    "m8-notification-dispatch-call-fence-receipt-v1": (M8NotificationDispatchCallFenceReceiptV1),
+    "m8-notification-dispatch-claim-receipt-v1": M8NotificationDispatchClaimReceiptV1,
+    "m8-notification-dispatch-claim-status-v1": M8NotificationDispatchClaimStatusV1,
+    "m8-notification-dispatch-completion-receipt-v1": (M8NotificationDispatchCompletionReceiptV1),
     "m8-notification-dispatch-request-v1": M8NotificationDispatchRequestV1,
     "m8-notification-dispatch-result-v1": M8NotificationDispatchResultV1,
     "m8-notification-escalation-policy-authority-v1": (M8NotificationEscalationPolicyAuthorityV1),
