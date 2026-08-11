@@ -29,6 +29,7 @@ from labcourt.application.m8_personal_demo_notification import (
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.application.m8_personal_demo_ppe_notification import (
     deliver_m8_personal_demo_ppe_notification,
+    deliver_m8_personal_demo_ppe_outcome_notification,
     respond_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_outcome_notification,
@@ -43,6 +44,7 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoNotificationReceiptV1,
     M8PersonalDemoPpeCaseReceiptV1,
     M8PersonalDemoPpeNotificationReceiptV1,
+    M8PersonalDemoPpeOutcomeNotificationReceiptV1,
     M8PersonalDemoRecordedMediaReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
@@ -698,6 +700,42 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO PPE appeal outcome queued for student: "
                 f"{run.receipt.appeal_resolution.value}"
+            )
+
+    @demo.command("ppe-outcome-notification-deliver")
+    def ppe_outcome_notification_deliver(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            route = M8PersonalDemoPpeOutcomeNotificationReceiptV1.model_validate_json(
+                (output / "ppe-outcome-notification-route-receipt.json").read_bytes()
+            )
+            receipt = deliver_m8_personal_demo_ppe_outcome_notification(
+                output / "labcourt.sqlite3",
+                route,
+            )
+            _write_exact(
+                output / "ppe-outcome-notification-delivery-receipt.json",
+                (receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "case_transition_permitted": False,
+            "notification_id": receipt.notification_id,
+            "notification_status": receipt.status.value,
+            "real_delivery_confirmed": False,
+            "simulated": True,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO PPE outcome delivered by offline fake; "
+                "real delivery remains unconfirmed"
             )
 
     @demo.command("ppe-notification-deliver")

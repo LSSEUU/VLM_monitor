@@ -57,6 +57,7 @@ _DELIVERED_AT = _ROUTED_AT + timedelta(seconds=2)
 _RESPONDED_AT = _DELIVERED_AT + timedelta(seconds=1)
 _OUTCOME_PLANNED_AT = _PLANNED_AT + timedelta(minutes=10)
 _OUTCOME_ROUTED_AT = _OUTCOME_PLANNED_AT + timedelta(seconds=1)
+_OUTCOME_DELIVERED_AT = _OUTCOME_ROUTED_AT + timedelta(seconds=2)
 
 
 def _manifest(name: str) -> Sha256Hex:
@@ -478,10 +479,72 @@ def route_m8_personal_demo_ppe_outcome_notification(
     return M8PersonalDemoPpeOutcomeNotificationRun(receipt=receipt, card=card)
 
 
+def deliver_m8_personal_demo_ppe_outcome_notification(
+    database_path: Path,
+    route_receipt: M8PersonalDemoPpeOutcomeNotificationReceiptV1,
+) -> M8NotificationCommitReceiptV1:
+    """Deliver the exact final outcome card through the offline fake channel."""
+
+    if not isinstance(route_receipt, M8PersonalDemoPpeOutcomeNotificationReceiptV1):
+        raise TypeError("M8 personal Demo PPE outcome delivery requires a typed receipt")
+    bootstrap = bootstrap_m8_personal_demo(database_path)
+    repository_manifest_id = bootstrap.projection.topology_receipt.repository_manifest_id
+    operations = SQLiteM8OperationsRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    notifications = SQLiteM8NotificationRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    current = notifications.get_current_notification(route_receipt.notification_id)
+    plan = current.audit_event.notification_authority.plan
+    case = operations.get_current_operational_case(route_receipt.case_id)
+    if (
+        plan.notification_id != route_receipt.notification_id
+        or plan.case_id != route_receipt.case_id
+        or plan.case_version != route_receipt.source_case_version
+        or plan.case_authority_sha256 != route_receipt.source_case_authority_sha256
+        or plan.target.target_authority_id != route_receipt.target_authority_id
+        or plan.target.actor_id != route_receipt.target_actor_id
+        or plan.target.inbound_response_supported is not False
+        or case.case_version != route_receipt.source_case_version
+        or case.case_document_sha256 != route_receipt.source_case_authority_sha256
+        or case.status != M8OperationalCaseStatus.APPEAL_RESOLVED
+    ):
+        raise ValueError("M8 personal Demo PPE outcome delivery authority changed")
+    if current.status == M8NotificationStatus.DELIVERED:
+        return current
+    channel = _channel()
+    service = M8NotificationService(notifications, operations, channel, _workflow())
+    supporting = case.audit_event.case_authority.create_command.trigger_authorities
+    if current.status == M8NotificationStatus.QUEUED:
+        current = service.dispatch(route_receipt.notification_id, supporting)
+    if current.status == M8NotificationStatus.SENT:
+        transition = current.audit_event.transition_command
+        dispatch_result = transition.dispatch_result if transition is not None else None
+        if dispatch_result is None:
+            raise ValueError("M8 personal Demo PPE outcome lacks dispatch authority")
+        raw_card = notifications.read_raw_artifact(dispatch_result.request.rendered_card_ref)
+        if channel.dispatch(dispatch_result.request, raw_card) != dispatch_result:
+            raise ValueError("M8 personal Demo PPE outcome dispatch replay changed")
+        current = service.confirm_simulated_delivery(
+            route_receipt.notification_id,
+            _OUTCOME_DELIVERED_AT,
+            supporting,
+        )
+    if current.status != M8NotificationStatus.DELIVERED:
+        raise ValueError("M8 personal Demo PPE outcome did not reach simulated delivery")
+    return current
+
+
 __all__ = [
     "M8PersonalDemoPpeNotificationRun",
     "M8PersonalDemoPpeOutcomeNotificationRun",
     "deliver_m8_personal_demo_ppe_notification",
+    "deliver_m8_personal_demo_ppe_outcome_notification",
     "respond_m8_personal_demo_ppe_notification",
     "route_m8_personal_demo_ppe_notification",
     "route_m8_personal_demo_ppe_outcome_notification",

@@ -436,3 +436,7 @@ notification authority 必须进入既有 reply authority、raw artifact 与 aud
 申诉结案结果必须创建新的 student outcome notification，不得改写首次确认卡或回复记录。additive typed
 route receipt 必须绑定 exact `APPEAL_RESOLVED` Case version/hash、closed appeal resolution 与 revisioned
 student target；结果卡 target 必须关闭 inbound response，路由只到 `QUEUED`，不声称送达且不得迁移案件。
+
+结果卡送达必须是独立显式入口，只消费 exact outcome route receipt，并复核 terminal Case 与
+acknowledgement-only target 后通过离线 fake channel 提交 `QUEUED -> SENT -> DELIVERED`。中断恢复、raw
+artifact 与审计要求沿用首次学生卡；最终仍固定 `real_delivery_confirmed=false` 且无 Case transition 权限。

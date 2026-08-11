@@ -21,6 +21,7 @@ from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_re
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.application.m8_personal_demo_ppe_notification import (
     deliver_m8_personal_demo_ppe_notification,
+    deliver_m8_personal_demo_ppe_outcome_notification,
     respond_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_outcome_notification,
@@ -247,6 +248,24 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         assert outcome.receipt.appeal_resolution == M8AppealResolution.UPHELD
         assert outcome.receipt.notification_status.value == "QUEUED"
         assert outcome.card.available_actions == ()
+        outcome_delivery = deliver_m8_personal_demo_ppe_outcome_notification(
+            root / "labcourt.sqlite3",
+            outcome.receipt,
+        )
+        assert (
+            deliver_m8_personal_demo_ppe_outcome_notification(
+                root / "labcourt.sqlite3",
+                outcome.receipt,
+            )
+            == outcome_delivery
+        )
+        assert outcome_delivery.status.value == "DELIVERED"
+        assert outcome_delivery.audit_event.transition_command is not None
+        outcome_delivery_receipt = (
+            outcome_delivery.audit_event.transition_command.delivery_receipt
+        )
+        assert outcome_delivery_receipt is not None
+        assert outcome_delivery_receipt.real_delivery_confirmed is False
         assert appeal.request.action.value == "SUBMIT_APPEAL"
         assert appeal.request.reason_code.value == "SUBJECT_DISPUTE"
         assert appeal.request.explicit_human_confirmation is True
