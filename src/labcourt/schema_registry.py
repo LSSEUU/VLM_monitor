@@ -308,6 +308,7 @@ from labcourt.contracts.m8_feishu_activation import (
 )
 from labcourt.contracts.m8_feishu_challenge import (
     M8FeishuLoopbackChallengeListenerProfileV1,
+    M8FeishuUrlChallengeCommitReceiptV1,
     M8FeishuUrlChallengeIngressRequestV1,
     M8FeishuUrlChallengeVerificationReceiptV1,
 )
@@ -768,6 +769,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-url-challenge-ingress-request-v1": (
         M8FeishuUrlChallengeIngressRequestV1
     ),
+    "m8-feishu-url-challenge-commit-receipt-v1": M8FeishuUrlChallengeCommitReceiptV1,
     "m8-feishu-url-challenge-verification-receipt-v1": (
         M8FeishuUrlChallengeVerificationReceiptV1
     ),

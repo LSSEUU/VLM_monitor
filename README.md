@@ -59,6 +59,8 @@ M8.7f8 已增加显式构建的 activation-gated webhook backend：只监听 run
 current ingress status；无事件头走 challenge，完整三件套签名头才走 `im.message.receive_v1` 验证/SQLite evidence
 commit。任一缺头、坏签名、撤销或 authority 漂移均 fail closed；HTTP 200 仅表示入站证据已提交，不会自动
 提交学生说明、改变案件或声称公网 TLS 已部署。
+M8.7f9 已通过 migration 0012 将 URL challenge verification receipt 持久化为 hash-only append-only audit；
+clear challenge 与原始解密载荷不落该 ledger，exact retry 幂等，审计提交仍不能激活入口或改变案件。
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见

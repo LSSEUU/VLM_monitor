@@ -376,8 +376,97 @@ class M8FeishuUrlChallengeVerificationReceiptV1(FrozenContractModel):
         )
 
 
+class M8FeishuUrlChallengeCommitReceiptV1(FrozenContractModel):
+    """Append-only audit proof for one verified URL challenge response."""
+
+    schema_version: Literal["m8-feishu-url-challenge-commit-receipt-v1"] = (
+        "m8-feishu-url-challenge-commit-receipt-v1"
+    )
+    verification_receipt: M8FeishuUrlChallengeVerificationReceiptV1
+    committed_at: datetime
+    commit_manifest_id: Sha256Hex
+    repository_manifest_id: Sha256Hex
+
+    @field_validator("committed_at")
+    @classmethod
+    def validate_committed_at(cls, value: datetime) -> datetime:
+        return _require_utc(value, "committed_at")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(
+            value,
+            (
+                "verified_receipt_persisted",
+                "raw_challenge_persisted",
+                "external_ingress_activation_permitted",
+                "case_transition_permitted",
+                "commit_receipt_id",
+            ),
+        )
+        receipt = handler(payload)
+        _verify_computed_claims(receipt, claims)
+        return receipt
+
+    @model_validator(mode="after")
+    def validate_commit(self) -> Self:
+        verified = self.verification_receipt
+        if self.committed_at < verified.verified_at:
+            raise ValueError("M8 Feishu URL challenge commit cannot predate verification")
+        deadline = verified.ingress_request.received_at + timedelta(
+            milliseconds=verified.response_deadline_milliseconds
+        )
+        if self.committed_at > deadline:
+            raise ValueError("M8 Feishu URL challenge commit missed its response deadline")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def verified_receipt_persisted(self) -> bool:
+        return True
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def raw_challenge_persisted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def external_ingress_activation_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def case_transition_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def commit_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-feishu-url-challenge-commit-receipt",
+                1,
+                self.verification_receipt.verification_receipt_id,
+                _canonical_utc(self.committed_at),
+                self.commit_manifest_id,
+                self.repository_manifest_id,
+                self.verified_receipt_persisted,
+                self.raw_challenge_persisted,
+                self.external_ingress_activation_permitted,
+                self.case_transition_permitted,
+            ]
+        )
+
+
 __all__ = [
     "M8FeishuLoopbackChallengeListenerProfileV1",
+    "M8FeishuUrlChallengeCommitReceiptV1",
     "M8FeishuUrlChallengeIngressRequestV1",
     "M8FeishuUrlChallengeVerificationReceiptV1",
 ]

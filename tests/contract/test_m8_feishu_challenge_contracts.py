@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 
 from labcourt.contracts.m8_feishu_challenge import (
     M8FeishuLoopbackChallengeListenerProfileV1,
+    M8FeishuUrlChallengeCommitReceiptV1,
     M8FeishuUrlChallengeIngressRequestV1,
     M8FeishuUrlChallengeVerificationReceiptV1,
 )
@@ -53,6 +54,15 @@ def _receipt() -> M8FeishuUrlChallengeVerificationReceiptV1:
         verification_token_sha256=_webhook_profile().verification_token_sha256,
         verified_at=RECEIVED_AT + timedelta(milliseconds=10),
         verification_manifest_id=SHA_D,
+    )
+
+
+def _commit() -> M8FeishuUrlChallengeCommitReceiptV1:
+    return M8FeishuUrlChallengeCommitReceiptV1(
+        verification_receipt=_receipt(),
+        committed_at=RECEIVED_AT + timedelta(milliseconds=20),
+        commit_manifest_id=SHA_A,
+        repository_manifest_id=SHA_B,
     )
 
 
@@ -119,7 +129,21 @@ def test_verified_challenge_rejects_profile_token_time_and_reference_grafts() ->
         )
 
 
-@pytest.mark.parametrize("model", (_listener(), _ingress(), _receipt()))
+def test_challenge_commit_is_hash_only_audit_not_ingress_authority() -> None:
+    commit = _commit()
+
+    assert commit.verified_receipt_persisted is True
+    assert commit.raw_challenge_persisted is False
+    assert commit.external_ingress_activation_permitted is False
+    assert commit.case_transition_permitted is False
+
+    with pytest.raises(ValidationError, match="cannot predate verification"):
+        commit.model_copy(update={"committed_at": RECEIVED_AT})
+    with pytest.raises(ValidationError, match="missed its response deadline"):
+        commit.model_copy(update={"committed_at": RECEIVED_AT + timedelta(seconds=2)})
+
+
+@pytest.mark.parametrize("model", (_listener(), _ingress(), _receipt(), _commit()))
 def test_challenge_contracts_round_trip_and_hide_clear_values(model: BaseModel) -> None:
     restored = type(model).model_validate_json(model.model_dump_json())
     assert restored == model
@@ -147,6 +171,9 @@ def test_challenge_schemas_are_registered_serialization_roots() -> None:
         ),
         "m8-feishu-url-challenge-ingress-request-v1": (
             M8FeishuUrlChallengeIngressRequestV1
+        ),
+        "m8-feishu-url-challenge-commit-receipt-v1": (
+            M8FeishuUrlChallengeCommitReceiptV1
         ),
         "m8-feishu-url-challenge-verification-receipt-v1": (
             M8FeishuUrlChallengeVerificationReceiptV1

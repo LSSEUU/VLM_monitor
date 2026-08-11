@@ -28,6 +28,7 @@ from labcourt.contracts.m8_adapter_commissioning import (
     M8CommissioningEvidenceKind,
 )
 from labcourt.contracts.m8_feishu_challenge import (
+    M8FeishuUrlChallengeCommitReceiptV1,
     M8FeishuUrlChallengeVerificationReceiptV1,
 )
 from labcourt.contracts.m8_feishu_inbound import M8FeishuInboundWebhookProfileV1
@@ -79,8 +80,14 @@ class _ReceiptSink:
     def record_verification(
         self,
         receipt: M8FeishuUrlChallengeVerificationReceiptV1,
-    ) -> None:
+    ) -> M8FeishuUrlChallengeCommitReceiptV1:
         self.receipts.append(receipt)
+        return M8FeishuUrlChallengeCommitReceiptV1(
+            verification_receipt=receipt,
+            committed_at=receipt.verified_at,
+            commit_manifest_id=SHA_A,
+            repository_manifest_id=SHA_B,
+        )
 
 
 @dataclass

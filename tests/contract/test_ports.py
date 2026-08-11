@@ -169,6 +169,7 @@ from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxRuntimeConfigV1,
 )
 from labcourt.contracts.m8_feishu_challenge import (
+    M8FeishuUrlChallengeCommitReceiptV1,
     M8FeishuUrlChallengeVerificationReceiptV1,
 )
 from labcourt.contracts.m8_feishu_inbound import (
@@ -630,7 +631,7 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
             ("self", "receipt"),
             {
                 "receipt": M8FeishuUrlChallengeVerificationReceiptV1,
-                "return": NONE_TYPE,
+                "return": M8FeishuUrlChallengeCommitReceiptV1,
             },
         ),
     },

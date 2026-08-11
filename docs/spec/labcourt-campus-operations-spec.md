@@ -235,6 +235,9 @@ activated webhook application backend 必须只绑定 runtime config 的 loopbac
 且 running activation commit 必须仍为 latest exact commit。无 Lark 事件头只允许进入 challenge 路径；timestamp、
 nonce、signature 必须三者完整才可构造业务 ingress。业务 HTTP 200 只确认 verified evidence 已 append-only
 提交，不得自动提交 notification reply、改变 Case、形成处分或声明学生身份已经确定。
+URL challenge 必须在写出 clear response 前提交 hash-only audit receipt；ledger 只保存 verification receipt、
+encrypted/decrypted/response hashes、时间与 commit/repository manifests，不保存 clear challenge 或原始解密载荷。
+exact verification retry 必须返回同一 commit，表与索引必须 append-only；该 audit 仍不是 ingress activation。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
