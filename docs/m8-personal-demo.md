@@ -81,6 +81,19 @@ authority 恢复；重复执行不会生成第二次尝试。这里的 `DELIVERE
 保留 raw media reference 和显著模拟标记。基础 `bootstrap-receipt.json` 始终锚定最初单传感器切片，不会被
 新增摄像头、通知或案件迁移反向改写。
 
+## Windows 一键启动
+
+双击仓库根目录的 `labcourt-demo-start.cmd`。入口按固定顺序执行：
+
+1. 幂等验证基础 bootstrap；
+2. 幂等注册预录视频模拟摄像头；
+3. 首次运行时路由并通过离线 fake 送达通知，已有 route/delivery/acknowledgement receipt 则复用；
+4. 先执行 API bind-and-close 预检，再阻塞启动 `http://127.0.0.1:8877`。
+
+`api-profile.json`、`api-access.json` 和 `knowledge-receipt.json` 都是从当前已验证 authority 完全派生的本机
+runtime 文件，版本升级后会原子刷新；真实凭据不在这些文件中。基础 receipt、案件动作、通知动作和 raw
+artifacts 仍保持 conflict-closed，不会被一键入口覆盖。关闭窗口或按 `Ctrl+C` 停止本机 API。
+
 主要路由沿用既有 M8 API：
 
 - `GET /api/m8/campuses/campus-demo/operations-projection`：领导只看到全局与重大案件，安全负责人看到完整

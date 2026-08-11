@@ -39,6 +39,16 @@ def _write_exact(path: Path, content: bytes) -> None:
     path.write_bytes(content)
 
 
+def _write_runtime_artifact(path: Path, content: bytes) -> None:
+    """Refresh a fully derived local runtime file after its authority validates."""
+
+    if path.exists() and not path.is_file():
+        raise ValueError("M8 personal demo runtime artifact path is not a file")
+    temporary = path.with_name(f".{path.name}.tmp")
+    temporary.write_bytes(content)
+    temporary.replace(path)
+
+
 def register_m8_demo_commands(root: typer.Typer) -> None:
     demo = typer.Typer(help="Reproducible offline M8 campus-operations product demo.")
     root.add_typer(demo, name="demo")
@@ -108,11 +118,11 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             profile_path = output / "api-profile.json"
             access_path = output / "api-access.json"
             knowledge_path = output / "knowledge-receipt.json"
-            _write_exact(
+            _write_runtime_artifact(
                 profile_path,
                 (assembly.profile.model_dump_json(indent=2) + "\n").encode("utf-8"),
             )
-            _write_exact(
+            _write_runtime_artifact(
                 access_path,
                 (
                     json.dumps(
@@ -124,7 +134,7 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
                     + "\n"
                 ).encode("utf-8"),
             )
-            _write_exact(
+            _write_runtime_artifact(
                 knowledge_path,
                 (assembly.knowledge_receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
             )

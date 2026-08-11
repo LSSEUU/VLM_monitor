@@ -28,11 +28,23 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert isinstance(case_action, TyperCommand)
     action_options = {option for parameter in case_action.params for option in parameter.opts}
     assert {"--action", "--reason", "--output", "--confirmed", "--json"} <= action_options
+    for command_name in (
+        "camera-register",
+        "notification-route",
+        "notification-deliver",
+        "notification-acknowledge",
+    ):
+        assert isinstance(demo.commands[command_name], TyperCommand)
 
     for name in (
         "labcourt-demo-bootstrap.ps1",
         "labcourt-demo-api.ps1",
         "labcourt-demo-case-action.ps1",
+        "labcourt-demo-camera.ps1",
+        "labcourt-demo-notification.ps1",
+        "labcourt-demo-notification-deliver.ps1",
+        "labcourt-demo-notification-acknowledge.ps1",
+        "labcourt-demo-start.ps1",
     ):
         script = PROJECT_ROOT / "scripts" / "windows" / name
         parsed = subprocess.run(
