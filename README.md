@@ -23,8 +23,9 @@ adapter 的准入契约、append-only commissioning evidence、可重算 readine
 只读准入状态，不返回原始评审工件或凭据。M8.7c 已选择飞书企业自建应用并完成厂商专用卡片、
 `open_id` binding、`uuid` 去重、typed failure/raw response 与 SQLite outbox 的全离线 preflight；模拟
 provider 接受不会把通知推进到 `SENT`。M8.7d 进一步冻结了飞书 sandbox 的无密钥 runtime config 与
-双人 activation commit：首次外部调用只可
-面向显式测试收件人 allowlist，生产发送仍禁止；当前切片尚未落库、读取凭据或访问飞书。独立 UI 任务
+双人 activation commit：首次外部调用只可面向显式测试收件人 allowlist，生产发送仍禁止。M8.7d2 已
+用 append-only SQLite 持久化 activation 与单人 kill switch；当前证据、双人权限或收件人 authority 变化
+会动态变为 `INVALIDATED`，不再授权调用。仓库仍未读取飞书凭据或访问飞书。独立 UI 任务
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见

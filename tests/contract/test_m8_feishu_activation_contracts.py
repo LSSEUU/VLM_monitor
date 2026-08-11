@@ -26,6 +26,9 @@ from labcourt.contracts.m8_adapter_commissioning import (
 from labcourt.contracts.m8_case_persistence import M8ActorAuthorityCommitReceiptV1
 from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxActivationCommitReceiptV1,
+    M8FeishuSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuSandboxActivationStatusV1,
+    M8FeishuSandboxRevocationReason,
     M8FeishuSandboxRuntimeConfigV1,
     m8_feishu_runtime_config_bytes,
 )
@@ -34,6 +37,9 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuRecipientBindingAuthorityV1,
 )
 from labcourt.contracts.m8_notification_lifecycle import M8NotificationChannelKind
+from labcourt.contracts.m8_notification_persistence import (
+    M8NotificationTargetCommitReceiptV1,
+)
 from labcourt.contracts.m8_notifications import M8NotificationTargetAuthorityV1
 
 SHA_A = "a" * 64
@@ -180,6 +186,19 @@ def _config() -> M8FeishuSandboxRuntimeConfigV1:
     )
 
 
+def _current_target_receipts(
+    config: M8FeishuSandboxRuntimeConfigV1 | None = None,
+) -> tuple[M8NotificationTargetCommitReceiptV1, ...]:
+    resolved = config or _config()
+    return tuple(
+        M8NotificationTargetCommitReceiptV1(
+            target=binding.target,
+            repository_manifest_id=SHA_C,
+        )
+        for binding in resolved.recipient_allowlist
+    )
+
+
 def _intent(config: M8FeishuSandboxRuntimeConfigV1) -> M8AdapterActivationIntentV1:
     raw = m8_feishu_runtime_config_bytes(config)
     return M8AdapterActivationIntentV1(
@@ -203,8 +222,21 @@ def _receipt() -> M8FeishuSandboxActivationCommitReceiptV1:
         current_readiness_assessment=_assessment(assessed_at=BASE_TIME + timedelta(hours=3)),
         current_operations_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
         current_safety_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+        activation_revision=1,
         committed_at=BASE_TIME + timedelta(hours=4),
         runtime_config_storage_manifest_id=SHA_B,
+        repository_manifest_id=SHA_C,
+    )
+
+
+def _revocation() -> M8FeishuSandboxActivationRevocationCommitReceiptV1:
+    return M8FeishuSandboxActivationRevocationCommitReceiptV1(
+        activation_receipt=_receipt(),
+        revoked_by_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+        reason=M8FeishuSandboxRevocationReason.MANUAL_SAFETY_STOP,
+        reason_ref="sandbox-stop-drill-01",
+        revoked_at=BASE_TIME + timedelta(hours=5),
+        revocation_manifest_id=SHA_E,
         repository_manifest_id=SHA_C,
     )
 
@@ -259,6 +291,9 @@ def test_activation_receipt_only_authorizes_allowlisted_sandbox_calls() -> None:
     assert receipt.face_recognition_permitted is False
     assert receipt.cross_camera_reidentification_permitted is False
 
+    with pytest.raises(ValidationError, match="exact prior commit"):
+        receipt.model_copy(update={"activation_revision": 2})
+
 
 def test_activation_receipt_rejects_changed_config_or_credential_reference() -> None:
     receipt = _receipt()
@@ -310,7 +345,75 @@ def test_serialized_activation_claims_cannot_escalate_authority() -> None:
         M8FeishuSandboxActivationCommitReceiptV1.model_validate(payload)
 
 
-@pytest.mark.parametrize("model", (_config(), _receipt()))
+def test_revocation_is_immediate_one_person_kill_switch_without_reactivation() -> None:
+    revocation = _revocation()
+    assert revocation.activation_state == "REVOKED"
+    assert revocation.sandbox_external_call_permitted is False
+    assert revocation.production_external_call_permitted is False
+    assert revocation.automatic_reactivation_permitted is False
+
+    with pytest.raises(ValidationError, match="operations or safety"):
+        revocation.model_copy(
+            update={"revoked_by_actor_receipt": _actor_receipt(M8ActorRole.LEADER)}
+        )
+    with pytest.raises(ValidationError, match="cannot predate activation"):
+        revocation.model_copy(update={"revoked_at": BASE_TIME})
+
+
+def test_status_only_allows_current_unrevoked_sandbox_activation() -> None:
+    active = M8FeishuSandboxActivationStatusV1(
+        activation_receipt=_receipt(),
+        current_operations_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
+        current_safety_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+        current_recipient_target_receipts=_current_target_receipts(),
+        current_readiness_assessment=_assessment(assessed_at=BASE_TIME + timedelta(hours=5)),
+        assessed_at=BASE_TIME + timedelta(hours=5),
+        repository_manifest_id=SHA_C,
+    )
+    assert active.activation_state == "SANDBOX_ACTIVE"
+    assert active.sandbox_external_call_permitted is True
+    assert active.production_external_call_permitted is False
+
+    revoked = active.model_copy(
+        update={
+            "revocation_receipt": _revocation(),
+            "current_readiness_assessment": _assessment(assessed_at=BASE_TIME + timedelta(hours=6)),
+            "assessed_at": BASE_TIME + timedelta(hours=6),
+        }
+    )
+    assert revoked.activation_state == "REVOKED"
+    assert revoked.sandbox_external_call_permitted is False
+
+    invalidated = active.model_copy(
+        update={
+            "current_safety_actor_receipt": _actor_receipt(
+                M8ActorRole.SAFETY_OFFICER,
+                actor_suffix="02",
+            )
+        }
+    )
+    assert invalidated.activation_state == "INVALIDATED"
+    assert invalidated.sandbox_external_call_permitted is False
+
+
+@pytest.mark.parametrize(
+    "model",
+    (
+        _config(),
+        _receipt(),
+        _revocation(),
+        M8FeishuSandboxActivationStatusV1(
+            activation_receipt=_receipt(),
+            revocation_receipt=_revocation(),
+            current_operations_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
+            current_safety_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
+            current_recipient_target_receipts=_current_target_receipts(),
+            current_readiness_assessment=_assessment(assessed_at=BASE_TIME + timedelta(hours=6)),
+            assessed_at=BASE_TIME + timedelta(hours=6),
+            repository_manifest_id=SHA_C,
+        ),
+    ),
+)
 def test_feishu_activation_contracts_validate_as_serialization_schemas(
     model: BaseModel,
 ) -> None:
@@ -326,6 +429,10 @@ def test_feishu_activation_schemas_are_registered_serialization_roots() -> None:
         "m8-feishu-sandbox-activation-commit-receipt-v1": (
             M8FeishuSandboxActivationCommitReceiptV1
         ),
+        "m8-feishu-sandbox-activation-revocation-commit-receipt-v1": (
+            M8FeishuSandboxActivationRevocationCommitReceiptV1
+        ),
+        "m8-feishu-sandbox-activation-status-v1": M8FeishuSandboxActivationStatusV1,
         "m8-feishu-sandbox-runtime-config-v1": M8FeishuSandboxRuntimeConfigV1,
     }
     assert {name: SCHEMA_MODELS[name] for name in expected} == expected

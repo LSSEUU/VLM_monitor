@@ -1324,6 +1324,18 @@
       "name": "m8-feishu-sandbox-activation-commit-receipt-v1"
     },
     {
+      "file": "m8-feishu-sandbox-activation-revocation-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxActivationRevocationCommitReceiptV1",
+      "name": "m8-feishu-sandbox-activation-revocation-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-sandbox-activation-status-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxActivationStatusV1",
+      "name": "m8-feishu-sandbox-activation-status-v1"
+    },
+    {
       "file": "m8-feishu-sandbox-runtime-config-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxRuntimeConfigV1",

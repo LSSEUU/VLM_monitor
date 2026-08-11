@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timedelta
+from enum import StrEnum
 from typing import Literal, Self
 
 from pydantic import (
@@ -17,7 +18,7 @@ from pydantic import (
 from labcourt.contracts.base import FrozenContractModel
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.frames import Sha256Hex
-from labcourt.contracts.m8_access_cases import M8ActorRole
+from labcourt.contracts.m8_access_cases import M8ActorRole, M8ActorScopeKind
 from labcourt.contracts.m8_adapter_commissioning import (
     MAX_M8_RUNTIME_CONFIG_BYTES,
     M8AdapterActivationIntentV1,
@@ -29,9 +30,20 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuRecipientBindingAuthorityV1,
 )
+from labcourt.contracts.m8_notification_persistence import (
+    M8NotificationTargetCommitReceiptV1,
+)
 from labcourt.contracts.references import ReferenceToken, require_reference_token
 
 MAX_M8_FEISHU_SANDBOX_RECIPIENTS = 32
+
+
+class M8FeishuSandboxRevocationReason(StrEnum):
+    COMMISSIONING_INVALIDATED = "COMMISSIONING_INVALIDATED"
+    CONFIGURATION_REPLACED = "CONFIGURATION_REPLACED"
+    CREDENTIAL_ROTATION = "CREDENTIAL_ROTATION"
+    MANUAL_OPERATIONS_STOP = "MANUAL_OPERATIONS_STOP"
+    MANUAL_SAFETY_STOP = "MANUAL_SAFETY_STOP"
 
 
 def _canonical_utc(value: datetime) -> str:
@@ -188,6 +200,8 @@ class M8FeishuSandboxActivationCommitReceiptV1(FrozenContractModel):
     current_readiness_assessment: M8AdapterReadinessAssessmentV1
     current_operations_actor_receipt: M8ActorAuthorityCommitReceiptV1
     current_safety_actor_receipt: M8ActorAuthorityCommitReceiptV1
+    activation_revision: int = Field(gt=0, strict=True)
+    prior_activation_commit_id: Sha256Hex | None = None
     committed_at: datetime
     runtime_config_storage_manifest_id: Sha256Hex
     repository_manifest_id: Sha256Hex
@@ -259,6 +273,8 @@ class M8FeishuSandboxActivationCommitReceiptV1(FrozenContractModel):
             raise ValueError("M8 Feishu sandbox current readiness predates activation intent")
         if self.committed_at < current.assessed_at:
             raise ValueError("M8 Feishu sandbox activation cannot predate current readiness")
+        if (self.activation_revision == 1) != (self.prior_activation_commit_id is None):
+            raise ValueError("M8 Feishu sandbox activation revision requires an exact prior commit")
         if config.runtime_config_ref != intent.runtime_config_ref:
             raise ValueError("M8 Feishu sandbox runtime config reference conflicts with intent")
         if config.profile.credential_bundle_reference_id != intent.credential_reference_id:
@@ -350,6 +366,8 @@ class M8FeishuSandboxActivationCommitReceiptV1(FrozenContractModel):
                 self.current_readiness_assessment.assessment_id,
                 self.current_operations_actor_receipt.commit_receipt_id,
                 self.current_safety_actor_receipt.commit_receipt_id,
+                self.activation_revision,
+                self.prior_activation_commit_id,
                 _canonical_utc(self.committed_at),
                 self.runtime_config_document_sha256,
                 self.runtime_config_size_bytes,
@@ -375,9 +393,307 @@ class M8FeishuSandboxActivationCommitReceiptV1(FrozenContractModel):
         return self
 
 
+class M8FeishuSandboxActivationRevocationCommitReceiptV1(FrozenContractModel):
+    """Append-only one-person kill switch for a persisted sandbox activation."""
+
+    schema_version: Literal["m8-feishu-sandbox-activation-revocation-commit-receipt-v1"] = (
+        "m8-feishu-sandbox-activation-revocation-commit-receipt-v1"
+    )
+    activation_receipt: M8FeishuSandboxActivationCommitReceiptV1
+    revoked_by_actor_receipt: M8ActorAuthorityCommitReceiptV1
+    reason: M8FeishuSandboxRevocationReason
+    reason_ref: ReferenceToken
+    revoked_at: datetime
+    explicit_confirmation: Literal[True] = True
+    revocation_manifest_id: Sha256Hex
+    repository_manifest_id: Sha256Hex
+
+    @field_validator("reason_ref")
+    @classmethod
+    def validate_reason_ref(cls, value: str) -> str:
+        return require_reference_token(value, "M8 Feishu sandbox revocation reason")
+
+    @field_validator("revoked_at")
+    @classmethod
+    def validate_revoked_at(cls, value: datetime) -> datetime:
+        return _require_utc(value, "revoked_at")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(
+            value,
+            (
+                "activation_state",
+                "sandbox_external_call_permitted",
+                "production_external_call_permitted",
+                "automatic_reactivation_permitted",
+                "revocation_commit_id",
+            ),
+        )
+        receipt = handler(payload)
+        _verify_computed_claims(receipt, claims)
+        return receipt
+
+    @model_validator(mode="after")
+    def validate_revocation_authority(self) -> Self:
+        actor = self.revoked_by_actor_receipt.authority
+        candidate = self.activation_receipt.runtime_config.profile.candidate
+        if actor.role not in {M8ActorRole.OPERATIONS, M8ActorRole.SAFETY_OFFICER}:
+            raise ValueError("M8 Feishu sandbox revocation requires operations or safety")
+        if not actor.active or actor.scope_kind != M8ActorScopeKind.CAMPUS_WIDE:
+            raise ValueError("M8 Feishu sandbox revocation actor is inactive or out of scope")
+        if actor.scope_location_ids or candidate.scope_kind != M8ActorScopeKind.CAMPUS_WIDE:
+            raise ValueError("M8 Feishu sandbox revocation requires campus-wide authority")
+        if self.revoked_at < self.activation_receipt.committed_at:
+            raise ValueError("M8 Feishu sandbox revocation cannot predate activation")
+        if (
+            self.repository_manifest_id != self.activation_receipt.repository_manifest_id
+            or self.repository_manifest_id != self.revoked_by_actor_receipt.repository_manifest_id
+        ):
+            raise ValueError("M8 Feishu sandbox revocation authorities cross repositories")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def activation_state(self) -> str:
+        return "REVOKED"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def sandbox_external_call_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def production_external_call_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def automatic_reactivation_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def revocation_commit_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-feishu-sandbox-activation-revocation-commit-receipt",
+                1,
+                self.activation_receipt.activation_commit_id,
+                self.revoked_by_actor_receipt.commit_receipt_id,
+                self.reason,
+                self.reason_ref,
+                _canonical_utc(self.revoked_at),
+                self.explicit_confirmation,
+                self.revocation_manifest_id,
+                self.repository_manifest_id,
+                self.activation_state,
+                self.sandbox_external_call_permitted,
+                self.production_external_call_permitted,
+                self.automatic_reactivation_permitted,
+            ]
+        )
+
+
+class M8FeishuSandboxActivationStatusV1(FrozenContractModel):
+    """Repository-derived current status consumed by a future sandbox transport."""
+
+    schema_version: Literal["m8-feishu-sandbox-activation-status-v1"] = (
+        "m8-feishu-sandbox-activation-status-v1"
+    )
+    activation_receipt: M8FeishuSandboxActivationCommitReceiptV1
+    revocation_receipt: M8FeishuSandboxActivationRevocationCommitReceiptV1 | None = None
+    current_operations_actor_receipt: M8ActorAuthorityCommitReceiptV1
+    current_safety_actor_receipt: M8ActorAuthorityCommitReceiptV1
+    current_recipient_target_receipts: tuple[M8NotificationTargetCommitReceiptV1, ...]
+    current_readiness_assessment: M8AdapterReadinessAssessmentV1 | None = None
+    assessed_at: datetime
+    repository_manifest_id: Sha256Hex
+
+    @field_validator("assessed_at")
+    @classmethod
+    def validate_assessed_at(cls, value: datetime) -> datetime:
+        return _require_utc(value, "status assessed_at")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(
+            value,
+            (
+                "activation_state",
+                "human_authority_current",
+                "commissioning_current",
+                "recipient_authority_current",
+                "sandbox_external_call_permitted",
+                "production_external_call_permitted",
+                "test_recipient_allowlist_only",
+                "status_id",
+            ),
+        )
+        status = handler(payload)
+        _verify_computed_claims(status, claims)
+        return status
+
+    @model_validator(mode="after")
+    def validate_current_status(self) -> Self:
+        if self.repository_manifest_id != self.activation_receipt.repository_manifest_id:
+            raise ValueError("M8 Feishu sandbox status crosses repositories")
+        if self.assessed_at < self.activation_receipt.committed_at:
+            raise ValueError("M8 Feishu sandbox status cannot predate activation")
+        if (
+            self.current_operations_actor_receipt.repository_manifest_id
+            != self.repository_manifest_id
+            or self.current_safety_actor_receipt.repository_manifest_id
+            != self.repository_manifest_id
+        ):
+            raise ValueError("M8 Feishu sandbox current actor status crosses repositories")
+        bindings = self.activation_receipt.runtime_config.recipient_allowlist
+        if len(self.current_recipient_target_receipts) != len(bindings):
+            raise ValueError("M8 Feishu sandbox status requires every current recipient target")
+        for binding, target_receipt in zip(
+            bindings,
+            self.current_recipient_target_receipts,
+            strict=True,
+        ):
+            if (
+                target_receipt.target.actor_id != binding.target.actor_id
+                or target_receipt.target.channel != binding.target.channel
+                or target_receipt.repository_manifest_id != self.repository_manifest_id
+            ):
+                raise ValueError("M8 Feishu sandbox status grafts current recipient authority")
+        if self.current_readiness_assessment is not None and (
+            self.current_readiness_assessment.candidate
+            != self.activation_receipt.runtime_config.profile.candidate
+            or self.current_readiness_assessment.assessor_actor_receipt
+            != self.current_operations_actor_receipt
+            or self.current_readiness_assessment.assessed_at != self.assessed_at
+        ):
+            raise ValueError("M8 Feishu sandbox status grafts current readiness")
+        if self.revocation_receipt is not None:
+            if self.revocation_receipt.activation_receipt != self.activation_receipt:
+                raise ValueError("M8 Feishu sandbox status grafts another revocation")
+            if self.revocation_receipt.repository_manifest_id != self.repository_manifest_id:
+                raise ValueError("M8 Feishu sandbox revocation status crosses repositories")
+            if self.assessed_at < self.revocation_receipt.revoked_at:
+                raise ValueError("M8 Feishu sandbox status cannot predate revocation")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def activation_state(self) -> str:
+        if self.revocation_receipt is not None:
+            return "REVOKED"
+        if (
+            not self.human_authority_current
+            or not self.commissioning_current
+            or not self.recipient_authority_current
+        ):
+            return "INVALIDATED"
+        return "SANDBOX_ACTIVE"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def human_authority_current(self) -> bool:
+        activation = self.activation_receipt
+        return (
+            self.current_operations_actor_receipt == activation.current_operations_actor_receipt
+            and self.current_safety_actor_receipt == activation.current_safety_actor_receipt
+            and self.current_operations_actor_receipt.authority.active
+            and self.current_safety_actor_receipt.authority.active
+            and self.current_operations_actor_receipt.authority.role == M8ActorRole.OPERATIONS
+            and self.current_safety_actor_receipt.authority.role == M8ActorRole.SAFETY_OFFICER
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def commissioning_current(self) -> bool:
+        assessment = self.current_readiness_assessment
+        return (
+            assessment is not None
+            and assessment.readiness == M8CommissioningReadiness.READY_FOR_HUMAN_ACTIVATION
+            and assessment.evidence_inventory_sha256
+            == self.activation_receipt.current_readiness_assessment.evidence_inventory_sha256
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def recipient_authority_current(self) -> bool:
+        bindings = self.activation_receipt.runtime_config.recipient_allowlist
+        return all(
+            receipt.target == binding.target and receipt.target.active
+            for binding, receipt in zip(
+                bindings,
+                self.current_recipient_target_receipts,
+                strict=True,
+            )
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def sandbox_external_call_permitted(self) -> bool:
+        return self.activation_state == "SANDBOX_ACTIVE"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def production_external_call_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def test_recipient_allowlist_only(self) -> bool:
+        return True
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def status_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-feishu-sandbox-activation-status",
+                1,
+                self.activation_receipt.activation_commit_id,
+                (
+                    self.revocation_receipt.revocation_commit_id
+                    if self.revocation_receipt is not None
+                    else None
+                ),
+                self.current_operations_actor_receipt.commit_receipt_id,
+                self.current_safety_actor_receipt.commit_receipt_id,
+                tuple(item.commit_receipt_id for item in self.current_recipient_target_receipts),
+                (
+                    self.current_readiness_assessment.assessment_id
+                    if self.current_readiness_assessment is not None
+                    else None
+                ),
+                _canonical_utc(self.assessed_at),
+                self.repository_manifest_id,
+                self.activation_state,
+                self.human_authority_current,
+                self.commissioning_current,
+                self.recipient_authority_current,
+                self.sandbox_external_call_permitted,
+                self.production_external_call_permitted,
+                self.test_recipient_allowlist_only,
+            ]
+        )
+
+
 __all__ = [
     "MAX_M8_FEISHU_SANDBOX_RECIPIENTS",
     "M8FeishuSandboxActivationCommitReceiptV1",
+    "M8FeishuSandboxActivationRevocationCommitReceiptV1",
+    "M8FeishuSandboxActivationStatusV1",
+    "M8FeishuSandboxRevocationReason",
     "M8FeishuSandboxRuntimeConfigV1",
     "m8_feishu_runtime_config_bytes",
 ]

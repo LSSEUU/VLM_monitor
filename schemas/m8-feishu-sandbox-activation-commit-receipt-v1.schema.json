@@ -1433,6 +1433,11 @@
     "activation_intent": {
       "$ref": "#/$defs/M8AdapterActivationIntentV1"
     },
+    "activation_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Activation Revision",
+      "type": "integer"
+    },
     "activation_state": {
       "readOnly": true,
       "title": "Activation State",
@@ -1481,6 +1486,19 @@
       "readOnly": true,
       "title": "Life Safety Action Permitted",
       "type": "boolean"
+    },
+    "prior_activation_commit_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Activation Commit Id"
     },
     "production_external_call_permitted": {
       "readOnly": true,
@@ -1534,6 +1552,7 @@
     "current_readiness_assessment",
     "current_operations_actor_receipt",
     "current_safety_actor_receipt",
+    "activation_revision",
     "committed_at",
     "runtime_config_storage_manifest_id",
     "repository_manifest_id",

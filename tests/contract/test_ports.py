@@ -148,6 +148,7 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseTransitionCommandV1,
 )
 from labcourt.contracts.m8_adapter_commissioning import (
+    M8AdapterActivationIntentV1,
     M8CommissioningEvidenceAuthorityV1,
     M8CommissioningEvidenceCommitReceiptV1,
     M8ProductionAdapterCandidateAuthorityV1,
@@ -158,6 +159,13 @@ from labcourt.contracts.m8_case_persistence import (
     M8ActorAuthorityCommitReceiptV1,
     M8OperationalCaseAuditEventV1,
     M8OperationalCaseCommitReceiptV1,
+)
+from labcourt.contracts.m8_feishu_activation import (
+    M8FeishuSandboxActivationCommitReceiptV1,
+    M8FeishuSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuSandboxActivationStatusV1,
+    M8FeishuSandboxRevocationReason,
+    M8FeishuSandboxRuntimeConfigV1,
 )
 from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
@@ -437,6 +445,7 @@ from labcourt.ports.m8_adapter_commissioning_repository import (
     M8AdapterCommissioningRepository,
 )
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
+from labcourt.ports.m8_feishu_activation_repository import M8FeishuActivationRepository
 from labcourt.ports.m8_feishu_notification_adapter import M8FeishuConformanceAdapter
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
@@ -502,6 +511,67 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8FeishuActivationRepository: {
+        "commit_activation": (
+            (
+                "self",
+                "activation_intent",
+                "runtime_config",
+                "runtime_config_bytes",
+                "runtime_config_storage_manifest_id",
+                "current_assessed_at",
+                "committed_at",
+            ),
+            {
+                "activation_intent": M8AdapterActivationIntentV1,
+                "runtime_config": M8FeishuSandboxRuntimeConfigV1,
+                "runtime_config_bytes": bytes,
+                "runtime_config_storage_manifest_id": str,
+                "current_assessed_at": datetime,
+                "committed_at": datetime,
+                "return": M8FeishuSandboxActivationCommitReceiptV1,
+            },
+        ),
+        "get_activation": (
+            ("self", "activation_commit_id"),
+            {
+                "activation_commit_id": str,
+                "return": M8FeishuSandboxActivationCommitReceiptV1,
+            },
+        ),
+        "get_current_status": (
+            ("self", "candidate_authority_id", "assessed_at"),
+            {
+                "candidate_authority_id": str,
+                "assessed_at": datetime,
+                "return": M8FeishuSandboxActivationStatusV1,
+            },
+        ),
+        "revoke_activation": (
+            (
+                "self",
+                "activation_commit_id",
+                "revoker_actor_id",
+                "reason",
+                "reason_ref",
+                "revoked_at",
+                "revocation_manifest_id",
+            ),
+            {
+                "activation_commit_id": str,
+                "revoker_actor_id": str,
+                "reason": M8FeishuSandboxRevocationReason,
+                "reason_ref": str,
+                "revoked_at": datetime,
+                "revocation_manifest_id": str,
+                "return": M8FeishuSandboxActivationRevocationCommitReceiptV1,
+            },
+        ),
+        "read_runtime_config": (
+            ("self", "runtime_config_ref"),
+            {"runtime_config_ref": str, "return": bytes},
+        ),
+    },
     M8FeishuConformanceAdapter: {
         "profile_authority": (
             ("self",),

@@ -163,6 +163,12 @@ authority。只有该 commit 可授权 allowlist 内的 sandbox call，生产发
 动作继续禁止。调用时仍须从持久化 authority 解析当前未撤销状态，并从批准的 secret store 短暂解析
 凭据与 open ID 后复核 hash；客户端不能提交或扩大激活状态。
 
+飞书 sandbox activation 与 revocation 使用独立 append-only authority。每个 candidate 同时至多一个未
+撤销 activation；kill switch 可由当前 in-scope OPERATIONS 或 SAFETY_OFFICER 单人显式提交，重新激活
+仍需新的连续 revision 和双人 intent。任何调用前都必须在稳定 repository cut 中重算当前双人 authority、
+当前测试收件人 target 与 latest commissioning readiness；显式撤销为 `REVOKED`，证据/人员/target 换版
+为 `INVALIDATED`，两者均禁止外部调用。不得用历史回执、客户端 payload 或长生命周期缓存替代该检查。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 
