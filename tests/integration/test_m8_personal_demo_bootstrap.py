@@ -10,6 +10,7 @@ from labcourt.adapters.storage.sqlite_m8_operations_repository import (
     SQLiteM8OperationsRepository,
 )
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
+from labcourt.application.m8_personal_demo_camera import register_m8_personal_demo_camera
 from labcourt.application.m8_personal_demo_notification import (
     acknowledge_m8_personal_demo_notification,
     deliver_m8_personal_demo_notification,
@@ -164,3 +165,41 @@ def test_notification_route_is_idempotent_and_writes_offline_card(tmp_path: Path
     assert json.loads(acknowledgement_result.stdout)["notification_status"] == "ACKNOWLEDGED"
     assert json.loads(acknowledgement_result.stdout)["case_transition_permitted"] is False
     assert (output / "notification-acknowledgement-receipt.json").is_file()
+
+
+def test_recorded_camera_registration_is_additive_idempotent_and_replayable(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "camera-demo"
+    database = output / "labcourt.sqlite3"
+
+    first = register_m8_personal_demo_camera(database)
+    replay = register_m8_personal_demo_camera(database)
+
+    assert replay == first
+    assert first.source_count == 2
+    assert first.camera_count == 1
+    assert first.simulated_source_count == 2
+    assert first.media_attached is False
+    assert first.live_camera_claim_permitted is False
+    post_registration = bootstrap_m8_personal_demo(database)
+    assert post_registration.projection.overview.source_count == 1
+    assert post_registration.projection.overview.camera_count == 0
+    assert post_registration.projection.overview.observed_sensor_count == 1
+
+    result = RUNNER.invoke(
+        app,
+        ["demo", "camera-register", "--output", str(output), "--json"],
+    )
+    replay_result = RUNNER.invoke(
+        app,
+        ["demo", "camera-register", "--output", str(output), "--json"],
+    )
+    assert result.exit_code == 0
+    assert replay_result.exit_code == 0
+    assert json.loads(result.stdout) == json.loads(replay_result.stdout)
+    summary = json.loads(result.stdout)
+    assert summary["mode"] == "RECORDED_VIDEO_SIMULATION"
+    assert summary["display_badge"] == "SIMULATED · RECORDED VIDEO"
+    assert summary["media_attached"] is False
+    assert (output / "camera-registration-receipt.json").is_file()

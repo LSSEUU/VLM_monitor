@@ -16,6 +16,7 @@ from labcourt.contracts.m8_notifications import M8NotificationStatus
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
+    M8PersonalDemoCameraReceiptV1,
     M8PersonalDemoKnowledgeReceiptV1,
     M8PersonalDemoNotificationReceiptV1,
 )
@@ -78,6 +79,7 @@ def test_personal_demo_schemas_are_exported() -> None:
     assert SCHEMA_MODELS["m8-personal-demo-bootstrap-receipt-v1"] is (
         M8PersonalDemoBootstrapReceiptV1
     )
+    assert SCHEMA_MODELS["m8-personal-demo-camera-receipt-v1"] is (M8PersonalDemoCameraReceiptV1)
     assert SCHEMA_MODELS["m8-personal-demo-api-profile-v1"] is M8PersonalDemoApiProfileV1
     assert SCHEMA_MODELS["m8-personal-demo-local-access-v1"] is M8PersonalDemoLocalAccessV1
     assert SCHEMA_MODELS["m8-personal-demo-knowledge-receipt-v1"] is (
@@ -176,3 +178,20 @@ def test_notification_receipt_is_queued_simulated_and_non_disciplinary() -> None
         M8PersonalDemoNotificationReceiptV1.model_validate_json(receipt.model_dump_json())
         == receipt
     )
+
+
+def test_camera_receipt_cannot_claim_live_or_attached_media() -> None:
+    receipt = M8PersonalDemoCameraReceiptV1(
+        source_catalog_id="1" * 64,
+        source_catalog_commit_receipt_id="2" * 64,
+        sensor_refresh_commit_receipt_id="3" * 64,
+        camera_manifest_id="4" * 64,
+    )
+
+    assert receipt.display_badge == "SIMULATED · RECORDED VIDEO"
+    assert receipt.media_attached is False
+    assert receipt.live_camera_claim_permitted is False
+    assert receipt.life_safety_eligible is False
+    assert receipt.network_used is False
+    assert receipt.gpu_used is False
+    assert len(receipt.camera_receipt_id) == 64

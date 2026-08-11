@@ -122,6 +122,8 @@ API 装配还会幂等装载六类离线知识文档；问答返回来源、版�
 结果始终标为模拟且 `real_delivery_confirmed=false`，不调用飞书。
 双击 `labcourt-demo-notification-acknowledge.cmd` 并输入 `APPLY` 后，安全负责人可把通知闭环为
 `ACKNOWLEDGED`；该动作不会确认、驳回或结案案件。
+双击 `labcourt-demo-camera.cmd` 可增量注册一个 `RECORDED_VIDEO_SIMULATION` 摄像头；运营地图会显著显示
+`SIMULATED · RECORDED VIDEO`。该切片只建立设备/来源 authority，尚未绑定媒体文件，也不伪装成实时画面。
 API 运行时可双击 `labcourt-demo-case-action.cmd`，选择确认、驳回、请求补证、返回核实或结案，并输入
 `APPLY` 完成一次安全负责人显式动作；脚本不提供领导或运维审批入口。
 

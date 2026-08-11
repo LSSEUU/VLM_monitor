@@ -69,6 +69,18 @@ authority 恢复；重复执行不会生成第二次尝试。这里的 `DELIVERE
 `notification-acknowledgement-receipt.json`。重复执行返回同一 receipt；运营投影中的未闭环通知数变为 0。
 确认通知只表示安全负责人已看到消息，不会确认、驳回、补证或结案对应案件。
 
+## 预录视频模拟摄像头
+
+双击 `labcourt-demo-camera.cmd` 会在保留烟雾传感器的前提下发布 source catalog revision 2，增加
+`camera-recorded-demo-01`。它固定使用 `RECORDED_VIDEO_SIMULATION`、`FRAME_INDEX` 和
+`SIMULATED · RECORDED VIDEO`，运营投影的来源数变为 2、摄像头数变为 1。catalog 换版后，模拟烟雾样本
+会以连续 source sequence 重新绑定当前 catalog，避免运行时投影拼接不同版本。
+
+`camera-registration-receipt.json` 固定声明 `media_attached=false`、`live_camera_claim_permitted=false`、
+`life_safety_eligible=false`。当前切片只完成设备/摄像头目录与地图展示，不包含视频文件；后续媒体绑定必须
+保留 raw media reference 和显著模拟标记。基础 `bootstrap-receipt.json` 始终锚定最初单传感器切片，不会被
+新增摄像头、通知或案件迁移反向改写。
+
 主要路由沿用既有 M8 API：
 
 - `GET /api/m8/campuses/campus-demo/operations-projection`：领导只看到全局与重大案件，安全负责人看到完整

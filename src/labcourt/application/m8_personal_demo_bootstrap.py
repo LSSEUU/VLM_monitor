@@ -8,15 +8,13 @@ from pathlib import Path
 
 from labcourt.adapters.simulated_sensors import DeterministicSimulatedSensorAdapter
 from labcourt.adapters.storage.sqlite_m8_inventory_repository import SQLiteM8InventoryRepository
-from labcourt.adapters.storage.sqlite_m8_notification_repository import (
-    SQLiteM8NotificationRepository,
-)
 from labcourt.adapters.storage.sqlite_m8_operations_repository import (
     SQLiteM8OperationsRepository,
 )
 from labcourt.adapters.storage.sqlite_m8_sensor_persistence_repository import (
     SQLiteM8SensorPersistenceRepository,
 )
+from labcourt.application.m8_projection_workflow import build_operations_projection
 from labcourt.application.m8_sensor_demo import build_offline_smoke_demo_bundle
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m8_access_cases import (
@@ -45,7 +43,6 @@ from labcourt.contracts.m8_sensor_signals import (
     M8SensorPollRequestV1,
     M8SensorRiskAssessmentV1,
 )
-from labcourt.services.m8_operations_projection import M8OperationsProjectionService
 
 _BUSY_TIMEOUT_MS = 5_000
 
@@ -226,18 +223,16 @@ def bootstrap_m8_personal_demo(database_path: Path) -> M8PersonalDemoBootstrapRu
         _manifest("labcourt-personal-demo-case-audit-v1"),
     )
 
-    notifications = SQLiteM8NotificationRepository(
-        database_path,
-        _BUSY_TIMEOUT_MS,
-        repository_manifest_id,
-    )
-    projection = M8OperationsProjectionService(
-        inventory,
-        operations,
-        sensors,
-        notifications,
+    projection = build_operations_projection(
+        topology_commit,
+        catalog_commit,
+        (latest_sample,),
+        (case_commit,),
+        (case_commit.audit_event,),
+        (),
+        (),
         _manifest("labcourt-personal-demo-operations-projection-v1"),
-    ).current_projection(topology.campus_id)
+    )
     overview = projection.overview
     receipt = M8PersonalDemoBootstrapReceiptV1(
         topology_commit_receipt_id=topology_commit.commit_receipt_id,

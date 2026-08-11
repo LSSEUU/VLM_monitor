@@ -11,6 +11,7 @@ import typer
 
 from labcourt.application.m8_personal_demo_api import assemble_m8_personal_demo_api
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
+from labcourt.application.m8_personal_demo_camera import register_m8_personal_demo_camera
 from labcourt.application.m8_personal_demo_case_action import (
     M8PersonalDemoCaseActionError,
     execute_m8_personal_demo_case_action,
@@ -344,6 +345,43 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO notification acknowledged by the safety officer; "
                 "the Case was not changed"
+            )
+
+    @demo.command("camera-register")
+    def camera_register(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+            receipt = register_m8_personal_demo_camera(output / "labcourt.sqlite3")
+            receipt_path = output / "camera-registration-receipt.json"
+            _write_exact(
+                receipt_path,
+                (receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "camera_count": receipt.camera_count,
+            "display_badge": receipt.display_badge,
+            "gpu_used": receipt.gpu_used,
+            "life_safety_eligible": receipt.life_safety_eligible,
+            "live_camera_claim_permitted": receipt.live_camera_claim_permitted,
+            "media_attached": receipt.media_attached,
+            "mode": receipt.mode.value,
+            "network_used": receipt.network_used,
+            "source_count": receipt.source_count,
+            "source_id": receipt.source_id,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO camera registered: "
+                "SIMULATED RECORDED VIDEO; no media is attached yet"
             )
 
 

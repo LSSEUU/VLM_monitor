@@ -325,6 +325,11 @@ source/version/effective_at；profile/receipt 固定声明 `model_used=false`、
 离线 acknowledgement 必须由当前安全负责人 authority 显式确认，只允许
 `DELIVERED -> ACKNOWLEDGED`，并固定 `case_transition_permitted=false`。确认通知不能解释为确认案件，重复命令
 必须返回同一 commit，角色裁剪投影应把它计为已闭环通知。
+预录视频模拟摄像头必须通过 source catalog 的连续增量 revision 注册，固定
+`RECORDED_VIDEO_SIMULATION`、`FRAME_INDEX`、`SIMULATED · RECORDED VIDEO`，并保持
+`live_camera_claim_permitted=false`、`life_safety_eligible=false`。未绑定媒体时 receipt 必须明确
+`media_attached=false`；catalog 换版后传感器最新样本必须重新绑定当前 catalog cut，不能跨版本拼接投影。
+基础 bootstrap receipt/projection 必须锚定初始切片，后续通知、案件和目录 revision 不得反向改变其 identity。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。

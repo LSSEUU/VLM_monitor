@@ -13,6 +13,7 @@ from labcourt.application.m8_personal_demo_api import (
     M8_PERSONAL_DEMO_ROLE_TOKENS,
     assemble_m8_personal_demo_api,
 )
+from labcourt.application.m8_personal_demo_camera import register_m8_personal_demo_camera
 from labcourt.application.m8_personal_demo_knowledge import (
     bootstrap_m8_personal_demo_knowledge,
 )
@@ -235,6 +236,43 @@ def test_demo_api_projection_exposes_routed_notification_by_role(
         assert status == 200
         assert isinstance(payload, dict)
         assert payload["visible_projection"]["overview"]["current_notification_count"] == 0
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_demo_api_projection_exposes_simulated_recorded_camera(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    database = tmp_path / "camera-api" / "labcourt.sqlite3"
+    camera = register_m8_personal_demo_camera(database)
+    assembly = assemble_m8_personal_demo_api(database, 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, payload = _request(
+            server.server_port,
+            "GET",
+            "/api/m8/campuses/campus-demo/operations-projection",
+            "operations",
+        )
+        assert status == 200
+        assert isinstance(payload, dict)
+        visible = payload["visible_projection"]
+        assert visible["overview"]["source_count"] == 2
+        assert visible["overview"]["camera_count"] == 1
+        assert visible["overview"]["simulated_source_count"] == 2
+        camera_source = next(
+            item for item in visible["sources"] if item["source"]["source_id"] == camera.source_id
+        )
+        assert camera_source["observation_state"] == "SOURCE_CATALOG_ONLY"
+        assert camera_source["display_badge"] == "SIMULATED · RECORDED VIDEO"
+        assert camera_source["simulated"] is True
+        assert camera_source["live_observation_confirmed"] is False
+        assert camera_source["certified_fire_detection_claim_permitted"] is False
     finally:
         server.shutdown()
         server.server_close()

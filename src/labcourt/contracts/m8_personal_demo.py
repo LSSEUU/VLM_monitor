@@ -23,6 +23,7 @@ from labcourt.contracts.m8_notifications import (
     M8NotificationPurpose,
     M8NotificationStatus,
 )
+from labcourt.contracts.m8_operations import M8OperationalSourceMode
 from labcourt.contracts.references import ReferenceToken, require_reference_token
 
 
@@ -297,9 +298,69 @@ class M8PersonalDemoNotificationReceiptV1(FrozenContractModel):
         )
 
 
+class M8PersonalDemoCameraReceiptV1(FrozenContractModel):
+    """Receipt for the additive recorded-video camera Demo catalog revision."""
+
+    schema_version: Literal["m8-personal-demo-camera-receipt-v1"] = (
+        "m8-personal-demo-camera-receipt-v1"
+    )
+    campus_id: Literal["campus-demo"] = "campus-demo"
+    location_id: Literal["room-chem-301"] = "room-chem-301"
+    source_id: Literal["camera-recorded-demo-01"] = "camera-recorded-demo-01"
+    device_id: Literal["device-recorded-camera-01"] = "device-recorded-camera-01"
+    mode: Literal[M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION] = (
+        M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION
+    )
+    display_badge: Literal["SIMULATED · RECORDED VIDEO"] = "SIMULATED · RECORDED VIDEO"
+    source_catalog_revision: Literal[2] = 2
+    source_catalog_id: Sha256Hex
+    source_catalog_commit_receipt_id: Sha256Hex
+    sensor_refresh_commit_receipt_id: Sha256Hex
+    source_count: Literal[2] = 2
+    camera_count: Literal[1] = 1
+    simulated_source_count: Literal[2] = 2
+    media_attached: Literal[False] = False
+    raw_media_reference_required: Literal[True] = True
+    live_camera_claim_permitted: Literal[False] = False
+    life_safety_eligible: Literal[False] = False
+    network_used: Literal[False] = False
+    gpu_used: Literal[False] = False
+    camera_manifest_id: Sha256Hex
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def camera_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-personal-demo-camera-receipt",
+                1,
+                self.campus_id,
+                self.location_id,
+                self.source_id,
+                self.device_id,
+                self.mode,
+                self.source_catalog_revision,
+                self.source_catalog_id,
+                self.source_catalog_commit_receipt_id,
+                self.sensor_refresh_commit_receipt_id,
+                self.source_count,
+                self.camera_count,
+                self.simulated_source_count,
+                self.media_attached,
+                self.raw_media_reference_required,
+                self.live_camera_claim_permitted,
+                self.life_safety_eligible,
+                self.network_used,
+                self.gpu_used,
+                self.camera_manifest_id,
+            ]
+        )
+
+
 __all__ = [
     "M8PersonalDemoActorBindingV1",
     "M8PersonalDemoBootstrapReceiptV1",
+    "M8PersonalDemoCameraReceiptV1",
     "M8PersonalDemoKnowledgeReceiptV1",
     "M8PersonalDemoNotificationReceiptV1",
 ]
