@@ -173,6 +173,10 @@ from labcourt.contracts.m8_feishu_inbound import (
     M8FeishuInboundMessageVerificationReceiptV1,
     M8FeishuInboundWebhookProfileV1,
 )
+from labcourt.contracts.m8_feishu_inbound_reply import (
+    M8FeishuInboundReplyCommitReceiptV1,
+    M8FeishuInboundReplyCorrelationAuthorityV1,
+)
 from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuCardDispatchPreflightV1,
@@ -465,6 +469,9 @@ from labcourt.ports.m8_feishu_http import (
     M8FeishuHttpTransport,
 )
 from labcourt.ports.m8_feishu_inbound_crypto import M8FeishuInboundCrypto
+from labcourt.ports.m8_feishu_inbound_reply_repository import (
+    M8FeishuInboundReplyRepository,
+)
 from labcourt.ports.m8_feishu_inbound_repository import M8FeishuInboundRepository
 from labcourt.ports.m8_feishu_inbound_secrets import (
     M8FeishuInboundSecretLease,
@@ -595,6 +602,41 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
         "read_raw_artifact": (
             ("self", "raw_artifact_ref"),
             {"raw_artifact_ref": str, "return": bytes},
+        ),
+    },
+    M8FeishuInboundReplyRepository: {
+        "get_notification_chain_by_provider_message_id": (
+            ("self", "provider_message_id", "adapter_id"),
+            {
+                "provider_message_id": str,
+                "adapter_id": str,
+                "return": tuple[M8NotificationCommitReceiptV1, ...],
+            },
+        ),
+        "commit_reply": (
+            (
+                "self",
+                "correlation_authority",
+                "notification_raw_storage_manifest_id",
+                "notification_audit_manifest_id",
+                "transition_command_manifest_id",
+                "reply_commit_manifest_id",
+            ),
+            {
+                "correlation_authority": M8FeishuInboundReplyCorrelationAuthorityV1,
+                "notification_raw_storage_manifest_id": str,
+                "notification_audit_manifest_id": str,
+                "transition_command_manifest_id": str,
+                "reply_commit_manifest_id": str,
+                "return": M8FeishuInboundReplyCommitReceiptV1,
+            },
+        ),
+        "get_reply_by_provider_message_id": (
+            ("self", "provider_message_id"),
+            {
+                "provider_message_id": str,
+                "return": M8FeishuInboundReplyCommitReceiptV1,
+            },
         ),
     },
     M8FeishuHttpTransport: {

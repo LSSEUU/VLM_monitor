@@ -169,10 +169,10 @@ def _queued() -> M8NotificationCommitReceiptV1:
     )
 
 
-def _sent() -> M8NotificationCommitReceiptV1:
+def _sent(*, adapter_id: str = "m8-feishu-tenant-app") -> M8NotificationCommitReceiptV1:
     before = _queued()
     capability = M8NotificationChannelCapabilityAuthorityV1(
-        adapter_id="m8-feishu-adapter",
+        adapter_id=adapter_id,
         adapter_revision="im-v1-2026-04-10",
         channel=M8NotificationChannelKind.FEISHU,
         request_timeout_ms=5_000,
@@ -355,7 +355,7 @@ def _reply_commit() -> M8FeishuInboundReplyCommitReceiptV1:
         reply=correlation.reply,
         supporting_authorities=(correlation.supporting_authority(),),
         explicit_human_confirmation=True,
-        occurred_at=correlation.reply.received_at,
+        occurred_at=correlation.correlated_at,
         command_manifest_id=SHA_E,
     )
     notification_commit = build_notification_transition_commit(
@@ -449,6 +449,14 @@ def test_correlation_rejects_reply_kind_guess_or_cross_repository_graft() -> Non
                     update={"repository_manifest_id": SHA_E}
                 )
             }
+        )
+
+
+def test_correlation_rejects_same_provider_message_from_another_adapter() -> None:
+    authority = _correlation()
+    with pytest.raises(ValidationError, match="another adapter"):
+        authority.model_copy(
+            update={"notification_commit_chain": (_sent(adapter_id="foreign-feishu-app"),)}
         )
 
 

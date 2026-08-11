@@ -174,6 +174,14 @@ class M8FeishuInboundReplyCorrelationAuthorityV1(FrozenContractModel):
         config = self.activation_status.activation_receipt.runtime_config
         if verified.profile.outbound_profile != config.profile:
             raise ValueError("M8 Feishu inbound reply belongs to another adapter profile")
+        candidate = config.profile.candidate
+        capability = dispatch.request.channel_capability
+        if (
+            capability.adapter_id != candidate.adapter_id
+            or capability.adapter_revision != candidate.adapter_revision
+            or capability.channel != M8NotificationChannelKind.FEISHU
+        ):
+            raise ValueError("M8 Feishu reply outbound message belongs to another adapter")
         binding_pairs = tuple(
             zip(
                 config.recipient_allowlist,
@@ -237,6 +245,9 @@ class M8FeishuInboundReplyCorrelationAuthorityV1(FrozenContractModel):
             or self.correlated_at < self.activation_status.assessed_at
         ):
             raise ValueError("M8 Feishu reply correlation predates a required current authority")
+        current_command = current.audit_event.transition_command
+        if current_command is not None and self.correlated_at < current_command.occurred_at:
+            raise ValueError("M8 Feishu reply correlation predates the current notification")
         repository_manifests = {
             self.inbound_commit.repository_manifest_id,
             self.activation_status.repository_manifest_id,
@@ -393,7 +404,7 @@ class M8FeishuInboundReplyCommitReceiptV1(FrozenContractModel):
             or command.reply != correlation.reply
             or command.supporting_authorities != (correlation.supporting_authority(),)
             or command.explicit_human_confirmation is not True
-            or command.occurred_at != correlation.reply.received_at
+            or command.occurred_at != correlation.correlated_at
         ):
             raise ValueError("M8 Feishu reply commit does not bind the exact correlation authority")
         expected_source = (
