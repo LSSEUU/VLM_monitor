@@ -162,6 +162,8 @@ PPE 案件确认后可双击 `labcourt-demo-ppe-notification.cmd`：它向 `stud
 它绑定 exact terminal Case 与 `UPHELD|OVERTURNED` 结果，停在 `QUEUED`，不会覆盖原说明/申诉审计。
 再双击 `labcourt-demo-ppe-outcome-deliver.cmd` 可通过离线 fake channel 显式推进到 `DELIVERED`；该状态仍
 固定 `real_delivery_confirmed=false`，不代表飞书送达，也不会改变已结案案件。
+学生最后可双击 `labcourt-demo-ppe-outcome-acknowledge.cmd` 并输入 `APPLY`，将结果通知推进到
+`ACKNOWLEDGED`。这只关闭通知闭环，案件继续保持终态 `APPEAL_RESOLVED`。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

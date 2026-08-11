@@ -440,3 +440,6 @@ student target；结果卡 target 必须关闭 inbound response，路由只到 `
 结果卡送达必须是独立显式入口，只消费 exact outcome route receipt，并复核 terminal Case 与
 acknowledgement-only target 后通过离线 fake channel 提交 `QUEUED -> SENT -> DELIVERED`。中断恢复、raw
 artifact 与审计要求沿用首次学生卡；最终仍固定 `real_delivery_confirmed=false` 且无 Case transition 权限。
+
+结果通知确认必须由 student actor 在独立入口显式确认，只允许 `DELIVERED -> ACKNOWLEDGED`。确认关闭通知
+闭环但不得改变 terminal `APPEAL_RESOLVED` Case；exact retry 必须返回同一 commit，默认启动不得代学生确认。

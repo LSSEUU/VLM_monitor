@@ -20,6 +20,7 @@ from labcourt.application.m8_personal_demo_case_action import (
 from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_recorded_media
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.application.m8_personal_demo_ppe_notification import (
+    acknowledge_m8_personal_demo_ppe_outcome_notification,
     deliver_m8_personal_demo_ppe_notification,
     deliver_m8_personal_demo_ppe_outcome_notification,
     respond_m8_personal_demo_ppe_notification,
@@ -266,6 +267,35 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         )
         assert outcome_delivery_receipt is not None
         assert outcome_delivery_receipt.real_delivery_confirmed is False
+        outcome_acknowledgement = acknowledge_m8_personal_demo_ppe_outcome_notification(
+            root / "labcourt.sqlite3",
+            outcome.receipt,
+            confirmed=True,
+        )
+        assert (
+            acknowledge_m8_personal_demo_ppe_outcome_notification(
+                root / "labcourt.sqlite3",
+                outcome.receipt,
+                confirmed=True,
+            )
+            == outcome_acknowledgement
+        )
+        assert outcome_acknowledgement.status.value == "ACKNOWLEDGED"
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", assembly.server.server_port, timeout=3
+        )
+        connection.request(
+            "GET",
+            f"/api/m8/cases/{ppe.case_id}",
+            headers={
+                "Authorization": f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS['student']}"
+            },
+        )
+        response = connection.getresponse()
+        final_case = json.loads(response.read())
+        connection.close()
+        assert response.status == 200
+        assert final_case["status"] == "APPEAL_RESOLVED"
         assert appeal.request.action.value == "SUBMIT_APPEAL"
         assert appeal.request.reason_code.value == "SUBJECT_DISPUTE"
         assert appeal.request.explicit_human_confirmation is True

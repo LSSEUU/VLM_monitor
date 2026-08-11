@@ -58,6 +58,7 @@ _RESPONDED_AT = _DELIVERED_AT + timedelta(seconds=1)
 _OUTCOME_PLANNED_AT = _PLANNED_AT + timedelta(minutes=10)
 _OUTCOME_ROUTED_AT = _OUTCOME_PLANNED_AT + timedelta(seconds=1)
 _OUTCOME_DELIVERED_AT = _OUTCOME_ROUTED_AT + timedelta(seconds=2)
+_OUTCOME_ACKNOWLEDGED_AT = _OUTCOME_DELIVERED_AT + timedelta(seconds=1)
 
 
 def _manifest(name: str) -> Sha256Hex:
@@ -540,9 +541,65 @@ def deliver_m8_personal_demo_ppe_outcome_notification(
     return current
 
 
+def acknowledge_m8_personal_demo_ppe_outcome_notification(
+    database_path: Path,
+    route_receipt: M8PersonalDemoPpeOutcomeNotificationReceiptV1,
+    *,
+    confirmed: bool,
+) -> M8NotificationCommitReceiptV1:
+    """Record the student's explicit acknowledgement of the final outcome."""
+
+    if confirmed is not True:
+        raise ValueError("M8 personal Demo PPE outcome acknowledgement requires confirmation")
+    if not isinstance(route_receipt, M8PersonalDemoPpeOutcomeNotificationReceiptV1):
+        raise TypeError("M8 personal Demo PPE outcome acknowledgement requires typed receipt")
+    bootstrap = bootstrap_m8_personal_demo(database_path)
+    repository_manifest_id = bootstrap.projection.topology_receipt.repository_manifest_id
+    operations = SQLiteM8OperationsRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    notifications = SQLiteM8NotificationRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    current = notifications.get_current_notification(route_receipt.notification_id)
+    plan = current.audit_event.notification_authority.plan
+    case = operations.get_current_operational_case(route_receipt.case_id)
+    if (
+        plan.notification_id != route_receipt.notification_id
+        or plan.case_id != route_receipt.case_id
+        or plan.case_version != route_receipt.source_case_version
+        or plan.case_authority_sha256 != route_receipt.source_case_authority_sha256
+        or plan.target.target_authority_id != route_receipt.target_authority_id
+        or plan.target.actor_id != route_receipt.target_actor_id
+        or case.case_version != route_receipt.source_case_version
+        or case.case_document_sha256 != route_receipt.source_case_authority_sha256
+        or case.status != M8OperationalCaseStatus.APPEAL_RESOLVED
+    ):
+        raise ValueError("M8 personal Demo PPE outcome acknowledgement authority changed")
+    if current.status == M8NotificationStatus.ACKNOWLEDGED:
+        return current
+    if current.status != M8NotificationStatus.DELIVERED:
+        raise ValueError("M8 personal Demo PPE outcome acknowledgement requires delivery")
+    service = M8NotificationService(notifications, operations, _channel(), _workflow())
+    committed = service.acknowledge(
+        route_receipt.notification_id,
+        route_receipt.target_actor_id,
+        _OUTCOME_ACKNOWLEDGED_AT,
+        case.audit_event.case_authority.create_command.trigger_authorities,
+    )
+    if committed.status != M8NotificationStatus.ACKNOWLEDGED:
+        raise ValueError("M8 personal Demo PPE outcome acknowledgement was not committed")
+    return committed
+
+
 __all__ = [
     "M8PersonalDemoPpeNotificationRun",
     "M8PersonalDemoPpeOutcomeNotificationRun",
+    "acknowledge_m8_personal_demo_ppe_outcome_notification",
     "deliver_m8_personal_demo_ppe_notification",
     "deliver_m8_personal_demo_ppe_outcome_notification",
     "respond_m8_personal_demo_ppe_notification",

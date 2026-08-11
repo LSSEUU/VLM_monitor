@@ -28,6 +28,7 @@ from labcourt.application.m8_personal_demo_notification import (
 )
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.application.m8_personal_demo_ppe_notification import (
+    acknowledge_m8_personal_demo_ppe_outcome_notification,
     deliver_m8_personal_demo_ppe_notification,
     deliver_m8_personal_demo_ppe_outcome_notification,
     respond_m8_personal_demo_ppe_notification,
@@ -736,6 +737,46 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO PPE outcome delivered by offline fake; "
                 "real delivery remains unconfirmed"
+            )
+
+    @demo.command("ppe-outcome-notification-acknowledge")
+    def ppe_outcome_notification_acknowledge(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        confirmed: Annotated[
+            bool,
+            typer.Option("--confirmed", help="Explicit student outcome acknowledgement."),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            route = M8PersonalDemoPpeOutcomeNotificationReceiptV1.model_validate_json(
+                (output / "ppe-outcome-notification-route-receipt.json").read_bytes()
+            )
+            receipt = acknowledge_m8_personal_demo_ppe_outcome_notification(
+                output / "labcourt.sqlite3",
+                route,
+                confirmed=confirmed,
+            )
+            _write_exact(
+                output / "ppe-outcome-notification-acknowledgement-receipt.json",
+                (receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "case_transition_permitted": False,
+            "explicit_student_confirmation": True,
+            "notification_id": receipt.notification_id,
+            "notification_status": receipt.status.value,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO PPE outcome acknowledged by student; "
+                "terminal Case remains unchanged"
             )
 
     @demo.command("ppe-notification-deliver")
