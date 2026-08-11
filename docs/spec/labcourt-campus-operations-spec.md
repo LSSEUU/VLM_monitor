@@ -239,6 +239,14 @@ URL challenge 必须在写出 clear response 前提交 hash-only audit receipt�
 encrypted/decrypted/response hashes、时间与 commit/repository manifests，不保存 clear challenge 或原始解密载荷。
 exact verification retry 必须返回同一 commit，表与索引必须 append-only；该 audit 仍不是 ingress activation。
 
+activated webhook 的产品运行时必须通过独立显式命令装配，不得挂入默认离线启动路径。装配时必须读取
+既有 SQLite current activation，并按 activation 的 exact inbound profile 解析显式提供的环境变量名；不得
+扫描环境变量前缀、接受 secret 明文命令行参数或创建新的 activation。运行时必须在开始服务前完成 secret
+reference/hash 校验并关闭预检 lease，随后仅向 verification service 提供按请求取得的短生命周期 lease。
+缺少可选密码依赖、数据库、current activation、精确 secret binding 或本机 bind 能力时必须 typed/fail-closed
+退出。check mode 只允许构建、绑定、报告无密钥摘要并关闭 listener；正常 mode 才可阻塞服务。两种 mode
+均不得管理公网 TLS、提交 notification reply、改变 Case、形成处分或声称真实飞书租户验证已经完成。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

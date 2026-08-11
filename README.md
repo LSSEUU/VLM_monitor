@@ -61,6 +61,10 @@ commit。任一缺头、坏签名、撤销或 authority 漂移均 fail closed；
 提交学生说明、改变案件或声称公网 TLS 已部署。
 M8.7f9 已通过 migration 0012 将 URL challenge verification receipt 持久化为 hash-only append-only audit；
 clear challenge 与原始解密载荷不落该 ledger，exact retry 幂等，审计提交仍不能激活入口或改变案件。
+M8.7f10 已增加显式的 `labcourt feishu webhook-serve` 运行时装配：它只读取既有 SQLite activation，按
+exact inbound profile 解析两个具名环境变量引用，装配可选 AES adapter、入站证据库和 challenge audit 后
+绑定 activation 指定的 loopback 端口。`--check` 只完成校验、绑定与关闭；命令不会创建 activation、管理
+公网 TLS、自动提交学生说明或执行案件动作。
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
@@ -107,6 +111,22 @@ it does not enable a public webhook or change the default offline wiring:
 ```bash
 uv sync --all-groups --extra feishu-inbound --locked
 ```
+
+已有 current sandbox inbound activation 时，可先让获批的 secret loader 注入 Encrypt Key 与 Verification
+Token，再以环境变量名（不是 secret 值）执行一次只读运行时预检：
+
+```powershell
+.\.venv\Scripts\labcourt.exe feishu webhook-serve `
+  --database <activated-authority.db> `
+  --candidate-authority-id <candidate-authority-id> `
+  --encrypt-key-env LABCOURT_FEISHU_ENCRYPT_KEY `
+  --verification-token-env LABCOURT_FEISHU_VERIFICATION_TOKEN `
+  --runtime-manifest-id <lowercase-sha256> `
+  --check --json
+```
+
+去掉 `--check` 才会阻塞运行本机 backend；公网 HTTPS、域名、证书、反向代理与飞书后台 Request URL
+仍由外部受审计部署负责，且必须与 activation 中的引用和哈希一致。
 
 没有 `make` 的 Windows 环境可直接运行：
 
