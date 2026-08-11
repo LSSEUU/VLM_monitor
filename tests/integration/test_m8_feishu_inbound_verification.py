@@ -8,6 +8,9 @@ from pathlib import Path
 
 import pytest
 
+from labcourt.adapters.m8_feishu_inbound_cryptography import (
+    CryptographyM8FeishuInboundCrypto,
+)
 from labcourt.adapters.m8_feishu_inbound_environment_secrets import (
     EnvironmentM8FeishuInboundSecretResolver,
     M8FeishuInboundEnvironmentSecretBinding,
@@ -255,6 +258,39 @@ def test_environment_resolver_plugs_into_offline_verification_service(tmp_path: 
     assert committed.provider_message_id == "om_student_reply_01"
     assert ENCRYPT_KEY.decode() not in repr(resolver)
     assert VERIFICATION_TOKEN.decode() not in repr(resolver)
+
+
+def test_optional_cryptography_adapter_verifies_a_full_encrypted_event(tmp_path: Path) -> None:
+    padding = pytest.importorskip("cryptography.hazmat.primitives.padding")
+    ciphers = pytest.importorskip("cryptography.hazmat.primitives.ciphers")
+    algorithms = pytest.importorskip("cryptography.hazmat.primitives.ciphers.algorithms")
+    modes = pytest.importorskip("cryptography.hazmat.primitives.ciphers.modes")
+    event = _event_bytes()
+    padder = padding.PKCS7(128).padder()
+    padded = padder.update(event) + padder.finalize()
+    iv = b"0123456789abcdef"
+    encryptor = ciphers.Cipher(
+        algorithms.AES256(hashlib.sha256(ENCRYPT_KEY).digest()),
+        modes.CBC(iv),
+    ).encryptor()
+    encrypted_event = iv + encryptor.update(padded) + encryptor.finalize()
+    body = canonical_json({"encrypt": base64.b64encode(encrypted_event).decode()}).encode()
+    repository = _repository(tmp_path)
+    profile = _webhook_profile()
+    service = M8FeishuInboundVerificationService(
+        repository,
+        _SecretResolver(),
+        CryptographyM8FeishuInboundCrypto(),
+        lambda: RECEIVED_AT + timedelta(seconds=1),
+        SHA_D,
+        SHA_E,
+        SHA_A,
+    )
+
+    committed = service.verify_and_commit(profile, _ingress(profile, body), body)
+
+    assert committed.provider_message_id == "om_student_reply_01"
+    assert repository.read_raw_artifact(committed.raw_artifact_refs[1]) == event
 
 
 @pytest.mark.parametrize(

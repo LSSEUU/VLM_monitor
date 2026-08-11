@@ -83,6 +83,13 @@ make m4-coverage
 make demo
 ```
 
+The audited AES provider for encrypted Feishu inbound events is an explicit optional install;
+it does not enable a public webhook or change the default offline wiring:
+
+```bash
+uv sync --all-groups --extra feishu-inbound --locked
+```
+
 没有 `make` 的 Windows 环境可直接运行：
 
 ```powershell
