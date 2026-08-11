@@ -9,8 +9,12 @@ from labcourt.adapters.storage.sqlite_m8_operations_repository import (
     SQLiteM8OperationsRepository,
 )
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
+from labcourt.application.m8_personal_demo_notification import (
+    route_m8_personal_demo_notification,
+)
 from labcourt.cli import app
 from labcourt.contracts.m8_access_cases import M8OperationalCaseStatus
+from labcourt.contracts.m8_notifications import M8NotificationStatus
 
 RUNNER = CliRunner()
 BUSY_TIMEOUT_MS = 5_000
@@ -53,3 +57,32 @@ def test_bootstrap_cli_writes_replayable_local_artifacts(tmp_path: Path) -> None
     assert (output / "labcourt.sqlite3").is_file()
     assert (output / "bootstrap-receipt.json").is_file()
     assert (output / "operations-projection.json").is_file()
+
+
+def test_notification_route_is_idempotent_and_writes_offline_card(tmp_path: Path) -> None:
+    output = tmp_path / "notification-demo"
+    database = output / "labcourt.sqlite3"
+
+    first = route_m8_personal_demo_notification(database)
+    replay = route_m8_personal_demo_notification(database)
+
+    assert replay == first
+    assert first.receipt.notification_status == M8NotificationStatus.QUEUED
+    assert first.receipt.target_actor_id == "safety-officer-demo"
+    assert first.card.display_badge == "SIMULATED · LOCAL MESSAGE CARD"
+    assert first.card.real_delivery_confirmed is False
+
+    result = RUNNER.invoke(
+        app,
+        ["demo", "notification-route", "--output", str(output), "--json"],
+    )
+    replay_result = RUNNER.invoke(
+        app,
+        ["demo", "notification-route", "--output", str(output), "--json"],
+    )
+    assert result.exit_code == 0
+    assert replay_result.exit_code == 0
+    assert json.loads(result.stdout) == json.loads(replay_result.stdout)
+    assert json.loads(result.stdout)["real_delivery_confirmed"] is False
+    assert (output / "notification-route-receipt.json").is_file()
+    assert (output / "notification-card.json").is_file()

@@ -47,6 +47,17 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 - `api-access.json`：四角色本机明文演示 token，供独立 UI 或手工 API 联调读取，不会输出到终端。
 - `knowledge-receipt.json`：制度、SOP、历史案例、应急预案、设备资料和 FAQ 六类离线知识的提交摘要。
 
+## 离线通知路由
+
+在案件仍为初始 `PENDING_VERIFICATION` 时双击 `labcourt-demo-notification.cmd`。它会幂等发布安全负责人
+本地模拟收件目标，把紧急案件的 `CASE_ACTION_REQUIRED` 通知推进到 `QUEUED`，并写入：
+
+- `notification-route-receipt.json`：目标、案件版本、通知版本和排队提交的 typed 摘要；
+- `notification-card.json`：显著标注 `SIMULATED · LOCAL MESSAGE CARD` 的离线卡片。
+
+该路由不读取飞书凭据、不联网、不声称真实送达、不确认案件，也不形成处分。它完成后，安全负责人和领导
+的运营投影会看到该重大案件通知；运维视图仍不暴露案件或通知。
+
 主要路由沿用既有 M8 API：
 
 - `GET /api/m8/campuses/campus-demo/operations-projection`：领导只看到全局与重大案件，安全负责人看到完整

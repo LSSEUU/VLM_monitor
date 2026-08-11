@@ -12,10 +12,12 @@ from labcourt.contracts.m8_api import (
     M8ApiCredentialCatalogAuthorityV1,
 )
 from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
+from labcourt.contracts.m8_notifications import M8NotificationStatus
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
     M8PersonalDemoKnowledgeReceiptV1,
+    M8PersonalDemoNotificationReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoApiProfileV1,
@@ -81,6 +83,9 @@ def test_personal_demo_schemas_are_exported() -> None:
     assert SCHEMA_MODELS["m8-personal-demo-knowledge-receipt-v1"] is (
         M8PersonalDemoKnowledgeReceiptV1
     )
+    assert SCHEMA_MODELS["m8-personal-demo-notification-receipt-v1"] is (
+        M8PersonalDemoNotificationReceiptV1
+    )
 
 
 def test_api_profile_keeps_plaintext_tokens_out_of_authority() -> None:
@@ -145,3 +150,25 @@ def test_knowledge_receipt_covers_all_types_without_rule_authority() -> None:
     assert receipt.model_used is False
     assert receipt.network_used is False
     assert len(receipt.knowledge_receipt_id) == 64
+
+
+def test_notification_receipt_is_queued_simulated_and_non_disciplinary() -> None:
+    receipt = M8PersonalDemoNotificationReceiptV1(
+        case_id="1" * 64,
+        source_case_authority_sha256="2" * 64,
+        target_commit_receipt_id="3" * 64,
+        target_authority_id="4" * 64,
+        notification_id="5" * 64,
+        notification_commit_receipt_id="6" * 64,
+        routed_at=datetime(2026, 8, 10, 9, 1, 1, tzinfo=UTC),
+        offline_card_id="7" * 64,
+        notification_manifest_id="8" * 64,
+    )
+
+    assert receipt.notification_status == M8NotificationStatus.QUEUED
+    assert receipt.simulated is True
+    assert receipt.network_used is False
+    assert receipt.real_delivery_confirmed is False
+    assert receipt.case_transition_permitted is False
+    assert receipt.direct_disciplinary_action_permitted is False
+    assert len(receipt.notification_receipt_id) == 64

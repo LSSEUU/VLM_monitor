@@ -409,6 +409,7 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
     M8PersonalDemoKnowledgeReceiptV1,
+    M8PersonalDemoNotificationReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoApiProfileV1,
@@ -764,12 +765,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1": (
         M8FeishuInboundSandboxActivationRevocationCommitReceiptV1
     ),
-    "m8-feishu-inbound-sandbox-activation-status-v1": (
-        M8FeishuInboundSandboxActivationStatusV1
-    ),
-    "m8-feishu-inbound-sandbox-runtime-config-v1": (
-        M8FeishuInboundSandboxRuntimeConfigV1
-    ),
+    "m8-feishu-inbound-sandbox-activation-status-v1": (M8FeishuInboundSandboxActivationStatusV1),
+    "m8-feishu-inbound-sandbox-runtime-config-v1": (M8FeishuInboundSandboxRuntimeConfigV1),
     "m8-feishu-inbound-webhook-profile-v1": M8FeishuInboundWebhookProfileV1,
     "m8-feishu-local-demo-config-v1": M8FeishuLocalDemoConfigV1,
     "m8-feishu-emergency-demo-probe-receipt-v1": M8FeishuEmergencyDemoProbeReceiptV1,
@@ -790,13 +787,9 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-loopback-challenge-listener-profile-v1": (
         M8FeishuLoopbackChallengeListenerProfileV1
     ),
-    "m8-feishu-url-challenge-ingress-request-v1": (
-        M8FeishuUrlChallengeIngressRequestV1
-    ),
+    "m8-feishu-url-challenge-ingress-request-v1": (M8FeishuUrlChallengeIngressRequestV1),
     "m8-feishu-url-challenge-commit-receipt-v1": M8FeishuUrlChallengeCommitReceiptV1,
-    "m8-feishu-url-challenge-verification-receipt-v1": (
-        M8FeishuUrlChallengeVerificationReceiptV1
-    ),
+    "m8-feishu-url-challenge-verification-receipt-v1": (M8FeishuUrlChallengeVerificationReceiptV1),
     "m8-feishu-webhook-ingress-request-v1": M8FeishuWebhookIngressRequestV1,
     "m8-knowledge-answer-v1": M8KnowledgeAnswerV1,
     "m8-knowledge-answer-commit-receipt-v1": M8KnowledgeAnswerCommitReceiptV1,
@@ -844,6 +837,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-personal-demo-api-profile-v1": M8PersonalDemoApiProfileV1,
     "m8-personal-demo-bootstrap-receipt-v1": M8PersonalDemoBootstrapReceiptV1,
     "m8-personal-demo-knowledge-receipt-v1": M8PersonalDemoKnowledgeReceiptV1,
+    "m8-personal-demo-notification-receipt-v1": M8PersonalDemoNotificationReceiptV1,
     "m8-personal-demo-local-access-v1": M8PersonalDemoLocalAccessV1,
     "m8-personal-demo-role-tokens-v1": M8PersonalDemoRoleTokensV1,
     "m8-operations-projection-v1": M8OperationsProjectionV1,

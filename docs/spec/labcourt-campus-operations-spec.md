@@ -315,6 +315,11 @@ EMERGENCY_PLAN、DEVICE_MANUAL、FAQ。问答必须走既有 deterministic offli
 source/version/effective_at；profile/receipt 固定声明 `model_used=false`、`network_used=false` 和普通文档不能
 定义案件规则。知识 catalog 冲突必须 fail closed，不能自动生成下一 revision 掩盖漂移。
 
+个人 Demo 的通知必须通过独立显式路由入口创建，不能偷偷塞进基础 bootstrap。首个路由固定把原始模拟
+`EMERGENCY` 待核实案件的 `CASE_ACTION_REQUIRED` 发送意图指向安全负责人，并只推进到离线 fake outbox 的
+`QUEUED`。输出必须包含 typed route receipt 与显著模拟卡片；不得联网、读取飞书 secret、声称送达、迁移
+案件或形成处分。安全负责人和领导可从角色裁剪的运营投影查看，运维不得看到案件通知。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

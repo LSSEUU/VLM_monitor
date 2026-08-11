@@ -16,6 +16,9 @@ from labcourt.application.m8_personal_demo_api import (
 from labcourt.application.m8_personal_demo_knowledge import (
     bootstrap_m8_personal_demo_knowledge,
 )
+from labcourt.application.m8_personal_demo_notification import (
+    route_m8_personal_demo_notification,
+)
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseAction,
@@ -178,6 +181,48 @@ def test_demo_api_answers_from_versioned_offline_knowledge_with_citations(
         assert answer["citations"]
         assert all(citation["source_version"] == 1 for citation in answer["citations"])
         assert all(citation["source_effective_at"] for citation in answer["citations"])
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_demo_api_projection_exposes_routed_notification_by_role(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    database = tmp_path / "notification-api" / "labcourt.sqlite3"
+    routed = route_m8_personal_demo_notification(database)
+    assembly = assemble_m8_personal_demo_api(database, 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        for role in ("safety", "leader"):
+            status, payload = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/campuses/campus-demo/operations-projection",
+                role,
+            )
+            assert status == 200
+            assert isinstance(payload, dict)
+            visible = payload["visible_projection"]
+            assert visible["overview"]["current_notification_count"] == 1
+            assert visible["current_notifications"][0]["notification_id"] == (
+                routed.receipt.notification_id
+            )
+            assert visible["current_notifications"][0]["status"] == "QUEUED"
+
+        status, payload = _request(
+            server.server_port,
+            "GET",
+            "/api/m8/campuses/campus-demo/operations-projection",
+            "operations",
+        )
+        assert status == 200
+        assert isinstance(payload, dict)
+        assert payload["visible_projection"]["overview"]["current_notification_count"] == 0
     finally:
         server.shutdown()
         server.server_close()

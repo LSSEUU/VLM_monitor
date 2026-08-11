@@ -17,6 +17,12 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalRiskLevel,
 )
 from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
+from labcourt.contracts.m8_notifications import (
+    M8NotificationAudienceKind,
+    M8NotificationChannelKind,
+    M8NotificationPurpose,
+    M8NotificationStatus,
+)
 from labcourt.contracts.references import ReferenceToken, require_reference_token
 
 
@@ -197,8 +203,84 @@ class M8PersonalDemoKnowledgeReceiptV1(FrozenContractModel):
         )
 
 
+class M8PersonalDemoNotificationReceiptV1(FrozenContractModel):
+    """Compact authority for one deterministic emergency notification route."""
+
+    schema_version: Literal["m8-personal-demo-notification-receipt-v1"] = (
+        "m8-personal-demo-notification-receipt-v1"
+    )
+    case_id: Sha256Hex
+    source_case_version: Literal[1] = 1
+    source_case_authority_sha256: Sha256Hex
+    target_commit_receipt_id: Sha256Hex
+    target_authority_id: Sha256Hex
+    target_actor_id: Literal["safety-officer-demo"] = "safety-officer-demo"
+    purpose: Literal[M8NotificationPurpose.CASE_ACTION_REQUIRED] = (
+        M8NotificationPurpose.CASE_ACTION_REQUIRED
+    )
+    audience: Literal[M8NotificationAudienceKind.SAFETY_RESPONDER] = (
+        M8NotificationAudienceKind.SAFETY_RESPONDER
+    )
+    channel: Literal[M8NotificationChannelKind.LOCAL_OFFLINE_FAKE] = (
+        M8NotificationChannelKind.LOCAL_OFFLINE_FAKE
+    )
+    notification_id: Sha256Hex
+    notification_version: Literal[2] = 2
+    notification_commit_receipt_id: Sha256Hex
+    notification_status: Literal[M8NotificationStatus.QUEUED] = M8NotificationStatus.QUEUED
+    routed_at: datetime
+    offline_card_id: Sha256Hex
+    display_badge: Literal["SIMULATED · LOCAL MESSAGE CARD"] = "SIMULATED · LOCAL MESSAGE CARD"
+    simulated: Literal[True] = True
+    network_used: Literal[False] = False
+    model_used: Literal[False] = False
+    real_delivery_confirmed: Literal[False] = False
+    case_transition_permitted: Literal[False] = False
+    direct_disciplinary_action_permitted: Literal[False] = False
+    notification_manifest_id: Sha256Hex
+
+    @model_validator(mode="after")
+    def validate_routed_at(self) -> Self:
+        if self.routed_at.tzinfo is None or self.routed_at.utcoffset() != timedelta(0):
+            raise ValueError("M8 personal Demo notification routed_at must be UTC")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def notification_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-personal-demo-notification-receipt",
+                1,
+                self.case_id,
+                self.source_case_version,
+                self.source_case_authority_sha256,
+                self.target_commit_receipt_id,
+                self.target_authority_id,
+                self.target_actor_id,
+                self.purpose,
+                self.audience,
+                self.channel,
+                self.notification_id,
+                self.notification_version,
+                self.notification_commit_receipt_id,
+                self.notification_status,
+                self.routed_at.isoformat(timespec="microseconds"),
+                self.offline_card_id,
+                self.simulated,
+                self.network_used,
+                self.model_used,
+                self.real_delivery_confirmed,
+                self.case_transition_permitted,
+                self.direct_disciplinary_action_permitted,
+                self.notification_manifest_id,
+            ]
+        )
+
+
 __all__ = [
     "M8PersonalDemoActorBindingV1",
     "M8PersonalDemoBootstrapReceiptV1",
     "M8PersonalDemoKnowledgeReceiptV1",
+    "M8PersonalDemoNotificationReceiptV1",
 ]

@@ -15,6 +15,9 @@ from labcourt.application.m8_personal_demo_case_action import (
     M8PersonalDemoCaseActionError,
     execute_m8_personal_demo_case_action,
 )
+from labcourt.application.m8_personal_demo_notification import (
+    route_m8_personal_demo_notification,
+)
 from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoOperatorAction
 from labcourt.exceptions import LabCourtError
 
@@ -202,6 +205,48 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 f"LabCourt PERSONAL DEMO Case action committed: "
                 f"{run.request.action.value} -> {run.receipt.status.value}"
+            )
+
+    @demo.command("notification-route")
+    def notification_route(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+            run = route_m8_personal_demo_notification(output / "labcourt.sqlite3")
+            receipt_path = output / "notification-route-receipt.json"
+            card_path = output / "notification-card.json"
+            _write_exact(
+                receipt_path,
+                (run.receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+            _write_exact(
+                card_path,
+                (run.card.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "audience": run.receipt.audience.value,
+            "card": str(card_path.resolve()),
+            "case_id": run.receipt.case_id,
+            "channel": run.receipt.channel.value,
+            "network_used": run.receipt.network_used,
+            "notification_id": run.receipt.notification_id,
+            "notification_status": run.receipt.notification_status.value,
+            "real_delivery_confirmed": run.receipt.real_delivery_confirmed,
+            "simulated": run.receipt.simulated,
+            "target_actor_id": run.receipt.target_actor_id,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO notification routed: "
+                "SIMULATED emergency card is QUEUED for the safety officer"
             )
 
 
