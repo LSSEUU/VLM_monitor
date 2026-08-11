@@ -1,0 +1,157 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-ppe-case-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Receipt for one simulated weak-label PPE candidate awaiting human review.",
+  "properties": {
+    "candidate_kind": {
+      "const": "GOGGLES_MISSING_CANDIDATE",
+      "default": "GOGGLES_MISSING_CANDIDATE",
+      "title": "Candidate Kind",
+      "type": "string"
+    },
+    "case_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Commit Receipt Id",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_status": {
+      "const": "PENDING_VERIFICATION",
+      "default": "PENDING_VERIFICATION",
+      "title": "Case Status",
+      "type": "string"
+    },
+    "case_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "direct_disciplinary_action_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "display_badge": {
+      "const": "SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION",
+      "default": "SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION",
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "filename_used_as_evidence": {
+      "const": false,
+      "default": false,
+      "title": "Filename Used As Evidence",
+      "type": "boolean"
+    },
+    "gpu_used": {
+      "const": false,
+      "default": false,
+      "title": "Gpu Used",
+      "type": "boolean"
+    },
+    "human_verification_required": {
+      "const": true,
+      "default": true,
+      "title": "Human Verification Required",
+      "type": "boolean"
+    },
+    "input_media_content_claim_verified": {
+      "const": false,
+      "default": false,
+      "title": "Input Media Content Claim Verified",
+      "type": "boolean"
+    },
+    "location_id": {
+      "const": "room-chem-301",
+      "default": "room-chem-301",
+      "title": "Location Id",
+      "type": "string"
+    },
+    "machine_weak_label_is_ground_truth": {
+      "const": false,
+      "default": false,
+      "title": "Machine Weak Label Is Ground Truth",
+      "type": "boolean"
+    },
+    "media_binding_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Media Binding Receipt Id",
+      "type": "string"
+    },
+    "model_used": {
+      "const": false,
+      "default": false,
+      "title": "Model Used",
+      "type": "boolean"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "ppe_case_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Ppe Case Manifest Id",
+      "type": "string"
+    },
+    "ppe_case_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Ppe Case Receipt Id",
+      "type": "string"
+    },
+    "risk_level": {
+      "const": "GENERAL",
+      "default": "GENERAL",
+      "title": "Risk Level",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-ppe-case-receipt-v1",
+      "default": "m8-personal-demo-ppe-case-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_catalog_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Id",
+      "type": "string"
+    },
+    "source_id": {
+      "const": "camera-recorded-demo-01",
+      "default": "camera-recorded-demo-01",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "subject_actor_id": {
+      "const": "student-demo",
+      "default": "student-demo",
+      "title": "Subject Actor Id",
+      "type": "string"
+    },
+    "video_event_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Video Event Document Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_catalog_id",
+    "media_binding_receipt_id",
+    "video_event_document_sha256",
+    "case_id",
+    "case_commit_receipt_id",
+    "ppe_case_manifest_id",
+    "ppe_case_receipt_id"
+  ],
+  "title": "M8PersonalDemoPpeCaseReceiptV1",
+  "type": "object"
+}

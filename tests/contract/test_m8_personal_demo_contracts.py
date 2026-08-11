@@ -21,6 +21,7 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoCameraViewV1,
     M8PersonalDemoKnowledgeReceiptV1,
     M8PersonalDemoNotificationReceiptV1,
+    M8PersonalDemoPpeCaseReceiptV1,
     M8PersonalDemoRecordedMediaReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
@@ -94,6 +95,9 @@ def test_personal_demo_schemas_are_exported() -> None:
     )
     assert SCHEMA_MODELS["m8-personal-demo-recorded-media-receipt-v1"] is (
         M8PersonalDemoRecordedMediaReceiptV1
+    )
+    assert SCHEMA_MODELS["m8-personal-demo-ppe-case-receipt-v1"] is (
+        M8PersonalDemoPpeCaseReceiptV1
     )
 
 
@@ -261,3 +265,23 @@ def test_camera_view_requires_binding_and_attachment_state_to_match() -> None:
     payload["media_attached"] = True
     with pytest.raises(ValidationError):
         M8PersonalDemoCameraViewV1.model_validate(payload)
+
+
+def test_ppe_case_receipt_is_only_a_simulated_weak_label_candidate() -> None:
+    receipt = M8PersonalDemoPpeCaseReceiptV1(
+        source_catalog_id="1" * 64,
+        media_binding_receipt_id="2" * 64,
+        video_event_document_sha256="3" * 64,
+        case_id="4" * 64,
+        case_commit_receipt_id="5" * 64,
+        ppe_case_manifest_id="6" * 64,
+    )
+
+    assert receipt.input_media_content_claim_verified is False
+    assert receipt.filename_used_as_evidence is False
+    assert receipt.machine_weak_label_is_ground_truth is False
+    assert receipt.model_used is False
+    assert receipt.human_verification_required is True
+    assert receipt.case_transition_permitted is False
+    assert receipt.direct_disciplinary_action_permitted is False
+    assert M8PersonalDemoPpeCaseReceiptV1.model_validate_json(receipt.model_dump_json()) == receipt

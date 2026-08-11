@@ -17,8 +17,13 @@ from labcourt.application.m8_personal_demo_notification import (
     deliver_m8_personal_demo_notification,
     route_m8_personal_demo_notification,
 )
+from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.cli import app
-from labcourt.contracts.m8_access_cases import M8OperationalCaseStatus
+from labcourt.contracts.m8_access_cases import (
+    M8AuthorityReferenceKind,
+    M8OperationalCaseStatus,
+    M8OperationalRiskLevel,
+)
 from labcourt.contracts.m8_notifications import M8NotificationStatus
 
 RUNNER = CliRunner()
@@ -248,3 +253,64 @@ def test_recorded_media_binding_preserves_input_and_is_replayable(tmp_path: Path
     assert summary["exact_byte_copy"] is True
     assert summary["original_media_modified"] is False
     assert (output / "camera-media-receipt.json").is_file()
+
+
+def test_ppe_weak_label_creates_only_a_replayable_pending_student_case(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "ppe-demo"
+    input_media = tmp_path / "authorized-ppe.mp4"
+    input_media.write_bytes(
+        b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
+        b"\x00\x00\x00\x08mdat"
+    )
+    binding = bind_m8_personal_demo_recorded_media(
+        output / "labcourt.sqlite3", input_media, output
+    )
+    (output / "camera-media-receipt.json").write_text(
+        binding.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    first = create_m8_personal_demo_ppe_case(
+        output / "labcourt.sqlite3", output, binding
+    )
+    replay = create_m8_personal_demo_ppe_case(
+        output / "labcourt.sqlite3", output, binding
+    )
+
+    assert replay == first
+    assert first.case_status == M8OperationalCaseStatus.PENDING_VERIFICATION
+    assert first.risk_level == M8OperationalRiskLevel.GENERAL
+    assert first.subject_actor_id == "student-demo"
+    assert first.machine_weak_label_is_ground_truth is False
+    assert first.direct_disciplinary_action_permitted is False
+    repository_manifest_id = bootstrap_m8_personal_demo(
+        output / "labcourt.sqlite3"
+    ).projection.topology_receipt.repository_manifest_id
+    repository = SQLiteM8OperationsRepository(
+        output / "labcourt.sqlite3",
+        BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    case = repository.get_current_operational_case(first.case_id)
+    authority = case.audit_event.case_authority
+    assert authority.subject_actor_id == "student-demo"
+    assert authority.risk_level == M8OperationalRiskLevel.GENERAL
+    assert authority.create_command.human_verification_required is True
+    assert authority.create_command.direct_disciplinary_action_permitted is False
+    assert authority.create_command.trigger_authorities[0].kind == (
+        M8AuthorityReferenceKind.VIDEO_EVENT
+    )
+    assert len(repository.list_current_operational_cases(10)) == 2
+
+    result = RUNNER.invoke(
+        app,
+        ["demo", "ppe-case-create", "--output", str(output), "--json"],
+    )
+    assert result.exit_code == 0
+    summary = json.loads(result.stdout)
+    assert summary["case_status"] == "PENDING_VERIFICATION"
+    assert summary["risk_level"] == "GENERAL"
+    assert summary["machine_weak_label_is_ground_truth"] is False
+    assert (output / "ppe-case-receipt.json").is_file()

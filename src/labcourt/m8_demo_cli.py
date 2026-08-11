@@ -22,7 +22,11 @@ from labcourt.application.m8_personal_demo_notification import (
     deliver_m8_personal_demo_notification,
     route_m8_personal_demo_notification,
 )
-from labcourt.contracts.m8_personal_demo import M8PersonalDemoNotificationReceiptV1
+from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
+from labcourt.contracts.m8_personal_demo import (
+    M8PersonalDemoNotificationReceiptV1,
+    M8PersonalDemoRecordedMediaReceiptV1,
+)
 from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoOperatorAction
 from labcourt.exceptions import LabCourtError
 
@@ -434,6 +438,46 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO media attached: "
                 "SIMULATED RECORDED VIDEO; exact local byte copy"
+            )
+
+    @demo.command("ppe-case-create")
+    def ppe_case_create(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            media_receipt = M8PersonalDemoRecordedMediaReceiptV1.model_validate_json(
+                (output / "camera-media-receipt.json").read_bytes()
+            )
+            receipt = create_m8_personal_demo_ppe_case(
+                output / "labcourt.sqlite3",
+                output,
+                media_receipt,
+            )
+            _write_exact(
+                output / "ppe-case-receipt.json",
+                (receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "candidate_kind": receipt.candidate_kind,
+            "case_id": receipt.case_id,
+            "case_status": receipt.case_status.value,
+            "display_badge": receipt.display_badge,
+            "human_verification_required": receipt.human_verification_required,
+            "machine_weak_label_is_ground_truth": receipt.machine_weak_label_is_ground_truth,
+            "risk_level": receipt.risk_level.value,
+            "subject_actor_id": receipt.subject_actor_id,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO PPE candidate created: "
+                "SIMULATED MACHINE WEAK LABEL; pending human verification"
             )
 
 

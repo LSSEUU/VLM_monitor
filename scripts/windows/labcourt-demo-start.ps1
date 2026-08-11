@@ -39,6 +39,8 @@ try {
     }
     Invoke-LabCourtStep $executable @("demo", "media-bind", "--input", $media.FullName, "--output", $output) `
         "LabCourt personal demo media binding failed."
+    Invoke-LabCourtStep $executable @("demo", "ppe-case-create", "--output", $output) `
+        "LabCourt personal demo PPE candidate Case creation failed."
 
     $routeReceipt = Join-Path $output "notification-route-receipt.json"
     if (-not (Test-Path -LiteralPath $routeReceipt -PathType Leaf)) {

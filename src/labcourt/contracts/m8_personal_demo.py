@@ -548,6 +548,92 @@ class M8PersonalDemoCameraViewV1(FrozenContractModel):
         )
 
 
+class M8PersonalDemoPpeCaseReceiptV1(FrozenContractModel):
+    """Receipt for one simulated weak-label PPE candidate awaiting human review."""
+
+    schema_version: Literal["m8-personal-demo-ppe-case-receipt-v1"] = (
+        "m8-personal-demo-ppe-case-receipt-v1"
+    )
+    source_catalog_id: Sha256Hex
+    source_id: Literal["camera-recorded-demo-01"] = "camera-recorded-demo-01"
+    location_id: Literal["room-chem-301"] = "room-chem-301"
+    subject_actor_id: Literal["student-demo"] = "student-demo"
+    candidate_kind: Literal["GOGGLES_MISSING_CANDIDATE"] = (
+        "GOGGLES_MISSING_CANDIDATE"
+    )
+    media_binding_receipt_id: Sha256Hex
+    video_event_document_sha256: Sha256Hex
+    case_id: Sha256Hex
+    case_commit_receipt_id: Sha256Hex
+    case_status: Literal[M8OperationalCaseStatus.PENDING_VERIFICATION] = (
+        M8OperationalCaseStatus.PENDING_VERIFICATION
+    )
+    risk_level: Literal[M8OperationalRiskLevel.GENERAL] = M8OperationalRiskLevel.GENERAL
+    display_badge: Literal[
+        "SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION"
+    ] = "SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION"
+    input_media_content_claim_verified: Literal[False] = False
+    filename_used_as_evidence: Literal[False] = False
+    machine_weak_label_is_ground_truth: Literal[False] = False
+    model_used: Literal[False] = False
+    network_used: Literal[False] = False
+    gpu_used: Literal[False] = False
+    human_verification_required: Literal[True] = True
+    case_transition_permitted: Literal[False] = False
+    direct_disciplinary_action_permitted: Literal[False] = False
+    ppe_case_manifest_id: Sha256Hex
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_computed_claim(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        claimed: object | None = None
+        present = False
+        if isinstance(value, dict):
+            payload = dict(value)
+            present = "ppe_case_receipt_id" in payload
+            claimed = payload.pop("ppe_case_receipt_id", None)
+            value = payload
+        receipt = handler(value)
+        if present and canonical_json(claimed) != canonical_json(receipt.ppe_case_receipt_id):
+            raise ValueError("serialized PPE case receipt ID conflicts with authority")
+        return receipt
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def ppe_case_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-personal-demo-ppe-case-receipt",
+                1,
+                self.source_catalog_id,
+                self.source_id,
+                self.location_id,
+                self.subject_actor_id,
+                self.candidate_kind,
+                self.media_binding_receipt_id,
+                self.video_event_document_sha256,
+                self.case_id,
+                self.case_commit_receipt_id,
+                self.case_status,
+                self.risk_level,
+                self.input_media_content_claim_verified,
+                self.filename_used_as_evidence,
+                self.machine_weak_label_is_ground_truth,
+                self.model_used,
+                self.network_used,
+                self.gpu_used,
+                self.human_verification_required,
+                self.case_transition_permitted,
+                self.direct_disciplinary_action_permitted,
+                self.ppe_case_manifest_id,
+            ]
+        )
+
+
 __all__ = [
     "M8PersonalDemoActorBindingV1",
     "M8PersonalDemoBootstrapReceiptV1",
@@ -555,5 +641,6 @@ __all__ = [
     "M8PersonalDemoCameraViewV1",
     "M8PersonalDemoKnowledgeReceiptV1",
     "M8PersonalDemoNotificationReceiptV1",
+    "M8PersonalDemoPpeCaseReceiptV1",
     "M8PersonalDemoRecordedMediaReceiptV1",
 ]

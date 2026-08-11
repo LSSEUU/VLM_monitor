@@ -31,6 +31,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     for command_name in (
         "camera-register",
         "media-bind",
+        "ppe-case-create",
         "notification-route",
         "notification-deliver",
         "notification-acknowledge",
@@ -46,6 +47,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
         "labcourt-demo-api.ps1",
         "labcourt-demo-case-action.ps1",
         "labcourt-demo-camera.ps1",
+        "labcourt-demo-ppe-case.ps1",
         "labcourt-demo-notification.ps1",
         "labcourt-demo-notification-deliver.ps1",
         "labcourt-demo-notification-acknowledge.ps1",

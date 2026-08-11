@@ -132,6 +132,9 @@ API 装配还会幂等装载六类离线知识文档；问答返回来源、版�
 single-byte `Range` 与 `206 Partial Content`。领导和学生不自动获得一般风险摄像头媒体访问权。
 设备页应先调用 authenticated `GET /api/m8/cameras`：安全负责人和运维会得到当前 catalog camera、媒体绑定
 状态和上述播放入口；领导和学生得到空集合。未绑定媒体的 camera 仍会返回，但明确 `media_attached=false`。
+双击 `labcourt-demo-ppe-case.cmd` 可把已绑定媒体作为 `VIDEO_EVENT` 创建一个 `GENERAL` 风险的学生 PPE
+候选案件；它固定标注 `SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION`，不验证视频内容、
+不使用文件名作为证据、不把弱标签当 ground truth，也不能自动确认或处分。`labcourt-demo-start.cmd` 会幂等包含该步骤。
 集成界面可先调用 authenticated `GET /api/m8/session` 获取当前 actor、role、scope 与 capability，无需在前端
 根据 token 猜测角色；响应不包含 bearer token。
 案件列表使用 `GET /api/m8/cases`：安全负责人只看辖区案件、领导只看重大事件、学生只看本人案件，运维
