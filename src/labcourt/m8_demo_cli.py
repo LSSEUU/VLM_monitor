@@ -10,6 +10,10 @@ from typing import Annotated, NoReturn
 import typer
 
 from labcourt.application.m8_personal_demo_api import assemble_m8_personal_demo_api
+from labcourt.application.m8_personal_demo_appeal_resolution import (
+    M8PersonalDemoAppealResolutionError,
+    execute_m8_personal_demo_appeal_resolution,
+)
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
 from labcourt.application.m8_personal_demo_camera import register_m8_personal_demo_camera
 from labcourt.application.m8_personal_demo_case_action import (
@@ -32,6 +36,7 @@ from labcourt.application.m8_personal_demo_student_appeal import (
     M8PersonalDemoStudentAppealError,
     execute_m8_personal_demo_student_appeal,
 )
+from labcourt.contracts.m8_access_cases import M8AppealResolution
 from labcourt.contracts.m8_notification_lifecycle import M8NotificationReplyKind
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoNotificationReceiptV1,
@@ -595,6 +600,62 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO student notification queued: "
                 "SIMULATED LOCAL MESSAGE CARD"
+            )
+
+    @demo.command("ppe-appeal-resolve")
+    def ppe_appeal_resolve(
+        resolution: Annotated[M8AppealResolution, typer.Option("--resolution")],
+        reason: Annotated[str, typer.Option("--reason", min=1, max=2048)],
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        confirmed: Annotated[
+            bool,
+            typer.Option(
+                "--confirmed",
+                help="Explicit safety-officer confirmation for one appeal resolution.",
+            ),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            run = execute_m8_personal_demo_appeal_resolution(
+                access_path=output / "api-access.json",
+                ppe_case_receipt_path=output / "ppe-case-receipt.json",
+                resolution=resolution,
+                reason_summary=reason,
+                confirmed=confirmed,
+            )
+            resolution_directory = output / "ppe-appeal-resolutions"
+            resolution_directory.mkdir(parents=True, exist_ok=True)
+            _write_exact(
+                resolution_directory / f"{run.receipt.commit_receipt_id}.json",
+                (run.receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (
+            LabCourtError,
+            M8PersonalDemoAppealResolutionError,
+            OSError,
+            TypeError,
+            ValueError,
+            sqlite3.DatabaseError,
+        ) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "action": run.request.action.value,
+            "appeal_resolution": resolution.value,
+            "case_id": run.receipt.case_id,
+            "case_version": run.receipt.case_version,
+            "explicit_human_confirmation": run.request.explicit_human_confirmation,
+            "final_case_status": run.receipt.status.value,
+            "safety_officer_controlled": True,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO PPE appeal resolved and Case closed: "
+                f"{resolution.value} / {run.receipt.status.value}"
             )
 
     @demo.command("ppe-notification-deliver")

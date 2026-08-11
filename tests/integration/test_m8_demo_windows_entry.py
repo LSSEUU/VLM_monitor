@@ -37,6 +37,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
         "ppe-notification-route",
         "ppe-notification-deliver",
         "ppe-notification-reply",
+        "ppe-appeal-resolve",
         "student-appeal",
         "notification-route",
         "notification-deliver",
@@ -61,6 +62,14 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert {"--kind", "--text", "--output", "--confirmed", "--json"} <= (
         ppe_reply_options
     )
+    appeal_resolution = demo.commands["ppe-appeal-resolve"]
+    assert isinstance(appeal_resolution, TyperCommand)
+    resolution_options = {
+        option for parameter in appeal_resolution.params for option in parameter.opts
+    }
+    assert {"--resolution", "--reason", "--output", "--confirmed", "--json"} <= (
+        resolution_options
+    )
 
     for name in (
         "labcourt-demo-bootstrap.ps1",
@@ -71,6 +80,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
         "labcourt-demo-ppe-notification.ps1",
         "labcourt-demo-ppe-notification-deliver.ps1",
         "labcourt-demo-ppe-notification-reply.ps1",
+        "labcourt-demo-ppe-appeal-resolve.ps1",
         "labcourt-demo-notification.ps1",
         "labcourt-demo-notification-deliver.ps1",
         "labcourt-demo-notification-acknowledge.ps1",

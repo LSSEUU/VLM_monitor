@@ -427,3 +427,8 @@ Case、notification、target 与 source authority，复用默认离线 fake chan
 notification authority 必须进入既有 reply authority、raw artifact 与 audit chain；成功只允许
 `DELIVERED|ACKNOWLEDGED -> RESPONDED`，并固定禁止 Case transition 与直接处分。`APPEAL_REQUEST` 不得
 静默替代学生独立确认的 `SUBMIT_APPEAL` Case transition。
+
+安全负责人处理申诉必须从 exact current `APPEALED` PPE Case 通过既有 `RESOLVE_APPEAL` transition
+提交 closed `UPHELD | OVERTURNED` resolution、匹配 reason code、理由与 explicit human confirmation。
+成功后的 `APPEAL_RESOLVED` 是该申诉路径的 terminal closed status；不得为了展示“结案”而绕过冻结状态
+矩阵追加 `APPEAL_RESOLVED -> RESOLVED`，也不得把 appeal resolution 解释为自动处分依据。

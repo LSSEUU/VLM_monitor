@@ -155,6 +155,9 @@ PPE 案件确认后可双击 `labcourt-demo-ppe-notification.cmd`：它向 `stud
 学生再双击 `labcourt-demo-ppe-notification-reply.cmd`，可明确选择 `EXPLANATION` 或 `APPEAL_REQUEST`、
 填写内容并输入 `APPLY`。原始 UTF-8 回复会进入通知审计链，但只把通知推进到 `RESPONDED`；申诉案件仍须
 单独执行 `labcourt-demo-student-appeal.cmd`，消息回复本身没有案件或处分权限。
+案件进入 `APPEALED` 后，安全负责人可双击 `labcourt-demo-ppe-appeal-resolve.cmd`，选择
+`UPHELD` 或 `OVERTURNED`、填写理由并输入 `APPLY`。该动作使用既有 `RESOLVE_APPEAL` 契约，最终
+`APPEAL_RESOLVED` 即本申诉路径的结案状态；不会伪造一个状态矩阵不允许的二次 `RESOLVE`。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

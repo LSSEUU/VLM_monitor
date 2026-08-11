@@ -10,6 +10,9 @@ from labcourt.application.m8_personal_demo_api import (
     M8PersonalDemoApiAssembly,
     assemble_m8_personal_demo_api,
 )
+from labcourt.application.m8_personal_demo_appeal_resolution import (
+    execute_m8_personal_demo_appeal_resolution,
+)
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
 from labcourt.application.m8_personal_demo_case_action import (
     execute_m8_personal_demo_case_action,
@@ -24,6 +27,7 @@ from labcourt.application.m8_personal_demo_ppe_notification import (
 from labcourt.application.m8_personal_demo_student_appeal import (
     execute_m8_personal_demo_student_appeal,
 )
+from labcourt.contracts.m8_access_cases import M8AppealResolution
 from labcourt.contracts.m8_notification_lifecycle import M8NotificationReplyKind
 from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoOperatorAction
 
@@ -215,6 +219,20 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         )
         assert appeal.receipt.case_id == ppe.case_id
         assert appeal.receipt.status.value == "APPEALED"
+
+        resolution = execute_m8_personal_demo_appeal_resolution(
+            access_path=access,
+            ppe_case_receipt_path=ppe_path,
+            resolution=M8AppealResolution.UPHELD,
+            reason_summary="The safety officer reviewed the explanation and original evidence.",
+            confirmed=True,
+        )
+        assert resolution.request.action.value == "RESOLVE_APPEAL"
+        assert resolution.request.appeal_resolution == M8AppealResolution.UPHELD
+        assert resolution.receipt.case_id == ppe.case_id
+        assert resolution.receipt.status.value == "APPEAL_RESOLVED"
+        assert resolution.receipt.audit_event.transition_intent is not None
+        assert resolution.request.direct_disciplinary_action_permitted is False
         assert appeal.request.action.value == "SUBMIT_APPEAL"
         assert appeal.request.reason_code.value == "SUBJECT_DISPUTE"
         assert appeal.request.explicit_human_confirmation is True
