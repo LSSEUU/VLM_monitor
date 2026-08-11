@@ -150,6 +150,8 @@ PPE 案件经安全负责人明确确认后，学生可双击 `labcourt-demo-stu
 PPE 案件确认后可双击 `labcourt-demo-ppe-notification.cmd`：它向 `student-demo` 幂等路由一张默认离线的
 `CASE_UPDATED/CASE_SUBJECT` 卡片并停在 `QUEUED`，学生通知中心可见；卡片允许确认、提交说明或请求申诉，
 但回复和卡片本身均不能迁移案件。该入口不联网，也不在默认启动中自动执行。
+随后双击 `labcourt-demo-ppe-notification-deliver.cmd`，可将 exact route receipt 通过离线 fake channel
+显式推进到 `DELIVERED`；该状态固定不代表飞书或真实人员已收到，也不会迁移案件。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

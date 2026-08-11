@@ -413,3 +413,11 @@ typed notification receipts，不得授予 dispatch、reply、Case transition �
   `certified_fire_detection_claim_permitted=false`、`direct_disciplinary_action_permitted=false`。
 - 新增 schema 不改变 M0–M6 既有 schema 字节；聚焦 contract/unit/port、schema check、Ruff、Mypy 与
   架构门全部通过后才可进入 M8.3。
+
+## 12. PPE 学生卡离线送达切片
+
+确认后的 PPE 学生卡送达必须使用独立显式入口并只消费 exact typed route receipt。入口必须复核 current
+Case、notification、target 与 source authority，复用默认离线 fake channel 顺序提交
+`QUEUED -> SENT -> DELIVERED`；若中断在 `SENT`，必须从持久化 dispatch authority 与 raw card bytes
+确定性恢复。`DELIVERED` 仅表示模拟通道完成，必须固定
+`real_delivery_confirmed=false`、`case_transition_permitted=false`，不得替代飞书回执、迁移案件或形成处分。

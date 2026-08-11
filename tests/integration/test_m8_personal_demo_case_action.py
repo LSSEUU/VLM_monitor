@@ -17,6 +17,7 @@ from labcourt.application.m8_personal_demo_case_action import (
 from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_recorded_media
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.application.m8_personal_demo_ppe_notification import (
+    deliver_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_notification,
 )
 from labcourt.application.m8_personal_demo_student_appeal import (
@@ -165,6 +166,21 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         assert student_notifications[0]["notification_id"] == (
             notification.receipt.notification_id
         )
+
+        delivered = deliver_m8_personal_demo_ppe_notification(
+            root / "labcourt.sqlite3",
+            notification.receipt,
+        )
+        delivered_replay = deliver_m8_personal_demo_ppe_notification(
+            root / "labcourt.sqlite3",
+            notification.receipt,
+        )
+        assert delivered_replay == delivered
+        assert delivered.status.value == "DELIVERED"
+        assert delivered.audit_event.transition_command is not None
+        delivery_receipt = delivered.audit_event.transition_command.delivery_receipt
+        assert delivery_receipt is not None
+        assert delivery_receipt.real_delivery_confirmed is False
 
         appeal = execute_m8_personal_demo_student_appeal(
             access_path=access,
