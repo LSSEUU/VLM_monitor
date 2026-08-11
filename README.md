@@ -106,6 +106,12 @@ M8.7f13 已增加显式 `outbox-run-one`：一次只消费一条 current `QUEUED
 
 ## 开发命令
 
+Windows 个人 Demo 可使用仓库根目录的 `feishu-setup.cmd`、`feishu-preflight.cmd`、
+`feishu-webhook.cmd` 和 `feishu-send-one.cmd`。真实测试凭据只保存在被 Git 强制忽略的
+`.labcourt-local/feishu-secrets.json`；仓库中的示例保持全空。webhook 与单条发送入口都先执行无网络
+预检，发送还要求人工输入 `SEND`。详细前置工件、飞书后台配置和安全边界见
+[`docs/m8-feishu-windows-personal-demo.md`](docs/m8-feishu-windows-personal-demo.md)。
+
 支持 Python 3.11–3.12；本仓库的 `.python-version` 按规格固定为 3.11。依赖与命令由
 [uv](https://docs.astral.sh/uv/) 管理。
 

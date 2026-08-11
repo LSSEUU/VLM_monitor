@@ -273,6 +273,15 @@ one-shot command 必须提供 check mode，复用 exact activation/notification/
 但不得创建 dispatch claim、call fence、网络连接或通知状态迁移；check 结果只能输出无密钥摘要，并明确
 `external_call_attempted=false`。check 成功不授权自动移除 check flag。
 
+Windows 个人 Demo 可以增加显式的本机编排层，但不得改变上述 authority。唯一允许持久化明文测试
+凭据的位置固定为仓库根目录下被 Git 精确忽略的 `.labcourt-local/feishu-secrets.json`；提交物只能包含
+全空示例，首次写入必须先确认 ignore 生效并收紧当前 Windows 用户的目录 ACL。配置契约必须以
+`SecretStr` 脱敏 repr/JSON 和隐藏输入的校验错误保证 CLI、日志与测试不出现凭据值。默认入口必须先运行
+不 claim、不建 call fence、不联网的 exact webhook/outbox preflight；webhook 仅可在相应预检通过后监听
+loopback，单条发送还必须在预检后取得操作者明确确认，且不提供批量、后台 worker 或静默确认参数。
+本机脚本可消费既有 typed 双人 intent 并幂等提交 activation，但不得生成或代填两名确认人。它不管理
+公网 HTTPS/TLS/反向代理，不证明真实租户已联调，也不扩大 reply、Case 或纪律处分权限。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

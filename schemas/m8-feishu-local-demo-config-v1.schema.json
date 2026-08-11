@@ -1,0 +1,265 @@
+{
+  "$defs": {
+    "M8FeishuLocalDemoActivationFilesV1": {
+      "additionalProperties": false,
+      "properties": {
+        "activation_intent_path": {
+          "title": "Activation Intent Path",
+          "type": "string"
+        },
+        "runtime_config_path": {
+          "title": "Runtime Config Path",
+          "type": "string"
+        },
+        "runtime_config_storage_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Runtime Config Storage Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "activation_intent_path",
+        "runtime_config_path",
+        "runtime_config_storage_manifest_id"
+      ],
+      "title": "M8FeishuLocalDemoActivationFilesV1",
+      "type": "object"
+    },
+    "M8FeishuLocalDemoCredentialsV1": {
+      "additionalProperties": false,
+      "description": "Plaintext values allowed only in the ignored local personal-demo file.",
+      "properties": {
+        "app_id": {
+          "format": "password",
+          "title": "App Id",
+          "type": "string",
+          "writeOnly": true
+        },
+        "app_secret": {
+          "format": "password",
+          "title": "App Secret",
+          "type": "string",
+          "writeOnly": true
+        },
+        "encrypt_key": {
+          "format": "password",
+          "title": "Encrypt Key",
+          "type": "string",
+          "writeOnly": true
+        },
+        "test_open_id": {
+          "format": "password",
+          "title": "Test Open Id",
+          "type": "string",
+          "writeOnly": true
+        },
+        "verification_token": {
+          "format": "password",
+          "title": "Verification Token",
+          "type": "string",
+          "writeOnly": true
+        },
+        "worker_token": {
+          "format": "password",
+          "title": "Worker Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "app_id",
+        "app_secret",
+        "test_open_id",
+        "encrypt_key",
+        "verification_token",
+        "worker_token"
+      ],
+      "title": "M8FeishuLocalDemoCredentialsV1",
+      "type": "object"
+    },
+    "M8FeishuLocalDemoEnvironmentNamesV1": {
+      "additionalProperties": false,
+      "properties": {
+        "app_id": {
+          "title": "App Id",
+          "type": "string"
+        },
+        "app_secret": {
+          "title": "App Secret",
+          "type": "string"
+        },
+        "encrypt_key": {
+          "title": "Encrypt Key",
+          "type": "string"
+        },
+        "test_open_id": {
+          "title": "Test Open Id",
+          "type": "string"
+        },
+        "verification_token": {
+          "title": "Verification Token",
+          "type": "string"
+        },
+        "worker_token": {
+          "title": "Worker Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "app_id",
+        "app_secret",
+        "test_open_id",
+        "encrypt_key",
+        "verification_token",
+        "worker_token"
+      ],
+      "title": "M8FeishuLocalDemoEnvironmentNamesV1",
+      "type": "object"
+    },
+    "M8FeishuLocalDemoRuntimeV1": {
+      "additionalProperties": false,
+      "properties": {
+        "assessment_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Assessment Manifest Id",
+          "type": "string"
+        },
+        "candidate_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Candidate Authority Id",
+          "type": "string"
+        },
+        "database_path": {
+          "title": "Database Path",
+          "type": "string"
+        },
+        "notification_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Notification Id",
+          "type": "string"
+        },
+        "recipient_binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Recipient Binding Authority Id",
+          "type": "string"
+        },
+        "repository_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Repository Manifest Id",
+          "type": "string"
+        },
+        "runtime_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Runtime Manifest Id",
+          "type": "string"
+        },
+        "workflow_path": {
+          "title": "Workflow Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "database_path",
+        "candidate_authority_id",
+        "recipient_binding_authority_id",
+        "notification_id",
+        "workflow_path",
+        "repository_manifest_id",
+        "assessment_manifest_id",
+        "runtime_manifest_id"
+      ],
+      "title": "M8FeishuLocalDemoRuntimeV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-local-demo-config-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Strict local file contract; its repr/JSON serialization redacts secret values.",
+  "properties": {
+    "automatic_send_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Automatic Send Permitted",
+      "type": "boolean"
+    },
+    "case_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "credentials": {
+      "$ref": "#/$defs/M8FeishuLocalDemoCredentialsV1"
+    },
+    "default_preflight_required": {
+      "const": true,
+      "default": true,
+      "title": "Default Preflight Required",
+      "type": "boolean"
+    },
+    "direct_disciplinary_action_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "display_badge": {
+      "const": "PERSONAL DEMO · LOCAL PLAINTEXT CREDENTIALS",
+      "default": "PERSONAL DEMO · LOCAL PLAINTEXT CREDENTIALS",
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "environment_names": {
+      "$ref": "#/$defs/M8FeishuLocalDemoEnvironmentNamesV1"
+    },
+    "outbox_activation": {
+      "$ref": "#/$defs/M8FeishuLocalDemoActivationFilesV1"
+    },
+    "personal_demo_only": {
+      "const": true,
+      "default": true,
+      "title": "Personal Demo Only",
+      "type": "boolean"
+    },
+    "plaintext_credentials_persisted_locally": {
+      "const": true,
+      "default": true,
+      "title": "Plaintext Credentials Persisted Locally",
+      "type": "boolean"
+    },
+    "production_ready": {
+      "const": false,
+      "default": false,
+      "title": "Production Ready",
+      "type": "boolean"
+    },
+    "public_https_managed_by_scripts": {
+      "const": false,
+      "default": false,
+      "title": "Public Https Managed By Scripts",
+      "type": "boolean"
+    },
+    "runtime": {
+      "$ref": "#/$defs/M8FeishuLocalDemoRuntimeV1"
+    },
+    "schema_version": {
+      "const": "m8-feishu-local-demo-config-v1",
+      "default": "m8-feishu-local-demo-config-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "webhook_activation": {
+      "$ref": "#/$defs/M8FeishuLocalDemoActivationFilesV1"
+    }
+  },
+  "required": [
+    "credentials",
+    "environment_names",
+    "runtime",
+    "outbox_activation",
+    "webhook_activation"
+  ],
+  "title": "M8FeishuLocalDemoConfigV1",
+  "type": "object"
+}

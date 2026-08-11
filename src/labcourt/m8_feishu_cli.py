@@ -25,12 +25,14 @@ from labcourt.m8_feishu_cli_support import (
     parse_utc,
     read_document,
 )
+from labcourt.m8_feishu_local_demo_cli import register_m8_feishu_local_demo_commands
 from labcourt.m8_feishu_outbox_cli import register_m8_feishu_outbox_commands
 
 
 def register_m8_feishu_commands(root: typer.Typer) -> None:
     feishu = typer.Typer(help="Explicit Feishu sandbox operator commands.")
     root.add_typer(feishu, name="feishu")
+    register_m8_feishu_local_demo_commands(feishu)
     register_m8_feishu_outbox_commands(feishu)
 
     @feishu.command("webhook-activate")

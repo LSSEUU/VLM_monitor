@@ -1360,6 +1360,12 @@
       "name": "m8-feishu-inbound-webhook-profile-v1"
     },
     {
+      "file": "m8-feishu-local-demo-config-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_local_demo.M8FeishuLocalDemoConfigV1",
+      "name": "m8-feishu-local-demo-config-v1"
+    },
+    {
       "file": "m8-feishu-loopback-challenge-listener-profile-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_challenge.M8FeishuLoopbackChallengeListenerProfileV1",

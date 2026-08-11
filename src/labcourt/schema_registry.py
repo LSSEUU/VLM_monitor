@@ -328,6 +328,7 @@ from labcourt.contracts.m8_feishu_inbound_reply import (
     M8FeishuInboundReplyCommitReceiptV1,
     M8FeishuInboundReplyCorrelationAuthorityV1,
 )
+from labcourt.contracts.m8_feishu_local_demo import M8FeishuLocalDemoConfigV1
 from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuCardDispatchPreflightV1,
@@ -752,6 +753,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
         M8FeishuInboundSandboxRuntimeConfigV1
     ),
     "m8-feishu-inbound-webhook-profile-v1": M8FeishuInboundWebhookProfileV1,
+    "m8-feishu-local-demo-config-v1": M8FeishuLocalDemoConfigV1,
     "m8-feishu-notification-card-v1": M8FeishuNotificationCardV1,
     "m8-feishu-recipient-binding-authority-v1": M8FeishuRecipientBindingAuthorityV1,
     "m8-feishu-sandbox-activation-commit-receipt-v1": (M8FeishuSandboxActivationCommitReceiptV1),
