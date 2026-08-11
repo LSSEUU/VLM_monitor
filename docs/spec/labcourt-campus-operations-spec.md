@@ -269,6 +269,9 @@ canonical workflow authority 与显式 manifest；App ID/App Secret/open_id/work
 workflow 漂移必须在 claim/provider call 前 fail closed。transport 固定官方 HTTPS host、系统 CA、bounded timeout
 与零自动重试；claim fence 后的 timeout/transport unknown 必须进入待对账，provider acceptance 仍不得声称
 真实送达、改变 Case 或形成处分。
+one-shot command 必须提供 check mode，复用 exact activation/notification/binding/workflow/secret-reference 校验，
+但不得创建 dispatch claim、call fence、网络连接或通知状态迁移；check 结果只能输出无密钥摘要，并明确
+`external_call_attempted=false`。check 成功不授权自动移除 check flag。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。

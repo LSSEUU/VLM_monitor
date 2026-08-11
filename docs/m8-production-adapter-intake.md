@@ -75,5 +75,5 @@ current、预检成功且反向代理审计证据齐全后，
 送达、学生身份确认、案件责任或处分成立。
 
 真实发送验证只使用一条人工选定、已经处于 `QUEUED` 的测试通知，并通过 `outbox-run-one` 指定 exact
-notification/candidate/binding；禁止以现场验收为由开启队列扫描或批量发送。若调用围栏后结果未知，先对账，
-不得重复运行同一通知来“试试看”。
+notification/candidate/binding；必须先执行 `outbox-run-one --check --json` 并保存无调用预检结果，禁止以现场
+验收为由开启队列扫描或批量发送。若调用围栏后结果未知，先对账，不得重复运行同一通知来“试试看”。

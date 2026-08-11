@@ -7,7 +7,10 @@ import pytest
 from labcourt.application.m8_feishu_outbox_authority import (
     commit_m8_feishu_outbox_activation,
 )
-from labcourt.application.m8_feishu_outbox_runtime import run_m8_feishu_outbox_once
+from labcourt.application.m8_feishu_outbox_runtime import (
+    check_m8_feishu_outbox_once,
+    run_m8_feishu_outbox_once,
+)
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxRuntimeConfigV1,
@@ -17,7 +20,7 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuRecipientBindingAuthorityV1,
 )
 from labcourt.contracts.m8_notifications import M8NotificationStatus
-from labcourt.exceptions import ContractViolation
+from labcourt.exceptions import ContractViolation, EvidenceMissing
 from tests.contract.test_m8_feishu_notification_contracts import (
     FAKE_FEISHU_APP_ID,
     FAKE_FEISHU_APP_ID_SHA256,
@@ -145,6 +148,37 @@ def test_outbox_runtime_resolves_exact_environment_and_commits_one_attempt(
         outbox_runtime_harness
     )
     http = _HttpTransport()
+
+    checked = check_m8_feishu_outbox_once(
+        database_path=outbox_runtime_harness.database,
+        notification_id=queued.notification_id,
+        candidate_authority_id=config.profile.candidate.candidate_authority_id,
+        recipient_binding_authority_id=binding.binding_authority_id,
+        workflow_document=workflow_document,
+        app_id_env=APP_ID_ENV,
+        app_secret_env=APP_SECRET_ENV,
+        receive_id_env=OPEN_ID_ENV,
+        worker_token_env=WORKER_TOKEN_ENV,
+        repository_manifest_id=SHA_A,
+        assessment_manifest_id=SHA_E,
+        runtime_manifest_id=SHA_B,
+        busy_timeout_ms=BUSY_TIMEOUT_MS,
+        clock=_Clock(BASE_TIME + timedelta(hours=4)),
+        environment=_environment(),
+    )
+    assert checked.secrets_validated is True
+    assert checked.dispatch_claim_created is False
+    assert checked.external_call_attempted is False
+    assert WORKER_TOKEN not in repr(checked)
+    with pytest.raises(EvidenceMissing):
+        outbox_runtime_harness.notifications.get_dispatch_claim_status_for_source(
+            queued.notification_id,
+            queued.notification_version,
+            BASE_TIME + timedelta(hours=4),
+        )
+    assert outbox_runtime_harness.notifications.get_current_notification(
+        queued.notification_id
+    ) == queued
 
     receipt = run_m8_feishu_outbox_once(
         database_path=outbox_runtime_harness.database,

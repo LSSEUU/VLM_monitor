@@ -103,4 +103,5 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
         "--receive-id-env",
         "--worker-token-env",
         "--runtime-manifest-id",
+        "--check",
     } <= outbox_run_options

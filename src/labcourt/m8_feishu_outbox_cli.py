@@ -12,7 +12,10 @@ from labcourt.application.m8_feishu_outbox_authority import (
     get_m8_feishu_outbox_activation_status,
     revoke_m8_feishu_outbox_activation,
 )
-from labcourt.application.m8_feishu_outbox_runtime import run_m8_feishu_outbox_once
+from labcourt.application.m8_feishu_outbox_runtime import (
+    check_m8_feishu_outbox_once,
+    run_m8_feishu_outbox_once,
+)
 from labcourt.contracts.m8_feishu_activation import M8FeishuSandboxRevocationReason
 from labcourt.m8_feishu_cli_support import (
     OPERATOR_FAILURES,
@@ -67,15 +70,62 @@ def register_m8_feishu_outbox_commands(feishu: typer.Typer) -> None:
             int,
             typer.Option("--busy-timeout-ms", min=1, max=60_000),
         ] = 5_000,
+        check: Annotated[
+            bool,
+            typer.Option(
+                "--check",
+                help="Validate exact inputs without claim, network, or provider call.",
+            ),
+        ] = False,
         json_output: Annotated[bool, typer.Option("--json")] = False,
     ) -> None:
         try:
+            workflow_document = read_document(workflow, "outbox workflow")
+            if check:
+                checked = check_m8_feishu_outbox_once(
+                    database_path=database,
+                    notification_id=notification_id,
+                    candidate_authority_id=candidate_authority_id,
+                    recipient_binding_authority_id=(
+                        recipient_binding_authority_id
+                    ),
+                    workflow_document=workflow_document,
+                    app_id_env=app_id_env,
+                    app_secret_env=app_secret_env,
+                    receive_id_env=receive_id_env,
+                    worker_token_env=worker_token_env,
+                    repository_manifest_id=repository_manifest_id,
+                    assessment_manifest_id=assessment_manifest_id,
+                    runtime_manifest_id=runtime_manifest_id,
+                    busy_timeout_ms=busy_timeout_ms,
+                )
+                echo_summary(
+                    {
+                        "activation_commit_id": checked.activation_commit_id,
+                        "dispatch_claim_created": checked.dispatch_claim_created,
+                        "external_call_attempted": checked.external_call_attempted,
+                        "mode": "CHECKED",
+                        "notification_id": checked.notification_id,
+                        "notification_version": checked.notification_version,
+                        "recipient_binding_authority_id": (
+                            checked.recipient_binding_authority_id
+                        ),
+                        "secrets_validated": checked.secrets_validated,
+                        "workflow_authority_id": checked.workflow_authority_id,
+                    },
+                    json_output,
+                    (
+                        "Feishu sandbox outbox check passed; no claim or external "
+                        "call was attempted"
+                    ),
+                )
+                return
             receipt = run_m8_feishu_outbox_once(
                 database_path=database,
                 notification_id=notification_id,
                 candidate_authority_id=candidate_authority_id,
                 recipient_binding_authority_id=recipient_binding_authority_id,
-                workflow_document=read_document(workflow, "outbox workflow"),
+                workflow_document=workflow_document,
                 app_id_env=app_id_env,
                 app_secret_env=app_secret_env,
                 receive_id_env=receive_id_env,
