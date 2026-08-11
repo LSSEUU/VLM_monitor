@@ -58,6 +58,12 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 该路由不读取飞书凭据、不联网、不声称真实送达、不确认案件，也不形成处分。它完成后，安全负责人和领导
 的运营投影会看到该重大案件通知；运维视图仍不暴露案件或通知。
 
+随后可双击 `labcourt-demo-notification-deliver.cmd`。它只消费上述 exact route receipt，经现有离线 fake
+channel 提交 `QUEUED -> SENT -> DELIVERED`，把卡片、模拟发送响应与模拟送达响应作为 raw artifacts 写入
+SQLite，并生成 `notification-delivery-receipt.json`。进程在 `SENT` 后中断时可从已持久化卡片和 dispatch
+authority 恢复；重复执行不会生成第二次尝试。这里的 `DELIVERED` 仅是本地模拟状态，固定
+`real_delivery_confirmed=false`，不会调用飞书或改变案件。
+
 主要路由沿用既有 M8 API：
 
 - `GET /api/m8/campuses/campus-demo/operations-projection`：领导只看到全局与重大案件，安全负责人看到完整

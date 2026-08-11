@@ -26,6 +26,7 @@ from labcourt.contracts.m8_notification_cards import (
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationChannelCapabilityAuthorityV1,
 )
+from labcourt.contracts.m8_notification_persistence import M8NotificationCommitReceiptV1
 from labcourt.contracts.m8_notifications import (
     M8NotificationAudienceKind,
     M8NotificationChannelKind,
@@ -42,6 +43,7 @@ from labcourt.services.m8_notifications import M8NotificationService
 _BUSY_TIMEOUT_MS = 5_000
 _PLANNED_AT = datetime(2026, 8, 10, 9, 1, tzinfo=UTC)
 _ROUTED_AT = _PLANNED_AT + timedelta(seconds=1)
+_DELIVERED_AT = _ROUTED_AT + timedelta(seconds=2)
 
 
 def _manifest(name: str) -> Sha256Hex:
@@ -184,7 +186,64 @@ def route_m8_personal_demo_notification(
     return M8PersonalDemoNotificationRun(receipt=receipt, card=card)
 
 
+def deliver_m8_personal_demo_notification(
+    database_path: Path,
+    route_receipt: M8PersonalDemoNotificationReceiptV1,
+) -> M8NotificationCommitReceiptV1:
+    """Advance the exact queued Demo notification through the offline fake channel."""
+
+    if not isinstance(route_receipt, M8PersonalDemoNotificationReceiptV1):
+        raise TypeError("M8 personal Demo delivery requires a typed route receipt")
+    bootstrap = bootstrap_m8_personal_demo(database_path)
+    repository_manifest_id = bootstrap.projection.topology_receipt.repository_manifest_id
+    operations = SQLiteM8OperationsRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    notifications = SQLiteM8NotificationRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    current = notifications.get_current_notification(route_receipt.notification_id)
+    plan = current.audit_event.notification_authority.plan
+    if (
+        plan.case_id != route_receipt.case_id
+        or plan.case_version != route_receipt.source_case_version
+        or plan.case_authority_sha256 != route_receipt.source_case_authority_sha256
+        or plan.target.target_authority_id != route_receipt.target_authority_id
+        or plan.notification_id != route_receipt.notification_id
+    ):
+        raise ValueError("M8 personal Demo delivery route authority changed")
+    if current.status == M8NotificationStatus.DELIVERED:
+        return current
+    channel = _channel()
+    service = M8NotificationService(notifications, operations, channel, _workflow())
+    case = operations.get_current_operational_case(plan.case_id)
+    supporting_authorities = case.audit_event.case_authority.create_command.trigger_authorities
+    if current.status == M8NotificationStatus.QUEUED:
+        current = service.dispatch(route_receipt.notification_id, supporting_authorities)
+    if current.status == M8NotificationStatus.SENT:
+        transition = current.audit_event.transition_command
+        dispatch_result = transition.dispatch_result if transition is not None else None
+        if dispatch_result is None:
+            raise ValueError("M8 personal Demo sent notification lacks dispatch authority")
+        raw_card = notifications.read_raw_artifact(dispatch_result.request.rendered_card_ref)
+        if channel.dispatch(dispatch_result.request, raw_card) != dispatch_result:
+            raise ValueError("M8 personal Demo dispatch replay changed")
+        current = service.confirm_simulated_delivery(
+            route_receipt.notification_id,
+            _DELIVERED_AT,
+            supporting_authorities,
+        )
+    if current.status != M8NotificationStatus.DELIVERED:
+        raise ValueError("M8 personal Demo notification did not reach simulated delivery")
+    return current
+
+
 __all__ = [
     "M8PersonalDemoNotificationRun",
+    "deliver_m8_personal_demo_notification",
     "route_m8_personal_demo_notification",
 ]

@@ -118,6 +118,8 @@ API 装配还会幂等装载六类离线知识文档；问答返回来源、版�
 静默转换为案件规则。
 双击 `labcourt-demo-notification.cmd` 会把原始模拟紧急案件确定性路由给安全负责人，生成本地模拟卡片并
 推进到 `QUEUED`；该入口不联网、不声称送达，也不改变案件。随后运营投影会显示该通知及审计链。
+再双击 `labcourt-demo-notification-deliver.cmd`，现有离线 fake channel 会依次提交 `SENT` 和 `DELIVERED`；
+结果始终标为模拟且 `real_delivery_confirmed=false`，不调用飞书。
 API 运行时可双击 `labcourt-demo-case-action.cmd`，选择确认、驳回、请求补证、返回核实或结案，并输入
 `APPLY` 完成一次安全负责人显式动作；脚本不提供领导或运维审批入口。
 

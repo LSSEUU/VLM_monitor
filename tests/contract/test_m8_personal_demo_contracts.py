@@ -172,3 +172,7 @@ def test_notification_receipt_is_queued_simulated_and_non_disciplinary() -> None
     assert receipt.case_transition_permitted is False
     assert receipt.direct_disciplinary_action_permitted is False
     assert len(receipt.notification_receipt_id) == 64
+    assert (
+        M8PersonalDemoNotificationReceiptV1.model_validate_json(receipt.model_dump_json())
+        == receipt
+    )

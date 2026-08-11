@@ -319,6 +319,9 @@ source/version/effective_at；profile/receipt 固定声明 `model_used=false`、
 `EMERGENCY` 待核实案件的 `CASE_ACTION_REQUIRED` 发送意图指向安全负责人，并只推进到离线 fake outbox 的
 `QUEUED`。输出必须包含 typed route receipt 与显著模拟卡片；不得联网、读取飞书 secret、声称送达、迁移
 案件或形成处分。安全负责人和领导可从角色裁剪的运营投影查看，运维不得看到案件通知。
+后续离线 delivery 必须是另一个显式入口，只消费 exact route receipt，复用既有 fake channel 提交
+`QUEUED -> SENT -> DELIVERED` 及 raw artifacts；中断在 `SENT` 时必须可确定性恢复。该 `DELIVERED` 仅表示
+模拟通道完成，固定 `real_delivery_confirmed=false`，不得替代飞书 provider receipt。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。

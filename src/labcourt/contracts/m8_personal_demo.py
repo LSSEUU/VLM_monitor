@@ -239,6 +239,25 @@ class M8PersonalDemoNotificationReceiptV1(FrozenContractModel):
     direct_disciplinary_action_permitted: Literal[False] = False
     notification_manifest_id: Sha256Hex
 
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_computed_claim(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        claimed: object | None = None
+        present = False
+        if isinstance(value, dict):
+            payload = dict(value)
+            present = "notification_receipt_id" in payload
+            claimed = payload.pop("notification_receipt_id", None)
+            value = payload
+        receipt = handler(value)
+        if present and canonical_json(claimed) != canonical_json(receipt.notification_receipt_id):
+            raise ValueError("serialized notification receipt ID conflicts with authority")
+        return receipt
+
     @model_validator(mode="after")
     def validate_routed_at(self) -> Self:
         if self.routed_at.tzinfo is None or self.routed_at.utcoffset() != timedelta(0):

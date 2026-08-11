@@ -16,8 +16,10 @@ from labcourt.application.m8_personal_demo_case_action import (
     execute_m8_personal_demo_case_action,
 )
 from labcourt.application.m8_personal_demo_notification import (
+    deliver_m8_personal_demo_notification,
     route_m8_personal_demo_notification,
 )
+from labcourt.contracts.m8_personal_demo import M8PersonalDemoNotificationReceiptV1
 from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoOperatorAction
 from labcourt.exceptions import LabCourtError
 
@@ -247,6 +249,49 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO notification routed: "
                 "SIMULATED emergency card is QUEUED for the safety officer"
+            )
+
+    @demo.command("notification-deliver")
+    def notification_deliver(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            route_path = output / "notification-route-receipt.json"
+            route_receipt = M8PersonalDemoNotificationReceiptV1.model_validate_json(
+                route_path.read_bytes()
+            )
+            receipt = deliver_m8_personal_demo_notification(
+                output / "labcourt.sqlite3",
+                route_receipt,
+            )
+            receipt_path = output / "notification-delivery-receipt.json"
+            _write_exact(
+                receipt_path,
+                (receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        transition = receipt.audit_event.transition_command
+        delivery = transition.delivery_receipt if transition is not None else None
+        summary: dict[str, object] = {
+            "case_transition_permitted": False,
+            "channel": receipt.audit_event.notification_authority.plan.target.channel.value,
+            "network_used": False,
+            "notification_id": receipt.notification_id,
+            "notification_status": receipt.status.value,
+            "notification_version": receipt.notification_version,
+            "real_delivery_confirmed": False,
+            "simulated": delivery.simulated if delivery is not None else True,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO notification delivered by the offline fake: "
+                "SIMULATED only; real delivery remains unconfirmed"
             )
 
 

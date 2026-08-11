@@ -10,6 +10,7 @@ from labcourt.adapters.storage.sqlite_m8_operations_repository import (
 )
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
 from labcourt.application.m8_personal_demo_notification import (
+    deliver_m8_personal_demo_notification,
     route_m8_personal_demo_notification,
 )
 from labcourt.cli import app
@@ -86,3 +87,28 @@ def test_notification_route_is_idempotent_and_writes_offline_card(tmp_path: Path
     assert json.loads(result.stdout)["real_delivery_confirmed"] is False
     assert (output / "notification-route-receipt.json").is_file()
     assert (output / "notification-card.json").is_file()
+
+    delivered = deliver_m8_personal_demo_notification(database, first.receipt)
+    delivered_replay = deliver_m8_personal_demo_notification(database, first.receipt)
+    assert delivered_replay == delivered
+    assert delivered.status == M8NotificationStatus.DELIVERED
+    assert delivered.notification_version == 4
+    transition = delivered.audit_event.transition_command
+    assert transition is not None
+    assert transition.delivery_receipt is not None
+    assert transition.delivery_receipt.simulated is True
+
+    delivery_result = RUNNER.invoke(
+        app,
+        ["demo", "notification-deliver", "--output", str(output), "--json"],
+    )
+    delivery_replay = RUNNER.invoke(
+        app,
+        ["demo", "notification-deliver", "--output", str(output), "--json"],
+    )
+    assert delivery_result.exit_code == 0
+    assert delivery_replay.exit_code == 0
+    assert json.loads(delivery_result.stdout) == json.loads(delivery_replay.stdout)
+    assert json.loads(delivery_result.stdout)["notification_status"] == "DELIVERED"
+    assert json.loads(delivery_result.stdout)["real_delivery_confirmed"] is False
+    assert (output / "notification-delivery-receipt.json").is_file()
