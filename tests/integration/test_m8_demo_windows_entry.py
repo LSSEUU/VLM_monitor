@@ -30,11 +30,16 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert {"--action", "--reason", "--output", "--confirmed", "--json"} <= action_options
     for command_name in (
         "camera-register",
+        "media-bind",
         "notification-route",
         "notification-deliver",
         "notification-acknowledge",
     ):
         assert isinstance(demo.commands[command_name], TyperCommand)
+    media_bind = demo.commands["media-bind"]
+    assert isinstance(media_bind, TyperCommand)
+    media_options = {option for parameter in media_bind.params for option in parameter.opts}
+    assert {"--input", "--output", "--json"} <= media_options
 
     for name in (
         "labcourt-demo-bootstrap.ps1",

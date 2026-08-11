@@ -25,6 +25,20 @@ try {
         "LabCourt personal demo bootstrap failed."
     Invoke-LabCourtStep $executable @("demo", "camera-register", "--output", $output) `
         "LabCourt personal demo camera registration failed."
+    $preferredMedia = Join-Path $projectRoot "inputs\goggles-missing.mp4"
+    if (Test-Path -LiteralPath $preferredMedia -PathType Leaf) {
+        $media = Get-Item -LiteralPath $preferredMedia
+    }
+    else {
+        $media = Get-ChildItem -LiteralPath (Join-Path $projectRoot "inputs") -File -Filter "*.mp4" |
+            Sort-Object -Property Name |
+            Select-Object -First 1
+    }
+    if ($null -eq $media) {
+        throw "No authorized MP4 was found under inputs."
+    }
+    Invoke-LabCourtStep $executable @("demo", "media-bind", "--input", $media.FullName, "--output", $output) `
+        "LabCourt personal demo media binding failed."
 
     $routeReceipt = Join-Path $output "notification-route-receipt.json"
     if (-not (Test-Path -LiteralPath $routeReceipt -PathType Leaf)) {

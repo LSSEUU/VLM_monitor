@@ -329,6 +329,9 @@ source/version/effective_at；profile/receipt 固定声明 `model_used=false`、
 `RECORDED_VIDEO_SIMULATION`、`FRAME_INDEX`、`SIMULATED · RECORDED VIDEO`，并保持
 `live_camera_claim_permitted=false`、`life_safety_eligible=false`。未绑定媒体时 receipt 必须明确
 `media_attached=false`；catalog 换版后传感器最新样本必须重新绑定当前 catalog cut，不能跨版本拼接投影。
+媒体绑定必须是独立 additive receipt，至少固定 raw media ref、输入文件 SHA-256/字节数、播放副本
+SHA-256/字节数、source catalog cut 与 manifest；默认路径只做 ISO-BMFF 签名检查和精确字节复制，
+不转码、不修改原文件、不声称已完成解码验证，且仍保持模拟、非实时、非生命安全来源。
 基础 bootstrap receipt/projection 必须锚定初始切片，后续通知、案件和目录 revision 不得反向改变其 identity。
 Windows 一键启动入口可以顺序编排上述已验证命令，但不得新增隐式 authority 或跳过 API bind preflight。
 它只可覆盖由当前 authority 完全派生的本机 runtime profile/access/knowledge 摘要；bootstrap、catalog、Case、

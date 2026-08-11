@@ -16,6 +16,7 @@ from labcourt.application.m8_personal_demo_case_action import (
     M8PersonalDemoCaseActionError,
     execute_m8_personal_demo_case_action,
 )
+from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_recorded_media
 from labcourt.application.m8_personal_demo_notification import (
     acknowledge_m8_personal_demo_notification,
     deliver_m8_personal_demo_notification,
@@ -392,6 +393,47 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO camera registered: "
                 "SIMULATED RECORDED VIDEO; no media is attached yet"
+            )
+
+    @demo.command("media-bind")
+    def media_bind(
+        input_media: Annotated[Path, typer.Option("--input", dir_okay=False)],
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+            receipt = bind_m8_personal_demo_recorded_media(
+                output / "labcourt.sqlite3",
+                input_media,
+                output,
+            )
+            receipt_path = output / "camera-media-receipt.json"
+            _write_exact(
+                receipt_path,
+                (receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "display_badge": receipt.display_badge,
+            "exact_byte_copy": receipt.exact_byte_copy,
+            "gpu_used": receipt.gpu_used,
+            "input_file_sha256": receipt.input_file_sha256,
+            "media_attached": receipt.media_attached,
+            "network_used": receipt.network_used,
+            "original_media_modified": receipt.original_media_modified,
+            "playback_media_ref": receipt.playback_media_ref,
+            "source_id": receipt.source_id,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO media attached: "
+                "SIMULATED RECORDED VIDEO; exact local byte copy"
             )
 
 

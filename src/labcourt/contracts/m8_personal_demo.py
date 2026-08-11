@@ -357,10 +357,91 @@ class M8PersonalDemoCameraReceiptV1(FrozenContractModel):
         )
 
 
+class M8PersonalDemoRecordedMediaReceiptV1(FrozenContractModel):
+    """Content-addressed binding of one local MP4 to the simulated Demo camera."""
+
+    schema_version: Literal["m8-personal-demo-recorded-media-receipt-v1"] = (
+        "m8-personal-demo-recorded-media-receipt-v1"
+    )
+    source_id: Literal["camera-recorded-demo-01"] = "camera-recorded-demo-01"
+    source_catalog_id: Sha256Hex
+    source_catalog_commit_receipt_id: Sha256Hex
+    raw_media_ref: ReferenceToken
+    input_file_sha256: Sha256Hex
+    input_size_bytes: int = Field(gt=0)
+    playback_media_ref: Literal["media/camera-recorded-demo-01.mp4"] = (
+        "media/camera-recorded-demo-01.mp4"
+    )
+    playback_file_sha256: Sha256Hex
+    playback_size_bytes: int = Field(gt=0)
+    mode: Literal[M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION] = (
+        M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION
+    )
+    display_badge: Literal["SIMULATED · RECORDED VIDEO"] = (
+        "SIMULATED · RECORDED VIDEO"
+    )
+    container_signature: Literal["ISO_BMFF_FTYP"] = "ISO_BMFF_FTYP"
+    media_attached: Literal[True] = True
+    exact_byte_copy: Literal[True] = True
+    original_media_modified: Literal[False] = False
+    transcoding_performed: Literal[False] = False
+    decoder_preflight_performed: Literal[False] = False
+    live_camera_claim_permitted: Literal[False] = False
+    life_safety_eligible: Literal[False] = False
+    face_recognition_performed: Literal[False] = False
+    cross_camera_reidentification_performed: Literal[False] = False
+    network_used: Literal[False] = False
+    gpu_used: Literal[False] = False
+    media_binding_manifest_id: Sha256Hex
+
+    @model_validator(mode="after")
+    def validate_exact_copy(self) -> Self:
+        require_reference_token(self.raw_media_ref, "M8 personal Demo raw_media_ref")
+        if self.playback_file_sha256 != self.input_file_sha256:
+            raise ValueError("M8 personal Demo playback bytes must match input bytes")
+        if self.playback_size_bytes != self.input_size_bytes:
+            raise ValueError("M8 personal Demo playback size must match input size")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def media_binding_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-personal-demo-recorded-media-receipt",
+                1,
+                self.source_id,
+                self.source_catalog_id,
+                self.source_catalog_commit_receipt_id,
+                self.raw_media_ref,
+                self.input_file_sha256,
+                self.input_size_bytes,
+                self.playback_media_ref,
+                self.playback_file_sha256,
+                self.playback_size_bytes,
+                self.mode,
+                self.container_signature,
+                self.media_attached,
+                self.exact_byte_copy,
+                self.original_media_modified,
+                self.transcoding_performed,
+                self.decoder_preflight_performed,
+                self.live_camera_claim_permitted,
+                self.life_safety_eligible,
+                self.face_recognition_performed,
+                self.cross_camera_reidentification_performed,
+                self.network_used,
+                self.gpu_used,
+                self.media_binding_manifest_id,
+            ]
+        )
+
+
 __all__ = [
     "M8PersonalDemoActorBindingV1",
     "M8PersonalDemoBootstrapReceiptV1",
     "M8PersonalDemoCameraReceiptV1",
     "M8PersonalDemoKnowledgeReceiptV1",
     "M8PersonalDemoNotificationReceiptV1",
+    "M8PersonalDemoRecordedMediaReceiptV1",
 ]

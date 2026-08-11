@@ -11,6 +11,7 @@ from labcourt.adapters.storage.sqlite_m8_operations_repository import (
 )
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
 from labcourt.application.m8_personal_demo_camera import register_m8_personal_demo_camera
+from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_recorded_media
 from labcourt.application.m8_personal_demo_notification import (
     acknowledge_m8_personal_demo_notification,
     deliver_m8_personal_demo_notification,
@@ -203,3 +204,47 @@ def test_recorded_camera_registration_is_additive_idempotent_and_replayable(
     assert summary["display_badge"] == "SIMULATED · RECORDED VIDEO"
     assert summary["media_attached"] is False
     assert (output / "camera-registration-receipt.json").is_file()
+
+
+def test_recorded_media_binding_preserves_input_and_is_replayable(tmp_path: Path) -> None:
+    output = tmp_path / "camera-demo"
+    input_media = tmp_path / "authorized-demo.mp4"
+    media_bytes = (
+        b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
+        b"\x00\x00\x00\x08mdat"
+    )
+    input_media.write_bytes(media_bytes)
+
+    first = bind_m8_personal_demo_recorded_media(
+        output / "labcourt.sqlite3", input_media, output
+    )
+    replay = bind_m8_personal_demo_recorded_media(
+        output / "labcourt.sqlite3", input_media, output
+    )
+
+    assert replay == first
+    assert input_media.read_bytes() == media_bytes
+    assert (output / first.playback_media_ref).read_bytes() == media_bytes
+    assert first.media_attached is True
+    assert first.exact_byte_copy is True
+    assert first.original_media_modified is False
+    assert first.decoder_preflight_performed is False
+
+    result = RUNNER.invoke(
+        app,
+        [
+            "demo",
+            "media-bind",
+            "--input",
+            str(input_media),
+            "--output",
+            str(output),
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0
+    summary = json.loads(result.stdout)
+    assert summary["media_attached"] is True
+    assert summary["exact_byte_copy"] is True
+    assert summary["original_media_modified"] is False
+    assert (output / "camera-media-receipt.json").is_file()

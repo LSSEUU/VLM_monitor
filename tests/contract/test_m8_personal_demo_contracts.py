@@ -19,6 +19,7 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoCameraReceiptV1,
     M8PersonalDemoKnowledgeReceiptV1,
     M8PersonalDemoNotificationReceiptV1,
+    M8PersonalDemoRecordedMediaReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoApiProfileV1,
@@ -87,6 +88,9 @@ def test_personal_demo_schemas_are_exported() -> None:
     )
     assert SCHEMA_MODELS["m8-personal-demo-notification-receipt-v1"] is (
         M8PersonalDemoNotificationReceiptV1
+    )
+    assert SCHEMA_MODELS["m8-personal-demo-recorded-media-receipt-v1"] is (
+        M8PersonalDemoRecordedMediaReceiptV1
     )
 
 
@@ -195,3 +199,30 @@ def test_camera_receipt_cannot_claim_live_or_attached_media() -> None:
     assert receipt.network_used is False
     assert receipt.gpu_used is False
     assert len(receipt.camera_receipt_id) == 64
+
+
+def test_recorded_media_receipt_requires_an_exact_non_authoritative_copy() -> None:
+    receipt = M8PersonalDemoRecordedMediaReceiptV1(
+        source_catalog_id="1" * 64,
+        source_catalog_commit_receipt_id="2" * 64,
+        raw_media_ref="raw-media-3",
+        input_file_sha256="3" * 64,
+        input_size_bytes=128,
+        playback_file_sha256="3" * 64,
+        playback_size_bytes=128,
+        media_binding_manifest_id="4" * 64,
+    )
+
+    assert receipt.media_attached is True
+    assert receipt.exact_byte_copy is True
+    assert receipt.original_media_modified is False
+    assert receipt.decoder_preflight_performed is False
+    assert receipt.live_camera_claim_permitted is False
+    assert receipt.face_recognition_performed is False
+    assert receipt.cross_camera_reidentification_performed is False
+    assert len(receipt.media_binding_receipt_id) == 64
+
+    payload = receipt.model_dump(mode="json")
+    payload["playback_file_sha256"] = "5" * 64
+    with pytest.raises(ValidationError):
+        M8PersonalDemoRecordedMediaReceiptV1.model_validate(payload)
