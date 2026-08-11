@@ -12,9 +12,13 @@ from typing import BinaryIO, TypeVar
 
 from pydantic import ValidationError
 
-from labcourt.contracts.m8_access_cases import M8ActorRole
+from labcourt.contracts.m8_access_cases import M8ActorAuthorityV1, M8ActorRole
 from labcourt.contracts.m8_api import M8ApiPrincipalV1
-from labcourt.contracts.m8_personal_demo import M8PersonalDemoRecordedMediaReceiptV1
+from labcourt.contracts.m8_operations import M8OperationalSourceMode
+from labcourt.contracts.m8_personal_demo import (
+    M8PersonalDemoCameraViewV1,
+    M8PersonalDemoRecordedMediaReceiptV1,
+)
 from labcourt.exceptions import BudgetExceeded, ConcurrentModification, EvidenceMissing
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
@@ -38,10 +42,45 @@ class M8RecordedMediaApiService:
         artifact_root: Path,
         inventory_repository: M8InventoryRepository,
         operations_repository: M8OperationsRepository,
+        camera_view_manifest_id: str,
     ) -> None:
         self._artifact_root = artifact_root.resolve()
         self._inventory = inventory_repository
         self._operations = operations_repository
+        self._camera_view_manifest_id = camera_view_manifest_id
+
+    def cameras(
+        self,
+        principal: M8ApiPrincipalV1,
+    ) -> tuple[M8PersonalDemoCameraViewV1, ...]:
+        actor = self._actor(principal)
+        if actor.role not in {M8ActorRole.OPERATIONS, M8ActorRole.SAFETY_OFFICER}:
+            return ()
+        catalog = self._call(
+            lambda: self._inventory.get_current_source_catalog("campus-demo")
+        )
+        cameras = tuple(
+            source
+            for source in catalog.catalog.sources
+            if source.mode == M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION
+        )
+        views: list[M8PersonalDemoCameraViewV1] = []
+        for source in cameras:
+            binding = None
+            if (self._artifact_root / "camera-media-receipt.json").exists():
+                with self.open_verified(principal, source.source_id) as opened:
+                    binding = opened.receipt
+            views.append(
+                M8PersonalDemoCameraViewV1(
+                    source_catalog_id=catalog.catalog.catalog_id,
+                    source_catalog_commit_receipt_id=catalog.commit_receipt_id,
+                    source=source,
+                    media_attached=binding is not None,
+                    media_binding=binding,
+                    camera_view_manifest_id=self._camera_view_manifest_id,
+                )
+            )
+        return tuple(views)
 
     def metadata(
         self,
@@ -94,18 +133,20 @@ class M8RecordedMediaApiService:
             handle.close()
 
     def _authorize(self, principal: M8ApiPrincipalV1) -> None:
+        actor = self._actor(principal)
+        if actor.role not in {M8ActorRole.OPERATIONS, M8ActorRole.SAFETY_OFFICER}:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+
+    def _actor(self, principal: M8ApiPrincipalV1) -> M8ActorAuthorityV1:
         if not isinstance(principal, M8ApiPrincipalV1):
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         actor_receipt = self._call(
             lambda: self._operations.get_current_actor_authority(principal.actor_id)
         )
         actor = actor_receipt.authority
-        if (
-            not actor.active
-            or actor.actor_id != principal.actor_id
-            or actor.role not in {M8ActorRole.OPERATIONS, M8ActorRole.SAFETY_OFFICER}
-        ):
+        if not actor.active or actor.actor_id != principal.actor_id:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+        return actor
 
     def _receipt(self, source_id: str) -> M8PersonalDemoRecordedMediaReceiptV1:
         if source_id != "camera-recorded-demo-01":

@@ -175,10 +175,11 @@ def assemble_m8_personal_demo_api(
             clock=lambda: datetime.now(UTC),
         ),
         authenticator=M8HashedBearerAuthenticator(_credential_catalog()),
-        recorded_media_service=(
-            M8RecordedMediaApiService(database_path.parent, inventory, operations)
-            if (database_path.parent / "camera-media-receipt.json").is_file()
-            else None
+        recorded_media_service=M8RecordedMediaApiService(
+            database_path.parent,
+            inventory,
+            operations,
+            _manifest("labcourt-personal-demo-camera-view-v1"),
         ),
     )
     profile = M8PersonalDemoApiProfileV1(

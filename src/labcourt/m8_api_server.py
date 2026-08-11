@@ -111,6 +111,20 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                     [item.model_dump(mode="json") for item in notifications],
                 )
                 return
+            if segments == ("api", "m8", "cameras"):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                media_service = self.server.recorded_media_service
+                if media_service is None:
+                    self._json(HTTPStatus.OK, [])
+                    return
+                cameras = media_service.cameras(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    [camera.model_dump(mode="json") for camera in cameras],
+                )
+                return
             if (
                 len(segments) == 5
                 and segments[:3] == ("api", "m8", "cameras")

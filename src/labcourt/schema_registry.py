@@ -409,6 +409,7 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
     M8PersonalDemoCameraReceiptV1,
+    M8PersonalDemoCameraViewV1,
     M8PersonalDemoKnowledgeReceiptV1,
     M8PersonalDemoNotificationReceiptV1,
     M8PersonalDemoRecordedMediaReceiptV1,
@@ -839,6 +840,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-personal-demo-api-profile-v1": M8PersonalDemoApiProfileV1,
     "m8-personal-demo-bootstrap-receipt-v1": M8PersonalDemoBootstrapReceiptV1,
     "m8-personal-demo-camera-receipt-v1": M8PersonalDemoCameraReceiptV1,
+    "m8-personal-demo-camera-view-v1": M8PersonalDemoCameraViewV1,
     "m8-personal-demo-recorded-media-receipt-v1": (
         M8PersonalDemoRecordedMediaReceiptV1
     ),

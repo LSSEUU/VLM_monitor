@@ -13,10 +13,12 @@ from labcourt.contracts.m8_api import (
 )
 from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 from labcourt.contracts.m8_notifications import M8NotificationStatus
+from labcourt.contracts.m8_operations import M8OperationalSource, M8OperationalSourceMode
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
     M8PersonalDemoCameraReceiptV1,
+    M8PersonalDemoCameraViewV1,
     M8PersonalDemoKnowledgeReceiptV1,
     M8PersonalDemoNotificationReceiptV1,
     M8PersonalDemoRecordedMediaReceiptV1,
@@ -81,6 +83,7 @@ def test_personal_demo_schemas_are_exported() -> None:
         M8PersonalDemoBootstrapReceiptV1
     )
     assert SCHEMA_MODELS["m8-personal-demo-camera-receipt-v1"] is (M8PersonalDemoCameraReceiptV1)
+    assert SCHEMA_MODELS["m8-personal-demo-camera-view-v1"] is M8PersonalDemoCameraViewV1
     assert SCHEMA_MODELS["m8-personal-demo-api-profile-v1"] is M8PersonalDemoApiProfileV1
     assert SCHEMA_MODELS["m8-personal-demo-local-access-v1"] is M8PersonalDemoLocalAccessV1
     assert SCHEMA_MODELS["m8-personal-demo-knowledge-receipt-v1"] is (
@@ -230,3 +233,31 @@ def test_recorded_media_receipt_requires_an_exact_non_authoritative_copy() -> No
     payload["playback_file_sha256"] = "5" * 64
     with pytest.raises(ValidationError):
         M8PersonalDemoRecordedMediaReceiptV1.model_validate(payload)
+
+
+def test_camera_view_requires_binding_and_attachment_state_to_match() -> None:
+    source = M8OperationalSource(
+        source_id="camera-recorded-demo-01",
+        device_id="device-recorded-camera-01",
+        location_id="room-chem-301",
+        mode=M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION,
+        adapter_id="m8-recorded-video-simulator",
+        manifest_id="5" * 64,
+    )
+    view = M8PersonalDemoCameraViewV1(
+        source_catalog_id="1" * 64,
+        source_catalog_commit_receipt_id="2" * 64,
+        source=source,
+        media_attached=False,
+        camera_view_manifest_id="4" * 64,
+    )
+
+    assert view.media_binding is None
+    assert view.simulated is True
+    assert view.authentication_required is True
+    assert M8PersonalDemoCameraViewV1.model_validate_json(view.model_dump_json()) == view
+
+    payload = view.model_dump(mode="json")
+    payload["media_attached"] = True
+    with pytest.raises(ValidationError):
+        M8PersonalDemoCameraViewV1.model_validate(payload)

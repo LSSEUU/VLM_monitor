@@ -427,6 +427,14 @@ def test_demo_api_projection_exposes_simulated_recorded_camera(
         assert camera_source["simulated"] is True
         assert camera_source["live_observation_confirmed"] is False
         assert camera_source["certified_fire_detection_claim_permitted"] is False
+
+        status, cameras = _request(server.server_port, "GET", "/api/m8/cameras", "operations")
+        assert status == 200
+        assert isinstance(cameras, list)
+        assert len(cameras) == 1
+        assert cameras[0]["source"]["source_id"] == camera.source_id
+        assert cameras[0]["media_attached"] is False
+        assert cameras[0]["media_binding"] is None
     finally:
         server.shutdown()
         server.server_close()
@@ -467,7 +475,30 @@ def test_demo_api_streams_verified_recorded_media_with_role_scoped_ranges(
         assert metadata["display_badge"] == "SIMULATED · RECORDED VIDEO"
         assert metadata["live_camera_claim_permitted"] is False
 
+        for role in ("operations", "safety"):
+            status, cameras = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/cameras",
+                role,
+            )
+            assert status == 200
+            assert isinstance(cameras, list)
+            assert len(cameras) == 1
+            assert cameras[0]["media_attached"] is True
+            assert cameras[0]["media_binding"]["media_binding_receipt_id"] == (
+                binding.media_binding_receipt_id
+            )
+
         for role in ("leader", "student"):
+            status, cameras = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/cameras",
+                role,
+            )
+            assert status == 200
+            assert cameras == []
             status, payload = _request(
                 server.server_port,
                 "GET",

@@ -23,7 +23,7 @@ from labcourt.contracts.m8_notifications import (
     M8NotificationPurpose,
     M8NotificationStatus,
 )
-from labcourt.contracts.m8_operations import M8OperationalSourceMode
+from labcourt.contracts.m8_operations import M8OperationalSource, M8OperationalSourceMode
 from labcourt.contracts.references import ReferenceToken, require_reference_token
 
 
@@ -458,10 +458,101 @@ class M8PersonalDemoRecordedMediaReceiptV1(FrozenContractModel):
         )
 
 
+class M8PersonalDemoCameraViewV1(FrozenContractModel):
+    """Discoverable product view over the fixed simulated recorded camera."""
+
+    schema_version: Literal["m8-personal-demo-camera-view-v1"] = (
+        "m8-personal-demo-camera-view-v1"
+    )
+    source_catalog_id: Sha256Hex
+    source_catalog_commit_receipt_id: Sha256Hex
+    source: M8OperationalSource
+    display_badge: Literal["SIMULATED · RECORDED VIDEO"] = (
+        "SIMULATED · RECORDED VIDEO"
+    )
+    media_attached: bool
+    media_binding: M8PersonalDemoRecordedMediaReceiptV1 | None = None
+    media_metadata_api_path: Literal[
+        "/api/m8/cameras/camera-recorded-demo-01/media-metadata"
+    ] = "/api/m8/cameras/camera-recorded-demo-01/media-metadata"
+    media_api_path: Literal["/api/m8/cameras/camera-recorded-demo-01/media"] = (
+        "/api/m8/cameras/camera-recorded-demo-01/media"
+    )
+    authentication_required: Literal[True] = True
+    simulated: Literal[True] = True
+    live_camera_claim_permitted: Literal[False] = False
+    life_safety_eligible: Literal[False] = False
+    camera_view_manifest_id: Sha256Hex
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_computed_claim(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        claimed: object | None = None
+        present = False
+        if isinstance(value, dict):
+            payload = dict(value)
+            present = "camera_view_id" in payload
+            claimed = payload.pop("camera_view_id", None)
+            value = payload
+        view = handler(value)
+        if present and canonical_json(claimed) != canonical_json(view.camera_view_id):
+            raise ValueError("serialized camera view ID conflicts with authority")
+        return view
+
+    @model_validator(mode="after")
+    def validate_camera_binding(self) -> Self:
+        if (
+            self.source.source_id != "camera-recorded-demo-01"
+            or self.source.mode != M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION
+        ):
+            raise ValueError("M8 personal Demo camera view requires the fixed recorded source")
+        if self.media_attached != (self.media_binding is not None):
+            raise ValueError("M8 personal Demo media attachment state conflicts with binding")
+        if self.media_binding is not None and (
+            self.media_binding.source_id != self.source.source_id
+            or self.media_binding.source_catalog_id != self.source_catalog_id
+            or self.media_binding.source_catalog_commit_receipt_id
+            != self.source_catalog_commit_receipt_id
+        ):
+            raise ValueError("M8 personal Demo media binding belongs to another catalog cut")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def camera_view_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-personal-demo-camera-view",
+                1,
+                self.source_catalog_id,
+                self.source_catalog_commit_receipt_id,
+                self.source.model_dump(mode="json"),
+                self.media_attached,
+                (
+                    self.media_binding.model_dump(mode="json")
+                    if self.media_binding is not None
+                    else None
+                ),
+                self.media_metadata_api_path,
+                self.media_api_path,
+                self.authentication_required,
+                self.simulated,
+                self.live_camera_claim_permitted,
+                self.life_safety_eligible,
+                self.camera_view_manifest_id,
+            ]
+        )
+
+
 __all__ = [
     "M8PersonalDemoActorBindingV1",
     "M8PersonalDemoBootstrapReceiptV1",
     "M8PersonalDemoCameraReceiptV1",
+    "M8PersonalDemoCameraViewV1",
     "M8PersonalDemoKnowledgeReceiptV1",
     "M8PersonalDemoNotificationReceiptV1",
     "M8PersonalDemoRecordedMediaReceiptV1",

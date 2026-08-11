@@ -335,6 +335,9 @@ SHA-256/字节数、source catalog cut 与 manifest；默认路径只做 ISO-BMF
 相机媒体 API 必须复核当前 actor authority、绑定 receipt、source catalog cut 和同一打开文件句柄的字节哈希；
 仅安全负责人和运维可读取一般风险摄像头媒体。播放响应必须使用 `video/mp4`、`Accept-Ranges: bytes`，
 支持单区间 `206`/`416`，并在输出中继续保留显著模拟来源元数据。
+camera collection 必须从当前 source catalog 发现设备而非使用前端静态 inventory；安全负责人/运维可见，
+领导/学生返回空集合。每个 typed camera view 必须固定 source catalog cut、source、模拟 badge、媒体绑定状态和
+鉴权播放入口；未绑定媒体时设备仍可发现，但 binding 必须为 null 且 `media_attached=false`。
 基础 bootstrap receipt/projection 必须锚定初始切片，后续通知、案件和目录 revision 不得反向改变其 identity。
 Windows 一键启动入口可以顺序编排上述已验证命令，但不得新增隐式 authority 或跳过 API bind preflight。
 它只可覆盖由当前 authority 完全派生的本机 runtime profile/access/knowledge 摘要；bootstrap、catalog、Case、

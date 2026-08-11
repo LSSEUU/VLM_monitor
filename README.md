@@ -130,6 +130,8 @@ API 装配还会幂等装载六类离线知识文档；问答返回来源、版�
 安全负责人或运维可用 authenticated `GET /api/m8/cameras/camera-recorded-demo-01/media-metadata`
 读取绑定回执，并通过 `GET /api/m8/cameras/camera-recorded-demo-01/media` 获取 `video/mp4`；媒体接口支持标准
 single-byte `Range` 与 `206 Partial Content`。领导和学生不自动获得一般风险摄像头媒体访问权。
+设备页应先调用 authenticated `GET /api/m8/cameras`：安全负责人和运维会得到当前 catalog camera、媒体绑定
+状态和上述播放入口；领导和学生得到空集合。未绑定媒体的 camera 仍会返回，但明确 `media_attached=false`。
 集成界面可先调用 authenticated `GET /api/m8/session` 获取当前 actor、role、scope 与 capability，无需在前端
 根据 token 猜测角色；响应不包含 bearer token。
 案件列表使用 `GET /api/m8/cases`：安全负责人只看辖区案件、领导只看重大事件、学生只看本人案件，运维
