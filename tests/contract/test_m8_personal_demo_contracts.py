@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -10,9 +11,11 @@ from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
 )
+from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
+    M8PersonalDemoKnowledgeReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoApiProfileV1,
@@ -75,6 +78,9 @@ def test_personal_demo_schemas_are_exported() -> None:
     )
     assert SCHEMA_MODELS["m8-personal-demo-api-profile-v1"] is M8PersonalDemoApiProfileV1
     assert SCHEMA_MODELS["m8-personal-demo-local-access-v1"] is M8PersonalDemoLocalAccessV1
+    assert SCHEMA_MODELS["m8-personal-demo-knowledge-receipt-v1"] is (
+        M8PersonalDemoKnowledgeReceiptV1
+    )
 
 
 def test_api_profile_keeps_plaintext_tokens_out_of_authority() -> None:
@@ -123,3 +129,19 @@ def test_local_access_contract_redacts_role_tokens_on_serialization() -> None:
     serialized = access.model_dump_json()
     assert "local-demo-safety-secret" not in serialized
     assert access.tokens.safety.get_secret_value() == "local-demo-safety-secret"
+
+
+def test_knowledge_receipt_covers_all_types_without_rule_authority() -> None:
+    receipt = M8PersonalDemoKnowledgeReceiptV1(
+        catalog_authority_id="4" * 64,
+        catalog_commit_receipt_id="3" * 64,
+        generated_at=datetime(2026, 8, 10, 9, 0, tzinfo=UTC),
+        document_types=tuple(sorted(M8KnowledgeDocumentType, key=lambda item: item.value)),
+        knowledge_manifest_id="2" * 64,
+    )
+
+    assert receipt.document_count == 6
+    assert receipt.ordinary_documents_can_define_case_rules is False
+    assert receipt.model_used is False
+    assert receipt.network_used is False
+    assert len(receipt.knowledge_receipt_id) == 64

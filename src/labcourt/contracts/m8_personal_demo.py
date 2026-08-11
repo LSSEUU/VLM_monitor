@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import Literal, Self
 
 from pydantic import Field, computed_field, model_validator
@@ -15,6 +16,7 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseStatus,
     M8OperationalRiskLevel,
 )
+from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 from labcourt.contracts.references import ReferenceToken, require_reference_token
 
 
@@ -147,7 +149,56 @@ class M8PersonalDemoBootstrapReceiptV1(FrozenContractModel):
         )
 
 
+class M8PersonalDemoKnowledgeReceiptV1(FrozenContractModel):
+    schema_version: Literal["m8-personal-demo-knowledge-receipt-v1"] = (
+        "m8-personal-demo-knowledge-receipt-v1"
+    )
+    catalog_id: Literal["campus-safety-knowledge"] = "campus-safety-knowledge"
+    catalog_authority_id: Sha256Hex
+    catalog_commit_receipt_id: Sha256Hex
+    generated_at: datetime
+    document_types: tuple[M8KnowledgeDocumentType, ...] = Field(
+        min_length=6,
+        max_length=6,
+    )
+    document_count: Literal[6] = 6
+    ordinary_documents_can_define_case_rules: Literal[False] = False
+    model_used: Literal[False] = False
+    network_used: Literal[False] = False
+    knowledge_manifest_id: Sha256Hex
+
+    @model_validator(mode="after")
+    def validate_knowledge_inventory(self) -> Self:
+        if self.generated_at.tzinfo is None or self.generated_at.utcoffset() != timedelta(0):
+            raise ValueError("M8 personal Demo knowledge generated_at must be UTC")
+        expected = tuple(sorted(M8KnowledgeDocumentType, key=lambda item: item.value))
+        if self.document_types != expected:
+            raise ValueError("M8 personal Demo knowledge must cover the six fixed document types")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def knowledge_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-personal-demo-knowledge-receipt",
+                1,
+                self.catalog_id,
+                self.catalog_authority_id,
+                self.catalog_commit_receipt_id,
+                self.generated_at.isoformat(timespec="microseconds"),
+                [item.value for item in self.document_types],
+                self.document_count,
+                self.ordinary_documents_can_define_case_rules,
+                self.model_used,
+                self.network_used,
+                self.knowledge_manifest_id,
+            ]
+        )
+
+
 __all__ = [
     "M8PersonalDemoActorBindingV1",
     "M8PersonalDemoBootstrapReceiptV1",
+    "M8PersonalDemoKnowledgeReceiptV1",
 ]

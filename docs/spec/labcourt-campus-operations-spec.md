@@ -310,6 +310,11 @@ check；领导的投影视图只含重大案件且不能迁移 Case，运维不�
 使用既有 typed transition request，取得独立 `APPLY` 确认后只提交一次；不得提供领导/运维审批模式、自动重试
 或客户端自报 actor authority。响应必须按 commit receipt 严格解析并写入 ignored 本机目录。
 
+个人 Demo API 启动时应幂等装载固定六类知识文档，覆盖 POLICY、SOP、HISTORICAL_PRECEDENT、
+EMERGENCY_PLAN、DEVICE_MANUAL、FAQ。问答必须走既有 deterministic offline retriever，citation 返回 exact
+source/version/effective_at；profile/receipt 固定声明 `model_used=false`、`network_used=false` 和普通文档不能
+定义案件规则。知识 catalog 冲突必须 fail closed，不能自动生成下一 revision 掩盖漂移。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

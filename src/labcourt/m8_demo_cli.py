@@ -100,6 +100,7 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             assembly = assemble_m8_personal_demo_api(output / "labcourt.sqlite3", port)
             profile_path = output / "api-profile.json"
             access_path = output / "api-access.json"
+            knowledge_path = output / "knowledge-receipt.json"
             _write_exact(
                 profile_path,
                 (assembly.profile.model_dump_json(indent=2) + "\n").encode("utf-8"),
@@ -116,6 +117,10 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
                     + "\n"
                 ).encode("utf-8"),
             )
+            _write_exact(
+                knowledge_path,
+                (assembly.knowledge_receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
         except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
             _fail(error)
         summary: dict[str, object] = {
@@ -123,6 +128,7 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             "api_profile_id": assembly.profile.api_profile_id,
             "base_url": assembly.profile.base_url,
             "check_only": check,
+            "knowledge_catalog_id": assembly.knowledge_receipt.catalog_id,
             "personal_demo_only": assembly.profile.personal_demo_only,
             "production_ready": assembly.profile.production_ready,
         }

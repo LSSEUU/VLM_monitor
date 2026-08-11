@@ -3,6 +3,7 @@ from __future__ import annotations
 import http.client
 import json
 import threading
+from datetime import UTC, datetime
 from pathlib import Path
 
 from labcourt.adapters.storage.sqlite_m8_operations_repository import (
@@ -12,12 +13,19 @@ from labcourt.application.m8_personal_demo_api import (
     M8_PERSONAL_DEMO_ROLE_TOKENS,
     assemble_m8_personal_demo_api,
 )
+from labcourt.application.m8_personal_demo_knowledge import (
+    bootstrap_m8_personal_demo_knowledge,
+)
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseAction,
     M8OperationalCaseReasonCode,
 )
-from labcourt.contracts.m8_api import M8ApiCaseTransitionRequestV1
+from labcourt.contracts.m8_api import (
+    M8ApiCaseTransitionRequestV1,
+    M8ApiKnowledgeQueryRequestV1,
+)
+from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 
 BUSY_TIMEOUT_MS = 5_000
 
@@ -131,3 +139,46 @@ def test_demo_api_check_assembly_exposes_tokens_only_in_local_document(
         )
     finally:
         assembly.server.server_close()
+
+
+def test_demo_api_answers_from_versioned_offline_knowledge_with_citations(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    database = tmp_path / "knowledge" / "labcourt.sqlite3"
+    assembly = assemble_m8_personal_demo_api(database, 0)
+    assert bootstrap_m8_personal_demo_knowledge(database) == assembly.knowledge_receipt
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        request = M8ApiKnowledgeQueryRequestV1(
+            query_text="护目镜 佩戴",
+            locale="zh-CN",
+            as_of=datetime(2026, 8, 10, 9, 0, tzinfo=UTC),
+            allowed_document_types=tuple(
+                sorted(M8KnowledgeDocumentType, key=lambda item: item.value)
+            ),
+            max_citations=3,
+        ).model_dump(mode="json")
+        status, payload = _request(
+            server.server_port,
+            "POST",
+            "/api/m8/knowledge/catalogs/campus-safety-knowledge/queries",
+            "safety",
+            request,
+        )
+        assert status == 200
+        assert isinstance(payload, dict)
+        answer = payload["answer"]
+        assert answer["outcome"] == "ANSWERED"
+        assert answer["network_used"] is False
+        assert answer["model_used"] is False
+        assert answer["ordinary_document_used_as_case_rule"] is False
+        assert answer["citations"]
+        assert all(citation["source_version"] == 1 for citation in answer["citations"])
+        assert all(citation["source_effective_at"] for citation in answer["citations"])
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)

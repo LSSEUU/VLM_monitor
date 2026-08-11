@@ -62,6 +62,12 @@
       "title": "Base Url",
       "type": "string"
     },
+    "knowledge_catalog_id": {
+      "const": "campus-safety-knowledge",
+      "default": "campus-safety-knowledge",
+      "title": "Knowledge Catalog Id",
+      "type": "string"
+    },
     "personal_demo_only": {
       "const": true,
       "default": true,

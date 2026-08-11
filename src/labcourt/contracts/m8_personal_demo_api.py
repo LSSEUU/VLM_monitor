@@ -35,6 +35,7 @@ class M8PersonalDemoLocalAccessV1(FrozenContractModel):
     base_url: str = Field(min_length=18, max_length=64)
     personal_demo_only: Literal[True] = True
     production_ready: Literal[False] = False
+    knowledge_catalog_id: Literal["campus-safety-knowledge"] = "campus-safety-knowledge"
     tokens: M8PersonalDemoRoleTokensV1
 
     @model_validator(mode="after")

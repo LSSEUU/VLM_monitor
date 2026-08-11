@@ -23,11 +23,15 @@ from labcourt.adapters.storage.sqlite_m8_sensor_persistence_repository import (
     SQLiteM8SensorPersistenceRepository,
 )
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
+from labcourt.application.m8_personal_demo_knowledge import (
+    bootstrap_m8_personal_demo_knowledge,
+)
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
 )
+from labcourt.contracts.m8_personal_demo import M8PersonalDemoKnowledgeReceiptV1
 from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoApiProfileV1,
     M8PersonalDemoLocalAccessV1,
@@ -81,11 +85,13 @@ def _credential_catalog() -> M8ApiCredentialCatalogAuthorityV1:
 class M8PersonalDemoApiAssembly:
     server: M8ApiHttpServer
     profile: M8PersonalDemoApiProfileV1
+    knowledge_receipt: M8PersonalDemoKnowledgeReceiptV1
 
     def local_access_document(self) -> dict[str, object]:
         document: dict[str, object] = {
             "schema_version": "m8-personal-demo-local-access-v1",
             "base_url": self.profile.base_url,
+            "knowledge_catalog_id": self.knowledge_receipt.catalog_id,
             "personal_demo_only": True,
             "production_ready": False,
             "tokens": dict(sorted(M8_PERSONAL_DEMO_ROLE_TOKENS.items())),
@@ -101,6 +107,7 @@ def assemble_m8_personal_demo_api(
     """Bootstrap exact data and bind, but do not start, one loopback server."""
 
     bootstrap = bootstrap_m8_personal_demo(database_path)
+    knowledge_receipt = bootstrap_m8_personal_demo_knowledge(database_path)
     repository_manifest_id = _manifest("labcourt-personal-demo-sqlite-repository-v1")
     inventory = SQLiteM8InventoryRepository(
         database_path,
@@ -172,7 +179,11 @@ def assemble_m8_personal_demo_api(
         credential_catalog=_credential_catalog(),
         server_manifest_id=_manifest("labcourt-personal-demo-api-server-v1"),
     )
-    return M8PersonalDemoApiAssembly(server=server, profile=profile)
+    return M8PersonalDemoApiAssembly(
+        server=server,
+        profile=profile,
+        knowledge_receipt=knowledge_receipt,
+    )
 
 
 __all__ = [

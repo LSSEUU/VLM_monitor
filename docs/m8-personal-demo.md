@@ -45,6 +45,7 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 
 - `api-profile.json`：只含 token hash 的 typed loopback runtime profile；
 - `api-access.json`：四角色本机明文演示 token，供独立 UI 或手工 API 联调读取，不会输出到终端。
+- `knowledge-receipt.json`：制度、SOP、历史案例、应急预案、设备资料和 FAQ 六类离线知识的提交摘要。
 
 主要路由沿用既有 M8 API：
 
@@ -53,6 +54,8 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 - `GET /api/m8/cases/{case_id}`：按角色和案件范围读取；
 - `POST /api/m8/cases/{case_id}/transitions`：服务端重新解析当前 actor authority，领导和运维不能审批，
   安全负责人必须提交 `explicit_human_confirmation=true` 和支持材料引用。
+- `POST /api/m8/knowledge/catalogs/campus-safety-knowledge/queries`：确定性离线检索，回答的每条 citation 都
+  带 `source_ref`、`source_version` 和 `source_effective_at`；`model_used=false`、`network_used=false`。
 
 这些固定 token 不是生产身份凭据，API 只绑定 loopback，`production_ready=false`。未来接校园 OIDC 时替换
 认证 adapter，不改变案件 capability 或审计契约。

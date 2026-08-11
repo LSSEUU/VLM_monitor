@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "M8KnowledgeDocumentType": {
+      "enum": [
+        "DEVICE_MANUAL",
+        "EMERGENCY_PLAN",
+        "FAQ",
+        "HISTORICAL_PRECEDENT",
+        "POLICY",
+        "SOP"
+      ],
+      "title": "M8KnowledgeDocumentType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-knowledge-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "catalog_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Catalog Authority Id",
+      "type": "string"
+    },
+    "catalog_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Catalog Commit Receipt Id",
+      "type": "string"
+    },
+    "catalog_id": {
+      "const": "campus-safety-knowledge",
+      "default": "campus-safety-knowledge",
+      "title": "Catalog Id",
+      "type": "string"
+    },
+    "document_count": {
+      "const": 6,
+      "default": 6,
+      "title": "Document Count",
+      "type": "integer"
+    },
+    "document_types": {
+      "items": {
+        "$ref": "#/$defs/M8KnowledgeDocumentType"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "title": "Document Types",
+      "type": "array"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "knowledge_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Knowledge Manifest Id",
+      "type": "string"
+    },
+    "knowledge_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Knowledge Receipt Id",
+      "type": "string"
+    },
+    "model_used": {
+      "const": false,
+      "default": false,
+      "title": "Model Used",
+      "type": "boolean"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "ordinary_documents_can_define_case_rules": {
+      "const": false,
+      "default": false,
+      "title": "Ordinary Documents Can Define Case Rules",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-knowledge-receipt-v1",
+      "default": "m8-personal-demo-knowledge-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "catalog_authority_id",
+    "catalog_commit_receipt_id",
+    "generated_at",
+    "document_types",
+    "knowledge_manifest_id",
+    "knowledge_receipt_id"
+  ],
+  "title": "M8PersonalDemoKnowledgeReceiptV1",
+  "type": "object"
+}
