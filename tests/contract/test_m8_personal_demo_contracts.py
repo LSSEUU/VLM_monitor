@@ -221,6 +221,10 @@ def test_recorded_media_receipt_requires_an_exact_non_authoritative_copy() -> No
     assert receipt.face_recognition_performed is False
     assert receipt.cross_camera_reidentification_performed is False
     assert len(receipt.media_binding_receipt_id) == 64
+    assert (
+        M8PersonalDemoRecordedMediaReceiptV1.model_validate_json(receipt.model_dump_json())
+        == receipt
+    )
 
     payload = receipt.model_dump(mode="json")
     payload["playback_file_sha256"] = "5" * 64

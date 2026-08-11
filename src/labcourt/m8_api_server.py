@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +18,7 @@ from labcourt.contracts.m8_api import (
     M8ApiErrorReason,
     M8ApiErrorResponseV1,
     M8ApiKnowledgeQueryRequestV1,
+    M8ApiPrincipalV1,
 )
 from labcourt.exceptions import ContractViolation
 from labcourt.ports.m8_api_authentication import (
@@ -33,8 +35,11 @@ from labcourt.services.m8_operations_api import (
     M8OperationsApiService,
 )
 from labcourt.services.m8_projection_api import M8ProjectionApiService
+from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
 
 _MAX_REQUEST_BYTES = 64 * 1024
+_STREAM_CHUNK_BYTES = 1024 * 1024
+_RANGE = re.compile(r"bytes=(?P<start>\d*)-(?P<end>\d*)")
 
 
 class M8ApiHttpServer(ThreadingHTTPServer):
@@ -51,6 +56,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         projection_service: M8ProjectionApiService,
         commissioning_service: M8CommissioningApiService,
         authenticator: M8RequestAuthenticator,
+        recorded_media_service: M8RecordedMediaApiService | None = None,
     ) -> None:
         super().__init__(server_address, M8ApiRequestHandler)
         self.api_service = service
@@ -59,6 +65,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         self.projection_service = projection_service
         self.commissioning_service = commissioning_service
         self.api_authenticator = authenticator
+        self.recorded_media_service = recorded_media_service
 
 
 class M8ApiRequestHandler(BaseHTTPRequestHandler):
@@ -103,6 +110,21 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                     HTTPStatus.OK,
                     [item.model_dump(mode="json") for item in notifications],
                 )
+                return
+            if (
+                len(segments) == 5
+                and segments[:3] == ("api", "m8", "cameras")
+                and segments[4] in {"media", "media-metadata"}
+            ):
+                media_service = self.server.recorded_media_service
+                if media_service is None:
+                    self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+                    return
+                if segments[4] == "media-metadata":
+                    metadata = media_service.metadata(principal, segments[3])
+                    self._json(HTTPStatus.OK, metadata.model_dump(mode="json"))
+                    return
+                self._recorded_media(media_service, principal, segments[3])
                 return
             if len(segments) == 4 and segments[:3] == ("api", "m8", "notifications"):
                 notification = self.server.notification_service.notification(
@@ -279,6 +301,82 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
             raise ValueError("M8 API request body is outside the bounded size")
         return self.rfile.read(length)
 
+    def _recorded_media(
+        self,
+        service: M8RecordedMediaApiService,
+        principal: M8ApiPrincipalV1,
+        source_id: str,
+    ) -> None:
+        with service.open_verified(principal, source_id) as opened:
+            requested = self._requested_range(opened.size_bytes)
+            if requested is None:
+                return
+            start, end, partial = requested
+            length = end - start + 1
+            self.send_response(HTTPStatus.PARTIAL_CONTENT if partial else HTTPStatus.OK)
+            self.send_header("Cache-Control", "private, max-age=3600")
+            self.send_header("Content-Type", "video/mp4")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(length))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-Frame-Options", "DENY")
+            self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+            if partial:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{opened.size_bytes}")
+            self.end_headers()
+            try:
+                opened.handle.seek(start)
+                remaining = length
+                while remaining:
+                    chunk = opened.handle.read(min(_STREAM_CHUNK_BYTES, remaining))
+                    if not chunk:
+                        raise OSError("verified M8 media ended before its inspected size")
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
+            except (BrokenPipeError, ConnectionResetError):
+                return
+
+    def _requested_range(self, size_bytes: int) -> tuple[int, int, bool] | None:
+        value = self.headers.get("Range")
+        if value is None:
+            return 0, size_bytes - 1, False
+        matched = _RANGE.fullmatch(value.strip())
+        if matched is None:
+            self._range_error(size_bytes)
+            return None
+        start_text = matched.group("start")
+        end_text = matched.group("end")
+        if not start_text and not end_text:
+            self._range_error(size_bytes)
+            return None
+        if start_text:
+            start = int(start_text)
+            end = int(end_text) if end_text else size_bytes - 1
+        else:
+            suffix = int(end_text)
+            if suffix <= 0:
+                self._range_error(size_bytes)
+                return None
+            start = max(0, size_bytes - suffix)
+            end = size_bytes - 1
+        if start >= size_bytes or end < start:
+            self._range_error(size_bytes)
+            return None
+        return start, min(end, size_bytes - 1), True
+
+    def _range_error(self, size_bytes: int) -> None:
+        payload = M8ApiErrorResponseV1(reason_code=M8ApiErrorReason.INVALID_REQUEST)
+        data = canonical_json(payload.model_dump(mode="json")).encode("utf-8")
+        self.send_response(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Range", f"bytes */{size_bytes}")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(data)
+
     def _authentication_error(self, error: M8AuthenticationError) -> None:
         reason = (
             M8ApiErrorReason.AUTHENTICATION_REQUIRED
@@ -376,6 +474,7 @@ def build_m8_api_server(
     projection_service: M8ProjectionApiService,
     commissioning_service: M8CommissioningApiService,
     authenticator: M8RequestAuthenticator,
+    recorded_media_service: M8RecordedMediaApiService | None = None,
 ) -> M8ApiHttpServer:
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
         raise ValueError("M8 API port must be from zero through 65535")
@@ -391,6 +490,10 @@ def build_m8_api_server(
         raise TypeError("M8 API requires a commissioning service")
     if authenticator is None:
         raise TypeError("M8 API requires an explicit authenticator")
+    if recorded_media_service is not None and not isinstance(
+        recorded_media_service, M8RecordedMediaApiService
+    ):
+        raise TypeError("M8 API requires a recorded media service or None")
     return M8ApiHttpServer(
         ("127.0.0.1", port),
         service=service,
@@ -399,6 +502,7 @@ def build_m8_api_server(
         projection_service=projection_service,
         commissioning_service=commissioning_service,
         authenticator=authenticator,
+        recorded_media_service=recorded_media_service,
     )
 
 

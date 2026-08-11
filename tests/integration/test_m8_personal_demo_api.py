@@ -17,6 +17,7 @@ from labcourt.application.m8_personal_demo_camera import register_m8_personal_de
 from labcourt.application.m8_personal_demo_knowledge import (
     bootstrap_m8_personal_demo_knowledge,
 )
+from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_recorded_media
 from labcourt.application.m8_personal_demo_notification import (
     acknowledge_m8_personal_demo_notification,
     deliver_m8_personal_demo_notification,
@@ -426,6 +427,89 @@ def test_demo_api_projection_exposes_simulated_recorded_camera(
         assert camera_source["simulated"] is True
         assert camera_source["live_observation_confirmed"] is False
         assert camera_source["certified_fire_detection_claim_permitted"] is False
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_demo_api_streams_verified_recorded_media_with_role_scoped_ranges(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    output = tmp_path / "recorded-media-api"
+    database = output / "labcourt.sqlite3"
+    input_media = tmp_path / "authorized-camera.mp4"
+    media_bytes = (
+        b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
+        b"\x00\x00\x00\x10mdat12345678"
+    )
+    input_media.write_bytes(media_bytes)
+    binding = bind_m8_personal_demo_recorded_media(database, input_media, output)
+    (output / "camera-media-receipt.json").write_text(
+        binding.model_dump_json(indent=2) + "\n",
+        encoding="utf-8",
+    )
+    assembly = assemble_m8_personal_demo_api(database, 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        status, metadata = _request(
+            server.server_port,
+            "GET",
+            "/api/m8/cameras/camera-recorded-demo-01/media-metadata",
+            "operations",
+        )
+        assert status == 200
+        assert isinstance(metadata, dict)
+        assert metadata["media_binding_receipt_id"] == binding.media_binding_receipt_id
+        assert metadata["display_badge"] == "SIMULATED · RECORDED VIDEO"
+        assert metadata["live_camera_claim_permitted"] is False
+
+        for role in ("leader", "student"):
+            status, payload = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/cameras/camera-recorded-demo-01/media-metadata",
+                role,
+            )
+            assert status == 403
+            assert isinstance(payload, dict)
+            assert payload["reason_code"] == "FORBIDDEN"
+
+        connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=3)
+        connection.request(
+            "GET",
+            "/api/m8/cameras/camera-recorded-demo-01/media",
+            headers={
+                "Authorization": f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS['safety']}",
+                "Range": "bytes=4-11",
+            },
+        )
+        response = connection.getresponse()
+        body = response.read()
+        assert response.status == 206
+        assert response.getheader("Content-Type") == "video/mp4"
+        assert response.getheader("Accept-Ranges") == "bytes"
+        assert response.getheader("Content-Range") == f"bytes 4-11/{len(media_bytes)}"
+        assert body == media_bytes[4:12]
+        connection.close()
+
+        connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=3)
+        connection.request(
+            "GET",
+            "/api/m8/cameras/camera-recorded-demo-01/media",
+            headers={
+                "Authorization": f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS['operations']}",
+                "Range": "bytes=999-1000",
+            },
+        )
+        response = connection.getresponse()
+        assert response.status == 416
+        assert response.getheader("Content-Range") == f"bytes */{len(media_bytes)}"
+        assert json.loads(response.read())["reason_code"] == "INVALID_REQUEST"
+        connection.close()
     finally:
         server.shutdown()
         server.server_close()

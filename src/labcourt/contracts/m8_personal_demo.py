@@ -394,6 +394,27 @@ class M8PersonalDemoRecordedMediaReceiptV1(FrozenContractModel):
     gpu_used: Literal[False] = False
     media_binding_manifest_id: Sha256Hex
 
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_computed_claim(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        claimed: object | None = None
+        present = False
+        if isinstance(value, dict):
+            payload = dict(value)
+            present = "media_binding_receipt_id" in payload
+            claimed = payload.pop("media_binding_receipt_id", None)
+            value = payload
+        receipt = handler(value)
+        if present and canonical_json(claimed) != canonical_json(
+            receipt.media_binding_receipt_id
+        ):
+            raise ValueError("serialized media binding receipt ID conflicts with authority")
+        return receipt
+
     @model_validator(mode="after")
     def validate_exact_copy(self) -> Self:
         require_reference_token(self.raw_media_ref, "M8 personal Demo raw_media_ref")

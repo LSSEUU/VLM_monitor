@@ -44,6 +44,7 @@ from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_operations_api import M8OperationsApiService
 from labcourt.services.m8_operations_projection import M8OperationsProjectionService
 from labcourt.services.m8_projection_api import M8ProjectionApiService
+from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
 
 _BUSY_TIMEOUT_MS = 5_000
 M8_PERSONAL_DEMO_ROLE_TOKENS = {
@@ -174,6 +175,11 @@ def assemble_m8_personal_demo_api(
             clock=lambda: datetime.now(UTC),
         ),
         authenticator=M8HashedBearerAuthenticator(_credential_catalog()),
+        recorded_media_service=(
+            M8RecordedMediaApiService(database_path.parent, inventory, operations)
+            if (database_path.parent / "camera-media-receipt.json").is_file()
+            else None
+        ),
     )
     profile = M8PersonalDemoApiProfileV1(
         bind_port=server.server_port,
