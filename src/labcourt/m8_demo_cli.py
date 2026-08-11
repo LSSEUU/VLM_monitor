@@ -23,6 +23,10 @@ from labcourt.application.m8_personal_demo_notification import (
     route_m8_personal_demo_notification,
 )
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
+from labcourt.application.m8_personal_demo_student_appeal import (
+    M8PersonalDemoStudentAppealError,
+    execute_m8_personal_demo_student_appeal,
+)
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoNotificationReceiptV1,
     M8PersonalDemoPpeCaseReceiptV1,
@@ -496,6 +500,54 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
                 "LabCourt PERSONAL DEMO PPE candidate created: "
                 "SIMULATED MACHINE WEAK LABEL; pending human verification"
             )
+
+    @demo.command("student-appeal")
+    def student_appeal(
+        reason: Annotated[str, typer.Option("--reason", min=1, max=2048)],
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        confirmed: Annotated[
+            bool,
+            typer.Option("--confirmed", help="Explicit student confirmation for one appeal."),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            run = execute_m8_personal_demo_student_appeal(
+                access_path=output / "api-access.json",
+                ppe_case_receipt_path=output / "ppe-case-receipt.json",
+                reason_summary=reason,
+                confirmed=confirmed,
+            )
+            appeal_directory = output / "student-appeals"
+            appeal_directory.mkdir(parents=True, exist_ok=True)
+            _write_exact(
+                appeal_directory / f"{run.receipt.commit_receipt_id}.json",
+                (run.receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (
+            LabCourtError,
+            M8PersonalDemoStudentAppealError,
+            OSError,
+            TypeError,
+            ValueError,
+            sqlite3.DatabaseError,
+        ) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "action": run.request.action.value,
+            "case_id": run.receipt.case_id,
+            "case_version": run.receipt.case_version,
+            "explicit_human_confirmation": run.request.explicit_human_confirmation,
+            "reason_code": run.request.reason_code.value,
+            "status": run.receipt.status.value,
+            "student_controlled": True,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo("LabCourt PERSONAL DEMO student appeal committed: APPEALED")
 
 
 __all__ = ["register_m8_demo_commands"]

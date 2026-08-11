@@ -144,6 +144,9 @@ single-byte `Range` 与 `206 Partial Content`。领导和学生不自动获得�
 API 运行时可双击 `labcourt-demo-case-action.cmd`，选择确认、驳回、请求补证、返回核实或结案，并输入
 案件目标 `EMERGENCY_SMOKE` / `PPE_CANDIDATE` 后输入 `APPLY` 完成一次安全负责人显式动作；默认目标仍是
 烟雾案件，脚本不提供领导或运维审批入口，也不会被一键启动自动调用。
+PPE 案件经安全负责人明确确认后，学生可双击 `labcourt-demo-student-appeal.cmd`，填写争议理由并独立输入
+`APPLY`；客户端只读取 exact PPE receipt、只使用 student token，并提交现有
+`SUBMIT_APPEAL/SUBJECT_DISPUTE` transition。未确认的候选案会被状态机拒绝，申诉不会自动撤销或结案。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

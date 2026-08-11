@@ -34,6 +34,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
         "camera-register",
         "media-bind",
         "ppe-case-create",
+        "student-appeal",
         "notification-route",
         "notification-deliver",
         "notification-acknowledge",
@@ -43,6 +44,12 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert isinstance(media_bind, TyperCommand)
     media_options = {option for parameter in media_bind.params for option in parameter.opts}
     assert {"--input", "--output", "--json"} <= media_options
+    student_appeal = demo.commands["student-appeal"]
+    assert isinstance(student_appeal, TyperCommand)
+    student_appeal_options = {
+        option for parameter in student_appeal.params for option in parameter.opts
+    }
+    assert {"--reason", "--output", "--confirmed", "--json"} <= student_appeal_options
 
     for name in (
         "labcourt-demo-bootstrap.ps1",
@@ -54,6 +61,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
         "labcourt-demo-notification-deliver.ps1",
         "labcourt-demo-notification-acknowledge.ps1",
         "labcourt-demo-start.ps1",
+        "labcourt-demo-student-appeal.ps1",
     ):
         script = PROJECT_ROOT / "scripts" / "windows" / name
         parsed = subprocess.run(

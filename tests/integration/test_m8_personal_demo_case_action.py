@@ -14,6 +14,9 @@ from labcourt.application.m8_personal_demo_case_action import (
 )
 from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_recorded_media
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
+from labcourt.application.m8_personal_demo_student_appeal import (
+    execute_m8_personal_demo_student_appeal,
+)
 from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoOperatorAction
 
 
@@ -101,6 +104,8 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
     )
     binding = bind_m8_personal_demo_recorded_media(root / "labcourt.sqlite3", media, root)
     ppe = create_m8_personal_demo_ppe_case(root / "labcourt.sqlite3", root, binding)
+    ppe_path = root / "ppe-case-receipt.json"
+    ppe_path.write_text(ppe.model_dump_json(), encoding="utf-8")
     assembly = assemble_m8_personal_demo_api(root / "labcourt.sqlite3", 0)
     access = root / "api-access.json"
     access.write_text(json.dumps(assembly.local_access_document()), encoding="utf-8")
@@ -117,6 +122,18 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         assert run.receipt.case_id == ppe.case_id
         assert run.receipt.status.value == "CONFIRMED"
         assert run.request.explicit_human_confirmation is True
+
+        appeal = execute_m8_personal_demo_student_appeal(
+            access_path=access,
+            ppe_case_receipt_path=ppe_path,
+            reason_summary="The student explicitly disputes the simulated PPE finding.",
+            confirmed=True,
+        )
+        assert appeal.receipt.case_id == ppe.case_id
+        assert appeal.receipt.status.value == "APPEALED"
+        assert appeal.request.action.value == "SUBMIT_APPEAL"
+        assert appeal.request.reason_code.value == "SUBJECT_DISPUTE"
+        assert appeal.request.explicit_human_confirmation is True
     finally:
         assembly.server.shutdown()
         assembly.server.server_close()

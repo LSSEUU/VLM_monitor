@@ -345,6 +345,9 @@ ground truth、没有模型调用，且只能创建 `GENERAL/PENDING_VERIFICATIO
 安全负责人 Demo action client 可用闭合 target enum 选择初始烟雾案或 PPE 候选案；默认值必须保持初始烟雾案，
 PPE 目标只能从 exact local PPE receipt 解引用 case ID。两种目标都必须读取 current Case authority、使用 safety
 token 并要求独立显式确认；一键启动不得调用关键 transition。
+学生 PPE 申诉客户端只能解引用 exact PPE receipt、使用 student token，并固定提交
+`SUBMIT_APPEAL/SUBJECT_DISPUTE`；必须读取 current Case version/hash、要求独立显式确认并只允许状态矩阵接受的
+`CONFIRMED|RESOLVED -> APPEALED`。申诉不得自动撤销、结案、改变通知或授予安全负责人权限。
 基础 bootstrap receipt/projection 必须锚定初始切片，后续通知、案件和目录 revision 不得反向改变其 identity。
 Windows 一键启动入口可以顺序编排上述已验证命令，但不得新增隐式 authority 或跳过 API bind preflight。
 它只可覆盖由当前 authority 完全派生的本机 runtime profile/access/knowledge 摘要；bootstrap、catalog、Case、
