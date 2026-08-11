@@ -171,6 +171,9 @@ projection：前者发现 typed sensor sources，后者返回全部 source、lat
 `observation_state`。领导/安全负责人/运维可读，学生禁止；模拟与非认证生命安全边界始终保留。
 `GET /api/m8/rules` 向领导和安全负责人返回当前 typed smoke Demo risk policy，可展示阈值、风险等级、
 自动待核实建案与响应期限。它不是从知识库文档解析出来的，本切片只读；后续写入须先增加持久化 revision。
+双击 `labcourt-demo-e2e.cmd` 可启动全新的 ignored run，并引导完成 PPE 确认、学生卡、说明、申诉、
+安全负责人裁定、结案结果卡与学生确认。每个关键动作仍分别要求输入 `APPLY`；脚本最后核验案件、通知、
+用户、规则、传感器和设备健康，并生成 `acceptance.json`。全程仅 loopback，默认不调用飞书。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

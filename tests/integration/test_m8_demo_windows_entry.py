@@ -92,6 +92,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
         "labcourt-demo-notification-acknowledge.ps1",
         "labcourt-demo-start.ps1",
         "labcourt-demo-student-appeal.ps1",
+        "labcourt-demo-e2e.ps1",
     ):
         script = PROJECT_ROOT / "scripts" / "windows" / name
         parsed = subprocess.run(

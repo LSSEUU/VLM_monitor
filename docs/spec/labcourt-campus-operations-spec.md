@@ -456,3 +456,8 @@ observation state），不得建立前端静态 inventory、猜测 freshness 或
 规则配置最小 API 必须返回既有 typed `M8SensorRiskPolicyAuthorityV1`，其 source catalog 与 manifests 必须
 和 Demo bootstrap 完全一致，不得从普通知识文档或自由文本推断。领导与安全负责人可读；首个切片只读，
 未来写入必须先增加 persisted revision、current fence 与 optimistic concurrency，不能用静态响应冒充保存。
+
+Windows 端到端入口必须为每次运行创建 fresh ignored authority directory，先做 loopback bind preflight，再
+启动 hidden API helper。它可编排全部离线步骤，但每个 safety/student 关键动作仍须独立 `APPLY`；不得用
+一键入口代替确认。最终 gate 至少核验 terminal Case、两张 student notification、用户权限、typed rules、
+sensor discovery 与 device health，并写本地 acceptance artifact；默认不得尝试飞书或公网连接。
