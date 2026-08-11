@@ -447,3 +447,8 @@ artifact 与审计要求沿用首次学生卡；最终仍固定 `real_delivery_c
 用户权限清单 API 必须返回 persisted current actor commit receipts，而不是前端静态角色表；仅领导与安全
 负责人可读全量 inventory，运维与学生禁止。该最小端点只读，不得接收客户端 role/capability claim、返回
 bearer/credential secret，或暗示尚未定义的用户管理 capability。
+
+传感器发现与设备健康最小 API 必须复用同一 current role-scoped operations projection。sensor discovery
+仅按 typed source kind 过滤；device health 返回既有 `M8ProjectionSourceV1`（source、latest sample、
+observation state），不得建立前端静态 inventory、猜测 freshness 或发明开放 health 字符串。领导、安全
+负责人、运维可读，学生禁止，simulated/live/certification/life-safety claims 必须原样保留。

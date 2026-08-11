@@ -218,6 +218,52 @@ def test_demo_user_permission_list_is_current_typed_and_read_only(
         thread.join(timeout=3)
 
 
+def test_demo_sensor_discovery_and_device_health_reuse_role_scoped_projection(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = assemble_m8_personal_demo_api(tmp_path / "health" / "labcourt.sqlite3", 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        for role in ("leader", "safety", "operations"):
+            health_status, health = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/campuses/campus-demo/device-health",
+                role,
+            )
+            sensor_status, sensors = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/campuses/campus-demo/sensors",
+                role,
+            )
+            assert health_status == sensor_status == 200
+            assert isinstance(health, list)
+            assert isinstance(sensors, list)
+            assert len(sensors) >= 1
+            assert len(health) >= len(sensors)
+            assert all(item["source"]["source_kind"] == "SENSOR" for item in sensors)
+            assert all(item["source"]["simulated"] is True for item in sensors)
+            assert all(item["observation_state"] for item in health)
+            assert all(
+                item["certified_fire_detection_claim_permitted"] is False
+                for item in sensors
+            )
+        for path in (
+            "/api/m8/campuses/campus-demo/device-health",
+            "/api/m8/campuses/campus-demo/sensors",
+        ):
+            status, _payload = _request(server.server_port, "GET", path, "student")
+            assert status == 403
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
 def test_demo_api_case_list_is_server_filtered_by_current_role(
     tmp_path: Path,
     socket_enabled: None,

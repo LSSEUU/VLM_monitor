@@ -191,6 +191,23 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                     )
                     self._json(HTTPStatus.OK, projection.model_dump(mode="json"))
                     return
+                if segments[4] in {"device-health", "sensors"}:
+                    projection = self.server.projection_service.projection(
+                        principal,
+                        segments[3],
+                    )
+                    sources = projection.visible_projection.sources
+                    if segments[4] == "sensors":
+                        sources = tuple(
+                            item
+                            for item in sources
+                            if item.source.source_kind.value == "SENSOR"
+                        )
+                    self._json(
+                        HTTPStatus.OK,
+                        [item.model_dump(mode="json") for item in sources],
+                    )
+                    return
             if len(segments) == 4 and segments[:3] == ("api", "m8", "cases"):
                 case = self.server.api_service.case(principal, segments[3])
                 self._json(HTTPStatus.OK, case.model_dump(mode="json"))
