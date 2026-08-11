@@ -8,6 +8,10 @@ from pathlib import Path
 
 import pytest
 
+from labcourt.adapters.m8_feishu_inbound_environment_secrets import (
+    EnvironmentM8FeishuInboundSecretResolver,
+    M8FeishuInboundEnvironmentSecretBinding,
+)
 from labcourt.adapters.storage.sqlite_m8_feishu_inbound_repository import (
     SQLiteM8FeishuInboundRepository,
 )
@@ -224,6 +228,33 @@ def test_verification_commits_exact_raw_inventory_and_restarts(tmp_path: Path) -
     )
     assert restarted.get_by_provider_message_id(committed.provider_message_id) == committed
     assert service.verify_and_commit(profile, _ingress(profile, body), body) == committed
+
+
+def test_environment_resolver_plugs_into_offline_verification_service(tmp_path: Path) -> None:
+    repository = _repository(tmp_path)
+    profile = _webhook_profile()
+    body = _encrypted_body()
+    binding = M8FeishuInboundEnvironmentSecretBinding(
+        inbound_profile_id=profile.inbound_profile_id,
+        encrypt_key_reference_id=profile.encrypt_key_reference_id,
+        verification_token_reference_id=profile.verification_token_reference_id,
+        encrypt_key_env="LABCOURT_TEST_FEISHU_INBOUND_ENCRYPT_KEY",
+        verification_token_env="LABCOURT_TEST_FEISHU_INBOUND_VERIFICATION_TOKEN",
+    )
+    resolver = EnvironmentM8FeishuInboundSecretResolver(
+        (binding,),
+        environment={
+            binding.encrypt_key_env: ENCRYPT_KEY.decode(),
+            binding.verification_token_env: VERIFICATION_TOKEN.decode(),
+        },
+    )
+    service = _service(repository, _Crypto(_event_bytes()), resolver)
+
+    committed = service.verify_and_commit(profile, _ingress(profile, body), body)
+
+    assert committed.provider_message_id == "om_student_reply_01"
+    assert ENCRYPT_KEY.decode() not in repr(resolver)
+    assert VERIFICATION_TOKEN.decode() not in repr(resolver)
 
 
 @pytest.mark.parametrize(
