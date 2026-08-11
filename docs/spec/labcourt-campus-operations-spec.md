@@ -334,6 +334,9 @@ Windows 一键启动入口可以顺序编排上述已验证命令，但不得新
 它只可覆盖由当前 authority 完全派生的本机 runtime profile/access/knowledge 摘要；bootstrap、catalog、Case、
 notification 与 raw artifact receipt 继续 conflict closed。入口不得自动 acknowledgement、案件动作、飞书发送
 或公网监听。
+authenticated session discovery 必须从 bearer principal 重新解析当前 persisted actor receipt，返回现有 typed
+actor authority，不接受客户端 role/scope/capability claim，也不得回显 bearer token。inactive、actor drift 或
+缺失 authority 必须沿用 API 的 fail-closed 错误语义。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。

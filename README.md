@@ -126,6 +126,8 @@ API 装配还会幂等装载六类离线知识文档；问答返回来源、版�
 `SIMULATED · RECORDED VIDEO`。该切片只建立设备/来源 authority，尚未绑定媒体文件，也不伪装成实时画面。
 日常演示可直接双击 `labcourt-demo-start.cmd`：它依次准备基础数据、摄像头、离线通知，完成 API bind-and-close
 预检后在 `127.0.0.1:8877` 启动服务。已有回执会复用，派生的本机 API 访问文件会按当前 authority 刷新。
+集成界面可先调用 authenticated `GET /api/m8/session` 获取当前 actor、role、scope 与 capability，无需在前端
+根据 token 猜测角色；响应不包含 bearer token。
 API 运行时可双击 `labcourt-demo-case-action.cmd`，选择确认、驳回、请求补证、返回核实或结案，并输入
 `APPLY` 完成一次安全负责人显式动作；脚本不提供领导或运维审批入口。
 

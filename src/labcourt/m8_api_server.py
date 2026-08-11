@@ -77,6 +77,10 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                 self.headers.get("Authorization")
             )
             segments = self._segments()
+            if segments == ("api", "m8", "session"):
+                session = self.server.api_service.session(principal)
+                self._json(HTTPStatus.OK, session.model_dump(mode="json"))
+                return
             if len(segments) == 5 and segments[:3] == ("api", "m8", "campuses"):
                 if segments[4] == "topology":
                     topology = self.server.api_service.topology(principal, segments[3])

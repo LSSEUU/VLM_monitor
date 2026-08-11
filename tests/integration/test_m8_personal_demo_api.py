@@ -147,6 +147,46 @@ def test_demo_api_check_assembly_exposes_tokens_only_in_local_document(
         assembly.server.server_close()
 
 
+def test_demo_api_session_resolves_each_current_role_without_frontend_claims(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = assemble_m8_personal_demo_api(tmp_path / "session" / "labcourt.sqlite3", 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        expected = {
+            "leader": ("leader-demo", "LEADER"),
+            "operations": ("operations-demo", "OPERATIONS"),
+            "safety": ("safety-officer-demo", "SAFETY_OFFICER"),
+            "student": ("student-demo", "STUDENT"),
+        }
+        for token_role, (actor_id, actor_role) in expected.items():
+            status, payload = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/session",
+                token_role,
+            )
+            assert status == 200
+            assert isinstance(payload, dict)
+            authority = payload["authority"]
+            assert authority["actor_id"] == actor_id
+            assert authority["role"] == actor_role
+            assert authority["active"] is True
+            assert authority["capabilities"]
+            assert "bearer" not in canonical_json(payload).lower()
+            assert all(
+                token not in canonical_json(payload)
+                for token in M8_PERSONAL_DEMO_ROLE_TOKENS.values()
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
 def test_demo_api_answers_from_versioned_offline_knowledge_with_citations(
     tmp_path: Path,
     socket_enabled: None,

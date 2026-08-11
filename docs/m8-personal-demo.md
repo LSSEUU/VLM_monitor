@@ -96,6 +96,8 @@ artifacts 仍保持 conflict-closed，不会被一键入口覆盖。关闭窗口
 
 主要路由沿用既有 M8 API：
 
+- `GET /api/m8/session`：从 bearer credential 服务端解析当前 persisted actor authority，返回 role、scope、
+  capability 和 authority revision，不返回 token；
 - `GET /api/m8/campuses/campus-demo/operations-projection`：领导只看到全局与重大案件，安全负责人看到完整
   运营案件，运维只看到设备/来源；学生禁止访问运营投影；
 - `GET /api/m8/cases/{case_id}`：按角色和案件范围读取；

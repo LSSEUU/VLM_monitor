@@ -17,6 +17,7 @@ from labcourt.contracts.m8_access_cases import (
 )
 from labcourt.contracts.m8_api import M8ApiCaseTransitionRequestV1, M8ApiPrincipalV1
 from labcourt.contracts.m8_case_persistence import (
+    M8ActorAuthorityCommitReceiptV1,
     M8OperationalCaseAuditEventV1,
     M8OperationalCaseCommitReceiptV1,
 )
@@ -61,6 +62,18 @@ class M8OperationsApiService:
         self._sensors = sensor_repository
         self._case_manifest_id = case_manifest_id
         self._audit_manifest_id = audit_manifest_id
+
+    def session(self, principal: M8ApiPrincipalV1) -> M8ActorAuthorityCommitReceiptV1:
+        """Resolve the current persisted actor authority for the authenticated token."""
+
+        if not isinstance(principal, M8ApiPrincipalV1):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+        receipt = self._call(
+            lambda: self._operations.get_current_actor_authority(principal.actor_id)
+        )
+        if not receipt.authority.active or receipt.authority.actor_id != principal.actor_id:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+        return receipt
 
     def topology(
         self,
@@ -163,15 +176,7 @@ class M8OperationsApiService:
         )
 
     def _actor(self, principal: M8ApiPrincipalV1) -> M8ActorAuthorityV1:
-        if not isinstance(principal, M8ApiPrincipalV1):
-            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
-        receipt = self._call(
-            lambda: self._operations.get_current_actor_authority(principal.actor_id)
-        )
-        actor = receipt.authority
-        if not actor.active or actor.actor_id != principal.actor_id:
-            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
-        return actor
+        return self.session(principal).authority
 
     @staticmethod
     def _require_any(actor: M8ActorAuthorityV1, *capabilities: M8Capability) -> None:
