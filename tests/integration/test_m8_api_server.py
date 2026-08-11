@@ -66,6 +66,7 @@ from labcourt.ports.m8_api_authentication import M8AuthenticationError, M8Reques
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
+from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_operations_api import M8OperationsApiService
 from labcourt.services.m8_operations_projection import M8OperationsProjectionService
 from labcourt.services.m8_projection_api import M8ProjectionApiService
@@ -300,6 +301,7 @@ def api_server(
         port=0,
         service=service,
         knowledge_service=knowledge_service,
+        notification_service=M8NotificationApiService(notification_repository, operations),
         projection_service=projection_service,
         commissioning_service=commissioning_service,
         authenticator=M8HashedBearerAuthenticator(_credentials()),
@@ -394,6 +396,7 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             port=0,
             service=server.api_service,
             knowledge_service=server.knowledge_service,
+            notification_service=server.notification_service,
             projection_service=server.projection_service,
             commissioning_service=server.commissioning_service,
             authenticator=cast(M8RequestAuthenticator, None),
@@ -403,6 +406,7 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             port=0,
             service=server.api_service,
             knowledge_service=cast(M8KnowledgeApiService, None),
+            notification_service=server.notification_service,
             projection_service=server.projection_service,
             commissioning_service=server.commissioning_service,
             authenticator=server.api_authenticator,
@@ -412,7 +416,18 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             port=0,
             service=server.api_service,
             knowledge_service=server.knowledge_service,
+            notification_service=server.notification_service,
             projection_service=cast(M8ProjectionApiService, None),
+            commissioning_service=server.commissioning_service,
+            authenticator=server.api_authenticator,
+        )
+    with pytest.raises(TypeError, match="notification service"):
+        build_m8_api_server(
+            port=0,
+            service=server.api_service,
+            knowledge_service=server.knowledge_service,
+            notification_service=cast(M8NotificationApiService, None),
+            projection_service=server.projection_service,
             commissioning_service=server.commissioning_service,
             authenticator=server.api_authenticator,
         )
@@ -421,6 +436,7 @@ def test_hashed_authenticator_fails_closed_and_server_binds_loopback(
             port=0,
             service=server.api_service,
             knowledge_service=server.knowledge_service,
+            notification_service=server.notification_service,
             projection_service=server.projection_service,
             commissioning_service=cast(M8CommissioningApiService, None),
             authenticator=server.api_authenticator,

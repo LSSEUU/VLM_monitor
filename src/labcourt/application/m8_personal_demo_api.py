@@ -40,6 +40,7 @@ from labcourt.m8_api_server import M8ApiHttpServer, build_m8_api_server
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
+from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_operations_api import M8OperationsApiService
 from labcourt.services.m8_operations_projection import M8OperationsProjectionService
 from labcourt.services.m8_projection_api import M8ProjectionApiService
@@ -161,6 +162,7 @@ def assemble_m8_personal_demo_api(
             _manifest("labcourt-personal-demo-knowledge-query-v1"),
             _manifest("labcourt-personal-demo-knowledge-adapter-v1"),
         ),
+        notification_service=M8NotificationApiService(notifications, operations),
         projection_service=M8ProjectionApiService(operations, projection_reader),
         commissioning_service=M8CommissioningApiService(
             M8AdapterReadinessService(

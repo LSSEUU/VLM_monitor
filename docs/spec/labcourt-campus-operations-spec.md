@@ -341,6 +341,10 @@ current Case collection 必须由服务端按当前 actor authority 裁剪：SAF
 LEADER 仅 SEVERE/EMERGENCY，STUDENT 仅 `subject_actor_id` 等于自身，OPERATIONS 返回空 inventory。collection
 不得接受客户端 role 或无界 limit；单案与 audit 读取必须复用相同 location scope 判断，不能让列表和详情
 产生权限分叉。
+notification collection/detail 必须由独立 application service 从 current actor 与 current notification authority
+裁剪：SAFETY_OFFICER 按 location scope，LEADER 仅重大风险或 leader audience，STUDENT 仅自身 target，
+OPERATIONS 仅自身设备响应 target。audit 只允许可见范围内的 SAFETY_OFFICER/LEADER。所有读取均复用现有
+typed notification receipts，不得授予 dispatch、reply、Case transition 或纪律处分 capability。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。

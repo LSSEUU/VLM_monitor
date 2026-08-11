@@ -26,6 +26,7 @@ from labcourt.ports.m8_api_authentication import (
 )
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
+from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_operations_api import (
     M8ApiServiceError,
     M8ApiServiceFailureCode,
@@ -46,6 +47,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         *,
         service: M8OperationsApiService,
         knowledge_service: M8KnowledgeApiService,
+        notification_service: M8NotificationApiService,
         projection_service: M8ProjectionApiService,
         commissioning_service: M8CommissioningApiService,
         authenticator: M8RequestAuthenticator,
@@ -53,6 +55,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         super().__init__(server_address, M8ApiRequestHandler)
         self.api_service = service
         self.knowledge_service = knowledge_service
+        self.notification_service = notification_service
         self.projection_service = projection_service
         self.commissioning_service = commissioning_service
         self.api_authenticator = authenticator
@@ -89,6 +92,34 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                 self._json(
                     HTTPStatus.OK,
                     [case.model_dump(mode="json") for case in cases],
+                )
+                return
+            if segments == ("api", "m8", "notifications"):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                notifications = self.server.notification_service.notifications(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    [item.model_dump(mode="json") for item in notifications],
+                )
+                return
+            if len(segments) == 4 and segments[:3] == ("api", "m8", "notifications"):
+                notification = self.server.notification_service.notification(
+                    principal,
+                    segments[3],
+                )
+                self._json(HTTPStatus.OK, notification.model_dump(mode="json"))
+                return
+            if (
+                len(segments) == 5
+                and segments[:3] == ("api", "m8", "notifications")
+                and segments[4] == "audit"
+            ):
+                audit = self.server.notification_service.audit(principal, segments[3])
+                self._json(
+                    HTTPStatus.OK,
+                    [item.model_dump(mode="json") for item in audit],
                 )
                 return
             if len(segments) == 5 and segments[:3] == ("api", "m8", "campuses"):
@@ -341,6 +372,7 @@ def build_m8_api_server(
     port: int,
     service: M8OperationsApiService,
     knowledge_service: M8KnowledgeApiService,
+    notification_service: M8NotificationApiService,
     projection_service: M8ProjectionApiService,
     commissioning_service: M8CommissioningApiService,
     authenticator: M8RequestAuthenticator,
@@ -351,6 +383,8 @@ def build_m8_api_server(
         raise TypeError("M8 API requires an operations service")
     if not isinstance(knowledge_service, M8KnowledgeApiService):
         raise TypeError("M8 API requires a knowledge service")
+    if not isinstance(notification_service, M8NotificationApiService):
+        raise TypeError("M8 API requires a notification service")
     if not isinstance(projection_service, M8ProjectionApiService):
         raise TypeError("M8 API requires a projection service")
     if not isinstance(commissioning_service, M8CommissioningApiService):
@@ -361,6 +395,7 @@ def build_m8_api_server(
         ("127.0.0.1", port),
         service=service,
         knowledge_service=knowledge_service,
+        notification_service=notification_service,
         projection_service=projection_service,
         commissioning_service=commissioning_service,
         authenticator=authenticator,

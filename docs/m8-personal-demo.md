@@ -100,6 +100,10 @@ artifacts 仍保持 conflict-closed，不会被一键入口覆盖。关闭窗口
   capability 和 authority revision，不返回 token；
 - `GET /api/m8/cases`：返回服务端角色裁剪的当前案件列表；安全负责人按 location scope、领导仅重大事件、
   学生仅本人案件、运维为空；不接受客户端 limit 或 role 查询参数；
+- `GET /api/m8/notifications`、`GET /api/m8/notifications/{notification_id}`：通知列表与详情按当前 actor
+  服务端裁剪；安全负责人按 location scope、领导仅重大风险、学生仅本人 target、运维仅设备响应 target；
+- `GET /api/m8/notifications/{notification_id}/audit`：只允许可见范围内的安全负责人和领导读取完整通知
+  事件链；普通详情仍不授予发送、回复或案件动作；
 - `GET /api/m8/campuses/campus-demo/operations-projection`：领导只看到全局与重大案件，安全负责人看到完整
   运营案件，运维只看到设备/来源；学生禁止访问运营投影；
 - `GET /api/m8/cases/{case_id}`：按角色和案件范围读取；

@@ -322,6 +322,79 @@ def test_demo_api_projection_exposes_routed_notification_by_role(
         thread.join(timeout=3)
 
 
+def test_demo_api_notification_center_is_role_scoped_and_audited(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    database = tmp_path / "notification-center" / "labcourt.sqlite3"
+    routed = route_m8_personal_demo_notification(database)
+    deliver_m8_personal_demo_notification(database, routed.receipt)
+    acknowledged = acknowledge_m8_personal_demo_notification(
+        database,
+        routed.receipt,
+        confirmed=True,
+    )
+    assembly = assemble_m8_personal_demo_api(database, 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        for role in ("safety", "leader"):
+            status, payload = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/notifications",
+                role,
+            )
+            assert status == 200
+            assert isinstance(payload, list)
+            assert len(payload) == 1
+            assert payload[0]["commit_receipt_id"] == acknowledged.commit_receipt_id
+
+            status, detail = _request(
+                server.server_port,
+                "GET",
+                f"/api/m8/notifications/{routed.receipt.notification_id}",
+                role,
+            )
+            assert status == 200
+            assert isinstance(detail, dict)
+            assert detail["status"] == "ACKNOWLEDGED"
+
+            status, audit = _request(
+                server.server_port,
+                "GET",
+                f"/api/m8/notifications/{routed.receipt.notification_id}/audit",
+                role,
+            )
+            assert status == 200
+            assert isinstance(audit, list)
+            assert [item["event_sequence"] for item in audit] == [1, 2, 3, 4, 5]
+
+        for role in ("operations", "student"):
+            status, payload = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/notifications",
+                role,
+            )
+            assert status == 200
+            assert payload == []
+            status, detail = _request(
+                server.server_port,
+                "GET",
+                f"/api/m8/notifications/{routed.receipt.notification_id}",
+                role,
+            )
+            assert status == 403
+            assert isinstance(detail, dict)
+            assert detail["reason_code"] == "FORBIDDEN"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
 def test_demo_api_projection_exposes_simulated_recorded_camera(
     tmp_path: Path,
     socket_enabled: None,
