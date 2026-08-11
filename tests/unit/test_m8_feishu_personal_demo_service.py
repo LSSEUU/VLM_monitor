@@ -3,6 +3,9 @@ from __future__ import annotations
 import hashlib
 from datetime import UTC, datetime, timedelta
 
+from labcourt.application.m8_feishu_emergency_demo import (
+    build_m8_feishu_emergency_demo_probe,
+)
 from labcourt.contracts.m8_feishu_personal_demo import (
     M8FeishuPersonalDemoOutcome,
     M8FeishuPersonalDemoProbeV1,
@@ -51,11 +54,7 @@ class _FakeTransport:
             )
         return M8FeishuHttpResponse(
             200,
-            (
-                '{"code":0,"msg":"ok","tenant_access_token":"'
-                + TOKEN
-                + '\",\"expire\":7200}'
-            ).encode(),
+            ('{"code":0,"msg":"ok","tenant_access_token":"' + TOKEN + '","expire":7200}').encode(),
             "log-token-accepted",
         )
 
@@ -114,6 +113,22 @@ def test_send_accepts_one_card_and_redacts_token_artifact() -> None:
     combined = b"".join(raw for _reference, raw in run.raw_artifacts)
     assert TOKEN.encode() not in combined
     assert APP_SECRET not in combined
+
+
+def test_send_accepts_evidence_bound_simulated_emergency_card() -> None:
+    transport = _FakeTransport()
+    probe = build_m8_feishu_emergency_demo_probe(
+        app_id_sha256=hashlib.sha256(APP_ID).hexdigest(),
+        recipient_open_id_sha256=hashlib.sha256(OPEN_ID).hexdigest(),
+        requested_at=NOW,
+    )
+    run = M8FeishuPersonalDemoService(transport, _Clock()).send(probe, APP_ID, APP_SECRET, OPEN_ID)
+
+    assert run.receipt.outcome == M8FeishuPersonalDemoOutcome.MESSAGE_ACCEPTED
+    assert run.receipt.probe is probe
+    assert probe.risk_assessment.create_pending_case_recommended is True
+    assert run.receipt.case_transition_permitted is False
+    assert transport.message_calls == 1
 
 
 def test_rejected_token_never_attempts_message() -> None:

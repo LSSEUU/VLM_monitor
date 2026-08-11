@@ -312,6 +312,10 @@ from labcourt.contracts.m8_feishu_challenge import (
     M8FeishuUrlChallengeIngressRequestV1,
     M8FeishuUrlChallengeVerificationReceiptV1,
 )
+from labcourt.contracts.m8_feishu_emergency_demo import (
+    M8FeishuEmergencyDemoProbeReceiptV1,
+    M8FeishuEmergencyDemoProbeV1,
+)
 from labcourt.contracts.m8_feishu_inbound import (
     M8FeishuInboundMessageCommitReceiptV1,
     M8FeishuInboundMessageVerificationReceiptV1,
@@ -329,10 +333,6 @@ from labcourt.contracts.m8_feishu_inbound_reply import (
     M8FeishuInboundReplyCorrelationAuthorityV1,
 )
 from labcourt.contracts.m8_feishu_local_demo import M8FeishuLocalDemoConfigV1
-from labcourt.contracts.m8_feishu_personal_demo import (
-    M8FeishuPersonalDemoProbeReceiptV1,
-    M8FeishuPersonalDemoProbeV1,
-)
 from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuCardDispatchPreflightV1,
@@ -341,6 +341,10 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuRecipientBindingAuthorityV1,
 )
 from labcourt.contracts.m8_feishu_outbox import M8FeishuSandboxOutboxRunReceiptV1
+from labcourt.contracts.m8_feishu_personal_demo import (
+    M8FeishuPersonalDemoProbeReceiptV1,
+    M8FeishuPersonalDemoProbeV1,
+)
 from labcourt.contracts.m8_feishu_transport import (
     M8FeishuSandboxSendReceiptV1,
     M8FeishuTokenAcquisitionReceiptV1,
@@ -758,6 +762,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     ),
     "m8-feishu-inbound-webhook-profile-v1": M8FeishuInboundWebhookProfileV1,
     "m8-feishu-local-demo-config-v1": M8FeishuLocalDemoConfigV1,
+    "m8-feishu-emergency-demo-probe-receipt-v1": M8FeishuEmergencyDemoProbeReceiptV1,
+    "m8-feishu-emergency-demo-probe-v1": M8FeishuEmergencyDemoProbeV1,
     "m8-feishu-personal-demo-probe-receipt-v1": M8FeishuPersonalDemoProbeReceiptV1,
     "m8-feishu-personal-demo-probe-v1": M8FeishuPersonalDemoProbeV1,
     "m8-feishu-notification-card-v1": M8FeishuNotificationCardV1,

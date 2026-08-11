@@ -28,6 +28,9 @@
    不再询问 database、manifest、Encrypt Key 或 Verification Token，并自动完成无网络检查。
 4. 双击 `feishu-demo-card.cmd`。本地检查通过后输入 `SEND`，程序只发送一张固定、显著标注模拟事件的
    LabCourt 卡片。运行回执与脱敏响应保存在 `.labcourt-local/feishu-demo-runs/`。
+5. 业务链路展示可双击 `feishu-demo-emergency.cmd`。它先在本机确定性生成模拟烟雾原始信号、紧急风险
+   评估和“建议建立待核实案件”，输入 `SEND` 后再发送一张红色飞书卡片。它不写 SQLite，也不创建
+   正式案件或通知；回执保存在 `.labcourt-local/feishu-emergency-demo-runs/`。
 
 该卡片只证明应用凭据、权限、可用范围和目标 `open_id` 能完成一次 API 调用，不属于案件通知，不证明
 真实送达，也不能改变任何 LabCourt 状态。
@@ -43,7 +46,7 @@
 
 不要把真实学生自由文本、真实人员图片或生产租户凭据用于此个人 Demo。
 
-## 五个入口
+## 六个入口
 
 从资源管理器双击仓库根目录的命令文件，或在 PowerShell 中运行对应 `.ps1`：
 
@@ -51,11 +54,13 @@
    的无网络检查。完整 authority 配置使用
    `scripts\windows\feishu-setup.ps1 -FullAuthority`；只保存则附加 `-ConfigureOnly`。
 2. `feishu-demo-card.cmd`：先做无网络检查，通过后要求输入 `SEND`，向测试账号尝试发送一张固定模拟卡片。
-3. `feishu-preflight.cmd`：校验 Git ignore、配置契约、必需工件、双人 activation authority、secret 引用、
+3. `feishu-demo-emergency.cmd`：确定性运行离线模拟烟雾传感器与 typed 风险策略；先检查、再确认发送一张
+   “紧急候选/建议待核实案件”卡片。模拟信号不是认证消防检测，也没有正式案件 authority。
+4. `feishu-preflight.cmd`：校验 Git ignore、配置契约、必需工件、双人 activation authority、secret 引用、
    exact notification/binding/workflow，并分别运行 webhook 与 outbox check mode。不会连接飞书。
-4. `feishu-webhook.cmd`：先执行 webhook 预检，通过后才启动 loopback listener。终端需保持打开；
+5. `feishu-webhook.cmd`：先执行 webhook 预检，通过后才启动 loopback listener。终端需保持打开；
    `Ctrl+C` 停止。公网 HTTPS 仍由外部受审计设施负责。
-5. `feishu-send-one.cmd`：先执行 outbox 预检，通过后要求输入 `SEND`，随后进行一次 sandbox 调用尝试。
+6. `feishu-send-one.cmd`：先执行 outbox 预检，通过后要求输入 `SEND`，随后进行一次 sandbox 调用尝试。
    provider acceptance 仍显示 `real_delivery_confirmed=false`；超时或未知结果不得自动重试，应先对账。
 
 脚本可以从任意当前目录启动，所有相对路径都以仓库根目录解析。`.cmd` 包装器会在退出时暂停，便于

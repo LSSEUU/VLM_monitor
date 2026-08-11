@@ -1306,6 +1306,18 @@
       "name": "m8-feishu-conformance-result-v1"
     },
     {
+      "file": "m8-feishu-emergency-demo-probe-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_emergency_demo.M8FeishuEmergencyDemoProbeReceiptV1",
+      "name": "m8-feishu-emergency-demo-probe-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-emergency-demo-probe-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_emergency_demo.M8FeishuEmergencyDemoProbeV1",
+      "name": "m8-feishu-emergency-demo-probe-v1"
+    },
+    {
       "file": "m8-feishu-inbound-message-commit-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuInboundMessageCommitReceiptV1",

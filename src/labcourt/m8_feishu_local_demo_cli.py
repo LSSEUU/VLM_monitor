@@ -10,6 +10,9 @@ from typing import Annotated
 import typer
 
 from labcourt.adapters.m8_feishu_stdlib_http import StdlibM8FeishuHttpTransport
+from labcourt.application.m8_feishu_emergency_demo import (
+    build_m8_feishu_emergency_demo_probe,
+)
 from labcourt.contracts.m8_feishu_local_demo import M8FeishuLocalDemoConfigV1
 from labcourt.contracts.m8_feishu_personal_demo import (
     M8FeishuPersonalDemoOutcome,
@@ -127,9 +130,7 @@ def register_m8_feishu_local_demo_commands(feishu: typer.Typer) -> None:
         summary: dict[str, object] = {
             "case_transition_permitted": run.receipt.case_transition_permitted,
             "message_call_attempted": run.receipt.message_call_attempted,
-            "notification_transition_permitted": (
-                run.receipt.notification_transition_permitted
-            ),
+            "notification_transition_permitted": (run.receipt.notification_transition_permitted),
             "outcome": run.receipt.outcome.value,
             "probe_receipt_id": run.receipt.probe_receipt_id,
             "real_delivery_confirmed": run.receipt.real_delivery_confirmed,
@@ -141,6 +142,89 @@ def register_m8_feishu_local_demo_commands(feishu: typer.Typer) -> None:
             (
                 "Feishu PERSONAL DEMO card result: "
                 f"{run.receipt.outcome.value}; real delivery remains unconfirmed"
+            ),
+        )
+        if run.receipt.outcome not in {
+            M8FeishuPersonalDemoOutcome.CHECKED,
+            M8FeishuPersonalDemoOutcome.MESSAGE_ACCEPTED,
+        }:
+            raise typer.Exit(code=3)
+
+    @feishu.command("demo-emergency")
+    def demo_emergency(
+        config: Annotated[
+            Path,
+            typer.Option("--config", exists=True, dir_okay=False, readable=True),
+        ],
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/feishu-emergency-demo-runs"
+        ),
+        check: Annotated[
+            bool,
+            typer.Option("--check", help="Build and validate offline without provider calls."),
+        ] = False,
+        confirmed: Annotated[
+            bool,
+            typer.Option(
+                "--confirmed",
+                help="Explicitly permit one simulated emergency demo card attempt.",
+            ),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        if check == confirmed:
+            fail(
+                "simulated emergency demo",
+                ValueError("choose exactly one of --check/--confirmed"),
+            )
+        try:
+            parsed = load_m8_feishu_local_demo_config(config)
+            app_id = parsed.credentials.app_id.get_secret_value().encode("utf-8")
+            app_secret = parsed.credentials.app_secret.get_secret_value().encode("utf-8")
+            open_id = parsed.credentials.test_open_id.get_secret_value().encode("utf-8")
+            probe = build_m8_feishu_emergency_demo_probe(
+                app_id_sha256=hashlib.sha256(app_id).hexdigest(),
+                recipient_open_id_sha256=hashlib.sha256(open_id).hexdigest(),
+                requested_at=datetime.now(UTC),
+            )
+            service = M8FeishuPersonalDemoService(
+                StdlibM8FeishuHttpTransport(),
+                lambda: datetime.now(UTC),
+            )
+            run = (
+                service.check(probe, app_id, app_secret, open_id)
+                if check
+                else service.send(probe, app_id, app_secret, open_id)
+            )
+            if not check:
+                run_directory = output / run.receipt.probe_receipt_id
+                run_directory.mkdir(parents=True, exist_ok=False)
+                for reference, raw in run.raw_artifacts:
+                    (run_directory / f"{reference}.json").write_bytes(raw)
+                (run_directory / "receipt.json").write_text(
+                    run.receipt.model_dump_json(indent=2),
+                    encoding="utf-8",
+                )
+        except (OSError, TypeError, ValueError) as error:
+            fail("simulated emergency demo", error)
+        summary: dict[str, object] = {
+            "case_transition_permitted": run.receipt.case_transition_permitted,
+            "message_call_attempted": run.receipt.message_call_attempted,
+            "notification_transition_permitted": (run.receipt.notification_transition_permitted),
+            "outcome": run.receipt.outcome.value,
+            "pending_case_recommended": probe.risk_assessment.create_pending_case_recommended,
+            "probe_receipt_id": run.receipt.probe_receipt_id,
+            "real_delivery_confirmed": run.receipt.real_delivery_confirmed,
+            "risk_level": probe.risk_assessment.risk_level.value,
+            "simulated": probe.simulated,
+            "token_call_attempted": run.receipt.token_call_attempted,
+        }
+        echo_summary(
+            summary,
+            json_output,
+            (
+                "Feishu SIMULATED EMERGENCY demo result: "
+                f"{run.receipt.outcome.value}; pending case is advisory only"
             ),
         )
         if run.receipt.outcome not in {

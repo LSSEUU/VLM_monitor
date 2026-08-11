@@ -73,3 +73,26 @@ def test_personal_demo_card_check_is_offline_with_minimal_credentials(
     assert summary["outcome"] == "CHECKED"
     assert summary["token_call_attempted"] is False
     assert summary["message_call_attempted"] is False
+
+
+def test_simulated_emergency_demo_check_builds_advisory_without_provider_call(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "feishu-secrets.json"
+    payload = _payload()
+    config_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = RUNNER.invoke(
+        app,
+        ["feishu", "demo-emergency", "--check", "--config", str(config_path), "--json"],
+    )
+
+    assert result.exit_code == 0
+    summary = json.loads(result.stdout)
+    assert summary["outcome"] == "CHECKED"
+    assert summary["risk_level"] == "EMERGENCY"
+    assert summary["pending_case_recommended"] is True
+    assert summary["simulated"] is True
+    assert summary["token_call_attempted"] is False
+    assert summary["message_call_attempted"] is False
+    assert summary["case_transition_permitted"] is False

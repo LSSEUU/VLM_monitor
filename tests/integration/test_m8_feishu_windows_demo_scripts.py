@@ -36,12 +36,8 @@ def test_network_capable_entrypoints_run_preflight_before_action() -> None:
     webhook = (WINDOWS_SCRIPTS / "feishu-webhook.ps1").read_text(encoding="utf-8")
     send_one = (WINDOWS_SCRIPTS / "feishu-send-one.ps1").read_text(encoding="utf-8")
 
-    assert webhook.index("feishu-preflight.ps1") < webhook.index(
-        '"feishu", "webhook-serve"'
-    )
-    assert send_one.index("feishu-preflight.ps1") < send_one.index(
-        '"feishu", "outbox-run-one"'
-    )
+    assert webhook.index("feishu-preflight.ps1") < webhook.index('"feishu", "webhook-serve"')
+    assert send_one.index("feishu-preflight.ps1") < send_one.index('"feishu", "outbox-run-one"')
     assert send_one.index('Read-Host "Preflight passed.') < send_one.index(
         '"feishu", "outbox-run-one"'
     )
@@ -53,11 +49,18 @@ def test_network_capable_entrypoints_run_preflight_before_action() -> None:
     assert demo.index('Read-Host "Local check passed.') < demo.index('"--confirmed"')
     assert '$confirmation -cne "SEND"' in demo
 
+    emergency = (WINDOWS_SCRIPTS / "feishu-demo-emergency.ps1").read_text(encoding="utf-8")
+    assert emergency.index('"--check"') < emergency.index(
+        'Read-Host "Offline smoke scenario passed.'
+    )
+    assert emergency.index('Read-Host "Offline smoke scenario passed.') < (
+        emergency.index('"--confirmed"')
+    )
+    assert '$confirmation -cne "SEND"' in emergency
+
 
 def test_preflight_uses_check_modes_and_never_passes_secret_values_as_arguments() -> None:
-    preflight = (WINDOWS_SCRIPTS / "feishu-preflight.ps1").read_text(
-        encoding="utf-8"
-    )
+    preflight = (WINDOWS_SCRIPTS / "feishu-preflight.ps1").read_text(encoding="utf-8")
 
     assert preflight.count('"--check"') == 2
     assert '"--app-id-env", $config.environment_names.app_id' in preflight

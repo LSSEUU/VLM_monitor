@@ -290,6 +290,11 @@ Windows live 入口还需操作者明确输入 `SEND`；token 响应只能保存
 真实送达。该探针不得作为正式 adapter、通知回执或 commissioning evidence，完整闭环仍必须回到既有
 双人 activation-gated outbox/webhook 路径。
 
+在同一隔离边界内可增加第二个固定的业务演示探针：它只能消费默认离线烟雾模拟器产生的 exact typed
+poll result 与紧急 advisory assessment，卡片必须显示 `PERSONAL DEMO`、`SIMULATED`、非认证消防检测、
+待核实案件“建议”与人工核实要求。它不得接受正式 case/notification authority，不得写 SQLite 或把建议
+推进为案件状态；发送仍需先无网络 check，再由操作者输入 `SEND`，回执沿用单次调用和不确认真实送达语义。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

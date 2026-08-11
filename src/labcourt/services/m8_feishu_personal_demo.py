@@ -11,6 +11,10 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr, ValidationError
 
 from labcourt.contracts.canonical import canonical_json
+from labcourt.contracts.m8_feishu_emergency_demo import (
+    M8FeishuEmergencyDemoProbeReceiptV1,
+    M8FeishuEmergencyDemoProbeV1,
+)
 from labcourt.contracts.m8_feishu_personal_demo import (
     M8FeishuPersonalDemoOutcome,
     M8FeishuPersonalDemoProbeReceiptV1,
@@ -36,8 +40,46 @@ class _TokenWire(BaseModel):
 
 @dataclass(frozen=True, slots=True)
 class M8FeishuPersonalDemoRun:
-    receipt: M8FeishuPersonalDemoProbeReceiptV1
+    receipt: M8FeishuPersonalDemoProbeReceiptV1 | M8FeishuEmergencyDemoProbeReceiptV1
     raw_artifacts: tuple[tuple[str, bytes], ...]
+
+
+_DemoProbe = M8FeishuPersonalDemoProbeV1 | M8FeishuEmergencyDemoProbeV1
+_DemoReceipt = M8FeishuPersonalDemoProbeReceiptV1 | M8FeishuEmergencyDemoProbeReceiptV1
+
+
+def _receipt(
+    probe: _DemoProbe,
+    outcome: M8FeishuPersonalDemoOutcome,
+    completed_at: datetime,
+    token_call_attempted: bool,
+    message_call_attempted: bool,
+    provider_http_status: int | None = None,
+    provider_code: int | None = None,
+    provider_log_id: str | None = None,
+    provider_message_id: str | None = None,
+    token_raw_response_ref: str | None = None,
+    token_raw_response_sha256: str | None = None,
+    message_raw_response_ref: str | None = None,
+    message_raw_response_sha256: str | None = None,
+) -> _DemoReceipt:
+    values = {
+        "outcome": outcome,
+        "completed_at": completed_at,
+        "token_call_attempted": token_call_attempted,
+        "message_call_attempted": message_call_attempted,
+        "provider_http_status": provider_http_status,
+        "provider_code": provider_code,
+        "provider_log_id": provider_log_id,
+        "provider_message_id": provider_message_id,
+        "token_raw_response_ref": token_raw_response_ref,
+        "token_raw_response_sha256": token_raw_response_sha256,
+        "message_raw_response_ref": message_raw_response_ref,
+        "message_raw_response_sha256": message_raw_response_sha256,
+    }
+    if isinstance(probe, M8FeishuEmergencyDemoProbeV1):
+        return M8FeishuEmergencyDemoProbeReceiptV1(probe=probe, **values)  # type: ignore[arg-type]
+    return M8FeishuPersonalDemoProbeReceiptV1(probe=probe, **values)  # type: ignore[arg-type]
 
 
 def _raw_reference(kind: str, raw: bytes) -> str:
@@ -107,15 +149,15 @@ class M8FeishuPersonalDemoService:
 
     def check(
         self,
-        probe: M8FeishuPersonalDemoProbeV1,
+        probe: _DemoProbe,
         app_id: bytes,
         app_secret: bytes,
         open_id: bytes,
     ) -> M8FeishuPersonalDemoRun:
         self._validate_inputs(probe, app_id, app_secret, open_id)
         return M8FeishuPersonalDemoRun(
-            M8FeishuPersonalDemoProbeReceiptV1(
-                probe=probe,
+            _receipt(
+                probe,
                 outcome=M8FeishuPersonalDemoOutcome.CHECKED,
                 completed_at=self._clock(),
                 token_call_attempted=False,
@@ -126,7 +168,7 @@ class M8FeishuPersonalDemoService:
 
     def send(
         self,
-        probe: M8FeishuPersonalDemoProbeV1,
+        probe: _DemoProbe,
         app_id: bytes,
         app_secret: bytes,
         open_id: bytes,
@@ -198,11 +240,7 @@ class M8FeishuPersonalDemoService:
         code, message_id = _parse_message(message_response)
         if code is None:
             outcome = M8FeishuPersonalDemoOutcome.MESSAGE_RESPONSE_INVALID
-        elif (
-            code == 0
-            and message_response.status_code == 200
-            and message_id is not None
-        ):
+        elif code == 0 and message_response.status_code == 200 and message_id is not None:
             outcome = M8FeishuPersonalDemoOutcome.MESSAGE_ACCEPTED
         else:
             outcome = M8FeishuPersonalDemoOutcome.MESSAGE_REJECTED
@@ -218,7 +256,7 @@ class M8FeishuPersonalDemoService:
 
     def _token_only(
         self,
-        probe: M8FeishuPersonalDemoProbeV1,
+        probe: _DemoProbe,
         outcome: M8FeishuPersonalDemoOutcome,
         raw: bytes,
         response: M8FeishuHttpResponse | None = None,
@@ -226,8 +264,8 @@ class M8FeishuPersonalDemoService:
     ) -> M8FeishuPersonalDemoRun:
         reference = _raw_reference("token-redacted", raw)
         return M8FeishuPersonalDemoRun(
-            M8FeishuPersonalDemoProbeReceiptV1(
-                probe=probe,
+            _receipt(
+                probe,
                 outcome=outcome,
                 completed_at=self._clock(),
                 token_call_attempted=True,
@@ -243,7 +281,7 @@ class M8FeishuPersonalDemoService:
 
     def _message_result(
         self,
-        probe: M8FeishuPersonalDemoProbeV1,
+        probe: _DemoProbe,
         outcome: M8FeishuPersonalDemoOutcome,
         token_raw: bytes,
         message_raw: bytes,
@@ -254,8 +292,8 @@ class M8FeishuPersonalDemoService:
         token_ref = _raw_reference("token-redacted", token_raw)
         message_ref = _raw_reference("message", message_raw)
         return M8FeishuPersonalDemoRun(
-            M8FeishuPersonalDemoProbeReceiptV1(
-                probe=probe,
+            _receipt(
+                probe,
                 outcome=outcome,
                 completed_at=self._clock(),
                 token_call_attempted=True,
@@ -274,12 +312,15 @@ class M8FeishuPersonalDemoService:
 
     @staticmethod
     def _validate_inputs(
-        probe: M8FeishuPersonalDemoProbeV1,
+        probe: _DemoProbe,
         app_id: bytes,
         app_secret: bytes,
         open_id: bytes,
     ) -> None:
-        if not isinstance(probe, M8FeishuPersonalDemoProbeV1):
+        if not isinstance(
+            probe,
+            (M8FeishuPersonalDemoProbeV1, M8FeishuEmergencyDemoProbeV1),
+        ):
             raise TypeError("M8 Feishu personal demo requires a typed probe")
         for value in (app_id, app_secret, open_id):
             if not isinstance(value, bytes) or not value or any(byte <= 0x20 for byte in value):
