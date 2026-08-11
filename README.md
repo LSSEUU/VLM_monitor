@@ -169,6 +169,8 @@ PPE 案件确认后可双击 `labcourt-demo-ppe-notification.cmd`：它向 `stud
 `GET /api/m8/campuses/campus-demo/sensors` 与 `/device-health` 直接复用当前 role-scoped operations
 projection：前者发现 typed sensor sources，后者返回全部 source、latest persisted sample 与
 `observation_state`。领导/安全负责人/运维可读，学生禁止；模拟与非认证生命安全边界始终保留。
+`GET /api/m8/rules` 向领导和安全负责人返回当前 typed smoke Demo risk policy，可展示阈值、风险等级、
+自动待核实建案与响应期限。它不是从知识库文档解析出来的，本切片只读；后续写入须先增加持久化 revision。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

@@ -264,6 +264,34 @@ def test_demo_sensor_discovery_and_device_health_reuse_role_scoped_projection(
         thread.join(timeout=3)
 
 
+def test_demo_rule_config_returns_typed_policy_without_document_rule_power(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = assemble_m8_personal_demo_api(tmp_path / "rules" / "labcourt.sqlite3", 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        for role in ("leader", "safety"):
+            status, policy = _request(server.server_port, "GET", "/api/m8/rules", role)
+            assert status == 200
+            assert isinstance(policy, dict)
+            assert policy["schema_version"] == "m8-sensor-risk-policy-authority-v1"
+            assert policy["revision"] == 1
+            assert policy["purpose"] == "DEMONSTRATION"
+            assert policy["rules"][0]["rule_id"] == "simulated-smoke-active-emergency-v1"
+            assert policy["rules"][0]["risk_level"] == "EMERGENCY"
+            assert policy["rules"][0]["create_pending_case"] is True
+        for role in ("operations", "student"):
+            status, _payload = _request(server.server_port, "GET", "/api/m8/rules", role)
+            assert status == 403
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
 def test_demo_api_case_list_is_server_filtered_by_current_role(
     tmp_path: Path,
     socket_enabled: None,

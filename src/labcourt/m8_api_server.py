@@ -36,6 +36,7 @@ from labcourt.services.m8_operations_api import (
 )
 from labcourt.services.m8_projection_api import M8ProjectionApiService
 from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
+from labcourt.services.m8_rule_config_api import M8RuleConfigApiService
 from labcourt.services.m8_user_permission_api import M8UserPermissionApiService
 
 _MAX_REQUEST_BYTES = 64 * 1024
@@ -59,6 +60,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         authenticator: M8RequestAuthenticator,
         recorded_media_service: M8RecordedMediaApiService | None = None,
         user_permission_service: M8UserPermissionApiService | None = None,
+        rule_config_service: M8RuleConfigApiService | None = None,
     ) -> None:
         super().__init__(server_address, M8ApiRequestHandler)
         self.api_service = service
@@ -69,6 +71,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         self.api_authenticator = authenticator
         self.recorded_media_service = recorded_media_service
         self.user_permission_service = user_permission_service
+        self.rule_config_service = rule_config_service
 
 
 class M8ApiRequestHandler(BaseHTTPRequestHandler):
@@ -117,6 +120,17 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                     HTTPStatus.OK,
                     [user.model_dump(mode="json") for user in users],
                 )
+                return
+            if segments == ("api", "m8", "rules"):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                rule_service = self.server.rule_config_service
+                if rule_service is None:
+                    self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+                    return
+                policy = rule_service.current_policy(principal)
+                self._json(HTTPStatus.OK, policy.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "notifications"):
                 if urlsplit(self.path).query:
@@ -524,6 +538,7 @@ def build_m8_api_server(
     authenticator: M8RequestAuthenticator,
     recorded_media_service: M8RecordedMediaApiService | None = None,
     user_permission_service: M8UserPermissionApiService | None = None,
+    rule_config_service: M8RuleConfigApiService | None = None,
 ) -> M8ApiHttpServer:
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
         raise ValueError("M8 API port must be from zero through 65535")
@@ -547,6 +562,10 @@ def build_m8_api_server(
         user_permission_service, M8UserPermissionApiService
     ):
         raise TypeError("M8 API requires a user permission service or None")
+    if rule_config_service is not None and not isinstance(
+        rule_config_service, M8RuleConfigApiService
+    ):
+        raise TypeError("M8 API requires a rule config service or None")
     return M8ApiHttpServer(
         ("127.0.0.1", port),
         service=service,
@@ -557,6 +576,7 @@ def build_m8_api_server(
         authenticator=authenticator,
         recorded_media_service=recorded_media_service,
         user_permission_service=user_permission_service,
+        rule_config_service=rule_config_service,
     )
 
 

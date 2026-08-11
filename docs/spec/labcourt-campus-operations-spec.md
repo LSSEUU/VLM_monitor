@@ -452,3 +452,7 @@ bearer/credential secret，或暗示尚未定义的用户管理 capability。
 仅按 typed source kind 过滤；device health 返回既有 `M8ProjectionSourceV1`（source、latest sample、
 observation state），不得建立前端静态 inventory、猜测 freshness 或发明开放 health 字符串。领导、安全
 负责人、运维可读，学生禁止，simulated/live/certification/life-safety claims 必须原样保留。
+
+规则配置最小 API 必须返回既有 typed `M8SensorRiskPolicyAuthorityV1`，其 source catalog 与 manifests 必须
+和 Demo bootstrap 完全一致，不得从普通知识文档或自由文本推断。领导与安全负责人可读；首个切片只读，
+未来写入必须先增加 persisted revision、current fence 与 optimistic concurrency，不能用静态响应冒充保存。

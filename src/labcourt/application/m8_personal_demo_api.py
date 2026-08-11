@@ -26,6 +26,7 @@ from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_persona
 from labcourt.application.m8_personal_demo_knowledge import (
     bootstrap_m8_personal_demo_knowledge,
 )
+from labcourt.application.m8_sensor_demo import build_offline_smoke_demo_bundle
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
@@ -45,6 +46,7 @@ from labcourt.services.m8_operations_api import M8OperationsApiService
 from labcourt.services.m8_operations_projection import M8OperationsProjectionService
 from labcourt.services.m8_projection_api import M8ProjectionApiService
 from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
+from labcourt.services.m8_rule_config_api import M8RuleConfigApiService
 from labcourt.services.m8_user_permission_api import M8UserPermissionApiService
 
 _BUSY_TIMEOUT_MS = 5_000
@@ -149,6 +151,14 @@ def assemble_m8_personal_demo_api(
         _BUSY_TIMEOUT_MS,
         repository_manifest_id,
     )
+    source_catalog = inventory.get_current_source_catalog("campus-demo")
+    smoke_policy = build_offline_smoke_demo_bundle(
+        source_catalog_id=source_catalog.catalog.catalog_id,
+        location_id="room-chem-301",
+        adapter_manifest_id=_manifest("labcourt-offline-sensor-adapter-v1"),
+        fixture_manifest_id=_manifest("labcourt-personal-demo-smoke-fixture-v1"),
+        policy_manifest_id=_manifest("labcourt-personal-demo-smoke-policy-v1"),
+    ).risk_policy
     server = build_m8_api_server(
         port=port,
         service=M8OperationsApiService(
@@ -191,6 +201,7 @@ def assemble_m8_personal_demo_api(
                 "student-demo",
             ),
         ),
+        rule_config_service=M8RuleConfigApiService(operations, smoke_policy),
     )
     profile = M8PersonalDemoApiProfileV1(
         bind_port=server.server_port,
