@@ -65,6 +65,10 @@ M8.7f10 已增加显式的 `labcourt feishu webhook-serve` 运行时装配：它
 exact inbound profile 解析两个具名环境变量引用，装配可选 AES adapter、入站证据库和 challenge audit 后
 绑定 activation 指定的 loopback 端口。`--check` 只完成校验、绑定与关闭；命令不会创建 activation、管理
 公网 TLS、自动提交学生说明或执行案件动作。
+M8.7f11 已把既有双人 activation 与单人 kill-switch 状态机接入显式运维命令：`webhook-activate` 只接受
+已形成 typed intent 的两份当前人员确认和 canonical runtime config，`webhook-status` 从当前数据库 cut 重算，
+`webhook-revoke` 只允许当前 in-scope 运维或安全负责人撤销。三者都不读取 secret、不自动启动 listener，
+撤销由运行中的 backend 在下一次请求前观察并 fail closed。
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
@@ -127,6 +131,25 @@ Token，再以环境变量名（不是 secret 值）执行一次只读运行时�
 
 去掉 `--check` 才会阻塞运行本机 backend；公网 HTTPS、域名、证书、反向代理与飞书后台 Request URL
 仍由外部受审计部署负责，且必须与 activation 中的引用和哈希一致。
+
+首次 sandbox activation 必须消费外部双人确认流程生成的 typed intent 和 canonical runtime config，不能在
+命令行内临时拼接权限：
+
+```powershell
+.\.venv\Scripts\labcourt.exe feishu webhook-activate `
+  --database <commissioned-authority.db> `
+  --activation-intent <dual-human-activation-intent.json> `
+  --runtime-config <canonical-inbound-runtime-config.json> `
+  --runtime-config-storage-manifest-id <lowercase-sha256> `
+  --repository-manifest-id <lowercase-sha256> `
+  --assessment-manifest-id <lowercase-sha256> `
+  --json
+```
+
+当前状态可用 `webhook-status` 重算；紧急停用使用 `webhook-revoke` 并显式提供 current activation commit、
+当前 revoker actor、closed reason、reason reference、稳定的 ISO-8601 UTC `revoked_at` 和 revocation manifest；
+精确重试必须复用同一 `revoked_at`。kill-switch 不直接操作其他进程，但运行中的 backend 会逐请求重读
+authority，因此撤销后 challenge 与业务事件立即拒绝。
 
 没有 `make` 的 Windows 环境可直接运行：
 

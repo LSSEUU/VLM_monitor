@@ -51,3 +51,24 @@ evidence、readiness 和双人显式 activation gate。
 
 即使完成接入，AI/VLM 仍不能直接定责、处分、撤销或结案，真实传感器也只有在另行存在组织验证的
 certification authority 时才可能参与生命安全硬规则。
+
+## 5. 当前首接选择：飞书企业自建应用
+
+首接类别已经确定为 `EXTERNAL_NOTIFICATION`，provider 为飞书企业自建应用；当前实现仅授权 `SANDBOX`
+测试收件人与 sandbox webhook。仓库已具备离线 preflight、双人 activation、one-shot outbound、encrypted
+URL challenge、`im.message.receive_v1` evidence、回复关联、逐请求 activation gate 与单人 kill switch。
+
+进入真实租户现场验证前，仍需由部署方在仓库外准备：
+
+- 飞书测试租户中的企业自建应用、测试用户 `open_id` 与获批的消息/事件权限；
+- outbound App ID/App Secret，以及 inbound Encrypt Key/Verification Token 的获批 secret 注入；
+- 公开可达的 HTTPS 域名、有效证书和受审计反向代理，只转发固定 callback path 到 activation 指定的
+  `127.0.0.1` 端口；
+- 不含 secret 的 callback URL/TLS reference 与 SHA-256、环境变量名、candidate/actor authority 和各类
+  manifest ID；
+- 由当前 OPERATIONS 与 SAFETY_OFFICER 分别确认后生成的 typed activation intent 与 canonical runtime config。
+
+不要把上述 secret 值或真实学生消息粘贴到命令、清单、日志、fixture 或 Git。完成这些外部准备后，先执行
+`labcourt feishu webhook-activate`，再执行 `webhook-serve --check`；两步均成功且反向代理审计证据齐全后，
+才能在飞书后台配置 Request URL 并验证 challenge。provider 接受、HTTP 200 或 challenge 成功都不等于真实
+送达、学生身份确认、案件责任或处分成立。

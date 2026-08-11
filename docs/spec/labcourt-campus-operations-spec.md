@@ -247,6 +247,15 @@ reference/hash 校验并关闭预检 lease，随后仅向 verification service �
 退出。check mode 只允许构建、绑定、报告无密钥摘要并关闭 listener；正常 mode 才可阻塞服务。两种 mode
 均不得管理公网 TLS、提交 notification reply、改变 Case、形成处分或声称真实飞书租户验证已经完成。
 
+运维 activation boundary 只能消费已由外部人审流程生成的 typed `M8AdapterActivationIntentV1` 与 exact
+canonical inbound runtime config；不得从零散 CLI 参数代填 operations/safety receipt 或静默补齐双人确认。
+输入文件必须有界并在任何写入前完整通过 strict model/canonical bytes 校验。activation 命令只 append-only
+提交 authority，不得启动 listener；status 命令必须从当前数据库 cut 重算而非读取进程缓存；revocation 命令
+必须复用既有 current actor、closed reason 与 manifest gate，且只 append-only 提交 kill switch，不得直接
+控制其他进程。CLI kill switch 必须显式接收稳定 UTC revocation time，使回执丢失后的 exact retry 不会因
+隐式墙钟变化而冲突。运行中的 backend 通过逐请求重读观察撤销，因此下一次 challenge/business event 必须
+fail closed。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 
