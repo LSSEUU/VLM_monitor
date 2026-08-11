@@ -26,6 +26,7 @@ from labcourt.contracts.m8_personal_demo import (
 )
 from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoApiProfileV1,
+    M8PersonalDemoCaseTarget,
     M8PersonalDemoLocalAccessV1,
 )
 from labcourt.schema_registry import SCHEMA_MODELS
@@ -131,6 +132,13 @@ def test_api_profile_keeps_plaintext_tokens_out_of_authority() -> None:
     assert profile.base_url == "http://127.0.0.1:8877"
     assert profile.plaintext_demo_tokens_in_authority is False
     assert "labcourt-personal-demo-leader-token" not in profile.model_dump_json()
+
+
+def test_case_action_targets_are_closed_to_the_two_demo_cases() -> None:
+    assert tuple(M8PersonalDemoCaseTarget) == (
+        M8PersonalDemoCaseTarget.EMERGENCY_SMOKE,
+        M8PersonalDemoCaseTarget.PPE_CANDIDATE,
+    )
 
 
 def test_local_access_contract_redacts_role_tokens_on_serialization() -> None:

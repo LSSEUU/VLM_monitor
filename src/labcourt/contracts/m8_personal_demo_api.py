@@ -22,6 +22,11 @@ class M8PersonalDemoOperatorAction(StrEnum):
     RESOLVE = "RESOLVE"
 
 
+class M8PersonalDemoCaseTarget(StrEnum):
+    EMERGENCY_SMOKE = "EMERGENCY_SMOKE"
+    PPE_CANDIDATE = "PPE_CANDIDATE"
+
+
 class M8PersonalDemoRoleTokensV1(FrozenContractModel):
     schema_version: Literal["m8-personal-demo-role-tokens-v1"] = "m8-personal-demo-role-tokens-v1"
     leader: SecretStr = Field(min_length=16, max_length=256)
@@ -125,6 +130,7 @@ class M8PersonalDemoApiProfileV1(FrozenContractModel):
 
 __all__ = [
     "M8PersonalDemoApiProfileV1",
+    "M8PersonalDemoCaseTarget",
     "M8PersonalDemoLocalAccessV1",
     "M8PersonalDemoOperatorAction",
     "M8PersonalDemoRoleTokensV1",

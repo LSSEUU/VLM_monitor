@@ -21,6 +21,7 @@ from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoLocalAccessV1,
     M8PersonalDemoOperatorAction,
 )
+from labcourt.contracts.references import require_reference_token
 
 _MAX_LOCAL_DOCUMENT_BYTES = 1024 * 1024
 _HTTP_TIMEOUT_SECONDS = 3
@@ -93,10 +94,11 @@ def _call(
 def execute_m8_personal_demo_case_action(
     *,
     access_path: Path,
-    bootstrap_receipt_path: Path,
     action: M8PersonalDemoOperatorAction,
     reason_summary: str,
     confirmed: bool,
+    bootstrap_receipt_path: Path | None = None,
+    target_case_id: str | None = None,
 ) -> M8PersonalDemoCaseActionRun:
     """Read current authority, then submit one explicitly confirmed safety action."""
 
@@ -104,11 +106,18 @@ def execute_m8_personal_demo_case_action(
         raise ValueError("M8 personal Demo Case action requires explicit confirmation")
     if not isinstance(action, M8PersonalDemoOperatorAction):
         raise TypeError("M8 personal Demo Case action must use the closed action enum")
+    if (bootstrap_receipt_path is None) == (target_case_id is None):
+        raise ValueError("M8 personal Demo Case action requires exactly one target authority")
     access = M8PersonalDemoLocalAccessV1.model_validate_json(_read_bounded(access_path))
-    bootstrap = M8PersonalDemoBootstrapReceiptV1.model_validate_json(
-        _read_bounded(bootstrap_receipt_path)
-    )
-    case_path = f"/api/m8/cases/{bootstrap.case_id}"
+    if bootstrap_receipt_path is not None:
+        bootstrap = M8PersonalDemoBootstrapReceiptV1.model_validate_json(
+            _read_bounded(bootstrap_receipt_path)
+        )
+        resolved_case_id = bootstrap.case_id
+    else:
+        assert target_case_id is not None
+        resolved_case_id = require_reference_token(target_case_id, "M8 Demo target case_id")
+    case_path = f"/api/m8/cases/{resolved_case_id}"
     try:
         case = M8OperationalCaseCommitReceiptV1.model_validate_json(_call(access, "GET", case_path))
         request = M8ApiCaseTransitionRequestV1(

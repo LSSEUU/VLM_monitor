@@ -342,6 +342,9 @@ PPE 视频演示建案必须是独立显式切片，只消费已复核的 media 
 可以固定为 `GOGGLES_MISSING_CANDIDATE`，但必须声明没有验证输入媒体内容、没有把文件名当证据、机器弱标签不是
 ground truth、没有模型调用，且只能创建 `GENERAL/PENDING_VERIFICATION`、`human_verification_required=true`、
 `direct_disciplinary_action_permitted=false` 的学生案件。重复创建必须返回同一 commit。
+安全负责人 Demo action client 可用闭合 target enum 选择初始烟雾案或 PPE 候选案；默认值必须保持初始烟雾案，
+PPE 目标只能从 exact local PPE receipt 解引用 case ID。两种目标都必须读取 current Case authority、使用 safety
+token 并要求独立显式确认；一键启动不得调用关键 transition。
 基础 bootstrap receipt/projection 必须锚定初始切片，后续通知、案件和目录 revision 不得反向改变其 identity。
 Windows 一键启动入口可以顺序编排上述已验证命令，但不得新增隐式 authority 或跳过 API bind preflight。
 它只可覆盖由当前 authority 完全派生的本机 runtime profile/access/knowledge 摘要；bootstrap、catalog、Case、

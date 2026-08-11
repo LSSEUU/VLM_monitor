@@ -27,7 +27,9 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     case_action = demo.commands["case-action"]
     assert isinstance(case_action, TyperCommand)
     action_options = {option for parameter in case_action.params for option in parameter.opts}
-    assert {"--action", "--reason", "--output", "--confirmed", "--json"} <= action_options
+    assert {"--action", "--reason", "--target", "--output", "--confirmed", "--json"} <= (
+        action_options
+    )
     for command_name in (
         "camera-register",
         "media-bind",

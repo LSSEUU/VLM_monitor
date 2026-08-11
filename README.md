@@ -142,7 +142,8 @@ single-byte `Range` 与 `206 Partial Content`。领导和学生不自动获得�
 通知中心可使用 `GET /api/m8/notifications`、`GET /api/m8/notifications/{id}` 和 `/audit`；当前模拟紧急
 通知仅对辖区安全负责人及重大事件领导可见，学生与运维无法读取。
 API 运行时可双击 `labcourt-demo-case-action.cmd`，选择确认、驳回、请求补证、返回核实或结案，并输入
-`APPLY` 完成一次安全负责人显式动作；脚本不提供领导或运维审批入口。
+案件目标 `EMERGENCY_SMOKE` / `PPE_CANDIDATE` 后输入 `APPLY` 完成一次安全负责人显式动作；默认目标仍是
+烟雾案件，脚本不提供领导或运维审批入口，也不会被一键启动自动调用。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

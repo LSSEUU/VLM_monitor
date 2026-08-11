@@ -25,9 +25,13 @@ from labcourt.application.m8_personal_demo_notification import (
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoNotificationReceiptV1,
+    M8PersonalDemoPpeCaseReceiptV1,
     M8PersonalDemoRecordedMediaReceiptV1,
 )
-from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoOperatorAction
+from labcourt.contracts.m8_personal_demo_api import (
+    M8PersonalDemoCaseTarget,
+    M8PersonalDemoOperatorAction,
+)
 from labcourt.exceptions import LabCourtError
 
 
@@ -177,6 +181,9 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
     def case_action(
         action: Annotated[M8PersonalDemoOperatorAction, typer.Option("--action")],
         reason: Annotated[str, typer.Option("--reason", min=1, max=2048)],
+        target: Annotated[M8PersonalDemoCaseTarget, typer.Option("--target")] = (
+            M8PersonalDemoCaseTarget.EMERGENCY_SMOKE
+        ),
         output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
             ".labcourt-local/labcourt-demo"
         ),
@@ -187,12 +194,21 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
         json_output: Annotated[bool, typer.Option("--json")] = False,
     ) -> None:
         try:
+            ppe_case_id = None
+            bootstrap_path: Path | None = output / "bootstrap-receipt.json"
+            if target == M8PersonalDemoCaseTarget.PPE_CANDIDATE:
+                ppe_receipt = M8PersonalDemoPpeCaseReceiptV1.model_validate_json(
+                    (output / "ppe-case-receipt.json").read_bytes()
+                )
+                ppe_case_id = ppe_receipt.case_id
+                bootstrap_path = None
             run = execute_m8_personal_demo_case_action(
                 access_path=output / "api-access.json",
-                bootstrap_receipt_path=output / "bootstrap-receipt.json",
                 action=action,
                 reason_summary=reason,
                 confirmed=confirmed,
+                bootstrap_receipt_path=bootstrap_path,
+                target_case_id=ppe_case_id,
             )
             action_directory = output / "case-actions"
             action_directory.mkdir(parents=True, exist_ok=True)
@@ -217,6 +233,7 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             "commit_receipt_id": run.receipt.commit_receipt_id,
             "explicit_human_confirmation": run.request.explicit_human_confirmation,
             "status": run.receipt.status.value,
+            "target": target.value,
         }
         if json_output:
             typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
