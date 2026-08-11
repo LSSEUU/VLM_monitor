@@ -156,6 +156,13 @@ authority 与显著模拟的离线 conformance response，不读取 app secret�
 不能生成可提交到通知状态机的真实发送结果。只有 provider-specific contract、commissioning、双人
 activation、secret-store runtime binding 和真实沙箱证据全部通过后，才可增加实际 HTTP transport。
 
+飞书首次 activation 只允许 `SANDBOX`：无密钥 runtime config 必须绑定 exact profile、canonical
+bytes/hash/size 与 1–32 个 active 测试收件人 binding。配置本身不授权网络；append-only commit 必须重新
+评估相同 evidence inventory，并重新解析与 intent 完全相同的当前 OPERATIONS/SAFETY_OFFICER 双人
+authority。只有该 commit 可授权 allowlist 内的 sandbox call，生产发送、自动激活、生命安全联动和案件
+动作继续禁止。调用时仍须从持久化 authority 解析当前未撤销状态，并从批准的 secret store 短暂解析
+凭据与 open ID 后复核 hash；客户端不能提交或扩大激活状态。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

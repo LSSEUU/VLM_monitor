@@ -232,6 +232,8 @@ EXPECTED_SCHEMA_MODES = {
     "m8-feishu-conformance-result-v1": "serialization",
     "m8-feishu-notification-card-v1": "serialization",
     "m8-feishu-recipient-binding-authority-v1": "serialization",
+    "m8-feishu-sandbox-activation-commit-receipt-v1": "serialization",
+    "m8-feishu-sandbox-runtime-config-v1": "serialization",
     "m8-notification-authority-v1": "serialization",
     "m8-notification-channel-capability-authority-v1": "serialization",
     "m8-notification-commit-receipt-v1": "serialization",

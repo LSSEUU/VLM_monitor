@@ -1318,6 +1318,18 @@
       "name": "m8-feishu-recipient-binding-authority-v1"
     },
     {
+      "file": "m8-feishu-sandbox-activation-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxActivationCommitReceiptV1",
+      "name": "m8-feishu-sandbox-activation-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-sandbox-runtime-config-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxRuntimeConfigV1",
+      "name": "m8-feishu-sandbox-runtime-config-v1"
+    },
+    {
       "file": "m8-knowledge-answer-commit-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeAnswerCommitReceiptV1",
