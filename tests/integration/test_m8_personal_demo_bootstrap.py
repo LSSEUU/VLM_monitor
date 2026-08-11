@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from labcourt.adapters.storage.sqlite_m8_operations_repository import (
@@ -10,6 +11,7 @@ from labcourt.adapters.storage.sqlite_m8_operations_repository import (
 )
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
 from labcourt.application.m8_personal_demo_notification import (
+    acknowledge_m8_personal_demo_notification,
     deliver_m8_personal_demo_notification,
     route_m8_personal_demo_notification,
 )
@@ -112,3 +114,53 @@ def test_notification_route_is_idempotent_and_writes_offline_card(tmp_path: Path
     assert json.loads(delivery_result.stdout)["notification_status"] == "DELIVERED"
     assert json.loads(delivery_result.stdout)["real_delivery_confirmed"] is False
     assert (output / "notification-delivery-receipt.json").is_file()
+
+    with pytest.raises(ValueError, match="explicit confirmation"):
+        acknowledge_m8_personal_demo_notification(database, first.receipt, confirmed=False)
+    acknowledged = acknowledge_m8_personal_demo_notification(
+        database,
+        first.receipt,
+        confirmed=True,
+    )
+    acknowledged_replay = acknowledge_m8_personal_demo_notification(
+        database,
+        first.receipt,
+        confirmed=True,
+    )
+    assert acknowledged_replay == acknowledged
+    assert acknowledged.status == M8NotificationStatus.ACKNOWLEDGED
+    assert acknowledged.notification_version == 5
+    acknowledgement = acknowledged.audit_event.transition_command
+    assert acknowledgement is not None
+    assert acknowledgement.explicit_human_confirmation is True
+    assert acknowledgement.actor_authority is not None
+    assert acknowledgement.actor_authority.actor_id == "safety-officer-demo"
+
+    acknowledgement_result = RUNNER.invoke(
+        app,
+        [
+            "demo",
+            "notification-acknowledge",
+            "--output",
+            str(output),
+            "--confirmed",
+            "--json",
+        ],
+    )
+    acknowledgement_replay = RUNNER.invoke(
+        app,
+        [
+            "demo",
+            "notification-acknowledge",
+            "--output",
+            str(output),
+            "--confirmed",
+            "--json",
+        ],
+    )
+    assert acknowledgement_result.exit_code == 0
+    assert acknowledgement_replay.exit_code == 0
+    assert json.loads(acknowledgement_result.stdout) == json.loads(acknowledgement_replay.stdout)
+    assert json.loads(acknowledgement_result.stdout)["notification_status"] == "ACKNOWLEDGED"
+    assert json.loads(acknowledgement_result.stdout)["case_transition_permitted"] is False
+    assert (output / "notification-acknowledgement-receipt.json").is_file()

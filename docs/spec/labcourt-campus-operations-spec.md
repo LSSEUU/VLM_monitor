@@ -322,6 +322,9 @@ source/version/effective_at；profile/receipt 固定声明 `model_used=false`、
 后续离线 delivery 必须是另一个显式入口，只消费 exact route receipt，复用既有 fake channel 提交
 `QUEUED -> SENT -> DELIVERED` 及 raw artifacts；中断在 `SENT` 时必须可确定性恢复。该 `DELIVERED` 仅表示
 模拟通道完成，固定 `real_delivery_confirmed=false`，不得替代飞书 provider receipt。
+离线 acknowledgement 必须由当前安全负责人 authority 显式确认，只允许
+`DELIVERED -> ACKNOWLEDGED`，并固定 `case_transition_permitted=false`。确认通知不能解释为确认案件，重复命令
+必须返回同一 commit，角色裁剪投影应把它计为已闭环通知。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。

@@ -64,6 +64,11 @@ SQLite，并生成 `notification-delivery-receipt.json`。进程在 `SENT` 后�
 authority 恢复；重复执行不会生成第二次尝试。这里的 `DELIVERED` 仅是本地模拟状态，固定
 `real_delivery_confirmed=false`，不会调用飞书或改变案件。
 
+最后可双击 `labcourt-demo-notification-acknowledge.cmd`。脚本只接受精确的 `APPLY`，随后用当前
+`safety-officer-demo` authority 提交 `DELIVERED -> ACKNOWLEDGED`，并写入
+`notification-acknowledgement-receipt.json`。重复执行返回同一 receipt；运营投影中的未闭环通知数变为 0。
+确认通知只表示安全负责人已看到消息，不会确认、驳回、补证或结案对应案件。
+
 主要路由沿用既有 M8 API：
 
 - `GET /api/m8/campuses/campus-demo/operations-projection`：领导只看到全局与重大案件，安全负责人看到完整

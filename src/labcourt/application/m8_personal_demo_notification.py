@@ -44,6 +44,7 @@ _BUSY_TIMEOUT_MS = 5_000
 _PLANNED_AT = datetime(2026, 8, 10, 9, 1, tzinfo=UTC)
 _ROUTED_AT = _PLANNED_AT + timedelta(seconds=1)
 _DELIVERED_AT = _ROUTED_AT + timedelta(seconds=2)
+_ACKNOWLEDGED_AT = _DELIVERED_AT + timedelta(seconds=1)
 
 
 def _manifest(name: str) -> Sha256Hex:
@@ -242,8 +243,59 @@ def deliver_m8_personal_demo_notification(
     return current
 
 
+def acknowledge_m8_personal_demo_notification(
+    database_path: Path,
+    route_receipt: M8PersonalDemoNotificationReceiptV1,
+    *,
+    confirmed: bool,
+) -> M8NotificationCommitReceiptV1:
+    """Record one explicit safety-officer acknowledgement without changing the Case."""
+
+    if confirmed is not True:
+        raise ValueError("M8 personal Demo acknowledgement requires explicit confirmation")
+    if not isinstance(route_receipt, M8PersonalDemoNotificationReceiptV1):
+        raise TypeError("M8 personal Demo acknowledgement requires a typed route receipt")
+    bootstrap = bootstrap_m8_personal_demo(database_path)
+    repository_manifest_id = bootstrap.projection.topology_receipt.repository_manifest_id
+    operations = SQLiteM8OperationsRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    notifications = SQLiteM8NotificationRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    current = notifications.get_current_notification(route_receipt.notification_id)
+    plan = current.audit_event.notification_authority.plan
+    if (
+        plan.notification_id != route_receipt.notification_id
+        or plan.case_id != route_receipt.case_id
+        or plan.target.target_authority_id != route_receipt.target_authority_id
+        or plan.target.actor_id != route_receipt.target_actor_id
+    ):
+        raise ValueError("M8 personal Demo acknowledgement route authority changed")
+    if current.status == M8NotificationStatus.ACKNOWLEDGED:
+        return current
+    if current.status != M8NotificationStatus.DELIVERED:
+        raise ValueError("M8 personal Demo acknowledgement requires DELIVERED notification")
+    service = M8NotificationService(notifications, operations, _channel(), _workflow())
+    case = operations.get_current_operational_case(plan.case_id)
+    acknowledged = service.acknowledge(
+        route_receipt.notification_id,
+        route_receipt.target_actor_id,
+        _ACKNOWLEDGED_AT,
+        case.audit_event.case_authority.create_command.trigger_authorities,
+    )
+    if acknowledged.status != M8NotificationStatus.ACKNOWLEDGED:
+        raise ValueError("M8 personal Demo notification acknowledgement was not committed")
+    return acknowledged
+
+
 __all__ = [
     "M8PersonalDemoNotificationRun",
+    "acknowledge_m8_personal_demo_notification",
     "deliver_m8_personal_demo_notification",
     "route_m8_personal_demo_notification",
 ]

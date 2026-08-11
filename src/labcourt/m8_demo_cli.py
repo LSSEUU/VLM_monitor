@@ -16,6 +16,7 @@ from labcourt.application.m8_personal_demo_case_action import (
     execute_m8_personal_demo_case_action,
 )
 from labcourt.application.m8_personal_demo_notification import (
+    acknowledge_m8_personal_demo_notification,
     deliver_m8_personal_demo_notification,
     route_m8_personal_demo_notification,
 )
@@ -292,6 +293,57 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO notification delivered by the offline fake: "
                 "SIMULATED only; real delivery remains unconfirmed"
+            )
+
+    @demo.command("notification-acknowledge")
+    def notification_acknowledge(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        confirmed: Annotated[
+            bool,
+            typer.Option("--confirmed", help="Explicit safety-officer acknowledgement."),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            route_path = output / "notification-route-receipt.json"
+            route_receipt = M8PersonalDemoNotificationReceiptV1.model_validate_json(
+                route_path.read_bytes()
+            )
+            receipt = acknowledge_m8_personal_demo_notification(
+                output / "labcourt.sqlite3",
+                route_receipt,
+                confirmed=confirmed,
+            )
+            receipt_path = output / "notification-acknowledgement-receipt.json"
+            _write_exact(
+                receipt_path,
+                (receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        transition = receipt.audit_event.transition_command
+        summary: dict[str, object] = {
+            "actor_id": (
+                transition.actor_authority.actor_id
+                if transition is not None and transition.actor_authority is not None
+                else None
+            ),
+            "case_transition_permitted": False,
+            "explicit_human_confirmation": (
+                transition.explicit_human_confirmation if transition is not None else False
+            ),
+            "notification_id": receipt.notification_id,
+            "notification_status": receipt.status.value,
+            "notification_version": receipt.notification_version,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO notification acknowledged by the safety officer; "
+                "the Case was not changed"
             )
 
 

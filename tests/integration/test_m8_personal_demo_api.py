@@ -17,6 +17,7 @@ from labcourt.application.m8_personal_demo_knowledge import (
     bootstrap_m8_personal_demo_knowledge,
 )
 from labcourt.application.m8_personal_demo_notification import (
+    acknowledge_m8_personal_demo_notification,
     deliver_m8_personal_demo_notification,
     route_m8_personal_demo_notification,
 )
@@ -194,7 +195,12 @@ def test_demo_api_projection_exposes_routed_notification_by_role(
 ) -> None:
     database = tmp_path / "notification-api" / "labcourt.sqlite3"
     routed = route_m8_personal_demo_notification(database)
-    delivered = deliver_m8_personal_demo_notification(database, routed.receipt)
+    deliver_m8_personal_demo_notification(database, routed.receipt)
+    acknowledged = acknowledge_m8_personal_demo_notification(
+        database,
+        routed.receipt,
+        confirmed=True,
+    )
     assembly = assemble_m8_personal_demo_api(database, 0)
     server = assembly.server
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -214,10 +220,11 @@ def test_demo_api_projection_exposes_routed_notification_by_role(
             assert visible["current_notifications"][0]["notification_id"] == (
                 routed.receipt.notification_id
             )
-            assert visible["current_notifications"][0]["status"] == "DELIVERED"
+            assert visible["current_notifications"][0]["status"] == "ACKNOWLEDGED"
             assert visible["current_notifications"][0]["commit_receipt_id"] == (
-                delivered.commit_receipt_id
+                acknowledged.commit_receipt_id
             )
+            assert visible["overview"]["unresolved_notification_count"] == 0
 
         status, payload = _request(
             server.server_port,
