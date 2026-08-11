@@ -230,6 +230,12 @@ ingress activation/revocation 必须独立 append-only 持久化：同一 activa
 不同 config bytes 或 manifest 必须冲突；同一 candidate 未撤销时禁止第二个 activation，撤销后新 revision 必须
 连续并精确引用 prior commit。进程重启不得丢失 authority，运行时不得用缓存状态替代当前数据库 cut。
 
+activated webhook application backend 必须只绑定 runtime config 的 loopback host/port，由受审计的反向代理
+提供公网 HTTPS 并重写 application Host。每个 POST 在读取 secret 或解密前必须重读 current ingress status，
+且 running activation commit 必须仍为 latest exact commit。无 Lark 事件头只允许进入 challenge 路径；timestamp、
+nonce、signature 必须三者完整才可构造业务 ingress。业务 HTTP 200 只确认 verified evidence 已 append-only
+提交，不得自动提交 notification reply、改变 Case、形成处分或声明学生身份已经确定。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

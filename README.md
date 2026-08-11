@@ -55,6 +55,10 @@ commit：精确绑定 callback URL/TLS/profile/commissioning/current actor，配
 M8.7f7 已通过 migration 0011 将 ingress activation/revocation 做成 append-only SQLite authority：同一 intent
 幂等、未撤销时禁止第二次启用、撤销后只允许连续 revision；进程重启后仍会重读当前 actor 与 commissioning
 证据决定 `SANDBOX_INBOUND_ACTIVE` / `INVALIDATED` / `REVOKED`。仓库尚未把公网 HTTP listener 接到该状态。
+M8.7f8 已增加显式构建的 activation-gated webhook backend：只监听 runtime config 的本机端口，逐请求重读
+current ingress status；无事件头走 challenge，完整三件套签名头才走 `im.message.receive_v1` 验证/SQLite evidence
+commit。任一缺头、坏签名、撤销或 authority 漂移均 fail closed；HTTP 200 仅表示入站证据已提交，不会自动
+提交学生说明、改变案件或声称公网 TLS 已部署。
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
