@@ -213,6 +213,11 @@ Token，并在收到后 1 秒内只返回原始 challenge 的 canonical JSON。�
 hash、reference、size 与 manifest，不能嵌入 clear challenge，也不能激活公网入口、提交学生回复、改变 Case
 或形成处分。默认 wiring 不监听公网；真实 Request URL 仍需独立的人审 activation 与租户验证证据。
 
+默认 URL challenge HTTP adapter 只允许显式构建并手工启动 `127.0.0.1` listener，固定 POST path、
+`application/json`、单一 canonical Content-Length 与 256 KiB 上限；禁止 transfer/content encoding。该 listener
+只用于离线/本机集成验证，Host 必须为 loopback；出现任一业务事件签名头时必须返回 ingress inactive，不能
+调用业务事件验证器。loopback profile 不得被解释为公网 Request URL、TLS 就绪或 external activation。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

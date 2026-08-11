@@ -1336,6 +1336,12 @@
       "name": "m8-feishu-inbound-webhook-profile-v1"
     },
     {
+      "file": "m8-feishu-loopback-challenge-listener-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_challenge.M8FeishuLoopbackChallengeListenerProfileV1",
+      "name": "m8-feishu-loopback-challenge-listener-profile-v1"
+    },
+    {
       "file": "m8-feishu-notification-card-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_notification.M8FeishuNotificationCardV1",

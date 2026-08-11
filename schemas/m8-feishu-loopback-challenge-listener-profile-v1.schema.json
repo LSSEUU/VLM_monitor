@@ -1,0 +1,104 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-loopback-challenge-listener-profile-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Non-activating loopback HTTP listener profile for URL challenge tests.",
+  "properties": {
+    "bind_host": {
+      "const": "127.0.0.1",
+      "default": "127.0.0.1",
+      "title": "Bind Host",
+      "type": "string"
+    },
+    "business_event_ingress_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Business Event Ingress Permitted",
+      "type": "boolean"
+    },
+    "callback_path": {
+      "const": "/callbacks/feishu/v1",
+      "default": "/callbacks/feishu/v1",
+      "title": "Callback Path",
+      "type": "string"
+    },
+    "external_ingress_permitted": {
+      "const": false,
+      "default": false,
+      "title": "External Ingress Permitted",
+      "type": "boolean"
+    },
+    "inbound_profile_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Inbound Profile Id",
+      "type": "string"
+    },
+    "listener_autostart": {
+      "const": false,
+      "default": false,
+      "title": "Listener Autostart",
+      "type": "boolean"
+    },
+    "listener_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Listener Manifest Id",
+      "type": "string"
+    },
+    "listener_profile_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Listener Profile Id",
+      "type": "string"
+    },
+    "raw_body_max_bytes": {
+      "const": 262144,
+      "default": 262144,
+      "title": "Raw Body Max Bytes",
+      "type": "integer"
+    },
+    "request_content_type": {
+      "const": "application/json",
+      "default": "application/json",
+      "title": "Request Content Type",
+      "type": "string"
+    },
+    "request_method": {
+      "const": "POST",
+      "default": "POST",
+      "title": "Request Method",
+      "type": "string"
+    },
+    "requested_port": {
+      "maximum": 65535,
+      "minimum": 0,
+      "title": "Requested Port",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-feishu-loopback-challenge-listener-profile-v1",
+      "default": "m8-feishu-loopback-challenge-listener-profile-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tls_enabled": {
+      "const": false,
+      "default": false,
+      "title": "Tls Enabled",
+      "type": "boolean"
+    },
+    "transport_kind": {
+      "const": "HTTP_LOOPBACK",
+      "default": "HTTP_LOOPBACK",
+      "title": "Transport Kind",
+      "type": "string"
+    }
+  },
+  "required": [
+    "inbound_profile_id",
+    "requested_port",
+    "listener_manifest_id",
+    "listener_profile_id"
+  ],
+  "title": "M8FeishuLoopbackChallengeListenerProfileV1",
+  "type": "object"
+}

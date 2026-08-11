@@ -8,6 +8,7 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ValidationError
 
 from labcourt.contracts.m8_feishu_challenge import (
+    M8FeishuLoopbackChallengeListenerProfileV1,
     M8FeishuUrlChallengeIngressRequestV1,
     M8FeishuUrlChallengeVerificationReceiptV1,
 )
@@ -28,6 +29,14 @@ def _ingress() -> M8FeishuUrlChallengeIngressRequestV1:
         encrypted_body_size_bytes=512,
         received_at=RECEIVED_AT,
         ingress_manifest_id=SHA_B,
+    )
+
+
+def _listener() -> M8FeishuLoopbackChallengeListenerProfileV1:
+    return M8FeishuLoopbackChallengeListenerProfileV1(
+        inbound_profile_id=_webhook_profile().inbound_profile_id,
+        requested_port=0,
+        listener_manifest_id=SHA_D,
     )
 
 
@@ -56,6 +65,18 @@ def test_ingress_separates_url_verification_from_business_event_signature() -> N
     assert ingress.business_event_accepted is False
     assert ingress.credential_material_embedded is False
     assert len(ingress.ingress_request_id) == 64
+
+
+def test_listener_is_loopback_only_manual_and_challenge_only() -> None:
+    listener = _listener()
+
+    assert listener.bind_host == "127.0.0.1"
+    assert listener.callback_path == "/callbacks/feishu/v1"
+    assert listener.transport_kind == "HTTP_LOOPBACK"
+    assert listener.tls_enabled is False
+    assert listener.listener_autostart is False
+    assert listener.external_ingress_permitted is False
+    assert listener.business_event_ingress_permitted is False
 
 
 def test_verified_challenge_only_authorizes_exact_json_response() -> None:
@@ -98,7 +119,7 @@ def test_verified_challenge_rejects_profile_token_time_and_reference_grafts() ->
         )
 
 
-@pytest.mark.parametrize("model", (_ingress(), _receipt()))
+@pytest.mark.parametrize("model", (_listener(), _ingress(), _receipt()))
 def test_challenge_contracts_round_trip_and_hide_clear_values(model: BaseModel) -> None:
     restored = type(model).model_validate_json(model.model_dump_json())
     assert restored == model
@@ -121,6 +142,9 @@ def test_challenge_schemas_are_registered_serialization_roots() -> None:
     from labcourt.schema_registry import SCHEMA_MODELS, SCHEMA_VALIDATION_MODELS
 
     expected = {
+        "m8-feishu-loopback-challenge-listener-profile-v1": (
+            M8FeishuLoopbackChallengeListenerProfileV1
+        ),
         "m8-feishu-url-challenge-ingress-request-v1": (
             M8FeishuUrlChallengeIngressRequestV1
         ),

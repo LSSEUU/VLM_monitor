@@ -45,7 +45,9 @@ provider `message_id` 在 SQLite 中唯一，异证据重放 fail closed。M8.7f
 exact outbound provider receipt 授权学生普通说明，并在同一 SQLite 事务中追加 `RESPONDED` 与 reply ledger；
 它不会推断申诉、改变 Case 或形成处分。M8.7f4 增加了显式环境 secret resolver、可选且审计锁定的
 `cryptography` AES-256-CBC adapter，以及独立的 encrypted URL challenge 验证边界。challenge 清文仅存在于
-瞬时 JSON 响应，receipt 只保存 hash/reference；它不激活公网入口或业务事件。仓库仍未开放公网 webhook、
+瞬时 JSON 响应，receipt 只保存 hash/reference；它不激活公网入口或业务事件。M8.7f5 增加了需显式启动的
+`127.0.0.1` challenge-only HTTP listener：固定路径、有界 JSON、禁止压缩/分块传输，收到业务事件签名头时
+明确返回入口未激活。仓库仍未开放公网 webhook、
 保存真实学生自由文本或取得真实飞书租户验证证据。独立 UI 任务
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、

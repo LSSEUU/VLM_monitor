@@ -168,6 +168,9 @@ from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxRevocationReason,
     M8FeishuSandboxRuntimeConfigV1,
 )
+from labcourt.contracts.m8_feishu_challenge import (
+    M8FeishuUrlChallengeVerificationReceiptV1,
+)
 from labcourt.contracts.m8_feishu_inbound import (
     M8FeishuInboundMessageCommitReceiptV1,
     M8FeishuInboundMessageVerificationReceiptV1,
@@ -464,6 +467,7 @@ from labcourt.ports.m8_adapter_commissioning_repository import (
 )
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
 from labcourt.ports.m8_feishu_activation_repository import M8FeishuActivationRepository
+from labcourt.ports.m8_feishu_challenge_receipts import M8FeishuUrlChallengeReceiptSink
 from labcourt.ports.m8_feishu_http import (
     M8FeishuHttpResponse,
     M8FeishuHttpTransport,
@@ -550,6 +554,15 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8FeishuUrlChallengeReceiptSink: {
+        "record_verification": (
+            ("self", "receipt"),
+            {
+                "receipt": M8FeishuUrlChallengeVerificationReceiptV1,
+                "return": NONE_TYPE,
+            },
+        ),
+    },
     M8FeishuInboundCrypto: {
         "decrypt_aes_256_cbc": (
             ("self", "ciphertext_with_iv", "key_sha256"),

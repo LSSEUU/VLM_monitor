@@ -307,6 +307,7 @@ from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxRuntimeConfigV1,
 )
 from labcourt.contracts.m8_feishu_challenge import (
+    M8FeishuLoopbackChallengeListenerProfileV1,
     M8FeishuUrlChallengeIngressRequestV1,
     M8FeishuUrlChallengeVerificationReceiptV1,
 )
@@ -743,6 +744,9 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-sandbox-runtime-config-v1": M8FeishuSandboxRuntimeConfigV1,
     "m8-feishu-sandbox-send-receipt-v1": M8FeishuSandboxSendReceiptV1,
     "m8-feishu-token-acquisition-receipt-v1": M8FeishuTokenAcquisitionReceiptV1,
+    "m8-feishu-loopback-challenge-listener-profile-v1": (
+        M8FeishuLoopbackChallengeListenerProfileV1
+    ),
     "m8-feishu-url-challenge-ingress-request-v1": (
         M8FeishuUrlChallengeIngressRequestV1
     ),

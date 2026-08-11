@@ -155,6 +155,62 @@ class M8FeishuUrlChallengeIngressRequestV1(FrozenContractModel):
         )
 
 
+class M8FeishuLoopbackChallengeListenerProfileV1(FrozenContractModel):
+    """Non-activating loopback HTTP listener profile for URL challenge tests."""
+
+    schema_version: Literal["m8-feishu-loopback-challenge-listener-profile-v1"] = (
+        "m8-feishu-loopback-challenge-listener-profile-v1"
+    )
+    inbound_profile_id: Sha256Hex
+    bind_host: Literal["127.0.0.1"] = "127.0.0.1"
+    requested_port: int = Field(ge=0, le=65_535, strict=True)
+    callback_path: Literal["/callbacks/feishu/v1"] = "/callbacks/feishu/v1"
+    request_method: Literal["POST"] = "POST"
+    request_content_type: Literal["application/json"] = "application/json"
+    raw_body_max_bytes: Literal[262144] = 262_144
+    transport_kind: Literal["HTTP_LOOPBACK"] = "HTTP_LOOPBACK"
+    tls_enabled: Literal[False] = False
+    listener_autostart: Literal[False] = False
+    external_ingress_permitted: Literal[False] = False
+    business_event_ingress_permitted: Literal[False] = False
+    listener_manifest_id: Sha256Hex
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(value, ("listener_profile_id",))
+        profile = handler(payload)
+        _verify_computed_claims(profile, claims)
+        return profile
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def listener_profile_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-feishu-loopback-challenge-listener-profile",
+                1,
+                self.inbound_profile_id,
+                self.bind_host,
+                self.requested_port,
+                self.callback_path,
+                self.request_method,
+                self.request_content_type,
+                self.raw_body_max_bytes,
+                self.transport_kind,
+                self.tls_enabled,
+                self.listener_autostart,
+                self.external_ingress_permitted,
+                self.business_event_ingress_permitted,
+                self.listener_manifest_id,
+            ]
+        )
+
+
 class M8FeishuUrlChallengeVerificationReceiptV1(FrozenContractModel):
     """Hash-only proof that one encrypted URL challenge may be answered."""
 
@@ -321,6 +377,7 @@ class M8FeishuUrlChallengeVerificationReceiptV1(FrozenContractModel):
 
 
 __all__ = [
+    "M8FeishuLoopbackChallengeListenerProfileV1",
     "M8FeishuUrlChallengeIngressRequestV1",
     "M8FeishuUrlChallengeVerificationReceiptV1",
 ]
