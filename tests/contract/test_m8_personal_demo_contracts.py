@@ -14,7 +14,10 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
 )
-from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoApiProfileV1
+from labcourt.contracts.m8_personal_demo_api import (
+    M8PersonalDemoApiProfileV1,
+    M8PersonalDemoLocalAccessV1,
+)
 from labcourt.schema_registry import SCHEMA_MODELS
 
 
@@ -71,6 +74,7 @@ def test_personal_demo_schemas_are_exported() -> None:
         M8PersonalDemoBootstrapReceiptV1
     )
     assert SCHEMA_MODELS["m8-personal-demo-api-profile-v1"] is M8PersonalDemoApiProfileV1
+    assert SCHEMA_MODELS["m8-personal-demo-local-access-v1"] is M8PersonalDemoLocalAccessV1
 
 
 def test_api_profile_keeps_plaintext_tokens_out_of_authority() -> None:
@@ -103,3 +107,19 @@ def test_api_profile_keeps_plaintext_tokens_out_of_authority() -> None:
     assert profile.base_url == "http://127.0.0.1:8877"
     assert profile.plaintext_demo_tokens_in_authority is False
     assert "labcourt-personal-demo-leader-token" not in profile.model_dump_json()
+
+
+def test_local_access_contract_redacts_role_tokens_on_serialization() -> None:
+    access = M8PersonalDemoLocalAccessV1(
+        base_url="http://127.0.0.1:8877",
+        tokens={
+            "leader": "local-demo-leader-secret",
+            "operations": "local-demo-operations-secret",
+            "safety": "local-demo-safety-secret",
+            "student": "local-demo-student-secret",
+        },
+    )
+
+    serialized = access.model_dump_json()
+    assert "local-demo-safety-secret" not in serialized
+    assert access.tokens.safety.get_secret_value() == "local-demo-safety-secret"

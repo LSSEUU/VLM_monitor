@@ -24,8 +24,16 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert isinstance(api, TyperCommand)
     api_options = {option for parameter in api.params for option in parameter.opts}
     assert {"--output", "--port", "--check", "--json"} <= api_options
+    case_action = demo.commands["case-action"]
+    assert isinstance(case_action, TyperCommand)
+    action_options = {option for parameter in case_action.params for option in parameter.opts}
+    assert {"--action", "--reason", "--output", "--confirmed", "--json"} <= action_options
 
-    for name in ("labcourt-demo-bootstrap.ps1", "labcourt-demo-api.ps1"):
+    for name in (
+        "labcourt-demo-bootstrap.ps1",
+        "labcourt-demo-api.ps1",
+        "labcourt-demo-case-action.ps1",
+    ):
         script = PROJECT_ROOT / "scripts" / "windows" / name
         parsed = subprocess.run(
             [

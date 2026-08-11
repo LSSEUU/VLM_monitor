@@ -11,6 +11,11 @@ import typer
 
 from labcourt.application.m8_personal_demo_api import assemble_m8_personal_demo_api
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
+from labcourt.application.m8_personal_demo_case_action import (
+    M8PersonalDemoCaseActionError,
+    execute_m8_personal_demo_case_action,
+)
+from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoOperatorAction
 from labcourt.exceptions import LabCourtError
 
 
@@ -139,6 +144,59 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             assembly.server.serve_forever()
         finally:
             assembly.server.server_close()
+
+    @demo.command("case-action")
+    def case_action(
+        action: Annotated[M8PersonalDemoOperatorAction, typer.Option("--action")],
+        reason: Annotated[str, typer.Option("--reason", min=1, max=2048)],
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        confirmed: Annotated[
+            bool,
+            typer.Option("--confirmed", help="Explicit human confirmation for one action."),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            run = execute_m8_personal_demo_case_action(
+                access_path=output / "api-access.json",
+                bootstrap_receipt_path=output / "bootstrap-receipt.json",
+                action=action,
+                reason_summary=reason,
+                confirmed=confirmed,
+            )
+            action_directory = output / "case-actions"
+            action_directory.mkdir(parents=True, exist_ok=True)
+            receipt_path = action_directory / f"{run.receipt.commit_receipt_id}.json"
+            _write_exact(
+                receipt_path,
+                (run.receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (
+            LabCourtError,
+            M8PersonalDemoCaseActionError,
+            OSError,
+            TypeError,
+            ValueError,
+            sqlite3.DatabaseError,
+        ) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "action": run.request.action.value,
+            "case_id": run.receipt.case_id,
+            "case_version": run.receipt.case_version,
+            "commit_receipt_id": run.receipt.commit_receipt_id,
+            "explicit_human_confirmation": run.request.explicit_human_confirmation,
+            "status": run.receipt.status.value,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                f"LabCourt PERSONAL DEMO Case action committed: "
+                f"{run.request.action.value} -> {run.receipt.status.value}"
+            )
 
 
 __all__ = ["register_m8_demo_commands"]

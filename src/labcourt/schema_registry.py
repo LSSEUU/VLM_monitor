@@ -409,7 +409,11 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
 )
-from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoApiProfileV1
+from labcourt.contracts.m8_personal_demo_api import (
+    M8PersonalDemoApiProfileV1,
+    M8PersonalDemoLocalAccessV1,
+    M8PersonalDemoRoleTokensV1,
+)
 from labcourt.contracts.m8_projection_views import M8OperationsProjectionViewV1
 from labcourt.contracts.m8_projections import (
     M8OperationsProjectionV1,
@@ -838,6 +842,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-personal-demo-actor-binding-v1": M8PersonalDemoActorBindingV1,
     "m8-personal-demo-api-profile-v1": M8PersonalDemoApiProfileV1,
     "m8-personal-demo-bootstrap-receipt-v1": M8PersonalDemoBootstrapReceiptV1,
+    "m8-personal-demo-local-access-v1": M8PersonalDemoLocalAccessV1,
+    "m8-personal-demo-role-tokens-v1": M8PersonalDemoRoleTokensV1,
     "m8-operations-projection-v1": M8OperationsProjectionV1,
     "m8-operations-projection-view-v1": M8OperationsProjectionViewV1,
     "m8-projection-map-node-v1": M8ProjectionMapNodeV1,

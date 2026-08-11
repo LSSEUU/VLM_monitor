@@ -28,7 +28,10 @@ from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
 )
-from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoApiProfileV1
+from labcourt.contracts.m8_personal_demo_api import (
+    M8PersonalDemoApiProfileV1,
+    M8PersonalDemoLocalAccessV1,
+)
 from labcourt.m8_api_server import M8ApiHttpServer, build_m8_api_server
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
@@ -80,13 +83,15 @@ class M8PersonalDemoApiAssembly:
     profile: M8PersonalDemoApiProfileV1
 
     def local_access_document(self) -> dict[str, object]:
-        return {
+        document: dict[str, object] = {
             "schema_version": "m8-personal-demo-local-access-v1",
             "base_url": self.profile.base_url,
             "personal_demo_only": True,
             "production_ready": False,
             "tokens": dict(sorted(M8_PERSONAL_DEMO_ROLE_TOKENS.items())),
         }
+        M8PersonalDemoLocalAccessV1.model_validate(document)
+        return document
 
 
 def assemble_m8_personal_demo_api(

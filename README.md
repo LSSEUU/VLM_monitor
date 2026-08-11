@@ -114,6 +114,8 @@ raw signal、紧急待核实案件和运营投影，供后续本机 API 与独�
 [`docs/m8-personal-demo.md`](docs/m8-personal-demo.md)。
 双击 `labcourt-demo-api.cmd` 会先绑定后关闭完成预检，再在 `127.0.0.1:8877` 启动现有 authenticated M8
 API；四角色的本机演示 token 只写入同一 ignored 目录的 `api-access.json`，终端不显示明文。
+API 运行时可双击 `labcourt-demo-case-action.cmd`，选择确认、驳回、请求补证、返回核实或结案，并输入
+`APPLY` 完成一次安全负责人显式动作；脚本不提供领导或运维审批入口。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

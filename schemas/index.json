@@ -1738,6 +1738,18 @@
       "name": "m8-personal-demo-bootstrap-receipt-v1"
     },
     {
+      "file": "m8-personal-demo-local-access-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo_api.M8PersonalDemoLocalAccessV1",
+      "name": "m8-personal-demo-local-access-v1"
+    },
+    {
+      "file": "m8-personal-demo-role-tokens-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo_api.M8PersonalDemoRoleTokensV1",
+      "name": "m8-personal-demo-role-tokens-v1"
+    },
+    {
       "file": "m8-production-adapter-candidate-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8ProductionAdapterCandidateAuthorityV1",

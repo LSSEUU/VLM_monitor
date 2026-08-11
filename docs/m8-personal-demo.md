@@ -56,3 +56,16 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 
 这些固定 token 不是生产身份凭据，API 只绑定 loopback，`production_ready=false`。未来接校园 OIDC 时替换
 认证 adapter，不改变案件 capability 或审计契约。
+
+## 安全负责人案件处置
+
+保持 API 终端运行，再双击 `labcourt-demo-case-action.cmd`。依次输入动作、人工理由，并输入 `APPLY`。允许的
+动作及合法源状态为：
+
+- `CONFIRM` / `REJECT` / `REQUEST_EVIDENCE`：从 `PENDING_VERIFICATION` 执行；
+- `RETURN_TO_VERIFICATION`：从 `EVIDENCE_REQUESTED` 返回；
+- `RESOLVE`：从 `CONFIRMED` 结案。
+
+脚本读取本机 safety token，但不会打印或作为命令行参数传递。客户端先读取服务器当前案件版本和 authority
+hash，再构造既有 `M8ApiCaseTransitionRequestV1`；并发或非法状态会被 API 拒绝。成功回执保存在 ignored
+目录的 `case-actions/`。该入口没有领导/运维审批模式，也不支持绕过 `APPLY`。

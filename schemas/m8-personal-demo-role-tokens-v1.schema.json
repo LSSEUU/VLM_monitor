@@ -1,0 +1,53 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-role-tokens-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "leader": {
+      "format": "password",
+      "maxLength": 256,
+      "minLength": 16,
+      "title": "Leader",
+      "type": "string",
+      "writeOnly": true
+    },
+    "operations": {
+      "format": "password",
+      "maxLength": 256,
+      "minLength": 16,
+      "title": "Operations",
+      "type": "string",
+      "writeOnly": true
+    },
+    "safety": {
+      "format": "password",
+      "maxLength": 256,
+      "minLength": 16,
+      "title": "Safety",
+      "type": "string",
+      "writeOnly": true
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-role-tokens-v1",
+      "default": "m8-personal-demo-role-tokens-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "student": {
+      "format": "password",
+      "maxLength": 256,
+      "minLength": 16,
+      "title": "Student",
+      "type": "string",
+      "writeOnly": true
+    }
+  },
+  "required": [
+    "leader",
+    "operations",
+    "safety",
+    "student"
+  ],
+  "title": "M8PersonalDemoRoleTokensV1",
+  "type": "object"
+}

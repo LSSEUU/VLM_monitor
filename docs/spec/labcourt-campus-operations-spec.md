@@ -305,6 +305,11 @@ API 必须从该 SQLite authority 解引用角色和案件，不能用 bootstrap
 check；领导的投影视图只含重大案件且不能迁移 Case，运维不得读取案件，学生不得读取运营投影，安全负责人
 关键迁移仍需 `explicit_human_confirmation=true` 并由服务端解析 current actor authority。
 
+个人 Demo 可提供 safety-officer 专用的 loopback 客户端，允许 `CONFIRM`、`REJECT`、`REQUEST_EVIDENCE`、
+`RETURN_TO_VERIFICATION`、`RESOLVE` 五个既有动作。客户端必须先读取 current Case version/document hash，
+使用既有 typed transition request，取得独立 `APPLY` 确认后只提交一次；不得提供领导/运维审批模式、自动重试
+或客户端自报 actor authority。响应必须按 commit receipt 严格解析并写入 ignored 本机目录。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

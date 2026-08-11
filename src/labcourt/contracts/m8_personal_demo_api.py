@@ -2,15 +2,50 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import Literal, Self
 
-from pydantic import Field, computed_field, model_validator
+from pydantic import Field, SecretStr, computed_field, model_validator
 from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from labcourt.contracts.base import FrozenContractModel
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m8_api import M8ApiCredentialCatalogAuthorityV1
+
+
+class M8PersonalDemoOperatorAction(StrEnum):
+    CONFIRM = "CONFIRM"
+    REJECT = "REJECT"
+    REQUEST_EVIDENCE = "REQUEST_EVIDENCE"
+    RETURN_TO_VERIFICATION = "RETURN_TO_VERIFICATION"
+    RESOLVE = "RESOLVE"
+
+
+class M8PersonalDemoRoleTokensV1(FrozenContractModel):
+    schema_version: Literal["m8-personal-demo-role-tokens-v1"] = "m8-personal-demo-role-tokens-v1"
+    leader: SecretStr = Field(min_length=16, max_length=256)
+    operations: SecretStr = Field(min_length=16, max_length=256)
+    safety: SecretStr = Field(min_length=16, max_length=256)
+    student: SecretStr = Field(min_length=16, max_length=256)
+
+
+class M8PersonalDemoLocalAccessV1(FrozenContractModel):
+    schema_version: Literal["m8-personal-demo-local-access-v1"] = "m8-personal-demo-local-access-v1"
+    base_url: str = Field(min_length=18, max_length=64)
+    personal_demo_only: Literal[True] = True
+    production_ready: Literal[False] = False
+    tokens: M8PersonalDemoRoleTokensV1
+
+    @model_validator(mode="after")
+    def validate_loopback_url(self) -> Self:
+        prefix = "http://127.0.0.1:"
+        if not self.base_url.startswith(prefix):
+            raise ValueError("M8 personal Demo access must use HTTP loopback")
+        port = self.base_url.removeprefix(prefix)
+        if not port.isascii() or not port.isdigit() or not 1 <= int(port) <= 65_535:
+            raise ValueError("M8 personal Demo access port is invalid")
+        return self
 
 
 class M8PersonalDemoApiProfileV1(FrozenContractModel):
@@ -87,4 +122,9 @@ class M8PersonalDemoApiProfileV1(FrozenContractModel):
         )
 
 
-__all__ = ["M8PersonalDemoApiProfileV1"]
+__all__ = [
+    "M8PersonalDemoApiProfileV1",
+    "M8PersonalDemoLocalAccessV1",
+    "M8PersonalDemoOperatorAction",
+    "M8PersonalDemoRoleTokensV1",
+]
