@@ -41,8 +41,12 @@ encrypted webhook profile、未验证 ingress request 与 hash-only verified
 `im.message.receive_v1` receipt；按 provider `message_id` 防重放、按 `parent_id` 关联 outbound message，且
 验证回执本身不能提交 reply 或改变 Case。M8.7f2 已增加短生命周期可清零 secret lease、原始 body
 SHA-256 签名/严格事件验证服务，以及 migration 0009 的 append-only encrypted/decrypted/content raw store；
-provider `message_id` 在 SQLite 中唯一，异证据重放 fail closed。AES-256-CBC 只定义了可注入 primitive port，
-当前测试使用 deterministic fake，尚未选择生产密码库、开放公网 webhook 或保存真实学生自由文本。独立 UI 任务
+provider `message_id` 在 SQLite 中唯一，异证据重放 fail closed。M8.7f3 已按当前 target/actor、连续通知历史与
+exact outbound provider receipt 授权学生普通说明，并在同一 SQLite 事务中追加 `RESPONDED` 与 reply ledger；
+它不会推断申诉、改变 Case 或形成处分。M8.7f4 增加了显式环境 secret resolver、可选且审计锁定的
+`cryptography` AES-256-CBC adapter，以及独立的 encrypted URL challenge 验证边界。challenge 清文仅存在于
+瞬时 JSON 响应，receipt 只保存 hash/reference；它不激活公网入口或业务事件。仓库仍未开放公网 webhook、
+保存真实学生自由文本或取得真实飞书租户验证证据。独立 UI 任务
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见

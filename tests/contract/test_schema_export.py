@@ -244,6 +244,8 @@ EXPECTED_SCHEMA_MODES = {
     "m8-feishu-sandbox-runtime-config-v1": "serialization",
     "m8-feishu-sandbox-send-receipt-v1": "serialization",
     "m8-feishu-token-acquisition-receipt-v1": "serialization",
+    "m8-feishu-url-challenge-ingress-request-v1": "serialization",
+    "m8-feishu-url-challenge-verification-receipt-v1": "serialization",
     "m8-feishu-webhook-ingress-request-v1": "serialization",
     "m8-notification-authority-v1": "serialization",
     "m8-notification-channel-capability-authority-v1": "serialization",

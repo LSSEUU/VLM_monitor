@@ -1390,6 +1390,18 @@
       "name": "m8-feishu-token-acquisition-receipt-v1"
     },
     {
+      "file": "m8-feishu-url-challenge-ingress-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_challenge.M8FeishuUrlChallengeIngressRequestV1",
+      "name": "m8-feishu-url-challenge-ingress-request-v1"
+    },
+    {
+      "file": "m8-feishu-url-challenge-verification-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_challenge.M8FeishuUrlChallengeVerificationReceiptV1",
+      "name": "m8-feishu-url-challenge-verification-receipt-v1"
+    },
+    {
       "file": "m8-feishu-webhook-ingress-request-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuWebhookIngressRequestV1",

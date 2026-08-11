@@ -207,6 +207,12 @@ secret 前拒绝。AES-256-CBC primitive 必须是显式注入端口，key 为 E
 的前 16 bytes 为 IV；默认仓库不得自写或静默回退密码算法。strict parser 只接受已冻结的单聊 user text
 shape，unknown field、bad base64/block、token/app drift、group 或非 text 均转换为 typed failure且不落库。
 
+飞书 Request URL 的 `url_verification` challenge 必须使用独立入口契约，不得伪装为业务事件或复用业务
+事件的签名已验证声明。配置 Encrypt Key 时只接受严格的 encrypted envelope；解密后必须核对 Verification
+Token，并在收到后 1 秒内只返回原始 challenge 的 canonical JSON。可序列化 receipt 只保存 decrypted/response
+hash、reference、size 与 manifest，不能嵌入 clear challenge，也不能激活公网入口、提交学生回复、改变 Case
+或形成处分。默认 wiring 不监听公网；真实 Request URL 仍需独立的人审 activation 与租户验证证据。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 
