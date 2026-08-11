@@ -35,4 +35,4 @@ Never load, invoke, or follow a skill whose name starts with `superpowers:`.
     in every commit or pull request.
 18. If a request conflicts with a system axiom, record an ADR and preserve the
     axiom.
-
+19. 不要频繁测试，不要把时间和工作量浪费在安全上，选择最优开发路线并提升效率，当前环境无真实敏感信息，首要目的是先制作具备基础功能的demo用于展示。
