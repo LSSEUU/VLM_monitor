@@ -144,6 +144,7 @@ from labcourt.contracts.m6_upgrade_pending_sample_commitment import (
 from labcourt.contracts.m6_upgrade_physical import M6UpgradePhysicalArtifactRef
 from labcourt.contracts.m8_access_cases import (
     M8ActorAuthorityV1,
+    M8AuthorityReference,
     M8OperationalCaseCreateCommandV1,
     M8OperationalCaseTransitionCommandV1,
 )
@@ -185,6 +186,12 @@ from labcourt.contracts.m8_knowledge import (
 from labcourt.contracts.m8_knowledge_persistence import (
     M8KnowledgeAnswerCommitReceiptV1,
     M8KnowledgeCatalogCommitReceiptV1,
+)
+from labcourt.contracts.m8_notification_dispatch_claims import (
+    M8NotificationDispatchCallFenceReceiptV1,
+    M8NotificationDispatchClaimReceiptV1,
+    M8NotificationDispatchClaimStatusV1,
+    M8NotificationDispatchCompletionReceiptV1,
 )
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationChannelCapabilityAuthorityV1,
@@ -460,6 +467,9 @@ from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
 from labcourt.ports.m8_knowledge_repository import M8KnowledgeRepository
 from labcourt.ports.m8_notification_channel import M8NotificationChannelAdapter
+from labcourt.ports.m8_notification_dispatch_claim_repository import (
+    M8NotificationDispatchClaimRepository,
+)
 from labcourt.ports.m8_notification_repository import M8NotificationRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
 from labcourt.ports.m8_projection_reader import M8OperationsProjectionReader
@@ -774,6 +784,94 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
         "read_raw_response": (
             ("self", "raw_response_ref"),
             {"raw_response_ref": str, "return": bytes},
+        ),
+    },
+    M8NotificationDispatchClaimRepository: {
+        "claim_dispatch": (
+            (
+                "self",
+                "request",
+                "worker_owner_token",
+                "lease_expires_at",
+                "claim_manifest_id",
+            ),
+            {
+                "request": M8NotificationDispatchRequestV1,
+                "worker_owner_token": bytes,
+                "lease_expires_at": datetime,
+                "claim_manifest_id": str,
+                "return": M8NotificationDispatchClaimReceiptV1,
+            },
+        ),
+        "fence_dispatch_call": (
+            (
+                "self",
+                "claim_id",
+                "worker_owner_token",
+                "dispatch_authorization_id",
+                "fenced_at",
+                "call_fence_manifest_id",
+            ),
+            {
+                "claim_id": str,
+                "worker_owner_token": bytes,
+                "dispatch_authorization_id": str,
+                "fenced_at": datetime,
+                "call_fence_manifest_id": str,
+                "return": M8NotificationDispatchCallFenceReceiptV1,
+            },
+        ),
+        "complete_dispatch": (
+            (
+                "self",
+                "claim_id",
+                "call_fence_id",
+                "worker_owner_token",
+                "dispatch_result",
+                "raw_artifacts",
+                "raw_storage_manifest_id",
+                "supporting_authorities",
+                "command_manifest_id",
+                "audit_manifest_id",
+                "committed_at",
+                "completion_manifest_id",
+            ),
+            {
+                "claim_id": str,
+                "call_fence_id": str,
+                "worker_owner_token": bytes,
+                "dispatch_result": M8NotificationDispatchResultV1,
+                "raw_artifacts": tuple[bytes, ...],
+                "raw_storage_manifest_id": str,
+                "supporting_authorities": tuple[M8AuthorityReference, ...],
+                "command_manifest_id": str,
+                "audit_manifest_id": str,
+                "committed_at": datetime,
+                "completion_manifest_id": str,
+                "return": M8NotificationDispatchCompletionReceiptV1,
+            },
+        ),
+        "get_dispatch_claim_status": (
+            ("self", "claim_id", "assessed_at"),
+            {
+                "claim_id": str,
+                "assessed_at": datetime,
+                "return": M8NotificationDispatchClaimStatusV1,
+            },
+        ),
+        "get_dispatch_claim_status_for_source": (
+            (
+                "self",
+                "notification_id",
+                "source_notification_version",
+                "assessed_at",
+            ),
+            {
+                "notification_id": str,
+                "source_notification_version": int,
+                "assessed_at": datetime,
+                "return": M8NotificationDispatchClaimStatusV1,
+            },
         ),
     },
     M8NotificationRepository: {

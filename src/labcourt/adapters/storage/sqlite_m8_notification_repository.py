@@ -6,6 +6,7 @@ import hashlib
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -17,11 +18,22 @@ from labcourt.application.m8_notification_workflow import (
 )
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.frames import Sha256Hex
+from labcourt.contracts.m8_access_cases import M8AuthorityReference
 from labcourt.contracts.m8_case_persistence import (
     M8ActorAuthorityCommitReceiptV1,
     M8OperationalCaseCommitReceiptV1,
 )
+from labcourt.contracts.m8_notification_dispatch_claims import (
+    M8NotificationDispatchCallFenceReceiptV1,
+    M8NotificationDispatchClaimReceiptV1,
+    M8NotificationDispatchClaimStatusV1,
+    M8NotificationDispatchCompletionReceiptV1,
+)
 from labcourt.contracts.m8_notification_lifecycle import (
+    M8NotificationAction,
+    M8NotificationDispatchDisposition,
+    M8NotificationDispatchRequestV1,
+    M8NotificationDispatchResultV1,
     M8NotificationInitiatorKind,
     M8NotificationTransitionCommandV1,
 )
@@ -76,6 +88,22 @@ _M8_NOTIFICATION_REQUIRED_OBJECTS = frozenset(
         "m8_notification_version_raw_artifacts_no_update",
         "m8_notification_version_raw_artifacts_no_delete",
         "m8_notification_version_raw_artifacts_no_replace",
+        "m8_notification_dispatch_claims",
+        "idx_m8_notification_dispatch_claims_source",
+        "m8_notification_dispatch_call_fences",
+        "m8_notification_dispatch_completions",
+        "m8_notification_dispatch_claims_validate_current",
+        "m8_notification_dispatch_call_fences_validate_current",
+        "m8_notification_dispatch_completions_validate_transition",
+        "m8_notification_dispatch_claims_no_update",
+        "m8_notification_dispatch_claims_no_delete",
+        "m8_notification_dispatch_claims_no_replace",
+        "m8_notification_dispatch_call_fences_no_update",
+        "m8_notification_dispatch_call_fences_no_delete",
+        "m8_notification_dispatch_call_fences_no_replace",
+        "m8_notification_dispatch_completions_no_update",
+        "m8_notification_dispatch_completions_no_delete",
+        "m8_notification_dispatch_completions_no_replace",
     }
 )
 
@@ -88,6 +116,22 @@ def _validate_sha256(value: str, name: str) -> str:
     ):
         raise ValueError(f"M8 {name} must be lowercase SHA-256 hex")
     return value
+
+
+def _require_utc(value: datetime, name: str) -> datetime:
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != timedelta(0):
+        raise ValueError(f"M8 notification {name} must be timezone-aware UTC")
+    return value
+
+
+def _canonical_utc(value: datetime) -> str:
+    return value.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def _worker_owner_sha256(worker_owner_token: bytes) -> Sha256Hex:
+    if not isinstance(worker_owner_token, bytes) or not 32 <= len(worker_owner_token) <= 256:
+        raise ValueError("M8 notification worker owner token must be 32 through 256 bytes")
+    return hashlib.sha256(worker_owner_token).hexdigest()
 
 
 class SQLiteM8NotificationRepository:
@@ -170,7 +214,7 @@ class SQLiteM8NotificationRepository:
             migrations = connection.execute(
                 """
                 SELECT version, name FROM schema_migrations
-                WHERE version IN (1, 2, 3, 4) ORDER BY version
+                WHERE version IN (1, 2, 3, 4, 8) ORDER BY version
                 """
             ).fetchall()
         except sqlite3.DatabaseError as error:
@@ -183,8 +227,11 @@ class SQLiteM8NotificationRepository:
             (2, "m8_campus_inventory"),
             (3, "m8_sensor_cache"),
             (4, "m8_notification_outbox"),
+            (8, "m8_notification_dispatch_claims"),
         ):
-            raise RepositoryIntegrityError("M8 notification migrations 0001-0004 are not installed")
+            raise RepositoryIntegrityError(
+                "M8 notification migrations 0001-0004 and 0008 are not installed"
+            )
         observed = {
             _row_str(row, "name")
             for row in connection.execute(
@@ -408,6 +455,294 @@ class SQLiteM8NotificationRepository:
             self._insert_notification(connection, candidate)
             return candidate
 
+    def claim_dispatch(
+        self,
+        request: M8NotificationDispatchRequestV1,
+        worker_owner_token: bytes,
+        lease_expires_at: datetime,
+        claim_manifest_id: str,
+    ) -> M8NotificationDispatchClaimReceiptV1:
+        if not isinstance(request, M8NotificationDispatchRequestV1):
+            raise TypeError("M8 notification dispatch claim requires a typed request")
+        owner_sha256 = _worker_owner_sha256(worker_owner_token)
+        expiry = _require_utc(lease_expires_at, "dispatch claim lease_expires_at")
+        claim_manifest = _validate_sha256(claim_manifest_id, "dispatch claim manifest")
+        try:
+            candidate = M8NotificationDispatchClaimReceiptV1(
+                request=request,
+                worker_owner_sha256=owner_sha256,
+                claimed_at=request.dispatched_at,
+                lease_expires_at=expiry,
+                claim_manifest_id=claim_manifest,
+                repository_manifest_id=self._repository_manifest_id,
+            )
+        except ValueError as error:
+            raise ConcurrentModification(str(error)) from error
+        with self._immediate() as connection:
+            existing_row = connection.execute(
+                """
+                SELECT * FROM m8_notification_dispatch_claims
+                WHERE notification_id = ? AND source_notification_version = ?
+                """,
+                (candidate.notification_id, candidate.source_notification_version),
+            ).fetchone()
+            if existing_row is not None:
+                existing = self._load_dispatch_claim_row(existing_row)
+                if existing == candidate:
+                    return existing
+                raise ConcurrentModification(
+                    "M8 notification source version already has a dispatch claim"
+                )
+            before = self._load_current_notification_for_write(
+                connection,
+                candidate.notification_id,
+            )
+            expected_source = (
+                before.notification_version,
+                before.notification_document_sha256,
+                before.status,
+                before.audit_event.notification_authority.plan,
+            )
+            observed_source = (
+                request.source_notification_version,
+                request.source_notification_authority_sha256,
+                request.source_status,
+                request.plan,
+            )
+            if expected_source != observed_source or before.status != M8NotificationStatus.QUEUED:
+                raise ConcurrentModification(
+                    "M8 dispatch claim does not bind the current QUEUED notification"
+                )
+            self._insert_dispatch_claim(connection, candidate)
+            return candidate
+
+    def fence_dispatch_call(
+        self,
+        claim_id: str,
+        worker_owner_token: bytes,
+        dispatch_authorization_id: str,
+        fenced_at: datetime,
+        call_fence_manifest_id: str,
+    ) -> M8NotificationDispatchCallFenceReceiptV1:
+        claim_reference = _validate_sha256(claim_id, "dispatch claim_id")
+        owner_sha256 = _worker_owner_sha256(worker_owner_token)
+        authorization = _validate_sha256(
+            dispatch_authorization_id,
+            "dispatch authorization",
+        )
+        fence_time = _require_utc(fenced_at, "dispatch call fenced_at")
+        fence_manifest = _validate_sha256(
+            call_fence_manifest_id,
+            "dispatch call fence manifest",
+        )
+        with self._immediate() as connection:
+            claim = self._load_dispatch_claim_by_id(connection, claim_reference)
+            if claim.worker_owner_sha256 != owner_sha256:
+                raise ConcurrentModification("M8 dispatch claim belongs to another worker")
+            existing = connection.execute(
+                "SELECT 1 FROM m8_notification_dispatch_call_fences WHERE claim_id = ?",
+                (claim.claim_id,),
+            ).fetchone()
+            if existing is not None:
+                raise ConcurrentModification(
+                    "M8 dispatch claim already crossed the one-shot call boundary"
+                )
+            before = self._load_current_notification_for_write(connection, claim.notification_id)
+            if (
+                before.notification_version != claim.source_notification_version
+                or before.notification_document_sha256
+                != claim.request.source_notification_authority_sha256
+                or before.status != M8NotificationStatus.QUEUED
+            ):
+                raise ConcurrentModification(
+                    "M8 dispatch call fence no longer owns the current notification"
+                )
+            try:
+                candidate = M8NotificationDispatchCallFenceReceiptV1(
+                    claim=claim,
+                    dispatch_authorization_id=authorization,
+                    fenced_at=fence_time,
+                    call_fence_manifest_id=fence_manifest,
+                    repository_manifest_id=self._repository_manifest_id,
+                )
+            except ValueError as error:
+                raise ConcurrentModification(str(error)) from error
+            self._insert_dispatch_call_fence(connection, candidate)
+            return candidate
+
+    def complete_dispatch(
+        self,
+        claim_id: str,
+        call_fence_id: str,
+        worker_owner_token: bytes,
+        dispatch_result: M8NotificationDispatchResultV1,
+        raw_artifacts: tuple[bytes, ...],
+        raw_storage_manifest_id: str,
+        supporting_authorities: tuple[M8AuthorityReference, ...],
+        command_manifest_id: str,
+        audit_manifest_id: str,
+        committed_at: datetime,
+        completion_manifest_id: str,
+    ) -> M8NotificationDispatchCompletionReceiptV1:
+        claim_reference = _validate_sha256(claim_id, "dispatch claim_id")
+        fence_reference = _validate_sha256(call_fence_id, "dispatch call_fence_id")
+        owner_sha256 = _worker_owner_sha256(worker_owner_token)
+        if not isinstance(dispatch_result, M8NotificationDispatchResultV1):
+            raise TypeError("M8 dispatch completion requires a typed result")
+        if not isinstance(raw_artifacts, tuple) or any(
+            not isinstance(item, bytes) for item in raw_artifacts
+        ):
+            raise TypeError("M8 dispatch completion raw artifacts must be exact bytes")
+        if not isinstance(supporting_authorities, tuple) or any(
+            not isinstance(item, M8AuthorityReference) for item in supporting_authorities
+        ):
+            raise TypeError("M8 dispatch completion requires typed supporting authorities")
+        raw_manifest = _validate_sha256(
+            raw_storage_manifest_id,
+            "dispatch raw storage manifest",
+        )
+        command_manifest = _validate_sha256(
+            command_manifest_id,
+            "dispatch command manifest",
+        )
+        audit_manifest = _validate_sha256(audit_manifest_id, "dispatch audit manifest")
+        completion_time = _require_utc(committed_at, "dispatch completion committed_at")
+        completion_manifest = _validate_sha256(
+            completion_manifest_id,
+            "dispatch completion manifest",
+        )
+        with self._immediate() as connection:
+            claim = self._load_dispatch_claim_by_id(connection, claim_reference)
+            if claim.worker_owner_sha256 != owner_sha256:
+                raise ConcurrentModification("M8 dispatch claim belongs to another worker")
+            fence = self._load_dispatch_call_fence_by_claim(connection, claim.claim_id)
+            if fence.call_fence_id != fence_reference:
+                raise ConcurrentModification("M8 dispatch completion uses another call fence")
+            existing_row = connection.execute(
+                "SELECT * FROM m8_notification_dispatch_completions WHERE claim_id = ?",
+                (claim.claim_id,),
+            ).fetchone()
+            if existing_row is not None:
+                existing = self._load_dispatch_completion_row(connection, existing_row)
+                transition = existing.notification_commit.audit_event.transition_command
+                if (
+                    existing.dispatch_result == dispatch_result
+                    and existing.committed_at == completion_time
+                    and existing.completion_manifest_id == completion_manifest
+                    and transition is not None
+                    and transition.supporting_authorities == supporting_authorities
+                    and transition.command_manifest_id == command_manifest
+                    and existing.notification_commit.audit_event.audit_manifest_id == audit_manifest
+                ):
+                    self._verify_retry_raw(
+                        existing.notification_commit,
+                        raw_artifacts,
+                        raw_manifest,
+                    )
+                    return existing
+                raise ConcurrentModification(
+                    "M8 dispatch claim already completed with different authority"
+                )
+            if dispatch_result.request != claim.request:
+                raise ConcurrentModification("M8 dispatch result belongs to another claim")
+            before = self._load_current_notification_for_write(connection, claim.notification_id)
+            if (
+                before.notification_version != claim.source_notification_version
+                or before.notification_document_sha256
+                != claim.request.source_notification_authority_sha256
+                or before.status != M8NotificationStatus.QUEUED
+            ):
+                raise ConcurrentModification(
+                    "M8 dispatch completion no longer owns the current notification"
+                )
+            try:
+                command = M8NotificationTransitionCommandV1(
+                    notification_id=claim.notification_id,
+                    source_notification_version=claim.source_notification_version,
+                    source_notification_authority_sha256=(
+                        claim.request.source_notification_authority_sha256
+                    ),
+                    source_status=M8NotificationStatus.QUEUED,
+                    action=(
+                        M8NotificationAction.RECORD_SENT
+                        if dispatch_result.disposition == M8NotificationDispatchDisposition.ACCEPTED
+                        else M8NotificationAction.RECORD_FAILED
+                    ),
+                    initiator_kind=M8NotificationInitiatorKind.CHANNEL_ADAPTER,
+                    dispatch_result=dispatch_result,
+                    supporting_authorities=supporting_authorities,
+                    explicit_human_confirmation=False,
+                    occurred_at=dispatch_result.completed_at,
+                    command_manifest_id=command_manifest,
+                )
+                notification_commit = build_notification_transition_commit(
+                    before,
+                    command,
+                    raw_artifacts,
+                    raw_manifest,
+                    None,
+                    audit_manifest,
+                    self._repository_manifest_id,
+                )
+                completion = M8NotificationDispatchCompletionReceiptV1(
+                    claim=claim,
+                    call_fence=fence,
+                    dispatch_result=dispatch_result,
+                    notification_commit=notification_commit,
+                    committed_at=completion_time,
+                    completion_manifest_id=completion_manifest,
+                    repository_manifest_id=self._repository_manifest_id,
+                )
+            except ValueError as error:
+                raise ConcurrentModification(str(error)) from error
+            for raw_receipt, raw_bytes in zip(
+                notification_commit.raw_artifact_receipts,
+                raw_artifacts,
+                strict=True,
+            ):
+                self._insert_or_verify_raw(connection, raw_receipt, raw_bytes)
+            self._insert_notification(connection, notification_commit)
+            self._insert_dispatch_completion(connection, completion)
+            return completion
+
+    def get_dispatch_claim_status(
+        self,
+        claim_id: str,
+        assessed_at: datetime,
+    ) -> M8NotificationDispatchClaimStatusV1:
+        claim_reference = _validate_sha256(claim_id, "dispatch claim_id")
+        assessment_time = _require_utc(assessed_at, "dispatch claim assessed_at")
+        with self._read() as connection:
+            claim = self._load_dispatch_claim_by_id(connection, claim_reference)
+            return self._load_dispatch_claim_status(connection, claim, assessment_time)
+
+    def get_dispatch_claim_status_for_source(
+        self,
+        notification_id: str,
+        source_notification_version: int,
+        assessed_at: datetime,
+    ) -> M8NotificationDispatchClaimStatusV1:
+        require_reference_token(notification_id, "M8 notification dispatch source")
+        if (
+            not isinstance(source_notification_version, int)
+            or isinstance(source_notification_version, bool)
+            or source_notification_version < 1
+        ):
+            raise ValueError("M8 notification dispatch source version must be positive")
+        assessment_time = _require_utc(assessed_at, "dispatch claim assessed_at")
+        with self._read() as connection:
+            row = connection.execute(
+                """
+                SELECT * FROM m8_notification_dispatch_claims
+                WHERE notification_id = ? AND source_notification_version = ?
+                """,
+                (notification_id, source_notification_version),
+            ).fetchone()
+            if row is None:
+                raise EvidenceMissing("M8 notification dispatch claim was not found")
+            claim = self._load_dispatch_claim_row(row)
+            return self._load_dispatch_claim_status(connection, claim, assessment_time)
+
     def list_notifications_by_status(
         self,
         status: M8NotificationStatus,
@@ -491,6 +826,200 @@ class SQLiteM8NotificationRepository:
             if row is None:
                 raise EvidenceMissing("M8 notification raw artifact was not found")
             return self._validated_raw_bytes(row)
+
+    def _load_current_notification_for_write(
+        self,
+        connection: sqlite3.Connection,
+        notification_id: str,
+    ) -> M8NotificationCommitReceiptV1:
+        row = connection.execute(
+            """
+            SELECT * FROM m8_notification_versions
+            WHERE notification_id = ? ORDER BY notification_version DESC LIMIT 1
+            """,
+            (notification_id,),
+        ).fetchone()
+        if row is None:
+            raise EvidenceMissing("M8 notification was not found")
+        return self._load_notification_row(connection, row)
+
+    def _load_dispatch_claim_by_id(
+        self,
+        connection: sqlite3.Connection,
+        claim_id: str,
+    ) -> M8NotificationDispatchClaimReceiptV1:
+        row = connection.execute(
+            "SELECT * FROM m8_notification_dispatch_claims WHERE claim_id = ?",
+            (claim_id,),
+        ).fetchone()
+        if row is None:
+            raise EvidenceMissing("M8 notification dispatch claim was not found")
+        return self._load_dispatch_claim_row(row)
+
+    def _load_dispatch_claim_row(
+        self,
+        row: sqlite3.Row,
+    ) -> M8NotificationDispatchClaimReceiptV1:
+        raw = _row_str(row, "receipt_json")
+        try:
+            receipt = M8NotificationDispatchClaimReceiptV1.model_validate_json(raw)
+        except ValidationError as error:
+            raise RepositoryIntegrityError(
+                "persisted M8 notification dispatch claim is invalid"
+            ) from error
+        if (
+            canonical_json(receipt.model_dump(mode="json")) != raw
+            or receipt.claim_id != _row_str(row, "claim_id")
+            or receipt.notification_id != _row_str(row, "notification_id")
+            or receipt.source_notification_version != _row_int(row, "source_notification_version")
+            or receipt.attempt_number != _row_int(row, "attempt_number")
+            or receipt.request.dispatch_request_id != _row_str(row, "dispatch_request_id")
+            or receipt.worker_owner_sha256 != _row_str(row, "worker_owner_sha256")
+            or _canonical_utc(receipt.claimed_at) != _row_str(row, "claimed_at")
+            or _canonical_utc(receipt.lease_expires_at) != _row_str(row, "lease_expires_at")
+            or receipt.claim_manifest_id != _row_str(row, "claim_manifest_id")
+            or receipt.repository_manifest_id != self._repository_manifest_id
+            or receipt.repository_manifest_id != _row_str(row, "repository_manifest_id")
+        ):
+            raise RepositoryIntegrityError(
+                "M8 notification dispatch claim index conflicts with receipt"
+            )
+        return receipt
+
+    def _load_dispatch_call_fence_by_claim(
+        self,
+        connection: sqlite3.Connection,
+        claim_id: str,
+    ) -> M8NotificationDispatchCallFenceReceiptV1:
+        row = connection.execute(
+            "SELECT * FROM m8_notification_dispatch_call_fences WHERE claim_id = ?",
+            (claim_id,),
+        ).fetchone()
+        if row is None:
+            raise EvidenceMissing("M8 notification dispatch call fence was not found")
+        return self._load_dispatch_call_fence_row(row)
+
+    def _load_dispatch_call_fence_row(
+        self,
+        row: sqlite3.Row,
+    ) -> M8NotificationDispatchCallFenceReceiptV1:
+        raw = _row_str(row, "receipt_json")
+        try:
+            receipt = M8NotificationDispatchCallFenceReceiptV1.model_validate_json(raw)
+        except ValidationError as error:
+            raise RepositoryIntegrityError(
+                "persisted M8 notification dispatch call fence is invalid"
+            ) from error
+        if (
+            canonical_json(receipt.model_dump(mode="json")) != raw
+            or receipt.call_fence_id != _row_str(row, "call_fence_id")
+            or receipt.claim.claim_id != _row_str(row, "claim_id")
+            or receipt.dispatch_authorization_id != _row_str(row, "dispatch_authorization_id")
+            or _canonical_utc(receipt.fenced_at) != _row_str(row, "fenced_at")
+            or receipt.call_fence_manifest_id != _row_str(row, "call_fence_manifest_id")
+            or receipt.repository_manifest_id != self._repository_manifest_id
+            or receipt.repository_manifest_id != _row_str(row, "repository_manifest_id")
+        ):
+            raise RepositoryIntegrityError(
+                "M8 notification dispatch call fence index conflicts with receipt"
+            )
+        return receipt
+
+    def _load_dispatch_completion_row(
+        self,
+        connection: sqlite3.Connection,
+        row: sqlite3.Row,
+    ) -> M8NotificationDispatchCompletionReceiptV1:
+        raw = _row_str(row, "receipt_json")
+        try:
+            receipt = M8NotificationDispatchCompletionReceiptV1.model_validate_json(raw)
+        except ValidationError as error:
+            raise RepositoryIntegrityError(
+                "persisted M8 notification dispatch completion is invalid"
+            ) from error
+        if (
+            canonical_json(receipt.model_dump(mode="json")) != raw
+            or receipt.completion_id != _row_str(row, "completion_id")
+            or receipt.claim.claim_id != _row_str(row, "claim_id")
+            or receipt.call_fence.call_fence_id != _row_str(row, "call_fence_id")
+            or receipt.dispatch_result.dispatch_result_id != _row_str(row, "dispatch_result_id")
+            or receipt.notification_commit.notification_id != _row_str(row, "notification_id")
+            or receipt.notification_commit.notification_version
+            != _row_int(row, "notification_version")
+            or receipt.notification_commit.commit_receipt_id
+            != _row_str(row, "notification_commit_receipt_id")
+            or _canonical_utc(receipt.committed_at) != _row_str(row, "committed_at")
+            or receipt.completion_manifest_id != _row_str(row, "completion_manifest_id")
+            or receipt.repository_manifest_id != self._repository_manifest_id
+            or receipt.repository_manifest_id != _row_str(row, "repository_manifest_id")
+        ):
+            raise RepositoryIntegrityError(
+                "M8 notification dispatch completion index conflicts with receipt"
+            )
+        claim_row = connection.execute(
+            "SELECT * FROM m8_notification_dispatch_claims WHERE claim_id = ?",
+            (receipt.claim.claim_id,),
+        ).fetchone()
+        fence_row = connection.execute(
+            "SELECT * FROM m8_notification_dispatch_call_fences WHERE call_fence_id = ?",
+            (receipt.call_fence.call_fence_id,),
+        ).fetchone()
+        notification_row = connection.execute(
+            """
+            SELECT * FROM m8_notification_versions
+            WHERE notification_id = ? AND notification_version = ?
+            """,
+            (
+                receipt.notification_commit.notification_id,
+                receipt.notification_commit.notification_version,
+            ),
+        ).fetchone()
+        if (
+            claim_row is None
+            or fence_row is None
+            or notification_row is None
+            or self._load_dispatch_claim_row(claim_row) != receipt.claim
+            or self._load_dispatch_call_fence_row(fence_row) != receipt.call_fence
+            or self._load_notification_row(connection, notification_row)
+            != receipt.notification_commit
+        ):
+            raise RepositoryIntegrityError(
+                "M8 notification dispatch completion dependencies are incomplete"
+            )
+        return receipt
+
+    def _load_dispatch_claim_status(
+        self,
+        connection: sqlite3.Connection,
+        claim: M8NotificationDispatchClaimReceiptV1,
+        assessed_at: datetime,
+    ) -> M8NotificationDispatchClaimStatusV1:
+        fence_row = connection.execute(
+            "SELECT * FROM m8_notification_dispatch_call_fences WHERE claim_id = ?",
+            (claim.claim_id,),
+        ).fetchone()
+        completion_row = connection.execute(
+            "SELECT * FROM m8_notification_dispatch_completions WHERE claim_id = ?",
+            (claim.claim_id,),
+        ).fetchone()
+        fence = self._load_dispatch_call_fence_row(fence_row) if fence_row is not None else None
+        completion = (
+            self._load_dispatch_completion_row(connection, completion_row)
+            if completion_row is not None
+            else None
+        )
+        try:
+            return M8NotificationDispatchClaimStatusV1(
+                claim=claim,
+                call_fence=fence,
+                completion=completion,
+                assessed_at=assessed_at,
+                repository_manifest_id=self._repository_manifest_id,
+            )
+        except ValueError as error:
+            raise RepositoryIntegrityError(
+                "persisted M8 notification dispatch status is invalid"
+            ) from error
 
     def _load_current_target(
         self,
@@ -713,6 +1242,98 @@ class SQLiteM8NotificationRepository:
             )
         except sqlite3.IntegrityError as error:
             raise ConcurrentModification("M8 notification target append was rejected") from error
+
+    def _insert_dispatch_claim(
+        self,
+        connection: sqlite3.Connection,
+        receipt: M8NotificationDispatchClaimReceiptV1,
+    ) -> None:
+        try:
+            connection.execute(
+                """
+                INSERT INTO m8_notification_dispatch_claims(
+                    claim_id, notification_id, source_notification_version,
+                    attempt_number, dispatch_request_id, worker_owner_sha256,
+                    claimed_at, lease_expires_at, claim_manifest_id,
+                    repository_manifest_id, receipt_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    receipt.claim_id,
+                    receipt.notification_id,
+                    receipt.source_notification_version,
+                    receipt.attempt_number,
+                    receipt.request.dispatch_request_id,
+                    receipt.worker_owner_sha256,
+                    _canonical_utc(receipt.claimed_at),
+                    _canonical_utc(receipt.lease_expires_at),
+                    receipt.claim_manifest_id,
+                    receipt.repository_manifest_id,
+                    canonical_json(receipt.model_dump(mode="json")),
+                ),
+            )
+        except sqlite3.IntegrityError as error:
+            raise ConcurrentModification("M8 dispatch claim append was rejected") from error
+
+    def _insert_dispatch_call_fence(
+        self,
+        connection: sqlite3.Connection,
+        receipt: M8NotificationDispatchCallFenceReceiptV1,
+    ) -> None:
+        try:
+            connection.execute(
+                """
+                INSERT INTO m8_notification_dispatch_call_fences(
+                    call_fence_id, claim_id, dispatch_authorization_id,
+                    fenced_at, call_fence_manifest_id,
+                    repository_manifest_id, receipt_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    receipt.call_fence_id,
+                    receipt.claim.claim_id,
+                    receipt.dispatch_authorization_id,
+                    _canonical_utc(receipt.fenced_at),
+                    receipt.call_fence_manifest_id,
+                    receipt.repository_manifest_id,
+                    canonical_json(receipt.model_dump(mode="json")),
+                ),
+            )
+        except sqlite3.IntegrityError as error:
+            raise ConcurrentModification("M8 dispatch call fence append was rejected") from error
+
+    def _insert_dispatch_completion(
+        self,
+        connection: sqlite3.Connection,
+        receipt: M8NotificationDispatchCompletionReceiptV1,
+    ) -> None:
+        notification = receipt.notification_commit
+        try:
+            connection.execute(
+                """
+                INSERT INTO m8_notification_dispatch_completions(
+                    completion_id, claim_id, call_fence_id, dispatch_result_id,
+                    notification_id, notification_version,
+                    notification_commit_receipt_id, committed_at,
+                    completion_manifest_id, repository_manifest_id, receipt_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    receipt.completion_id,
+                    receipt.claim.claim_id,
+                    receipt.call_fence.call_fence_id,
+                    receipt.dispatch_result.dispatch_result_id,
+                    notification.notification_id,
+                    notification.notification_version,
+                    notification.commit_receipt_id,
+                    _canonical_utc(receipt.committed_at),
+                    receipt.completion_manifest_id,
+                    receipt.repository_manifest_id,
+                    canonical_json(receipt.model_dump(mode="json")),
+                ),
+            )
+        except sqlite3.IntegrityError as error:
+            raise ConcurrentModification("M8 dispatch completion append was rejected") from error
 
     def _insert_or_verify_raw(
         self,
