@@ -22,6 +22,7 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoKnowledgeReceiptV1,
     M8PersonalDemoNotificationReceiptV1,
     M8PersonalDemoPpeCaseReceiptV1,
+    M8PersonalDemoPpeNotificationReceiptV1,
     M8PersonalDemoRecordedMediaReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
@@ -99,6 +100,9 @@ def test_personal_demo_schemas_are_exported() -> None:
     )
     assert SCHEMA_MODELS["m8-personal-demo-ppe-case-receipt-v1"] is (
         M8PersonalDemoPpeCaseReceiptV1
+    )
+    assert SCHEMA_MODELS["m8-personal-demo-ppe-notification-receipt-v1"] is (
+        M8PersonalDemoPpeNotificationReceiptV1
     )
 
 
@@ -293,3 +297,29 @@ def test_ppe_case_receipt_is_only_a_simulated_weak_label_candidate() -> None:
     assert receipt.case_transition_permitted is False
     assert receipt.direct_disciplinary_action_permitted is False
     assert M8PersonalDemoPpeCaseReceiptV1.model_validate_json(receipt.model_dump_json()) == receipt
+
+
+def test_ppe_notification_receipt_is_queued_for_student_without_case_power() -> None:
+    receipt = M8PersonalDemoPpeNotificationReceiptV1(
+        ppe_case_receipt_id="1" * 64,
+        case_id="2" * 64,
+        source_case_version=2,
+        source_case_authority_sha256="3" * 64,
+        target_commit_receipt_id="4" * 64,
+        target_authority_id="5" * 64,
+        notification_id="6" * 64,
+        notification_commit_receipt_id="7" * 64,
+        routed_at=datetime(2026, 8, 11, 9, 0, tzinfo=UTC),
+        offline_card_id="8" * 64,
+        notification_manifest_id="9" * 64,
+    )
+
+    assert receipt.target_actor_id == "student-demo"
+    assert receipt.notification_status == M8NotificationStatus.QUEUED
+    assert receipt.real_delivery_confirmed is False
+    assert receipt.case_transition_permitted is False
+    assert receipt.direct_disciplinary_action_permitted is False
+    assert (
+        M8PersonalDemoPpeNotificationReceiptV1.model_validate_json(receipt.model_dump_json())
+        == receipt
+    )

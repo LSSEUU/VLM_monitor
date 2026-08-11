@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import http.client
 import json
 import threading
 from pathlib import Path
 
 from labcourt.application.m8_personal_demo_api import (
+    M8_PERSONAL_DEMO_ROLE_TOKENS,
     M8PersonalDemoApiAssembly,
     assemble_m8_personal_demo_api,
 )
@@ -14,6 +16,9 @@ from labcourt.application.m8_personal_demo_case_action import (
 )
 from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_recorded_media
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
+from labcourt.application.m8_personal_demo_ppe_notification import (
+    route_m8_personal_demo_ppe_notification,
+)
 from labcourt.application.m8_personal_demo_student_appeal import (
     execute_m8_personal_demo_student_appeal,
 )
@@ -122,6 +127,44 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         assert run.receipt.case_id == ppe.case_id
         assert run.receipt.status.value == "CONFIRMED"
         assert run.request.explicit_human_confirmation is True
+
+        notification = route_m8_personal_demo_ppe_notification(
+            root / "labcourt.sqlite3",
+            ppe,
+        )
+        replay = route_m8_personal_demo_ppe_notification(
+            root / "labcourt.sqlite3",
+            ppe,
+        )
+        assert replay == notification
+        assert notification.receipt.notification_status.value == "QUEUED"
+        assert notification.receipt.target_actor_id == "student-demo"
+        assert notification.card.case_transition_permitted is False
+        assert {action.value for action in notification.card.available_actions} == {
+            "ACKNOWLEDGE",
+            "REQUEST_APPEAL",
+            "SUBMIT_EXPLANATION",
+        }
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", assembly.server.server_port, timeout=3
+        )
+        connection.request(
+            "GET",
+            "/api/m8/notifications",
+            headers={
+                "Authorization": (
+                    f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS['student']}"
+                )
+            },
+        )
+        response = connection.getresponse()
+        student_notifications = json.loads(response.read())
+        connection.close()
+        assert response.status == 200
+        assert len(student_notifications) == 1
+        assert student_notifications[0]["notification_id"] == (
+            notification.receipt.notification_id
+        )
 
         appeal = execute_m8_personal_demo_student_appeal(
             access_path=access,

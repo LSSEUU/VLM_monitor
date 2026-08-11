@@ -413,6 +413,7 @@ from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoKnowledgeReceiptV1,
     M8PersonalDemoNotificationReceiptV1,
     M8PersonalDemoPpeCaseReceiptV1,
+    M8PersonalDemoPpeNotificationReceiptV1,
     M8PersonalDemoRecordedMediaReceiptV1,
 )
 from labcourt.contracts.m8_personal_demo_api import (
@@ -848,6 +849,9 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-personal-demo-knowledge-receipt-v1": M8PersonalDemoKnowledgeReceiptV1,
     "m8-personal-demo-notification-receipt-v1": M8PersonalDemoNotificationReceiptV1,
     "m8-personal-demo-ppe-case-receipt-v1": M8PersonalDemoPpeCaseReceiptV1,
+    "m8-personal-demo-ppe-notification-receipt-v1": (
+        M8PersonalDemoPpeNotificationReceiptV1
+    ),
     "m8-personal-demo-local-access-v1": M8PersonalDemoLocalAccessV1,
     "m8-personal-demo-role-tokens-v1": M8PersonalDemoRoleTokensV1,
     "m8-operations-projection-v1": M8OperationsProjectionV1,

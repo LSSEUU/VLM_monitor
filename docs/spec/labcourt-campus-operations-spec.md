@@ -348,6 +348,9 @@ token 并要求独立显式确认；一键启动不得调用关键 transition。
 学生 PPE 申诉客户端只能解引用 exact PPE receipt、使用 student token，并固定提交
 `SUBMIT_APPEAL/SUBJECT_DISPUTE`；必须读取 current Case version/hash、要求独立显式确认并只允许状态矩阵接受的
 `CONFIRMED|RESOLVED -> APPEALED`。申诉不得自动撤销、结案、改变通知或授予安全负责人权限。
+确认后的 PPE 案件可通过独立离线入口创建 `CASE_UPDATED/CASE_SUBJECT` 学生通知；plan 必须绑定 current confirmed
+Case version/hash、exact student target、GENERAL risk 与 fixed template/policy，并只推进到 `QUEUED`。卡片必须显著
+标注模拟、允许 acknowledgement/explanation/appeal request，同时固定 case transition 和处分权限为 false。
 基础 bootstrap receipt/projection 必须锚定初始切片，后续通知、案件和目录 revision 不得反向改变其 identity。
 Windows 一键启动入口可以顺序编排上述已验证命令，但不得新增隐式 authority 或跳过 API bind preflight。
 它只可覆盖由当前 authority 完全派生的本机 runtime profile/access/knowledge 摘要；bootstrap、catalog、Case、
