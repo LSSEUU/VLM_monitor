@@ -14,6 +14,7 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
     assert set(feishu.commands) >= {
         "outbox-activate",
         "outbox-revoke",
+        "outbox-run-one",
         "outbox-status",
         "webhook-activate",
         "webhook-revoke",
@@ -86,3 +87,20 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
         "--revoked-at",
         "--revocation-manifest-id",
     } <= outbox_revocation_options
+
+    outbox_run = feishu.commands["outbox-run-one"]
+    assert isinstance(outbox_run, TyperCommand)
+    outbox_run_options = {
+        option for parameter in outbox_run.params for option in parameter.opts
+    }
+    assert {
+        "--notification-id",
+        "--candidate-authority-id",
+        "--recipient-binding-authority-id",
+        "--workflow",
+        "--app-id-env",
+        "--app-secret-env",
+        "--receive-id-env",
+        "--worker-token-env",
+        "--runtime-manifest-id",
+    } <= outbox_run_options

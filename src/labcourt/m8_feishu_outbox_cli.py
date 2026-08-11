@@ -12,6 +12,7 @@ from labcourt.application.m8_feishu_outbox_authority import (
     get_m8_feishu_outbox_activation_status,
     revoke_m8_feishu_outbox_activation,
 )
+from labcourt.application.m8_feishu_outbox_runtime import run_m8_feishu_outbox_once
 from labcourt.contracts.m8_feishu_activation import M8FeishuSandboxRevocationReason
 from labcourt.m8_feishu_cli_support import (
     OPERATOR_FAILURES,
@@ -23,6 +24,90 @@ from labcourt.m8_feishu_cli_support import (
 
 
 def register_m8_feishu_outbox_commands(feishu: typer.Typer) -> None:
+    @feishu.command("outbox-run-one")
+    def outbox_run_one(
+        database: Annotated[
+            Path,
+            typer.Option("--database", exists=True, dir_okay=False, readable=True),
+        ],
+        notification_id: Annotated[str, typer.Option("--notification-id")],
+        candidate_authority_id: Annotated[
+            str,
+            typer.Option("--candidate-authority-id"),
+        ],
+        recipient_binding_authority_id: Annotated[
+            str,
+            typer.Option("--recipient-binding-authority-id"),
+        ],
+        workflow: Annotated[
+            Path,
+            typer.Option("--workflow", exists=True, dir_okay=False, readable=True),
+        ],
+        app_id_env: Annotated[str, typer.Option("--app-id-env")],
+        app_secret_env: Annotated[str, typer.Option("--app-secret-env")],
+        receive_id_env: Annotated[str, typer.Option("--receive-id-env")],
+        worker_token_env: Annotated[str, typer.Option("--worker-token-env")],
+        repository_manifest_id: Annotated[
+            str,
+            typer.Option("--repository-manifest-id"),
+        ],
+        assessment_manifest_id: Annotated[
+            str,
+            typer.Option("--assessment-manifest-id"),
+        ],
+        runtime_manifest_id: Annotated[
+            str,
+            typer.Option("--runtime-manifest-id"),
+        ],
+        claim_lease_seconds: Annotated[
+            int,
+            typer.Option("--claim-lease-seconds", min=2, max=900),
+        ] = 60,
+        busy_timeout_ms: Annotated[
+            int,
+            typer.Option("--busy-timeout-ms", min=1, max=60_000),
+        ] = 5_000,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            receipt = run_m8_feishu_outbox_once(
+                database_path=database,
+                notification_id=notification_id,
+                candidate_authority_id=candidate_authority_id,
+                recipient_binding_authority_id=recipient_binding_authority_id,
+                workflow_document=read_document(workflow, "outbox workflow"),
+                app_id_env=app_id_env,
+                app_secret_env=app_secret_env,
+                receive_id_env=receive_id_env,
+                worker_token_env=worker_token_env,
+                repository_manifest_id=repository_manifest_id,
+                assessment_manifest_id=assessment_manifest_id,
+                runtime_manifest_id=runtime_manifest_id,
+                busy_timeout_ms=busy_timeout_ms,
+                claim_lease_seconds=claim_lease_seconds,
+            )
+        except OPERATOR_FAILURES as error:
+            fail("outbox run", error)
+        summary = {
+            "attempt_number": receipt.attempt_number,
+            "automatic_retry_permitted": receipt.automatic_retry_permitted,
+            "notification_id": receipt.notification_id,
+            "notification_status": receipt.notification_status.value,
+            "provider_acceptance_confirmed": receipt.provider_acceptance_confirmed,
+            "real_delivery_confirmed": receipt.real_delivery_confirmed,
+            "run_receipt_id": receipt.run_receipt_id,
+            "unknown_delivery": receipt.unknown_delivery,
+        }
+        echo_summary(
+            summary,
+            json_output,
+            (
+                "Feishu sandbox outbox attempt committed: "
+                f"{receipt.run_receipt_id}; status={receipt.notification_status.value}; "
+                "real delivery remains unconfirmed"
+            ),
+        )
+
     @feishu.command("outbox-activate")
     def outbox_activate(
         database: Annotated[

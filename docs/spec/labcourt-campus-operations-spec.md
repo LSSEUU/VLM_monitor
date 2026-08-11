@@ -262,6 +262,14 @@ dual-human activation intent 与 exact canonical `M8FeishuSandboxRuntimeConfigV1
 revision/active 漂移都必须撤销 external call permission。activation/status/revocation 命令本身不得读取
 App Secret、取得 token 或发送消息；kill switch 必须使用稳定 UTC revocation time 支持 exact retry。
 
+live sandbox outbox operator 只允许显式 one-shot command，不得默认启动 worker、扫描队列或批量发送。每次
+必须绑定 exact current `QUEUED` notification、current outbound candidate、allowlisted recipient binding、
+canonical workflow authority 与显式 manifest；App ID/App Secret/open_id/worker owner token 只能通过具名
+环境变量引用解析，不得成为命令行值、日志或 receipt。任何 secret/reference/hash、activation、recipient 或
+workflow 漂移必须在 claim/provider call 前 fail closed。transport 固定官方 HTTPS host、系统 CA、bounded timeout
+与零自动重试；claim fence 后的 timeout/transport unknown 必须进入待对账，provider acceptance 仍不得声称
+真实送达、改变 Case 或形成处分。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

@@ -73,3 +73,7 @@ URL challenge、`im.message.receive_v1` evidence、回复关联、逐请求 acti
 current、预检成功且反向代理审计证据齐全后，
 才能在飞书后台配置 Request URL 并验证 challenge。provider 接受、HTTP 200 或 challenge 成功都不等于真实
 送达、学生身份确认、案件责任或处分成立。
+
+真实发送验证只使用一条人工选定、已经处于 `QUEUED` 的测试通知，并通过 `outbox-run-one` 指定 exact
+notification/candidate/binding；禁止以现场验收为由开启队列扫描或批量发送。若调用围栏后结果未知，先对账，
+不得重复运行同一通知来“试试看”。

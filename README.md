@@ -72,6 +72,10 @@ M8.7f11 已把既有双人 activation 与单人 kill-switch 状态机接入显�
 M8.7f12 以独立的 `outbox-activate` / `outbox-status` / `outbox-revoke` 暴露同样严格的 sandbox 发送 authority：
 发送 allowlist 还会重算当前收件人 target，activation 不会发送消息，稳定 UTC kill-switch 可精确重试；入站与
 出站授权互不替代，真实联调必须分别满足各自的 current authority。
+M8.7f13 已增加显式 `outbox-run-one`：一次只消费一条 current `QUEUED` 通知和一个 exact allowlisted binding，
+从具名环境变量短暂解析 App ID/App Secret/open_id/worker token，使用固定 `open.feishu.cn`、系统 CA、零自动
+重试 transport 完成 claim→call fence→send→SQLite completion。provider acceptance 只推进通知状态，仍明确
+`real_delivery_confirmed=false`；围栏后的未知结果不得自动重试。
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
@@ -157,6 +161,10 @@ authority，因此撤销后 challenge 与业务事件立即拒绝。
 outbound sandbox 使用同样的外部双人 intent 流程，但配置是包含测试收件人 allowlist 的
 `M8FeishuSandboxRuntimeConfigV1`；以 `outbox-activate` 提交、`outbox-status` 重算、`outbox-revoke` 停用。
 这三个命令不会读取 App Secret 或调用飞书，webhook activation 也不能替代 outbox activation。
+
+发送一条已排队测试通知时，使用 `outbox-run-one` 并显式提供 notification/candidate/binding、canonical
+`M8NotificationWorkflowManifestAuthorityV1`、四个环境变量名和三个 manifest ID。命令没有扫描/批量模式；
+App ID/App Secret/open_id/worker token 的值只能由获批 secret loader 注入环境，不能作为命令行参数。
 
 没有 `make` 的 Windows 环境可直接运行：
 
