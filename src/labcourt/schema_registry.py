@@ -306,6 +306,11 @@ from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxActivationStatusV1,
     M8FeishuSandboxRuntimeConfigV1,
 )
+from labcourt.contracts.m8_feishu_inbound import (
+    M8FeishuInboundMessageVerificationReceiptV1,
+    M8FeishuInboundWebhookProfileV1,
+    M8FeishuWebhookIngressRequestV1,
+)
 from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuCardDispatchPreflightV1,
@@ -709,6 +714,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-adapter-profile-v1": M8FeishuAdapterProfileV1,
     "m8-feishu-card-dispatch-preflight-v1": M8FeishuCardDispatchPreflightV1,
     "m8-feishu-conformance-result-v1": M8FeishuConformanceResultV1,
+    "m8-feishu-inbound-message-verification-receipt-v1": (
+        M8FeishuInboundMessageVerificationReceiptV1
+    ),
+    "m8-feishu-inbound-webhook-profile-v1": M8FeishuInboundWebhookProfileV1,
     "m8-feishu-notification-card-v1": M8FeishuNotificationCardV1,
     "m8-feishu-recipient-binding-authority-v1": M8FeishuRecipientBindingAuthorityV1,
     "m8-feishu-sandbox-activation-commit-receipt-v1": (M8FeishuSandboxActivationCommitReceiptV1),
@@ -720,6 +729,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-sandbox-runtime-config-v1": M8FeishuSandboxRuntimeConfigV1,
     "m8-feishu-sandbox-send-receipt-v1": M8FeishuSandboxSendReceiptV1,
     "m8-feishu-token-acquisition-receipt-v1": M8FeishuTokenAcquisitionReceiptV1,
+    "m8-feishu-webhook-ingress-request-v1": M8FeishuWebhookIngressRequestV1,
     "m8-knowledge-answer-v1": M8KnowledgeAnswerV1,
     "m8-knowledge-answer-commit-receipt-v1": M8KnowledgeAnswerCommitReceiptV1,
     "m8-knowledge-catalog-authority-v1": M8KnowledgeCatalogAuthorityV1,

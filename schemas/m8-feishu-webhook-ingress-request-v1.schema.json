@@ -1,0 +1,106 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-webhook-ingress-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Exact encrypted request evidence before any signature or payload claim.",
+  "properties": {
+    "business_event_accepted": {
+      "readOnly": true,
+      "title": "Business Event Accepted",
+      "type": "boolean"
+    },
+    "credential_material_persisted": {
+      "readOnly": true,
+      "title": "Credential Material Persisted",
+      "type": "boolean"
+    },
+    "encrypted_body_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Encrypted Body Ref",
+      "type": "string"
+    },
+    "encrypted_body_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Encrypted Body Sha256",
+      "type": "string"
+    },
+    "encrypted_body_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 262144,
+      "title": "Encrypted Body Size Bytes",
+      "type": "integer"
+    },
+    "inbound_profile_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Inbound Profile Id",
+      "type": "string"
+    },
+    "ingress_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Ingress Manifest Id",
+      "type": "string"
+    },
+    "ingress_request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Ingress Request Id",
+      "type": "string"
+    },
+    "payload_decrypted": {
+      "readOnly": true,
+      "title": "Payload Decrypted",
+      "type": "boolean"
+    },
+    "received_at": {
+      "format": "date-time",
+      "title": "Received At",
+      "type": "string"
+    },
+    "request_nonce": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+      "title": "Request Nonce",
+      "type": "string"
+    },
+    "request_signature": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Signature",
+      "type": "string"
+    },
+    "request_timestamp_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Request Timestamp Seconds",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-feishu-webhook-ingress-request-v1",
+      "default": "m8-feishu-webhook-ingress-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "signature_verified": {
+      "readOnly": true,
+      "title": "Signature Verified",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "inbound_profile_id",
+    "request_timestamp_seconds",
+    "request_nonce",
+    "request_signature",
+    "encrypted_body_ref",
+    "encrypted_body_sha256",
+    "encrypted_body_size_bytes",
+    "received_at",
+    "ingress_manifest_id",
+    "signature_verified",
+    "payload_decrypted",
+    "business_event_accepted",
+    "credential_material_persisted",
+    "ingress_request_id"
+  ],
+  "title": "M8FeishuWebhookIngressRequestV1",
+  "type": "object"
+}

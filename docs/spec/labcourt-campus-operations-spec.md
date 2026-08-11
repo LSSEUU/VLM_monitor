@@ -186,8 +186,16 @@ verification、exact path、单次 `POST`、0 自动重试和 256 KiB response �
 transition 必须原子提交；该流程不允许改变 Case 或形成纪律处分。
 
 飞书 runner 的最终 receipt 必须逐项绑定 preflight request、source-version claim、one-shot call fence、调用时
-current activation status 所引用的稳定 activation commit、provider send result 与 SQLite completion。provider acceptance 只允许把通知推进
+current activation status 所引用的稳定 activation commit、provider send result 与 SQLite completion。
+provider acceptance 只允许把通知推进
 到 `SENT`，不得声明真实送达；unknown delivery 必须保留为 `FAILED` 且禁止自动 retry。
+
+飞书学生回复必须先进入独立的 encrypted webhook evidence 边界。profile 只允许 `HTTPS_WEBHOOK`、事件
+schema `2.0`、`im.message.receive_v1`、`p2p` user text，并固定 external ingress 未激活；入口 receipt 只绑定
+原始密文 body/header/time，不能预先声明验签、解密或业务接受。验证 receipt 必须复核 Encrypt Key signature、
+Verification Token、freshness、app、message shape，并以 provider `message_id` 防重放、`parent_id` 关联既有
+outbound provider receipt；clear open ID 和自由文本只能通过 hash/raw reference 管理。验证成功本身仍不能
+提交 notification reply、改变 Case 或形成纪律处分。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。

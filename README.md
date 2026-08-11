@@ -36,7 +36,10 @@ M8.7e4a 进一步冻结 Feishu outbox run 组合回执，防止跨 preflight/act
 provider acceptance 不等于真实送达。M8.7e4b 已实现显式注入的单条 sandbox runner：claim 前与 call fence
 前均重读 current activation，send core 再次核对 exact profile/测试收件人 allowlist；accepted 或 typed failure
 会与 raw artifacts、`SENT`/`FAILED` 在 SQLite 原子提交，围栏后异常则进入待对账且不自动重试。默认产品
-wiring 仍不装配 live secret/TLS adapter，仓库也尚无真实租户调用证据。独立 UI 任务
+wiring 仍不装配 live secret/TLS adapter，仓库也尚无真实租户调用证据。M8.7f1 已开始补齐回复闭环：新增
+encrypted webhook profile、未验证 ingress request 与 hash-only verified
+`im.message.receive_v1` receipt；按 provider `message_id` 防重放、按 `parent_id` 关联 outbound message，且
+验证回执本身不能提交 reply 或改变 Case。当前仍未开放公网 webhook 或保存真实学生自由文本。独立 UI 任务
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
