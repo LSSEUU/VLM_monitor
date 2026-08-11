@@ -112,6 +112,8 @@ raw signal、紧急待核实案件和运营投影，供后续本机 API 与独�
 `.labcourt-local/labcourt-demo/` 中幂等初始化 SQLite、校园四层拓扑、四角色、模拟烟雾原始信号、紧急
 `PENDING_VERIFICATION` 案件及只读运营投影；不会联网、调用模型、发送消息或执行案件迁移。详见
 [`docs/m8-personal-demo.md`](docs/m8-personal-demo.md)。
+双击 `labcourt-demo-api.cmd` 会先绑定后关闭完成预检，再在 `127.0.0.1:8877` 启动现有 authenticated M8
+API；四角色的本机演示 token 只写入同一 ignored 目录的 `api-access.json`，终端不显示明文。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

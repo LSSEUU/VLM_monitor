@@ -300,6 +300,11 @@ poll result 与紧急 advisory assessment，卡片必须显示 `PERSONAL DEMO`�
 content-addressed typed receipt。bootstrap 自身不得执行案件迁移、通知迁移、模型调用或网络调用；后续本机
 API 必须从该 SQLite authority 解引用角色和案件，不能用 bootstrap 摘要替代持久化事实。
 
+个人 Demo API runtime 可以使用固定的本机演示 token，但 authority/profile 只保存 SHA-256，明文只允许写入
+被 Git 忽略的 local access 文件且不得打印。runtime 固定绑定 `127.0.0.1`，启动前必须支持 bind-and-close
+check；领导的投影视图只含重大案件且不能迁移 Case，运维不得读取案件，学生不得读取运营投影，安全负责人
+关键迁移仍需 `explicit_human_confirmation=true` 并由服务端解析 current actor authority。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

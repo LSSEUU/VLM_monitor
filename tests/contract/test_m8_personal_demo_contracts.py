@@ -1,13 +1,20 @@
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 from pydantic import ValidationError
 
 from labcourt.contracts.m8_access_cases import M8ActorRole
+from labcourt.contracts.m8_api import (
+    M8ApiCredentialAuthorityV1,
+    M8ApiCredentialCatalogAuthorityV1,
+)
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoActorBindingV1,
     M8PersonalDemoBootstrapReceiptV1,
 )
+from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoApiProfileV1
 from labcourt.schema_registry import SCHEMA_MODELS
 
 
@@ -63,3 +70,36 @@ def test_personal_demo_schemas_are_exported() -> None:
     assert SCHEMA_MODELS["m8-personal-demo-bootstrap-receipt-v1"] is (
         M8PersonalDemoBootstrapReceiptV1
     )
+    assert SCHEMA_MODELS["m8-personal-demo-api-profile-v1"] is M8PersonalDemoApiProfileV1
+
+
+def test_api_profile_keeps_plaintext_tokens_out_of_authority() -> None:
+    credentials = tuple(
+        M8ApiCredentialAuthorityV1(
+            credential_id=credential_id,
+            actor_id=actor_id,
+            bearer_token_sha256=hashlib.sha256(credential_id.encode()).hexdigest(),
+            active=True,
+            manifest_id="8" * 64,
+        )
+        for credential_id, actor_id in (
+            ("credential-leader-demo", "leader-demo"),
+            ("credential-operations-demo", "operations-demo"),
+            ("credential-safety-demo", "safety-officer-demo"),
+            ("credential-student-demo", "student-demo"),
+        )
+    )
+    profile = M8PersonalDemoApiProfileV1(
+        bind_port=8877,
+        bootstrap_receipt_id="7" * 64,
+        credential_catalog=M8ApiCredentialCatalogAuthorityV1(
+            revision=1,
+            credentials=credentials,
+            authentication_manifest_id="6" * 64,
+        ),
+        server_manifest_id="5" * 64,
+    )
+
+    assert profile.base_url == "http://127.0.0.1:8877"
+    assert profile.plaintext_demo_tokens_in_authority is False
+    assert "labcourt-personal-demo-leader-token" not in profile.model_dump_json()

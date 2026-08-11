@@ -20,18 +20,23 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert isinstance(command, TyperCommand)
     options = {option for parameter in command.params for option in parameter.opts}
     assert {"--output", "--json"} <= options
+    api = demo.commands["api"]
+    assert isinstance(api, TyperCommand)
+    api_options = {option for parameter in api.params for option in parameter.opts}
+    assert {"--output", "--port", "--check", "--json"} <= api_options
 
-    script = PROJECT_ROOT / "scripts" / "windows" / "labcourt-demo-bootstrap.ps1"
-    parsed = subprocess.run(
-        [
-            "powershell.exe",
-            "-NoProfile",
-            "-Command",
-            "$e=$null;$t=$null;"
-            f"[System.Management.Automation.Language.Parser]::ParseFile('{script}',[ref]$t,[ref]$e)"
-            "|Out-Null;if($e.Count){exit 1}",
-        ],
-        cwd=PROJECT_ROOT,
-        check=False,
-    )
-    assert parsed.returncode == 0
+    for name in ("labcourt-demo-bootstrap.ps1", "labcourt-demo-api.ps1"):
+        script = PROJECT_ROOT / "scripts" / "windows" / name
+        parsed = subprocess.run(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-Command",
+                "$e=$null;$t=$null;"
+                f"[System.Management.Automation.Language.Parser]::ParseFile('{script}',[ref]$t,[ref]$e)"
+                "|Out-Null;if($e.Count){exit 1}",
+            ],
+            cwd=PROJECT_ROOT,
+            check=False,
+        )
+        assert parsed.returncode == 0

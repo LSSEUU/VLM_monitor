@@ -31,3 +31,28 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 该数据集不是认证消防检测，不包含真实人员、真实摄像头或现实安全表现，也不允许 bootstrap 自动确认、
 驳回、补证、结案或处分。下一阶段的本机 API 从同一 SQLite 数据库解引用角色 authority，由安全负责人
 显式确认后才能执行关键案件迁移。
+
+## 启动角色化本机 API
+
+双击 `labcourt-demo-api.cmd`。脚本先执行一次 bind-and-close 预检，通过后启动
+`http://127.0.0.1:8877`；保持终端打开，按 `Ctrl+C` 停止。也可以只检查：
+
+```powershell
+.\.venv\Scripts\labcourt.exe demo api --check --json
+```
+
+启动时会在 ignored Demo 目录生成：
+
+- `api-profile.json`：只含 token hash 的 typed loopback runtime profile；
+- `api-access.json`：四角色本机明文演示 token，供独立 UI 或手工 API 联调读取，不会输出到终端。
+
+主要路由沿用既有 M8 API：
+
+- `GET /api/m8/campuses/campus-demo/operations-projection`：领导只看到全局与重大案件，安全负责人看到完整
+  运营案件，运维只看到设备/来源；学生禁止访问运营投影；
+- `GET /api/m8/cases/{case_id}`：按角色和案件范围读取；
+- `POST /api/m8/cases/{case_id}/transitions`：服务端重新解析当前 actor authority，领导和运维不能审批，
+  安全负责人必须提交 `explicit_human_confirmation=true` 和支持材料引用。
+
+这些固定 token 不是生产身份凭据，API 只绑定 loopback，`production_ready=false`。未来接校园 OIDC 时替换
+认证 adapter，不改变案件 capability 或审计契约。

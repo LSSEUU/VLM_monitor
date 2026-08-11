@@ -1,0 +1,195 @@
+{
+  "$defs": {
+    "M8ApiCredentialAuthorityV1": {
+      "additionalProperties": false,
+      "description": "One bearer-token hash mapping to an actor ID, never to role/capability.",
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "bearer_token_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Bearer Token Sha256",
+          "type": "string"
+        },
+        "credential_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Credential Authority Id",
+          "type": "string"
+        },
+        "credential_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Credential Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-api-credential-authority-v1",
+          "default": "m8-api-credential-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "credential_id",
+        "actor_id",
+        "bearer_token_sha256",
+        "active",
+        "manifest_id",
+        "credential_authority_id"
+      ],
+      "title": "M8ApiCredentialAuthorityV1",
+      "type": "object"
+    },
+    "M8ApiCredentialCatalogAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Complete runtime credential hash catalog required to start the API.",
+      "properties": {
+        "authentication_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Authentication Manifest Id",
+          "type": "string"
+        },
+        "credential_catalog_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Credential Catalog Id",
+          "type": "string"
+        },
+        "credential_inventory_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Credential Inventory Sha256",
+          "type": "string"
+        },
+        "credentials": {
+          "items": {
+            "$ref": "#/$defs/M8ApiCredentialAuthorityV1"
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "title": "Credentials",
+          "type": "array"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-api-credential-catalog-authority-v1",
+          "default": "m8-api-credential-catalog-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "credentials",
+        "authentication_manifest_id",
+        "credential_inventory_sha256",
+        "credential_catalog_id"
+      ],
+      "title": "M8ApiCredentialCatalogAuthorityV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-api-profile-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "api_profile_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Api Profile Id",
+      "type": "string"
+    },
+    "automatic_case_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Automatic Case Transition Permitted",
+      "type": "boolean"
+    },
+    "base_url": {
+      "readOnly": true,
+      "title": "Base Url",
+      "type": "string"
+    },
+    "bind_host": {
+      "const": "127.0.0.1",
+      "default": "127.0.0.1",
+      "title": "Bind Host",
+      "type": "string"
+    },
+    "bind_port": {
+      "maximum": 65535,
+      "minimum": 1,
+      "title": "Bind Port",
+      "type": "integer"
+    },
+    "bootstrap_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Bootstrap Receipt Id",
+      "type": "string"
+    },
+    "credential_catalog": {
+      "$ref": "#/$defs/M8ApiCredentialCatalogAuthorityV1"
+    },
+    "display_badge": {
+      "const": "PERSONAL DEMO · LOOPBACK API",
+      "default": "PERSONAL DEMO · LOOPBACK API",
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "personal_demo_only": {
+      "const": true,
+      "default": true,
+      "title": "Personal Demo Only",
+      "type": "boolean"
+    },
+    "plaintext_demo_tokens_in_authority": {
+      "const": false,
+      "default": false,
+      "title": "Plaintext Demo Tokens In Authority",
+      "type": "boolean"
+    },
+    "production_ready": {
+      "const": false,
+      "default": false,
+      "title": "Production Ready",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-api-profile-v1",
+      "default": "m8-personal-demo-api-profile-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "server_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Server Manifest Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "bind_port",
+    "bootstrap_receipt_id",
+    "credential_catalog",
+    "server_manifest_id",
+    "base_url",
+    "api_profile_id"
+  ],
+  "title": "M8PersonalDemoApiProfileV1",
+  "type": "object"
+}

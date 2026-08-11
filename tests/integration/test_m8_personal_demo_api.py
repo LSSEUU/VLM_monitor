@@ -1,0 +1,133 @@
+from __future__ import annotations
+
+import http.client
+import json
+import threading
+from pathlib import Path
+
+from labcourt.adapters.storage.sqlite_m8_operations_repository import (
+    SQLiteM8OperationsRepository,
+)
+from labcourt.application.m8_personal_demo_api import (
+    M8_PERSONAL_DEMO_ROLE_TOKENS,
+    assemble_m8_personal_demo_api,
+)
+from labcourt.contracts.canonical import canonical_json
+from labcourt.contracts.m8_access_cases import (
+    M8OperationalCaseAction,
+    M8OperationalCaseReasonCode,
+)
+from labcourt.contracts.m8_api import M8ApiCaseTransitionRequestV1
+
+BUSY_TIMEOUT_MS = 5_000
+
+
+def _request(
+    port: int,
+    method: str,
+    path: str,
+    role: str,
+    payload: object | None = None,
+) -> tuple[int, object]:
+    body = None if payload is None else canonical_json(payload).encode("utf-8")
+    headers = {"Authorization": f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS[role]}"}
+    if payload is not None:
+        headers["Content-Type"] = "application/json"
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+    connection.request(method, path, body=body, headers=headers)
+    response = connection.getresponse()
+    result = json.loads(response.read())
+    connection.close()
+    return response.status, result
+
+
+def test_demo_api_enforces_leader_read_only_and_safety_human_transition(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    database = tmp_path / "demo" / "labcourt.sqlite3"
+    assembly = assemble_m8_personal_demo_api(database, 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        projection_status, projection = _request(
+            server.server_port,
+            "GET",
+            "/api/m8/campuses/campus-demo/operations-projection",
+            "leader",
+        )
+        assert projection_status == 200
+        assert isinstance(projection, dict)
+        case_id = projection["visible_projection"]["current_cases"][0]["case_id"]
+        case_status, case_payload = _request(
+            server.server_port,
+            "GET",
+            f"/api/m8/cases/{case_id}",
+            "leader",
+        )
+        assert case_status == 200
+        assert isinstance(case_payload, dict)
+        repository = SQLiteM8OperationsRepository(
+            database,
+            BUSY_TIMEOUT_MS,
+            case_payload["repository_manifest_id"],
+        )
+        case = repository.get_current_operational_case(str(case_id))
+        request = M8ApiCaseTransitionRequestV1(
+            source_case_version=case.case_version,
+            source_case_authority_sha256=case.case_document_sha256,
+            source_status=case.status,
+            case_location_id=case.audit_event.case_authority.location_id,
+            subject_actor_id=case.audit_event.case_authority.subject_actor_id,
+            action=M8OperationalCaseAction.CONFIRM,
+            reason_code=M8OperationalCaseReasonCode.VERIFIED_VIOLATION,
+            reason_summary="安全负责人已明确确认模拟演示案件。",
+            supporting_authorities=(
+                case.audit_event.case_authority.create_command.trigger_authorities[0],
+            ),
+            explicit_human_confirmation=True,
+            command_manifest_id="5" * 64,
+        ).model_dump(mode="json")
+
+        leader_status, _leader_result = _request(
+            server.server_port,
+            "POST",
+            f"/api/m8/cases/{case_id}/transitions",
+            "leader",
+            request,
+        )
+        safety_status, safety_result = _request(
+            server.server_port,
+            "POST",
+            f"/api/m8/cases/{case_id}/transitions",
+            "safety",
+            request,
+        )
+        assert leader_status == 403
+        assert safety_status == 200
+        assert isinstance(safety_result, dict)
+        assert safety_result["status"] == "CONFIRMED"
+        assert len(repository.list_operational_case_audit(str(case_id))) == 2
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_demo_api_check_assembly_exposes_tokens_only_in_local_document(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = assemble_m8_personal_demo_api(tmp_path / "labcourt.sqlite3", 0)
+    try:
+        access = assembly.local_access_document()
+        assert access["personal_demo_only"] is True
+        assert access["production_ready"] is False
+        assert access["tokens"] == dict(sorted(M8_PERSONAL_DEMO_ROLE_TOKENS.items()))
+        assert all(
+            token not in assembly.profile.model_dump_json()
+            for token in M8_PERSONAL_DEMO_ROLE_TOKENS.values()
+        )
+    finally:
+        assembly.server.server_close()

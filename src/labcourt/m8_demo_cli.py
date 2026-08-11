@@ -9,6 +9,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
+from labcourt.application.m8_personal_demo_api import assemble_m8_personal_demo_api
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
 from labcourt.exceptions import LabCourtError
 
@@ -37,6 +38,7 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
         ),
         json_output: Annotated[bool, typer.Option("--json")] = False,
     ) -> None:
+        assembly = None
         try:
             output.mkdir(parents=True, exist_ok=True)
             database = output / "labcourt.sqlite3"
@@ -52,6 +54,8 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
                 (run.projection.model_dump_json(indent=2) + "\n").encode("utf-8"),
             )
         except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            if assembly is not None:
+                assembly.server.server_close()
             _fail(error)
         summary: dict[str, object] = {
             "bootstrap_receipt_id": run.receipt.bootstrap_receipt_id,
@@ -73,6 +77,68 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
                 "LabCourt PERSONAL DEMO initialized: "
                 "SIMULATED EMERGENCY case is PENDING_VERIFICATION"
             )
+
+    @demo.command("api")
+    def api(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        port: Annotated[int, typer.Option("--port", min=1, max=65_535)] = 8877,
+        check: Annotated[
+            bool,
+            typer.Option("--check", help="Bind, validate, write access, then close."),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+            assembly = assemble_m8_personal_demo_api(output / "labcourt.sqlite3", port)
+            profile_path = output / "api-profile.json"
+            access_path = output / "api-access.json"
+            _write_exact(
+                profile_path,
+                (assembly.profile.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+            _write_exact(
+                access_path,
+                (
+                    json.dumps(
+                        assembly.local_access_document(),
+                        ensure_ascii=False,
+                        indent=2,
+                        sort_keys=True,
+                    )
+                    + "\n"
+                ).encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "access_file": str(access_path.resolve()),
+            "api_profile_id": assembly.profile.api_profile_id,
+            "base_url": assembly.profile.base_url,
+            "check_only": check,
+            "personal_demo_only": assembly.profile.personal_demo_only,
+            "production_ready": assembly.profile.production_ready,
+        }
+        if check:
+            assembly.server.server_close()
+            if json_output:
+                typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+            else:
+                typer.echo("LabCourt PERSONAL DEMO API check passed; server was closed")
+            return
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                f"LabCourt PERSONAL DEMO API listening at {assembly.profile.base_url}; "
+                "role tokens are in the ignored api-access.json"
+            )
+        try:
+            assembly.server.serve_forever()
+        finally:
+            assembly.server.server_close()
 
 
 __all__ = ["register_m8_demo_commands"]

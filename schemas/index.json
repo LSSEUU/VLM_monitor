@@ -1726,6 +1726,12 @@
       "name": "m8-personal-demo-actor-binding-v1"
     },
     {
+      "file": "m8-personal-demo-api-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo_api.M8PersonalDemoApiProfileV1",
+      "name": "m8-personal-demo-api-profile-v1"
+    },
+    {
       "file": "m8-personal-demo-bootstrap-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoBootstrapReceiptV1",
