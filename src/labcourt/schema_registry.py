@@ -307,6 +307,7 @@ from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxRuntimeConfigV1,
 )
 from labcourt.contracts.m8_feishu_inbound import (
+    M8FeishuInboundMessageCommitReceiptV1,
     M8FeishuInboundMessageVerificationReceiptV1,
     M8FeishuInboundWebhookProfileV1,
     M8FeishuWebhookIngressRequestV1,
@@ -714,6 +715,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-adapter-profile-v1": M8FeishuAdapterProfileV1,
     "m8-feishu-card-dispatch-preflight-v1": M8FeishuCardDispatchPreflightV1,
     "m8-feishu-conformance-result-v1": M8FeishuConformanceResultV1,
+    "m8-feishu-inbound-message-commit-receipt-v1": M8FeishuInboundMessageCommitReceiptV1,
     "m8-feishu-inbound-message-verification-receipt-v1": (
         M8FeishuInboundMessageVerificationReceiptV1
     ),

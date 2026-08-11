@@ -1306,6 +1306,12 @@
       "name": "m8-feishu-conformance-result-v1"
     },
     {
+      "file": "m8-feishu-inbound-message-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuInboundMessageCommitReceiptV1",
+      "name": "m8-feishu-inbound-message-commit-receipt-v1"
+    },
+    {
       "file": "m8-feishu-inbound-message-verification-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuInboundMessageVerificationReceiptV1",

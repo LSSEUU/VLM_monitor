@@ -168,6 +168,11 @@ from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxRevocationReason,
     M8FeishuSandboxRuntimeConfigV1,
 )
+from labcourt.contracts.m8_feishu_inbound import (
+    M8FeishuInboundMessageCommitReceiptV1,
+    M8FeishuInboundMessageVerificationReceiptV1,
+    M8FeishuInboundWebhookProfileV1,
+)
 from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuCardDispatchPreflightV1,
@@ -459,6 +464,12 @@ from labcourt.ports.m8_feishu_http import (
     M8FeishuHttpResponse,
     M8FeishuHttpTransport,
 )
+from labcourt.ports.m8_feishu_inbound_crypto import M8FeishuInboundCrypto
+from labcourt.ports.m8_feishu_inbound_repository import M8FeishuInboundRepository
+from labcourt.ports.m8_feishu_inbound_secrets import (
+    M8FeishuInboundSecretLease,
+    M8FeishuInboundSecretResolver,
+)
 from labcourt.ports.m8_feishu_notification_adapter import M8FeishuConformanceAdapter
 from labcourt.ports.m8_feishu_sandbox_sender import M8FeishuSandboxSender
 from labcourt.ports.m8_feishu_secrets import (
@@ -532,6 +543,60 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8FeishuInboundCrypto: {
+        "decrypt_aes_256_cbc": (
+            ("self", "ciphertext_with_iv", "key_sha256"),
+            {
+                "ciphertext_with_iv": bytes,
+                "key_sha256": bytes,
+                "return": bytes,
+            },
+        ),
+    },
+    M8FeishuInboundSecretLease: {
+        "encrypt_key_bytes": (("self",), {"return": bytes}),
+        "verification_token_bytes": (("self",), {"return": bytes}),
+    },
+    M8FeishuInboundSecretResolver: {
+        "resolve": (
+            ("self", "profile"),
+            {
+                "profile": M8FeishuInboundWebhookProfileV1,
+                "return": AbstractContextManager[M8FeishuInboundSecretLease],
+            },
+        ),
+    },
+    M8FeishuInboundRepository: {
+        "commit_verification": (
+            (
+                "self",
+                "verification_receipt",
+                "raw_artifacts",
+                "raw_storage_manifest_id",
+                "committed_at",
+                "commit_manifest_id",
+            ),
+            {
+                "verification_receipt": M8FeishuInboundMessageVerificationReceiptV1,
+                "raw_artifacts": tuple[bytes, bytes, bytes],
+                "raw_storage_manifest_id": str,
+                "committed_at": datetime,
+                "commit_manifest_id": str,
+                "return": M8FeishuInboundMessageCommitReceiptV1,
+            },
+        ),
+        "get_by_provider_message_id": (
+            ("self", "provider_message_id"),
+            {
+                "provider_message_id": str,
+                "return": M8FeishuInboundMessageCommitReceiptV1,
+            },
+        ),
+        "read_raw_artifact": (
+            ("self", "raw_artifact_ref"),
+            {"raw_artifact_ref": str, "return": bytes},
+        ),
+    },
     M8FeishuHttpTransport: {
         "acquire_tenant_access_token": (
             ("self", "profile", "secrets"),

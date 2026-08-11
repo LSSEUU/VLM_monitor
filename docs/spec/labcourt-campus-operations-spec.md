@@ -197,6 +197,11 @@ Verification Token、freshness、app、message shape，并以 provider `message_
 outbound provider receipt；clear open ID 和自由文本只能通过 hash/raw reference 管理。验证成功本身仍不能
 提交 notification reply、改变 Case 或形成纪律处分。
 
+入站验证持久化必须以 provider `message_id` 为唯一 replay key；commit receipt 必须按 encrypted request、
+decrypted event、text content 的固定顺序绑定 raw ref/hash/size inventory、commit/repository/storage manifests
+与提交时点。exact retry 只能读回同一 receipt，任何不同 payload、event、parent 或 manifest 都必须冲突；
+raw artifact 和验证记录必须 append-only。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

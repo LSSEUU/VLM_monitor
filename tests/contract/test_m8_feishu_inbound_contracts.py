@@ -8,6 +8,7 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ValidationError
 
 from labcourt.contracts.m8_feishu_inbound import (
+    M8FeishuInboundMessageCommitReceiptV1,
     M8FeishuInboundMessageVerificationReceiptV1,
     M8FeishuInboundWebhookProfileV1,
     M8FeishuWebhookIngressRequestV1,
@@ -69,6 +70,16 @@ def _verified() -> M8FeishuInboundMessageVerificationReceiptV1:
         content_document_sha256=SHA_D,
         content_size_bytes=96,
         verification_manifest_id=SHA_E,
+    )
+
+
+def _commit() -> M8FeishuInboundMessageCommitReceiptV1:
+    return M8FeishuInboundMessageCommitReceiptV1(
+        verification_receipt=_verified(),
+        committed_at=RECEIVED_AT + timedelta(seconds=1),
+        raw_storage_manifest_id=SHA_A,
+        commit_manifest_id=SHA_B,
+        repository_manifest_id=SHA_C,
     )
 
 
@@ -153,7 +164,28 @@ def test_verified_reply_rejects_future_provider_time_and_raw_reference_graft() -
         )
 
 
-@pytest.mark.parametrize("model", (_webhook_profile(), _ingress(), _verified()))
+def test_commit_receipt_binds_ordered_raw_inventory_and_no_business_transition() -> None:
+    receipt = _commit()
+
+    assert receipt.provider_message_id == _verified().provider_message_id
+    assert receipt.provider_message_deduplication_key == receipt.provider_message_id
+    assert receipt.raw_artifact_refs == (
+        "feishu-encrypted-event-01",
+        "feishu-decrypted-event-01",
+        "feishu-text-content-01",
+    )
+    assert receipt.raw_artifact_sizes_bytes == (512, 480, 96)
+    assert receipt.total_raw_artifact_size_bytes == 1_088
+    assert receipt.verified_evidence_persisted is True
+    assert receipt.automatic_replay_permitted is False
+    assert receipt.notification_reply_commit_permitted is False
+    assert receipt.case_transition_permitted is False
+
+    with pytest.raises(ValidationError, match="cannot predate ingress"):
+        receipt.model_copy(update={"committed_at": RECEIVED_AT - timedelta(seconds=1)})
+
+
+@pytest.mark.parametrize("model", (_webhook_profile(), _ingress(), _verified(), _commit()))
 def test_inbound_contracts_round_trip_validate_and_hide_clear_content(model: BaseModel) -> None:
     restored = type(model).model_validate_json(model.model_dump_json())
     assert restored == model
@@ -176,6 +208,9 @@ def test_inbound_schemas_are_registered_serialization_roots() -> None:
     from labcourt.schema_registry import SCHEMA_MODELS, SCHEMA_VALIDATION_MODELS
 
     expected = {
+        "m8-feishu-inbound-message-commit-receipt-v1": (
+            M8FeishuInboundMessageCommitReceiptV1
+        ),
         "m8-feishu-inbound-message-verification-receipt-v1": (
             M8FeishuInboundMessageVerificationReceiptV1
         ),

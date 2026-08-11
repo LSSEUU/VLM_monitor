@@ -230,6 +230,7 @@ EXPECTED_SCHEMA_MODES = {
     "m8-feishu-adapter-profile-v1": "serialization",
     "m8-feishu-card-dispatch-preflight-v1": "serialization",
     "m8-feishu-conformance-result-v1": "serialization",
+    "m8-feishu-inbound-message-commit-receipt-v1": "serialization",
     "m8-feishu-inbound-message-verification-receipt-v1": "serialization",
     "m8-feishu-inbound-webhook-profile-v1": "serialization",
     "m8-feishu-notification-card-v1": "serialization",

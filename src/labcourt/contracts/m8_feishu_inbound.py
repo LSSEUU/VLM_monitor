@@ -450,9 +450,172 @@ class M8FeishuInboundMessageVerificationReceiptV1(FrozenContractModel):
         )
 
 
+class M8FeishuInboundMessageCommitReceiptV1(FrozenContractModel):
+    """Append-only persistence proof for exact inbound verification evidence."""
+
+    schema_version: Literal["m8-feishu-inbound-message-commit-receipt-v1"] = (
+        "m8-feishu-inbound-message-commit-receipt-v1"
+    )
+    verification_receipt: M8FeishuInboundMessageVerificationReceiptV1
+    committed_at: datetime
+    raw_storage_manifest_id: Sha256Hex
+    commit_manifest_id: Sha256Hex
+    repository_manifest_id: Sha256Hex
+
+    @field_validator("committed_at")
+    @classmethod
+    def validate_committed_at(cls, value: datetime) -> datetime:
+        return _require_utc(value, "commit time")
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_serialized_claims(
+        cls,
+        value: object,
+        handler: ModelWrapValidatorHandler[Self],
+    ) -> Self:
+        payload, claims = _pop_computed_claims(
+            value,
+            (
+                "provider_message_id",
+                "provider_message_deduplication_key",
+                "raw_artifact_refs",
+                "raw_artifact_sha256s",
+                "raw_artifact_sizes_bytes",
+                "raw_artifact_inventory_sha256",
+                "total_raw_artifact_size_bytes",
+                "verified_evidence_persisted",
+                "automatic_replay_permitted",
+                "notification_reply_commit_permitted",
+                "case_transition_permitted",
+                "direct_disciplinary_action_permitted",
+                "commit_receipt_id",
+            ),
+        )
+        receipt = handler(payload)
+        _verify_computed_claims(receipt, claims)
+        return receipt
+
+    @model_validator(mode="after")
+    def validate_commit(self) -> Self:
+        if self.committed_at < self.verification_receipt.ingress_request.received_at:
+            raise ValueError("M8 Feishu inbound commit cannot predate ingress")
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def provider_message_id(self) -> ReferenceToken:
+        return self.verification_receipt.provider_message_id
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def provider_message_deduplication_key(self) -> ReferenceToken:
+        return self.provider_message_id
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def raw_artifact_refs(self) -> tuple[ReferenceToken, ...]:
+        verified = self.verification_receipt
+        return (
+            verified.ingress_request.encrypted_body_ref,
+            verified.decrypted_event_ref,
+            verified.content_document_ref,
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def raw_artifact_sha256s(self) -> tuple[Sha256Hex, ...]:
+        verified = self.verification_receipt
+        return (
+            verified.ingress_request.encrypted_body_sha256,
+            verified.decrypted_event_sha256,
+            verified.content_document_sha256,
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def raw_artifact_sizes_bytes(self) -> tuple[int, ...]:
+        verified = self.verification_receipt
+        return (
+            verified.ingress_request.encrypted_body_size_bytes,
+            verified.decrypted_event_size_bytes,
+            verified.content_size_bytes,
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def raw_artifact_inventory_sha256(self) -> Sha256Hex:
+        return sha256_hex(
+            list(
+                zip(
+                    self.raw_artifact_refs,
+                    self.raw_artifact_sha256s,
+                    self.raw_artifact_sizes_bytes,
+                    strict=True,
+                )
+            )
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def total_raw_artifact_size_bytes(self) -> int:
+        return sum(self.raw_artifact_sizes_bytes)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def verified_evidence_persisted(self) -> bool:
+        return True
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def automatic_replay_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def notification_reply_commit_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def case_transition_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def direct_disciplinary_action_permitted(self) -> bool:
+        return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def commit_receipt_id(self) -> Sha256Hex:
+        return sha256_hex(
+            [
+                "m8-feishu-inbound-message-commit-receipt",
+                1,
+                self.verification_receipt.verification_receipt_id,
+                _canonical_utc(self.committed_at),
+                self.raw_artifact_refs,
+                self.raw_artifact_sha256s,
+                self.raw_artifact_sizes_bytes,
+                self.raw_artifact_inventory_sha256,
+                self.total_raw_artifact_size_bytes,
+                self.raw_storage_manifest_id,
+                self.commit_manifest_id,
+                self.repository_manifest_id,
+                self.verified_evidence_persisted,
+                self.automatic_replay_permitted,
+                self.notification_reply_commit_permitted,
+                self.case_transition_permitted,
+                self.direct_disciplinary_action_permitted,
+            ]
+        )
+
+
 __all__ = [
     "MAX_M8_FEISHU_INBOUND_BODY_BYTES",
     "MAX_M8_FEISHU_INBOUND_TIMESTAMP_SKEW_SECONDS",
+    "M8FeishuInboundMessageCommitReceiptV1",
     "M8FeishuInboundMessageVerificationReceiptV1",
     "M8FeishuInboundWebhookProfileV1",
     "M8FeishuWebhookIngressRequestV1",
