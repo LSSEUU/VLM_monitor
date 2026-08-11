@@ -25,7 +25,9 @@ adapter 的准入契约、append-only commissioning evidence、可重算 readine
 provider 接受不会把通知推进到 `SENT`。M8.7d 进一步冻结了飞书 sandbox 的无密钥 runtime config 与
 双人 activation commit：首次外部调用只可面向显式测试收件人 allowlist，生产发送仍禁止。M8.7d2 已
 用 append-only SQLite 持久化 activation 与单人 kill switch；当前证据、双人权限或收件人 authority 变化
-会动态变为 `INVALIDATED`，不再授权调用。仓库仍未读取飞书凭据或访问飞书。独立 UI 任务
+会动态变为 `INVALIDATED`，不再授权调用。M8.7e1 已实现可注入的 secret lease、token cache 与 sandbox
+send core；默认只配内存 fake，token 明文不
+进入 schema/SQLite/raw store，消息 timeout 保持 unknown-delivery，尚未配置真实 TLS client。独立 UI 任务
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见

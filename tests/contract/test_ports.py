@@ -171,6 +171,7 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuCardDispatchPreflightV1,
     M8FeishuConformanceResultV1,
+    M8FeishuRecipientBindingAuthorityV1,
 )
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
@@ -446,7 +447,15 @@ from labcourt.ports.m8_adapter_commissioning_repository import (
 )
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
 from labcourt.ports.m8_feishu_activation_repository import M8FeishuActivationRepository
+from labcourt.ports.m8_feishu_http import (
+    M8FeishuHttpResponse,
+    M8FeishuHttpTransport,
+)
 from labcourt.ports.m8_feishu_notification_adapter import M8FeishuConformanceAdapter
+from labcourt.ports.m8_feishu_secrets import (
+    M8FeishuResolvedSecrets,
+    M8FeishuSecretResolver,
+)
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
 from labcourt.ports.m8_knowledge_repository import M8KnowledgeRepository
@@ -511,6 +520,42 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8FeishuHttpTransport: {
+        "acquire_tenant_access_token": (
+            ("self", "profile", "secrets"),
+            {
+                "profile": M8FeishuAdapterProfileV1,
+                "secrets": M8FeishuResolvedSecrets,
+                "return": M8FeishuHttpResponse,
+            },
+        ),
+        "send_interactive_message": (
+            (
+                "self",
+                "preflight",
+                "secrets",
+                "tenant_access_token",
+                "rendered_card",
+            ),
+            {
+                "preflight": M8FeishuCardDispatchPreflightV1,
+                "secrets": M8FeishuResolvedSecrets,
+                "tenant_access_token": bytes,
+                "rendered_card": bytes,
+                "return": M8FeishuHttpResponse,
+            },
+        ),
+    },
+    M8FeishuSecretResolver: {
+        "resolve": (
+            ("self", "profile", "recipient_binding"),
+            {
+                "profile": M8FeishuAdapterProfileV1,
+                "recipient_binding": M8FeishuRecipientBindingAuthorityV1,
+                "return": AbstractContextManager[M8FeishuResolvedSecrets],
+            },
+        ),
+    },
     M8FeishuActivationRepository: {
         "commit_activation": (
             (

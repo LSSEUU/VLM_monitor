@@ -313,6 +313,10 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuNotificationCardV1,
     M8FeishuRecipientBindingAuthorityV1,
 )
+from labcourt.contracts.m8_feishu_transport import (
+    M8FeishuSandboxSendReceiptV1,
+    M8FeishuTokenAcquisitionReceiptV1,
+)
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
@@ -706,6 +710,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     ),
     "m8-feishu-sandbox-activation-status-v1": M8FeishuSandboxActivationStatusV1,
     "m8-feishu-sandbox-runtime-config-v1": M8FeishuSandboxRuntimeConfigV1,
+    "m8-feishu-sandbox-send-receipt-v1": M8FeishuSandboxSendReceiptV1,
+    "m8-feishu-token-acquisition-receipt-v1": M8FeishuTokenAcquisitionReceiptV1,
     "m8-knowledge-answer-v1": M8KnowledgeAnswerV1,
     "m8-knowledge-answer-commit-receipt-v1": M8KnowledgeAnswerCommitReceiptV1,
     "m8-knowledge-catalog-authority-v1": M8KnowledgeCatalogAuthorityV1,

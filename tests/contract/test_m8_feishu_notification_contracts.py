@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import UTC, datetime, timedelta
 
@@ -48,6 +49,10 @@ SHA_C = "c" * 64
 SHA_D = "d" * 64
 SHA_E = "e" * 64
 BASE_TIME = datetime(2026, 8, 10, 9, 0, tzinfo=UTC)
+FAKE_FEISHU_APP_ID = b"cli_fake_labcourt_app"
+FAKE_FEISHU_OPEN_ID = b"ou_fake_labcourt_student"
+FAKE_FEISHU_APP_ID_SHA256 = hashlib.sha256(FAKE_FEISHU_APP_ID).hexdigest()
+FAKE_FEISHU_OPEN_ID_SHA256 = hashlib.sha256(FAKE_FEISHU_OPEN_ID).hexdigest()
 
 
 def _candidate() -> M8ProductionAdapterCandidateAuthorityV1:
@@ -75,7 +80,7 @@ def _profile() -> M8FeishuAdapterProfileV1:
     return M8FeishuAdapterProfileV1(
         candidate=_candidate(),
         credential_bundle_reference_id="secret-feishu-campus-main",
-        app_id_sha256=SHA_C,
+        app_id_sha256=FAKE_FEISHU_APP_ID_SHA256,
         profile_manifest_id=SHA_D,
     )
 
@@ -84,7 +89,7 @@ def _target() -> M8NotificationTargetAuthorityV1:
     return M8NotificationTargetAuthorityV1(
         actor_id="student-01",
         identity_provider_id="campus-idp",
-        external_subject_binding_sha256=SHA_E,
+        external_subject_binding_sha256=FAKE_FEISHU_OPEN_ID_SHA256,
         channel=M8NotificationChannelKind.FEISHU,
         authority_revision=1,
         active=True,
@@ -98,7 +103,7 @@ def _binding() -> M8FeishuRecipientBindingAuthorityV1:
         target=_target(),
         profile_id=_profile().profile_id,
         receive_id_reference="feishu-open-id-student-01",
-        receive_id_sha256=SHA_E,
+        receive_id_sha256=FAKE_FEISHU_OPEN_ID_SHA256,
         mapping_revision=1,
         active=True,
         mapping_manifest_id=SHA_B,

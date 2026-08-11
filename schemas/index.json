@@ -1342,6 +1342,18 @@
       "name": "m8-feishu-sandbox-runtime-config-v1"
     },
     {
+      "file": "m8-feishu-sandbox-send-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_transport.M8FeishuSandboxSendReceiptV1",
+      "name": "m8-feishu-sandbox-send-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-token-acquisition-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_transport.M8FeishuTokenAcquisitionReceiptV1",
+      "name": "m8-feishu-token-acquisition-receipt-v1"
+    },
+    {
       "file": "m8-knowledge-answer-commit-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeAnswerCommitReceiptV1",

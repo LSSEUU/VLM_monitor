@@ -1,0 +1,116 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-token-acquisition-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Redacted successful token acquisition; token material is hash-only.",
+  "properties": {
+    "acquired_at": {
+      "format": "date-time",
+      "title": "Acquired At",
+      "type": "string"
+    },
+    "app_id_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "App Id Sha256",
+      "type": "string"
+    },
+    "credential_bundle_reference_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Credential Bundle Reference Id",
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "profile_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "provider_code": {
+      "const": 0,
+      "default": 0,
+      "title": "Provider Code",
+      "type": "integer"
+    },
+    "provider_http_status": {
+      "const": 200,
+      "default": 200,
+      "title": "Provider Http Status",
+      "type": "integer"
+    },
+    "provider_log_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Provider Log Id",
+      "type": "string"
+    },
+    "raw_response_redacted": {
+      "const": true,
+      "default": true,
+      "title": "Raw Response Redacted",
+      "type": "boolean"
+    },
+    "redacted_raw_response_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Redacted Raw Response Ref",
+      "type": "string"
+    },
+    "redacted_raw_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Redacted Raw Response Sha256",
+      "type": "string"
+    },
+    "redacted_raw_response_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 262144,
+      "title": "Redacted Raw Response Size Bytes",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-feishu-token-acquisition-receipt-v1",
+      "default": "m8-feishu-token-acquisition-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tenant_access_token_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tenant Access Token Sha256",
+      "type": "string"
+    },
+    "token_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Token Manifest Id",
+      "type": "string"
+    },
+    "token_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Token Receipt Id",
+      "type": "string"
+    },
+    "token_secret_persisted": {
+      "const": false,
+      "default": false,
+      "title": "Token Secret Persisted",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "profile_id",
+    "credential_bundle_reference_id",
+    "app_id_sha256",
+    "tenant_access_token_sha256",
+    "acquired_at",
+    "expires_at",
+    "provider_log_id",
+    "redacted_raw_response_ref",
+    "redacted_raw_response_sha256",
+    "redacted_raw_response_size_bytes",
+    "token_manifest_id",
+    "token_receipt_id"
+  ],
+  "title": "M8FeishuTokenAcquisitionReceiptV1",
+  "type": "object"
+}
