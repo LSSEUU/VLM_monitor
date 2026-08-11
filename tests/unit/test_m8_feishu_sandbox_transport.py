@@ -238,3 +238,19 @@ def test_invalid_activation_or_secret_hash_blocks_before_http() -> None:
             _preflight().card.provider_content_json.encode(),
         )
     assert http.token_calls == 0
+
+
+def test_authorized_send_rejects_activation_commit_race_before_http() -> None:
+    http = _HttpTransport()
+    service = _service(http)
+    preflight = _preflight()
+
+    with pytest.raises(ConcurrentModification, match="activation is not current"):
+        service.send_authorized(
+            preflight,
+            preflight.card.provider_content_json.encode(),
+            SHA_A,
+        )
+
+    assert http.token_calls == 0
+    assert http.message_calls == 0

@@ -186,7 +186,7 @@ verification、exact path、单次 `POST`、0 自动重试和 256 KiB response �
 transition 必须原子提交；该流程不允许改变 Case 或形成纪律处分。
 
 飞书 runner 的最终 receipt 必须逐项绑定 preflight request、source-version claim、one-shot call fence、调用时
-current activation status、provider send result 与 SQLite completion。provider acceptance 只允许把通知推进
+current activation status 所引用的稳定 activation commit、provider send result 与 SQLite completion。provider acceptance 只允许把通知推进
 到 `SENT`，不得声明真实送达；unknown delivery 必须保留为 `FAILED` 且禁止自动 retry。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8

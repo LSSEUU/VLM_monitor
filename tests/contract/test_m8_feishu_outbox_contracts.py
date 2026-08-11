@@ -134,7 +134,10 @@ def _run_receipt(
 ) -> M8FeishuSandboxOutboxRunReceiptV1:
     send = _send_receipt(outcome)
     claim = _claim(outcome)
-    fence = _fence(claim, send.activation_status.status_id)
+    fence = _fence(
+        claim,
+        send.activation_status.activation_receipt.activation_commit_id,
+    )
     completion = M8NotificationDispatchCompletionReceiptV1(
         claim=claim,
         call_fence=fence,
@@ -189,14 +192,14 @@ def test_outbox_run_rejects_cross_claim_fence_and_activation_graft() -> None:
     payload = receipt.model_dump(mode="json", exclude={"run_receipt_id"})
     payload["call_fence"] = _fence(
         another_claim,
-        receipt.send_receipt.activation_status.status_id,
+        receipt.send_receipt.activation_status.activation_receipt.activation_commit_id,
     ).model_dump(mode="json")
     with pytest.raises(ValidationError, match="another claim"):
         M8FeishuSandboxOutboxRunReceiptV1.model_validate(payload)
 
     payload = receipt.model_dump(mode="json", exclude={"run_receipt_id"})
     payload["call_fence"] = _fence(receipt.claim, SHA_A).model_dump(mode="json")
-    with pytest.raises(ValidationError, match="exact activation status"):
+    with pytest.raises(ValidationError, match="exact activation commit"):
         M8FeishuSandboxOutboxRunReceiptV1.model_validate(payload)
 
 

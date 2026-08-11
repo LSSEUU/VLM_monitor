@@ -92,9 +92,9 @@ class M8FeishuSandboxOutboxRunReceiptV1(FrozenContractModel):
             raise ValueError("M8 Feishu outbox call fence belongs to another claim")
         if (
             self.call_fence.dispatch_authorization_id
-            != self.send_receipt.activation_status.status_id
+            != self.send_receipt.activation_status.activation_receipt.activation_commit_id
         ):
-            raise ValueError("M8 Feishu outbox call fence lacks the exact activation status")
+            raise ValueError("M8 Feishu outbox call fence lacks the exact activation commit")
         if (
             self.completion.claim != self.claim
             or self.completion.call_fence != self.call_fence

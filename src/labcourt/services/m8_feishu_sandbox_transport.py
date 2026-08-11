@@ -113,6 +113,26 @@ class M8FeishuSandboxSendService:
         preflight: M8FeishuCardDispatchPreflightV1,
         rendered_card: bytes,
     ) -> M8FeishuSandboxSendReceiptV1:
+        return self._send(preflight, rendered_card, None)
+
+    def send_authorized(
+        self,
+        preflight: M8FeishuCardDispatchPreflightV1,
+        rendered_card: bytes,
+        dispatch_authorization_id: str,
+    ) -> M8FeishuSandboxSendReceiptV1:
+        authorization = _validate_sha256(
+            dispatch_authorization_id,
+            "dispatch authorization",
+        )
+        return self._send(preflight, rendered_card, authorization)
+
+    def _send(
+        self,
+        preflight: M8FeishuCardDispatchPreflightV1,
+        rendered_card: bytes,
+        dispatch_authorization_id: str | None,
+    ) -> M8FeishuSandboxSendReceiptV1:
         if not isinstance(preflight, M8FeishuCardDispatchPreflightV1):
             raise TypeError("M8 Feishu sandbox send requires a typed preflight")
         if not isinstance(rendered_card, bytes):
@@ -121,7 +141,17 @@ class M8FeishuSandboxSendService:
         started_at = _require_utc(self._clock(), "send started_at")
         candidate_id = preflight.profile.candidate.candidate_authority_id
         status = self._activations.get_current_status(candidate_id, started_at)
-        if not status.sandbox_external_call_permitted:
+        runtime = status.activation_receipt.runtime_config
+        if (
+            not status.sandbox_external_call_permitted
+            or runtime.profile != preflight.profile
+            or preflight.recipient_binding not in runtime.recipient_allowlist
+            or (
+                dispatch_authorization_id is not None
+                and status.activation_receipt.activation_commit_id
+                != dispatch_authorization_id
+            )
+        ):
             raise ConcurrentModification("M8 Feishu sandbox activation is not current")
 
         with self._secrets.resolve(preflight.profile, preflight.recipient_binding) as secrets:

@@ -174,6 +174,7 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuConformanceResultV1,
     M8FeishuRecipientBindingAuthorityV1,
 )
+from labcourt.contracts.m8_feishu_transport import M8FeishuSandboxSendReceiptV1
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
@@ -459,6 +460,7 @@ from labcourt.ports.m8_feishu_http import (
     M8FeishuHttpTransport,
 )
 from labcourt.ports.m8_feishu_notification_adapter import M8FeishuConformanceAdapter
+from labcourt.ports.m8_feishu_sandbox_sender import M8FeishuSandboxSender
 from labcourt.ports.m8_feishu_secrets import (
     M8FeishuResolvedSecrets,
     M8FeishuSecretResolver,
@@ -625,6 +627,26 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
         "read_runtime_config": (
             ("self", "runtime_config_ref"),
             {"runtime_config_ref": str, "return": bytes},
+        ),
+    },
+    M8FeishuSandboxSender: {
+        "send_authorized": (
+            (
+                "self",
+                "preflight",
+                "rendered_card",
+                "dispatch_authorization_id",
+            ),
+            {
+                "preflight": M8FeishuCardDispatchPreflightV1,
+                "rendered_card": bytes,
+                "dispatch_authorization_id": str,
+                "return": M8FeishuSandboxSendReceiptV1,
+            },
+        ),
+        "read_raw_response": (
+            ("self", "raw_response_ref"),
+            {"raw_response_ref": str, "return": bytes},
         ),
     },
     M8FeishuConformanceAdapter: {

@@ -14,7 +14,8 @@ transition。provider message ID 只能证明飞书 API 接受，不能证明终
 
 1. `M8FeishuSandboxOutboxRunReceiptV1` 必须同时包含 exact claim、call fence、send receipt 与 completion。
 2. claim request 必须等于 send preflight request；call fence 必须绑定 claim，且
-   `dispatch_authorization_id` 必须等于 send 时的 current activation status ID。
+   `dispatch_authorization_id` 必须等于 send 时 current status 所引用的稳定 activation commit ID；send receipt
+   仍完整保留调用时的 current activation status，避免把包含 `assessed_at` 的瞬时 status ID 当作可预知围栏值。
 3. completion 必须绑定同一个 claim/fence，并使用 send receipt 中完全相同的 generic dispatch result；
    repository manifest 必须一致。
 4. provider acceptance、notification transition 与 delivery 是三个独立派生事实。accepted send 可以原子推进
