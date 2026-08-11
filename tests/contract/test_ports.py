@@ -176,6 +176,13 @@ from labcourt.contracts.m8_feishu_inbound import (
     M8FeishuInboundMessageVerificationReceiptV1,
     M8FeishuInboundWebhookProfileV1,
 )
+from labcourt.contracts.m8_feishu_inbound_activation import (
+    M8FeishuInboundRevocationReason,
+    M8FeishuInboundSandboxActivationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationStatusV1,
+    M8FeishuInboundSandboxRuntimeConfigV1,
+)
 from labcourt.contracts.m8_feishu_inbound_reply import (
     M8FeishuInboundReplyCommitReceiptV1,
     M8FeishuInboundReplyCorrelationAuthorityV1,
@@ -472,6 +479,9 @@ from labcourt.ports.m8_feishu_http import (
     M8FeishuHttpResponse,
     M8FeishuHttpTransport,
 )
+from labcourt.ports.m8_feishu_inbound_activation_repository import (
+    M8FeishuInboundActivationRepository,
+)
 from labcourt.ports.m8_feishu_inbound_crypto import M8FeishuInboundCrypto
 from labcourt.ports.m8_feishu_inbound_reply_repository import (
     M8FeishuInboundReplyRepository,
@@ -554,6 +564,67 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8FeishuInboundActivationRepository: {
+        "commit_inbound_activation": (
+            (
+                "self",
+                "activation_intent",
+                "runtime_config",
+                "runtime_config_bytes",
+                "runtime_config_storage_manifest_id",
+                "current_assessed_at",
+                "committed_at",
+            ),
+            {
+                "activation_intent": M8AdapterActivationIntentV1,
+                "runtime_config": M8FeishuInboundSandboxRuntimeConfigV1,
+                "runtime_config_bytes": bytes,
+                "runtime_config_storage_manifest_id": str,
+                "current_assessed_at": datetime,
+                "committed_at": datetime,
+                "return": M8FeishuInboundSandboxActivationCommitReceiptV1,
+            },
+        ),
+        "get_inbound_activation": (
+            ("self", "activation_commit_id"),
+            {
+                "activation_commit_id": str,
+                "return": M8FeishuInboundSandboxActivationCommitReceiptV1,
+            },
+        ),
+        "get_current_inbound_status": (
+            ("self", "candidate_authority_id", "assessed_at"),
+            {
+                "candidate_authority_id": str,
+                "assessed_at": datetime,
+                "return": M8FeishuInboundSandboxActivationStatusV1,
+            },
+        ),
+        "revoke_inbound_activation": (
+            (
+                "self",
+                "activation_commit_id",
+                "revoker_actor_id",
+                "reason",
+                "reason_ref",
+                "revoked_at",
+                "revocation_manifest_id",
+            ),
+            {
+                "activation_commit_id": str,
+                "revoker_actor_id": str,
+                "reason": M8FeishuInboundRevocationReason,
+                "reason_ref": str,
+                "revoked_at": datetime,
+                "revocation_manifest_id": str,
+                "return": M8FeishuInboundSandboxActivationRevocationCommitReceiptV1,
+            },
+        ),
+        "read_inbound_runtime_config": (
+            ("self", "runtime_config_ref"),
+            {"runtime_config_ref": str, "return": bytes},
+        ),
+    },
     M8FeishuUrlChallengeReceiptSink: {
         "record_verification": (
             ("self", "receipt"),

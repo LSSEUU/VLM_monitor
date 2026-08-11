@@ -226,6 +226,9 @@ business-event ingress；不得授权生产入口、listener autostart、notific
 当前 ingress status 必须在请求时重算 current OPERATIONS/SAFETY_OFFICER 与 commissioning inventory；任一漂移
 立即 `INVALIDATED`。当前 in-scope OPERATIONS 或 SAFETY_OFFICER 可单人显式提交 append-only kill switch，
 状态变为 `REVOKED`，challenge 与 business event 同时禁用，且不得自动 reactivation。
+ingress activation/revocation 必须独立 append-only 持久化：同一 activation intent exact retry 只返回原 receipt，
+不同 config bytes 或 manifest 必须冲突；同一 candidate 未撤销时禁止第二个 activation，撤销后新 revision 必须
+连续并精确引用 prior commit。进程重启不得丢失 authority，运行时不得用缓存状态替代当前数据库 cut。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。

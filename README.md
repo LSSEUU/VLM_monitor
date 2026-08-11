@@ -52,6 +52,9 @@ exact outbound provider receipt 授权学生普通说明，并在同一 SQLite �
 commit：精确绑定 callback URL/TLS/profile/commissioning/current actor，配置本身仍不开放入口，commit 也不允许
 自动启动、生产入口、回复提交或案件动作；当前状态会重算人员与 commissioning authority，并支持当前运维或
 安全负责人单人 kill switch，撤销后不得自动重启。独立 UI 任务
+M8.7f7 已通过 migration 0011 将 ingress activation/revocation 做成 append-only SQLite authority：同一 intent
+幂等、未撤销时禁止第二次启用、撤销后只允许连续 revision；进程重启后仍会重读当前 actor 与 commissioning
+证据决定 `SANDBOX_INBOUND_ACTIVE` / `INVALIDATED` / `REVOKED`。仓库尚未把公网 HTTP listener 接到该状态。
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
