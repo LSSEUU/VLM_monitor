@@ -256,6 +256,12 @@ canonical inbound runtime config；不得从零散 CLI 参数代填 operations/s
 隐式墙钟变化而冲突。运行中的 backend 通过逐请求重读观察撤销，因此下一次 challenge/business event 必须
 fail closed。
 
+outbound sandbox authority 必须通过与 inbound 分离的显式 operator boundary 提交和撤销。它只消费 typed
+dual-human activation intent 与 exact canonical `M8FeishuSandboxRuntimeConfigV1`，不得把 webhook activation
+解释为发送授权。status 必须重算 current actor、commissioning 与每个 allowlisted recipient target；任一 target
+revision/active 漂移都必须撤销 external call permission。activation/status/revocation 命令本身不得读取
+App Secret、取得 token 或发送消息；kill switch 必须使用稳定 UTC revocation time 支持 exact retry。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 

@@ -69,6 +69,7 @@ URL challenge、`im.message.receive_v1` evidence、回复关联、逐请求 acti
 - 由当前 OPERATIONS 与 SAFETY_OFFICER 分别确认后生成的 typed activation intent 与 canonical runtime config。
 
 不要把上述 secret 值或真实学生消息粘贴到命令、清单、日志、fixture 或 Git。完成这些外部准备后，先执行
-`labcourt feishu webhook-activate`，再执行 `webhook-serve --check`；两步均成功且反向代理审计证据齐全后，
+`labcourt feishu outbox-activate` 与 `webhook-activate`，再执行 `webhook-serve --check`；各自 status 均为
+current、预检成功且反向代理审计证据齐全后，
 才能在飞书后台配置 Request URL 并验证 challenge。provider 接受、HTTP 200 或 challenge 成功都不等于真实
 送达、学生身份确认、案件责任或处分成立。

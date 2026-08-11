@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-import json
-import sqlite3
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Annotated, NoReturn
+from typing import Annotated
 
 import typer
 
-from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
 from labcourt.application.m8_feishu_webhook_authority import (
     commit_m8_feishu_webhook_activation,
     get_m8_feishu_webhook_activation_status,
@@ -19,57 +15,23 @@ from labcourt.application.m8_feishu_webhook_authority import (
 from labcourt.application.m8_feishu_webhook_runtime import (
     build_m8_feishu_webhook_runtime,
 )
-from labcourt.contracts.m8_adapter_commissioning import MAX_M8_RUNTIME_CONFIG_BYTES
 from labcourt.contracts.m8_feishu_inbound_activation import (
     M8FeishuInboundRevocationReason,
 )
-from labcourt.exceptions import ConcurrentModification, ContractViolation, EvidenceMissing
-
-_OPERATOR_FAILURES = (
-    ConcurrentModification,
-    ContractViolation,
-    EvidenceMissing,
-    RepositoryIntegrityError,
-    OSError,
-    TypeError,
-    ValueError,
-    sqlite3.DatabaseError,
+from labcourt.m8_feishu_cli_support import (
+    OPERATOR_FAILURES,
+    echo_summary,
+    fail,
+    parse_utc,
+    read_document,
 )
-
-
-def _read_document(path: Path, name: str) -> bytes:
-    document = path.read_bytes()
-    if not 0 < len(document) <= MAX_M8_RUNTIME_CONFIG_BYTES:
-        raise ValueError(f"Feishu webhook {name} exceeds the allowed bound")
-    return document
-
-
-def _parse_utc(value: str, name: str) -> datetime:
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError as error:
-        raise ValueError(f"Feishu webhook {name} must be an ISO-8601 UTC time") from error
-    if parsed.tzinfo is None or parsed.utcoffset() != timedelta(0):
-        raise ValueError(f"Feishu webhook {name} must be an ISO-8601 UTC time")
-    return parsed
-
-
-def _fail(operation: str, error: Exception) -> NoReturn:
-    typer.echo(f"Feishu webhook {operation} failed: {error}", err=True)
-    raise typer.Exit(code=2)
-
-
-def _echo(summary: dict[str, object], json_output: bool, message: str) -> None:
-    typer.echo(
-        json.dumps(summary, ensure_ascii=True, sort_keys=True)
-        if json_output
-        else message
-    )
+from labcourt.m8_feishu_outbox_cli import register_m8_feishu_outbox_commands
 
 
 def register_m8_feishu_commands(root: typer.Typer) -> None:
     feishu = typer.Typer(help="Explicit Feishu sandbox operator commands.")
     root.add_typer(feishu, name="feishu")
+    register_m8_feishu_outbox_commands(feishu)
 
     @feishu.command("webhook-activate")
     def webhook_activate(
@@ -116,13 +78,13 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
         try:
             receipt = commit_m8_feishu_webhook_activation(
                 database_path=database,
-                activation_intent_document=_read_document(
+                activation_intent_document=read_document(
                     activation_intent,
-                    "activation intent",
+                    "webhook activation intent",
                 ),
-                runtime_config_document=_read_document(
+                runtime_config_document=read_document(
                     runtime_config,
-                    "runtime config",
+                    "webhook runtime config",
                 ),
                 runtime_config_storage_manifest_id=(
                     runtime_config_storage_manifest_id
@@ -131,8 +93,8 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
                 assessment_manifest_id=assessment_manifest_id,
                 busy_timeout_ms=busy_timeout_ms,
             )
-        except _OPERATOR_FAILURES as error:
-            _fail("activation", error)
+        except OPERATOR_FAILURES as error:
+            fail("webhook activation", error)
         summary = {
             "activation_commit_id": receipt.activation_commit_id,
             "activation_revision": receipt.activation_revision,
@@ -145,7 +107,7 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
                 receipt.production_external_ingress_permitted
             ),
         }
-        _echo(
+        echo_summary(
             summary,
             json_output,
             (
@@ -202,14 +164,14 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
                 revoker_actor_id=revoker_actor_id,
                 reason=reason,
                 reason_ref=reason_ref,
-                revoked_at=_parse_utc(revoked_at, "revoked_at"),
+                revoked_at=parse_utc(revoked_at, "webhook revoked_at"),
                 revocation_manifest_id=revocation_manifest_id,
                 repository_manifest_id=repository_manifest_id,
                 assessment_manifest_id=assessment_manifest_id,
                 busy_timeout_ms=busy_timeout_ms,
             )
-        except _OPERATOR_FAILURES as error:
-            _fail("revocation", error)
+        except OPERATOR_FAILURES as error:
+            fail("webhook revocation", error)
         summary = {
             "activation_commit_id": receipt.activation_receipt.activation_commit_id,
             "activation_state": receipt.activation_state,
@@ -221,7 +183,7 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
                 receipt.sandbox_external_ingress_permitted
             ),
         }
-        _echo(
+        echo_summary(
             summary,
             json_output,
             (
@@ -262,8 +224,8 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
                 assessment_manifest_id=assessment_manifest_id,
                 busy_timeout_ms=busy_timeout_ms,
             )
-        except _OPERATOR_FAILURES as error:
-            _fail("status", error)
+        except OPERATOR_FAILURES as error:
+            fail("webhook status", error)
         summary = {
             "activation_commit_id": status.activation_receipt.activation_commit_id,
             "activation_state": status.activation_state,
@@ -273,7 +235,7 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
             ),
             "url_challenge_permitted": status.url_challenge_permitted,
         }
-        _echo(
+        echo_summary(
             summary,
             json_output,
             f"Feishu sandbox webhook status: {status.activation_state}",
@@ -317,8 +279,8 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
                 runtime_manifest_id=runtime_manifest_id,
                 busy_timeout_ms=busy_timeout_ms,
             )
-        except _OPERATOR_FAILURES as error:
-            _fail("startup", error)
+        except OPERATOR_FAILURES as error:
+            fail("webhook startup", error)
 
         server = assembly.server
         config = assembly.activation_status.activation_receipt.runtime_config
@@ -334,7 +296,7 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
             "public_tls_managed_by_labcourt": False,
             "sandbox_external_ingress_permitted": True,
         }
-        _echo(
+        echo_summary(
             summary,
             json_output,
             (

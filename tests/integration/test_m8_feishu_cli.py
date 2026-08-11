@@ -12,6 +12,9 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
     feishu = root.commands["feishu"]
     assert isinstance(feishu, TyperGroup)
     assert set(feishu.commands) >= {
+        "outbox-activate",
+        "outbox-revoke",
+        "outbox-status",
         "webhook-activate",
         "webhook-revoke",
         "webhook-serve",
@@ -56,3 +59,30 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
         "--revoked-at",
         "--revocation-manifest-id",
     } <= revocation_options
+
+    outbox_activate = feishu.commands["outbox-activate"]
+    assert isinstance(outbox_activate, TyperCommand)
+    outbox_activation_options = {
+        option for parameter in outbox_activate.params for option in parameter.opts
+    }
+    assert {
+        "--activation-intent",
+        "--runtime-config",
+        "--runtime-config-storage-manifest-id",
+        "--repository-manifest-id",
+        "--assessment-manifest-id",
+    } <= outbox_activation_options
+
+    outbox_revoke = feishu.commands["outbox-revoke"]
+    assert isinstance(outbox_revoke, TyperCommand)
+    outbox_revocation_options = {
+        option for parameter in outbox_revoke.params for option in parameter.opts
+    }
+    assert {
+        "--activation-commit-id",
+        "--revoker-actor-id",
+        "--reason",
+        "--reason-ref",
+        "--revoked-at",
+        "--revocation-manifest-id",
+    } <= outbox_revocation_options

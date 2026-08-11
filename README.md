@@ -69,6 +69,9 @@ M8.7f11 已把既有双人 activation 与单人 kill-switch 状态机接入显�
 已形成 typed intent 的两份当前人员确认和 canonical runtime config，`webhook-status` 从当前数据库 cut 重算，
 `webhook-revoke` 只允许当前 in-scope 运维或安全负责人撤销。三者都不读取 secret、不自动启动 listener，
 撤销由运行中的 backend 在下一次请求前观察并 fail closed。
+M8.7f12 以独立的 `outbox-activate` / `outbox-status` / `outbox-revoke` 暴露同样严格的 sandbox 发送 authority：
+发送 allowlist 还会重算当前收件人 target，activation 不会发送消息，稳定 UTC kill-switch 可精确重试；入站与
+出站授权互不替代，真实联调必须分别满足各自的 current authority。
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
@@ -150,6 +153,10 @@ Token，再以环境变量名（不是 secret 值）执行一次只读运行时�
 当前 revoker actor、closed reason、reason reference、稳定的 ISO-8601 UTC `revoked_at` 和 revocation manifest；
 精确重试必须复用同一 `revoked_at`。kill-switch 不直接操作其他进程，但运行中的 backend 会逐请求重读
 authority，因此撤销后 challenge 与业务事件立即拒绝。
+
+outbound sandbox 使用同样的外部双人 intent 流程，但配置是包含测试收件人 allowlist 的
+`M8FeishuSandboxRuntimeConfigV1`；以 `outbox-activate` 提交、`outbox-status` 重算、`outbox-revoke` 停用。
+这三个命令不会读取 App Secret 或调用飞书，webhook activation 也不能替代 outbox activation。
 
 没有 `make` 的 Windows 环境可直接运行：
 
