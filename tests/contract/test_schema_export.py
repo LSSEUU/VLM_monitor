@@ -234,6 +234,8 @@ EXPECTED_SCHEMA_MODES = {
     "m8-feishu-inbound-message-verification-receipt-v1": "serialization",
     "m8-feishu-inbound-reply-commit-receipt-v1": "serialization",
     "m8-feishu-inbound-reply-correlation-authority-v1": "serialization",
+    "m8-feishu-inbound-sandbox-activation-commit-receipt-v1": "serialization",
+    "m8-feishu-inbound-sandbox-runtime-config-v1": "serialization",
     "m8-feishu-inbound-webhook-profile-v1": "serialization",
     "m8-feishu-loopback-challenge-listener-profile-v1": "serialization",
     "m8-feishu-notification-card-v1": "serialization",

@@ -1330,6 +1330,18 @@
       "name": "m8-feishu-inbound-reply-correlation-authority-v1"
     },
     {
+      "file": "m8-feishu-inbound-sandbox-activation-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound_activation.M8FeishuInboundSandboxActivationCommitReceiptV1",
+      "name": "m8-feishu-inbound-sandbox-activation-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-sandbox-runtime-config-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound_activation.M8FeishuInboundSandboxRuntimeConfigV1",
+      "name": "m8-feishu-inbound-sandbox-runtime-config-v1"
+    },
+    {
       "file": "m8-feishu-inbound-webhook-profile-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuInboundWebhookProfileV1",

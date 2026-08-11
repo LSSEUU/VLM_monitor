@@ -218,6 +218,12 @@ hash、reference、size 与 manifest，不能嵌入 clear challenge，也不能�
 只用于离线/本机集成验证，Host 必须为 loopback；出现任一业务事件签名头时必须返回 ingress inactive，不能
 调用业务事件验证器。loopback profile 不得被解释为公网 Request URL、TLS 就绪或 external activation。
 
+公网飞书 sandbox webhook runtime config 必须是无密钥 authority，绑定 exact inbound profile、callback URL
+reference/hash、TLS configuration reference/hash、固定 path、本机 application bind 与反向代理 TLS termination；
+配置本身保持 external ingress false。只有 current commissioning readiness、当前 OPERATIONS/SAFETY_OFFICER
+双确认和 exact canonical config bytes 均未变化的 append-only activation commit 才可授权 sandbox challenge 与
+business-event ingress；不得授权生产入口、listener autostart、notification reply commit、Case 动作或处分。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 
