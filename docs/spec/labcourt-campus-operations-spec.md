@@ -175,6 +175,11 @@ authority。只有该 commit 可授权 allowlist 内的 sandbox call，生产发
 余量。token timeout 明确为消息未发，message timeout/transport failure 必须保持 unknown-delivery；数值
 `code=0` 加 typed message ID 只确认 provider acceptance，不确认 delivery，也不能触发 Case 动作。
 
+飞书 sandbox runtime 只允许显式的 credential/receive reference 到环境变量名映射；不得扫描前缀、猜测
+变量名或在 authority 中保存 clear value。HTTP transport 固定 `open.feishu.cn:443`、系统 CA 与 hostname
+verification、exact path、单次 `POST`、0 自动重试和 256 KiB response 上限。环境缺值、hash drift、TLS
+失败、timeout 与超界 response 必须转换为 typed failure；默认应用 wiring 不得实例化该 live transport。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 
