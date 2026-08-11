@@ -31,6 +31,10 @@
 - 密文请求、解密事件和内容文档保持三个不同 raw reference，避免覆盖或把解析结果冒充原始请求。
 - 自由文本不能静默成为裁决规则、定责事实或处分依据；它只可能在后续显式映射中成为学生补充材料。
 - 默认运行路径保持离线，不依赖飞书 SDK、DNS、公网 webhook、GPU 或真实凭据。
+- 实现层由 stdlib 负责 freshness、原始 body SHA-256 signature、strict JSON/base64/event parsing；AES-256-CBC
+  是独立注入端口。仓库不内置未经审计的自写 AES，也不因缺少可选 crypto provider 放宽验证。
+- migration 0009 以 provider message ID 唯一约束和 append-only trigger 落实 replay ledger，并将 encrypted
+  request、decrypted event、text content 三份原始字节与 commit receipt 原子绑定。
 
 ## 官方协议依据
 

@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Protocol
 
 
+class M8FeishuInboundCryptoError(RuntimeError):
+    """Sanitized deterministic decrypt failure from the injected provider."""
+
+
 class M8FeishuInboundCrypto(Protocol):
     def decrypt_aes_256_cbc(
         self,
@@ -13,4 +17,4 @@ class M8FeishuInboundCrypto(Protocol):
     ) -> bytes: ...
 
 
-__all__ = ["M8FeishuInboundCrypto"]
+__all__ = ["M8FeishuInboundCrypto", "M8FeishuInboundCryptoError"]

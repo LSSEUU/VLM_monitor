@@ -39,7 +39,10 @@ provider acceptance 不等于真实送达。M8.7e4b 已实现显式注入的单�
 wiring 仍不装配 live secret/TLS adapter，仓库也尚无真实租户调用证据。M8.7f1 已开始补齐回复闭环：新增
 encrypted webhook profile、未验证 ingress request 与 hash-only verified
 `im.message.receive_v1` receipt；按 provider `message_id` 防重放、按 `parent_id` 关联 outbound message，且
-验证回执本身不能提交 reply 或改变 Case。当前仍未开放公网 webhook 或保存真实学生自由文本。独立 UI 任务
+验证回执本身不能提交 reply 或改变 Case。M8.7f2 已增加短生命周期可清零 secret lease、原始 body
+SHA-256 签名/严格事件验证服务，以及 migration 0009 的 append-only encrypted/decrypted/content raw store；
+provider `message_id` 在 SQLite 中唯一，异证据重放 fail closed。AES-256-CBC 只定义了可注入 primitive port，
+当前测试使用 deterministic fake，尚未选择生产密码库、开放公网 webhook 或保存真实学生自由文本。独立 UI 任务
 可直接消费
 `GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
 消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见

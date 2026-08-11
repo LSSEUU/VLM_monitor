@@ -202,6 +202,11 @@ decrypted event、text content 的固定顺序绑定 raw ref/hash/size inventory
 与提交时点。exact retry 只能读回同一 receipt，任何不同 payload、event、parent 或 manifest 都必须冲突；
 raw artifact 和验证记录必须 append-only。
 
+签名必须在解析 encrypted envelope 前以 exact raw body 计算并 constant-time compare；freshness 必须在读取
+secret 前拒绝。AES-256-CBC primitive 必须是显式注入端口，key 为 Encrypt Key 的 SHA-256，decoded payload
+的前 16 bytes 为 IV；默认仓库不得自写或静默回退密码算法。strict parser 只接受已冻结的单聊 user text
+shape，unknown field、bad base64/block、token/app drift、group 或非 text 均转换为 typed failure且不落库。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 
