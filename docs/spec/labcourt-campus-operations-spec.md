@@ -443,3 +443,7 @@ artifact 与审计要求沿用首次学生卡；最终仍固定 `real_delivery_c
 
 结果通知确认必须由 student actor 在独立入口显式确认，只允许 `DELIVERED -> ACKNOWLEDGED`。确认关闭通知
 闭环但不得改变 terminal `APPEAL_RESOLVED` Case；exact retry 必须返回同一 commit，默认启动不得代学生确认。
+
+用户权限清单 API 必须返回 persisted current actor commit receipts，而不是前端静态角色表；仅领导与安全
+负责人可读全量 inventory，运维与学生禁止。该最小端点只读，不得接收客户端 role/capability claim、返回
+bearer/credential secret，或暗示尚未定义的用户管理 capability。

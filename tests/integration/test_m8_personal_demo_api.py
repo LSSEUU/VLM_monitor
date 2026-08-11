@@ -188,6 +188,36 @@ def test_demo_api_session_resolves_each_current_role_without_frontend_claims(
         thread.join(timeout=3)
 
 
+def test_demo_user_permission_list_is_current_typed_and_read_only(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = assemble_m8_personal_demo_api(tmp_path / "users" / "labcourt.sqlite3", 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        for role in ("leader", "safety"):
+            status, payload = _request(server.server_port, "GET", "/api/m8/users", role)
+            assert status == 200
+            assert isinstance(payload, list)
+            assert [item["authority"]["actor_id"] for item in payload] == [
+                "leader-demo",
+                "operations-demo",
+                "safety-officer-demo",
+                "student-demo",
+            ]
+            assert all(item["authority"]["active"] is True for item in payload)
+            assert all(item["authority"]["capabilities"] for item in payload)
+        for role in ("operations", "student"):
+            status, _payload = _request(server.server_port, "GET", "/api/m8/users", role)
+            assert status == 403
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
 def test_demo_api_case_list_is_server_filtered_by_current_role(
     tmp_path: Path,
     socket_enabled: None,

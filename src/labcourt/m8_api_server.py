@@ -36,6 +36,7 @@ from labcourt.services.m8_operations_api import (
 )
 from labcourt.services.m8_projection_api import M8ProjectionApiService
 from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
+from labcourt.services.m8_user_permission_api import M8UserPermissionApiService
 
 _MAX_REQUEST_BYTES = 64 * 1024
 _STREAM_CHUNK_BYTES = 1024 * 1024
@@ -57,6 +58,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         commissioning_service: M8CommissioningApiService,
         authenticator: M8RequestAuthenticator,
         recorded_media_service: M8RecordedMediaApiService | None = None,
+        user_permission_service: M8UserPermissionApiService | None = None,
     ) -> None:
         super().__init__(server_address, M8ApiRequestHandler)
         self.api_service = service
@@ -66,6 +68,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         self.commissioning_service = commissioning_service
         self.api_authenticator = authenticator
         self.recorded_media_service = recorded_media_service
+        self.user_permission_service = user_permission_service
 
 
 class M8ApiRequestHandler(BaseHTTPRequestHandler):
@@ -99,6 +102,20 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                 self._json(
                     HTTPStatus.OK,
                     [case.model_dump(mode="json") for case in cases],
+                )
+                return
+            if segments == ("api", "m8", "users"):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                user_service = self.server.user_permission_service
+                if user_service is None:
+                    self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+                    return
+                users = user_service.users(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    [user.model_dump(mode="json") for user in users],
                 )
                 return
             if segments == ("api", "m8", "notifications"):
@@ -489,6 +506,7 @@ def build_m8_api_server(
     commissioning_service: M8CommissioningApiService,
     authenticator: M8RequestAuthenticator,
     recorded_media_service: M8RecordedMediaApiService | None = None,
+    user_permission_service: M8UserPermissionApiService | None = None,
 ) -> M8ApiHttpServer:
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
         raise ValueError("M8 API port must be from zero through 65535")
@@ -508,6 +526,10 @@ def build_m8_api_server(
         recorded_media_service, M8RecordedMediaApiService
     ):
         raise TypeError("M8 API requires a recorded media service or None")
+    if user_permission_service is not None and not isinstance(
+        user_permission_service, M8UserPermissionApiService
+    ):
+        raise TypeError("M8 API requires a user permission service or None")
     return M8ApiHttpServer(
         ("127.0.0.1", port),
         service=service,
@@ -517,6 +539,7 @@ def build_m8_api_server(
         commissioning_service=commissioning_service,
         authenticator=authenticator,
         recorded_media_service=recorded_media_service,
+        user_permission_service=user_permission_service,
     )
 
 

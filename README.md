@@ -164,6 +164,8 @@ PPE 案件确认后可双击 `labcourt-demo-ppe-notification.cmd`：它向 `stud
 固定 `real_delivery_confirmed=false`，不代表飞书送达，也不会改变已结案案件。
 学生最后可双击 `labcourt-demo-ppe-outcome-acknowledge.cmd` 并输入 `APPLY`，将结果通知推进到
 `ACKNOWLEDGED`。这只关闭通知闭环，案件继续保持终态 `APPEAL_RESOLVED`。
+个人 Demo API 的 `GET /api/m8/users` 向领导和安全负责人返回当前 typed actor receipts，可直接展示
+角色、scope、capabilities、active 与 revision；运维/学生无权读取全量清单，且该端点不提供权限变更。
 
 Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
 `feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确

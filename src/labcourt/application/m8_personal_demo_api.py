@@ -45,6 +45,7 @@ from labcourt.services.m8_operations_api import M8OperationsApiService
 from labcourt.services.m8_operations_projection import M8OperationsProjectionService
 from labcourt.services.m8_projection_api import M8ProjectionApiService
 from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
+from labcourt.services.m8_user_permission_api import M8UserPermissionApiService
 
 _BUSY_TIMEOUT_MS = 5_000
 M8_PERSONAL_DEMO_ROLE_TOKENS = {
@@ -180,6 +181,15 @@ def assemble_m8_personal_demo_api(
             inventory,
             operations,
             _manifest("labcourt-personal-demo-camera-view-v1"),
+        ),
+        user_permission_service=M8UserPermissionApiService(
+            operations,
+            (
+                "leader-demo",
+                "operations-demo",
+                "safety-officer-demo",
+                "student-demo",
+            ),
         ),
     )
     profile = M8PersonalDemoApiProfileV1(
