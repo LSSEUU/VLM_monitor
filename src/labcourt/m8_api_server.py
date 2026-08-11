@@ -81,6 +81,16 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                 session = self.server.api_service.session(principal)
                 self._json(HTTPStatus.OK, session.model_dump(mode="json"))
                 return
+            if segments == ("api", "m8", "cases"):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                cases = self.server.api_service.cases(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    [case.model_dump(mode="json") for case in cases],
+                )
+                return
             if len(segments) == 5 and segments[:3] == ("api", "m8", "campuses"):
                 if segments[4] == "topology":
                     topology = self.server.api_service.topology(principal, segments[3])

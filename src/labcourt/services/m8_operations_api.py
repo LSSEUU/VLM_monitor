@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from labcourt.contracts.m8_access_cases import (
     M8ActorAuthorityV1,
     M8ActorRole,
+    M8ActorScopeKind,
     M8Capability,
     M8OperationalCaseTransitionCommandV1,
     M8OperationalRiskLevel,
@@ -26,7 +27,7 @@ from labcourt.contracts.m8_inventory_persistence import (
     M8OperationalSourceCatalogCommitReceiptV1,
 )
 from labcourt.contracts.m8_sensor_persistence import M8SensorPollCacheCommitReceiptV1
-from labcourt.exceptions import ConcurrentModification, EvidenceMissing
+from labcourt.exceptions import BudgetExceeded, ConcurrentModification, EvidenceMissing
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
 from labcourt.ports.m8_sensor_persistence_repository import M8SensorPersistenceRepository
@@ -116,6 +117,24 @@ class M8OperationsApiService:
         )
         return self._call(lambda: self._sensors.get_poll_cache(request_id))
 
+    def cases(
+        self,
+        principal: M8ApiPrincipalV1,
+    ) -> tuple[M8OperationalCaseCommitReceiptV1, ...]:
+        actor = self._actor(principal)
+        current = self._call(lambda: self._operations.list_current_operational_cases(10_000))
+        if actor.role == M8ActorRole.SAFETY_OFFICER:
+            return tuple(item for item in current if self._actor_covers_case(actor, item))
+        if actor.role == M8ActorRole.LEADER:
+            return tuple(item for item in current if self._is_major(item))
+        if actor.role == M8ActorRole.STUDENT:
+            return tuple(
+                item
+                for item in current
+                if item.audit_event.case_authority.subject_actor_id == actor.actor_id
+            )
+        return ()
+
     def case(
         self,
         principal: M8ApiPrincipalV1,
@@ -133,7 +152,7 @@ class M8OperationsApiService:
     ) -> tuple[M8OperationalCaseAuditEventV1, ...]:
         actor = self._actor(principal)
         case = self._call(lambda: self._operations.get_current_operational_case(case_id))
-        if actor.role == M8ActorRole.SAFETY_OFFICER or (
+        if (actor.role == M8ActorRole.SAFETY_OFFICER and self._actor_covers_case(actor, case)) or (
             actor.role == M8ActorRole.LEADER and self._is_major(case)
         ):
             self._require_any(actor, M8Capability.VIEW_AUDIT)
@@ -188,7 +207,7 @@ class M8OperationsApiService:
         actor: M8ActorAuthorityV1,
         case: M8OperationalCaseCommitReceiptV1,
     ) -> None:
-        if actor.role == M8ActorRole.SAFETY_OFFICER:
+        if actor.role == M8ActorRole.SAFETY_OFFICER and self._actor_covers_case(actor, case):
             self._require_any(actor, M8Capability.VIEW_GLOBAL_OVERVIEW)
             return
         if actor.role == M8ActorRole.LEADER and self._is_major(case):
@@ -201,6 +220,18 @@ class M8OperationsApiService:
             self._require_any(actor, M8Capability.VIEW_OWN_CASE)
             return
         raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+
+    @staticmethod
+    def _actor_covers_case(
+        actor: M8ActorAuthorityV1,
+        case: M8OperationalCaseCommitReceiptV1,
+    ) -> bool:
+        if actor.scope_kind == M8ActorScopeKind.CAMPUS_WIDE:
+            return True
+        return (
+            actor.scope_kind == M8ActorScopeKind.LOCATIONS
+            and case.audit_event.case_authority.location_id in actor.scope_location_ids
+        )
 
     @staticmethod
     def _is_major(case: M8OperationalCaseCommitReceiptV1) -> bool:
@@ -217,6 +248,8 @@ class M8OperationsApiService:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from error
         except ConcurrentModification as error:
             raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION) from error
+        except BudgetExceeded as error:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from error
 
 
 __all__ = ["M8ApiServiceError", "M8ApiServiceFailureCode", "M8OperationsApiService"]

@@ -187,6 +187,46 @@ def test_demo_api_session_resolves_each_current_role_without_frontend_claims(
         thread.join(timeout=3)
 
 
+def test_demo_api_case_list_is_server_filtered_by_current_role(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = assemble_m8_personal_demo_api(tmp_path / "case-list" / "labcourt.sqlite3", 0)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        visible_case_id: str | None = None
+        for role in ("safety", "leader"):
+            status, payload = _request(server.server_port, "GET", "/api/m8/cases", role)
+            assert status == 200
+            assert isinstance(payload, list)
+            assert len(payload) == 1
+            assert payload[0]["status"] == "PENDING_VERIFICATION"
+            assert payload[0]["audit_event"]["case_authority"]["risk_level"] == "EMERGENCY"
+            visible_case_id = payload[0]["case_id"]
+        assert visible_case_id is not None
+
+        for role in ("operations", "student"):
+            status, payload = _request(server.server_port, "GET", "/api/m8/cases", role)
+            assert status == 200
+            assert payload == []
+
+        status, payload = _request(
+            server.server_port,
+            "GET",
+            "/api/m8/cases?limit=999999",
+            "safety",
+        )
+        assert status == 400
+        assert isinstance(payload, dict)
+        assert payload["reason_code"] == "INVALID_REQUEST"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
 def test_demo_api_answers_from_versioned_offline_knowledge_with_citations(
     tmp_path: Path,
     socket_enabled: None,

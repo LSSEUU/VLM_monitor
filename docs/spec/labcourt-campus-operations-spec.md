@@ -337,6 +337,10 @@ notification 与 raw artifact receipt 继续 conflict closed。入口不得自�
 authenticated session discovery 必须从 bearer principal 重新解析当前 persisted actor receipt，返回现有 typed
 actor authority，不接受客户端 role/scope/capability claim，也不得回显 bearer token。inactive、actor drift 或
 缺失 authority 必须沿用 API 的 fail-closed 错误语义。
+current Case collection 必须由服务端按当前 actor authority 裁剪：SAFETY_OFFICER 仅 scope 覆盖的 location，
+LEADER 仅 SEVERE/EMERGENCY，STUDENT 仅 `subject_actor_id` 等于自身，OPERATIONS 返回空 inventory。collection
+不得接受客户端 role 或无界 limit；单案与 audit 读取必须复用相同 location scope 判断，不能让列表和详情
+产生权限分叉。
 
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
