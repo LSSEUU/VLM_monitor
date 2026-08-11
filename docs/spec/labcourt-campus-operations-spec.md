@@ -421,3 +421,9 @@ Case、notification、target 与 source authority，复用默认离线 fake chan
 `QUEUED -> SENT -> DELIVERED`；若中断在 `SENT`，必须从持久化 dispatch authority 与 raw card bytes
 确定性恢复。`DELIVERED` 仅表示模拟通道完成，必须固定
 `real_delivery_confirmed=false`、`case_transition_permitted=false`，不得替代飞书回执、迁移案件或形成处分。
+
+学生通知回复必须是送达后的独立显式动作，reply kind 仅允许 closed enum
+`EXPLANATION | APPEAL_REQUEST`。exact bounded UTF-8 reply、SHA-256、student actor、target 与 current
+notification authority 必须进入既有 reply authority、raw artifact 与 audit chain；成功只允许
+`DELIVERED|ACKNOWLEDGED -> RESPONDED`，并固定禁止 Case transition 与直接处分。`APPEAL_REQUEST` 不得
+静默替代学生独立确认的 `SUBMIT_APPEAL` Case transition。

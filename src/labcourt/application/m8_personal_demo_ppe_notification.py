@@ -18,6 +18,7 @@ from labcourt.adapters.storage.sqlite_m8_operations_repository import (
 )
 from labcourt.application.m8_personal_demo_bootstrap import bootstrap_m8_personal_demo
 from labcourt.contracts.frames import Sha256Hex
+from labcourt.contracts.m3_models import require_bounded_public_text
 from labcourt.contracts.m8_access_cases import M8ActorRole, M8OperationalCaseStatus
 from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
@@ -25,6 +26,7 @@ from labcourt.contracts.m8_notification_cards import (
 )
 from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationChannelCapabilityAuthorityV1,
+    M8NotificationReplyKind,
 )
 from labcourt.contracts.m8_notification_persistence import M8NotificationCommitReceiptV1
 from labcourt.contracts.m8_notifications import (
@@ -47,6 +49,7 @@ _BUSY_TIMEOUT_MS = 5_000
 _PLANNED_AT = datetime(2026, 8, 11, 10, 0, tzinfo=UTC)
 _ROUTED_AT = _PLANNED_AT + timedelta(seconds=1)
 _DELIVERED_AT = _ROUTED_AT + timedelta(seconds=2)
+_RESPONDED_AT = _DELIVERED_AT + timedelta(seconds=1)
 
 
 def _manifest(name: str) -> Sha256Hex:
@@ -262,8 +265,89 @@ def deliver_m8_personal_demo_ppe_notification(
     return current
 
 
+def respond_m8_personal_demo_ppe_notification(
+    database_path: Path,
+    route_receipt: M8PersonalDemoPpeNotificationReceiptV1,
+    *,
+    reply_kind: M8NotificationReplyKind,
+    reply_text: str,
+    confirmed: bool,
+) -> M8NotificationCommitReceiptV1:
+    """Persist one explicit student explanation or appeal request offline."""
+
+    if confirmed is not True:
+        raise ValueError("M8 personal Demo PPE reply requires explicit confirmation")
+    if not isinstance(route_receipt, M8PersonalDemoPpeNotificationReceiptV1):
+        raise TypeError("M8 personal Demo PPE reply requires a typed route receipt")
+    if not isinstance(reply_kind, M8NotificationReplyKind):
+        raise TypeError("M8 personal Demo PPE reply kind must be closed and typed")
+    exact_text = require_bounded_public_text(
+        reply_text,
+        "M8 personal Demo PPE reply",
+        max_length=2_048,
+    )
+    raw_reply = exact_text.encode("utf-8")
+    reply_sha256 = hashlib.sha256(raw_reply).hexdigest()
+    bootstrap = bootstrap_m8_personal_demo(database_path)
+    repository_manifest_id = bootstrap.projection.topology_receipt.repository_manifest_id
+    operations = SQLiteM8OperationsRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    notifications = SQLiteM8NotificationRepository(
+        database_path,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+    )
+    current = notifications.get_current_notification(route_receipt.notification_id)
+    plan = current.audit_event.notification_authority.plan
+    case = operations.get_current_operational_case(route_receipt.case_id)
+    if (
+        plan.notification_id != route_receipt.notification_id
+        or plan.case_id != route_receipt.case_id
+        or plan.case_version != route_receipt.source_case_version
+        or plan.case_authority_sha256 != route_receipt.source_case_authority_sha256
+        or plan.target.target_authority_id != route_receipt.target_authority_id
+        or plan.target.actor_id != route_receipt.target_actor_id
+        or case.case_version != route_receipt.source_case_version
+        or case.case_document_sha256 != route_receipt.source_case_authority_sha256
+    ):
+        raise ValueError("M8 personal Demo PPE reply route authority changed")
+    if current.status == M8NotificationStatus.RESPONDED:
+        transition = current.audit_event.transition_command
+        reply = transition.reply if transition is not None else None
+        if (
+            reply is None
+            or reply.reply_kind != reply_kind
+            or reply.reply_document_sha256 != reply_sha256
+            or notifications.read_raw_artifact(reply.raw_reply_ref) != raw_reply
+        ):
+            raise ValueError("M8 personal Demo PPE reply conflicts with current authority")
+        return current
+    if current.status not in (
+        M8NotificationStatus.DELIVERED,
+        M8NotificationStatus.ACKNOWLEDGED,
+    ):
+        raise ValueError("M8 personal Demo PPE reply requires simulated delivery")
+    service = M8NotificationService(notifications, operations, _channel(), _workflow())
+    committed = service.respond(
+        route_receipt.notification_id,
+        route_receipt.target_actor_id,
+        reply_kind,
+        reply_sha256,
+        raw_reply,
+        _RESPONDED_AT,
+        case.audit_event.case_authority.create_command.trigger_authorities,
+    )
+    if committed.status != M8NotificationStatus.RESPONDED:
+        raise ValueError("M8 personal Demo PPE notification reply was not committed")
+    return committed
+
+
 __all__ = [
     "M8PersonalDemoPpeNotificationRun",
     "deliver_m8_personal_demo_ppe_notification",
+    "respond_m8_personal_demo_ppe_notification",
     "route_m8_personal_demo_ppe_notification",
 ]

@@ -18,11 +18,13 @@ from labcourt.application.m8_personal_demo_media import bind_m8_personal_demo_re
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.application.m8_personal_demo_ppe_notification import (
     deliver_m8_personal_demo_ppe_notification,
+    respond_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_notification,
 )
 from labcourt.application.m8_personal_demo_student_appeal import (
     execute_m8_personal_demo_student_appeal,
 )
+from labcourt.contracts.m8_notification_lifecycle import M8NotificationReplyKind
 from labcourt.contracts.m8_personal_demo_api import M8PersonalDemoOperatorAction
 
 
@@ -181,6 +183,29 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         delivery_receipt = delivered.audit_event.transition_command.delivery_receipt
         assert delivery_receipt is not None
         assert delivery_receipt.real_delivery_confirmed is False
+
+        reply = respond_m8_personal_demo_ppe_notification(
+            root / "labcourt.sqlite3",
+            notification.receipt,
+            reply_kind=M8NotificationReplyKind.EXPLANATION,
+            reply_text="I wore prescription safety glasses and request a manual review.",
+            confirmed=True,
+        )
+        reply_replay = respond_m8_personal_demo_ppe_notification(
+            root / "labcourt.sqlite3",
+            notification.receipt,
+            reply_kind=M8NotificationReplyKind.EXPLANATION,
+            reply_text="I wore prescription safety glasses and request a manual review.",
+            confirmed=True,
+        )
+        assert reply_replay == reply
+        assert reply.status.value == "RESPONDED"
+        assert reply.audit_event.transition_command is not None
+        reply_authority = reply.audit_event.transition_command.reply
+        assert reply_authority is not None
+        assert reply_authority.reply_kind == M8NotificationReplyKind.EXPLANATION
+        assert reply_authority.case_transition_permitted is False
+        assert reply_authority.direct_disciplinary_action_permitted is False
 
         appeal = execute_m8_personal_demo_student_appeal(
             access_path=access,

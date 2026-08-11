@@ -25,12 +25,14 @@ from labcourt.application.m8_personal_demo_notification import (
 from labcourt.application.m8_personal_demo_ppe_case import create_m8_personal_demo_ppe_case
 from labcourt.application.m8_personal_demo_ppe_notification import (
     deliver_m8_personal_demo_ppe_notification,
+    respond_m8_personal_demo_ppe_notification,
     route_m8_personal_demo_ppe_notification,
 )
 from labcourt.application.m8_personal_demo_student_appeal import (
     M8PersonalDemoStudentAppealError,
     execute_m8_personal_demo_student_appeal,
 )
+from labcourt.contracts.m8_notification_lifecycle import M8NotificationReplyKind
 from labcourt.contracts.m8_personal_demo import (
     M8PersonalDemoNotificationReceiptV1,
     M8PersonalDemoPpeCaseReceiptV1,
@@ -630,6 +632,53 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(
                 "LabCourt PERSONAL DEMO student notification delivered by offline fake; "
                 "real delivery remains unconfirmed"
+            )
+
+    @demo.command("ppe-notification-reply")
+    def ppe_notification_reply(
+        kind: Annotated[M8NotificationReplyKind, typer.Option("--kind")],
+        text: Annotated[str, typer.Option("--text", min=1, max=2048)],
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-demo"
+        ),
+        confirmed: Annotated[
+            bool,
+            typer.Option("--confirmed", help="Explicit student confirmation for one reply."),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        try:
+            route = M8PersonalDemoPpeNotificationReceiptV1.model_validate_json(
+                (output / "ppe-notification-route-receipt.json").read_bytes()
+            )
+            receipt = respond_m8_personal_demo_ppe_notification(
+                output / "labcourt.sqlite3",
+                route,
+                reply_kind=kind,
+                reply_text=text,
+                confirmed=confirmed,
+            )
+            reply_directory = output / "student-notification-replies"
+            reply_directory.mkdir(parents=True, exist_ok=True)
+            _write_exact(
+                reply_directory / f"{receipt.commit_receipt_id}.json",
+                (receipt.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            )
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            _fail(error)
+        summary: dict[str, object] = {
+            "case_transition_permitted": False,
+            "notification_id": receipt.notification_id,
+            "notification_status": receipt.status.value,
+            "reply_kind": kind.value,
+            "student_controlled": True,
+        }
+        if json_output:
+            typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        else:
+            typer.echo(
+                "LabCourt PERSONAL DEMO student notification reply committed offline: "
+                f"{kind.value}"
             )
 
 
