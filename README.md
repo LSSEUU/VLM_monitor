@@ -106,7 +106,9 @@ M8.7f13 已增加显式 `outbox-run-one`：一次只消费一条 current `QUEUED
 
 ## 开发命令
 
-Windows 个人 Demo 可使用仓库根目录的 `feishu-setup.cmd`、`feishu-preflight.cmd`、
+Windows 个人 Demo 可先使用 `feishu-setup.cmd` 和 `feishu-demo-card.cmd`，只配置企业自建应用的
+App ID、App Secret 与测试 `open_id`，即可在明确确认后尝试发送一张固定模拟卡片。完整闭环再使用
+仓库根目录的 `feishu-preflight.cmd`、
 `feishu-webhook.cmd` 和 `feishu-send-one.cmd`。真实测试凭据只保存在被 Git 强制忽略的
 `.labcourt-local/feishu-secrets.json`；仓库中的示例保持全空。webhook 与单条发送入口都先执行无网络
 预检，发送还要求人工输入 `SEND`。详细前置工件、飞书后台配置和安全边界见

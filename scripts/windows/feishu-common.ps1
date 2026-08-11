@@ -91,6 +91,13 @@ function Assert-LabCourtFeishuArtifacts {
         [ValidateSet("All", "Webhook", "Outbox")][string]$Scope = "All"
     )
 
+    if (
+        $null -eq $Config.runtime -or
+        $null -eq $Config.outbox_activation -or
+        $null -eq $Config.webhook_activation
+    ) {
+        throw "Full Feishu authority is not configured. Re-run setup with -FullAuthority."
+    }
     $paths = @([string]$Config.runtime.database_path)
     if ($Scope -in @("All", "Outbox")) {
         $paths += @(

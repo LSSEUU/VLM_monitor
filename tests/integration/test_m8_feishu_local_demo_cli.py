@@ -47,3 +47,29 @@ def test_local_config_error_never_echoes_rejected_secret(tmp_path: Path) -> None
 
     assert result.exit_code == 2
     assert rejected not in result.stdout
+
+
+def test_personal_demo_card_check_is_offline_with_minimal_credentials(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "feishu-secrets.json"
+    payload = _payload()
+    credentials = payload["credentials"]
+    assert isinstance(credentials, dict)
+    credentials["encrypt_key"] = None
+    credentials["verification_token"] = None
+    payload["runtime"] = None
+    payload["outbox_activation"] = None
+    payload["webhook_activation"] = None
+    config_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = RUNNER.invoke(
+        app,
+        ["feishu", "demo-card", "--check", "--config", str(config_path), "--json"],
+    )
+
+    assert result.exit_code == 0
+    summary = json.loads(result.stdout)
+    assert summary["outcome"] == "CHECKED"
+    assert summary["token_call_attempted"] is False
+    assert summary["message_call_attempted"] is False

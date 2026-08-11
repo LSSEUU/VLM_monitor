@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import SecretStr, ValidationInfo, field_validator
+from pydantic import SecretStr, ValidationInfo, field_validator, model_validator
 
 from labcourt.contracts.base import FrozenContractModel
 from labcourt.contracts.frames import Sha256Hex
@@ -32,17 +32,19 @@ class M8FeishuLocalDemoCredentialsV1(FrozenContractModel):
     app_id: SecretStr
     app_secret: SecretStr
     test_open_id: SecretStr
-    encrypt_key: SecretStr
-    verification_token: SecretStr
+    encrypt_key: SecretStr | None = None
+    verification_token: SecretStr | None = None
     worker_token: SecretStr
 
     @field_validator("*")
     @classmethod
     def validate_secret_shape(
         cls,
-        value: SecretStr,
+        value: SecretStr | None,
         info: ValidationInfo,
-    ) -> SecretStr:
+    ) -> SecretStr | None:
+        if value is None:
+            return None
         plaintext = value.get_secret_value()
         minimum = 32 if info.field_name == "worker_token" else 1
         maximum = 256 if info.field_name == "worker_token" else _MAX_SECRET_CHARS
@@ -111,9 +113,9 @@ class M8FeishuLocalDemoConfigV1(FrozenContractModel):
     )
     credentials: M8FeishuLocalDemoCredentialsV1
     environment_names: M8FeishuLocalDemoEnvironmentNamesV1
-    runtime: M8FeishuLocalDemoRuntimeV1
-    outbox_activation: M8FeishuLocalDemoActivationFilesV1
-    webhook_activation: M8FeishuLocalDemoActivationFilesV1
+    runtime: M8FeishuLocalDemoRuntimeV1 | None = None
+    outbox_activation: M8FeishuLocalDemoActivationFilesV1 | None = None
+    webhook_activation: M8FeishuLocalDemoActivationFilesV1 | None = None
     personal_demo_only: Literal[True] = True
     plaintext_credentials_persisted_locally: Literal[True] = True
     default_preflight_required: Literal[True] = True
@@ -122,6 +124,19 @@ class M8FeishuLocalDemoConfigV1(FrozenContractModel):
     production_ready: Literal[False] = False
     case_transition_permitted: Literal[False] = False
     direct_disciplinary_action_permitted: Literal[False] = False
+
+    @model_validator(mode="after")
+    def validate_authority_bundle(self) -> M8FeishuLocalDemoConfigV1:
+        sections = (self.runtime, self.outbox_activation, self.webhook_activation)
+        configured = tuple(section is not None for section in sections)
+        if any(configured) and not all(configured):
+            raise ValueError("M8 Feishu local demo authority bundle is incomplete")
+        if all(configured) and (
+            self.credentials.encrypt_key is None
+            or self.credentials.verification_token is None
+        ):
+            raise ValueError("M8 Feishu local demo webhook credentials are missing")
+        return self
 
 
 __all__ = [

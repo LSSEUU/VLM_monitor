@@ -17,6 +17,7 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
         "outbox-run-one",
         "outbox-status",
         "local-config-check",
+        "demo-card",
         "webhook-activate",
         "webhook-revoke",
         "webhook-serve",

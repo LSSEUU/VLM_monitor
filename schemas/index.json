@@ -1378,6 +1378,18 @@
       "name": "m8-feishu-notification-card-v1"
     },
     {
+      "file": "m8-feishu-personal-demo-probe-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_personal_demo.M8FeishuPersonalDemoProbeReceiptV1",
+      "name": "m8-feishu-personal-demo-probe-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-personal-demo-probe-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_personal_demo.M8FeishuPersonalDemoProbeV1",
+      "name": "m8-feishu-personal-demo-probe-v1"
+    },
+    {
       "file": "m8-feishu-recipient-binding-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_notification.M8FeishuRecipientBindingAuthorityV1",

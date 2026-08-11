@@ -48,6 +48,11 @@ def test_network_capable_entrypoints_run_preflight_before_action() -> None:
     assert '$confirmation -cne "SEND"' in send_one
     assert "ConfirmSend" not in send_one
 
+    demo = (WINDOWS_SCRIPTS / "feishu-demo-card.ps1").read_text(encoding="utf-8")
+    assert demo.index('"--check"') < demo.index('Read-Host "Local check passed.')
+    assert demo.index('Read-Host "Local check passed.') < demo.index('"--confirmed"')
+    assert '$confirmation -cne "SEND"' in demo
+
 
 def test_preflight_uses_check_modes_and_never_passes_secret_values_as_arguments() -> None:
     preflight = (WINDOWS_SCRIPTS / "feishu-preflight.ps1").read_text(

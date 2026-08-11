@@ -1,4 +1,7 @@
-param([switch]$ConfigureOnly)
+param(
+    [switch]$ConfigureOnly,
+    [switch]$FullAuthority
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -59,21 +62,50 @@ try {
     Write-Host "PERSONAL DEMO only. Values are stored as local plaintext and are never printed."
     $appId = Read-RequiredSecret "Feishu App ID"
     $appSecret = Read-RequiredSecret "Feishu App Secret"
-    $testOpenId = Read-RequiredSecret "Allowlisted test recipient Open ID"
-    $encryptKey = Read-RequiredSecret "Feishu Encrypt Key"
-    $verificationToken = Read-RequiredSecret "Feishu Verification Token"
+    $testOpenId = Read-RequiredSecret "Test recipient Open ID"
+    $encryptKey = $null
+    $verificationToken = $null
+    if ($FullAuthority) {
+        $encryptKey = Read-RequiredSecret "Feishu Encrypt Key"
+        $verificationToken = Read-RequiredSecret "Feishu Verification Token"
+    }
     $randomBytes = New-Object byte[] 32
     $randomGenerator = [Security.Cryptography.RandomNumberGenerator]::Create()
     try { $randomGenerator.GetBytes($randomBytes) }
     finally { $randomGenerator.Dispose() }
     $workerToken = [Convert]::ToBase64String($randomBytes)
 
-    $databasePath = Read-ValueWithDefault "SQLite authority path" ".labcourt-local/labcourt.sqlite3"
-    $workflowPath = Read-ValueWithDefault "Notification workflow path" ".labcourt-local/notification-workflow.json"
-    $outboxIntent = Read-ValueWithDefault "Outbox activation intent path" ".labcourt-local/outbox-activation-intent.json"
-    $outboxRuntime = Read-ValueWithDefault "Outbox runtime config path" ".labcourt-local/outbox-runtime-config.json"
-    $webhookIntent = Read-ValueWithDefault "Webhook activation intent path" ".labcourt-local/webhook-activation-intent.json"
-    $webhookRuntime = Read-ValueWithDefault "Webhook runtime config path" ".labcourt-local/webhook-runtime-config.json"
+    $runtime = $null
+    $outboxActivation = $null
+    $webhookActivation = $null
+    if ($FullAuthority) {
+        $databasePath = Read-ValueWithDefault "SQLite authority path" ".labcourt-local/labcourt.sqlite3"
+        $workflowPath = Read-ValueWithDefault "Notification workflow path" ".labcourt-local/notification-workflow.json"
+        $outboxIntent = Read-ValueWithDefault "Outbox activation intent path" ".labcourt-local/outbox-activation-intent.json"
+        $outboxRuntime = Read-ValueWithDefault "Outbox runtime config path" ".labcourt-local/outbox-runtime-config.json"
+        $webhookIntent = Read-ValueWithDefault "Webhook activation intent path" ".labcourt-local/webhook-activation-intent.json"
+        $webhookRuntime = Read-ValueWithDefault "Webhook runtime config path" ".labcourt-local/webhook-runtime-config.json"
+        $runtime = [ordered]@{
+            database_path = $databasePath
+            candidate_authority_id = Read-RequiredValue "Candidate authority ID (64 hex)"
+            recipient_binding_authority_id = Read-RequiredValue "Recipient binding authority ID (64 hex)"
+            notification_id = Read-RequiredValue "Test notification ID (64 hex)"
+            workflow_path = $workflowPath
+            repository_manifest_id = Read-RequiredValue "Repository manifest ID (64 hex)"
+            assessment_manifest_id = Read-RequiredValue "Assessment manifest ID (64 hex)"
+            runtime_manifest_id = Read-RequiredValue "Runtime manifest ID (64 hex)"
+        }
+        $outboxActivation = [ordered]@{
+            activation_intent_path = $outboxIntent
+            runtime_config_path = $outboxRuntime
+            runtime_config_storage_manifest_id = Read-RequiredValue "Outbox runtime-config storage manifest ID (64 hex)"
+        }
+        $webhookActivation = [ordered]@{
+            activation_intent_path = $webhookIntent
+            runtime_config_path = $webhookRuntime
+            runtime_config_storage_manifest_id = Read-RequiredValue "Webhook runtime-config storage manifest ID (64 hex)"
+        }
+    }
 
     $config = [ordered]@{
         schema_version = "m8-feishu-local-demo-config-v1"
@@ -88,26 +120,9 @@ try {
             test_open_id = "LABCOURT_FEISHU_TEST_OPEN_ID"; encrypt_key = "LABCOURT_FEISHU_ENCRYPT_KEY"
             verification_token = "LABCOURT_FEISHU_VERIFICATION_TOKEN"; worker_token = "LABCOURT_FEISHU_WORKER_TOKEN"
         }
-        runtime = [ordered]@{
-            database_path = $databasePath
-            candidate_authority_id = Read-RequiredValue "Candidate authority ID (64 hex)"
-            recipient_binding_authority_id = Read-RequiredValue "Recipient binding authority ID (64 hex)"
-            notification_id = Read-RequiredValue "Test notification ID (64 hex)"
-            workflow_path = $workflowPath
-            repository_manifest_id = Read-RequiredValue "Repository manifest ID (64 hex)"
-            assessment_manifest_id = Read-RequiredValue "Assessment manifest ID (64 hex)"
-            runtime_manifest_id = Read-RequiredValue "Runtime manifest ID (64 hex)"
-        }
-        outbox_activation = [ordered]@{
-            activation_intent_path = $outboxIntent
-            runtime_config_path = $outboxRuntime
-            runtime_config_storage_manifest_id = Read-RequiredValue "Outbox runtime-config storage manifest ID (64 hex)"
-        }
-        webhook_activation = [ordered]@{
-            activation_intent_path = $webhookIntent
-            runtime_config_path = $webhookRuntime
-            runtime_config_storage_manifest_id = Read-RequiredValue "Webhook runtime-config storage manifest ID (64 hex)"
-        }
+        runtime = $runtime
+        outbox_activation = $outboxActivation
+        webhook_activation = $webhookActivation
         personal_demo_only = $true
         plaintext_credentials_persisted_locally = $true
         default_preflight_required = $true
@@ -127,8 +142,16 @@ try {
     $null = Read-LabCourtFeishuConfig
     Write-Host "Local config passed strict validation. Credential values were not displayed."
     if (-not $ConfigureOnly) {
-        & (Join-Path $PSScriptRoot "feishu-preflight.ps1") -Scope All
-        if ($LASTEXITCODE -ne 0) { throw "Default preflight failed." }
+        if ($FullAuthority) {
+            & (Join-Path $PSScriptRoot "feishu-preflight.ps1") -Scope All
+            if ($LASTEXITCODE -ne 0) { throw "Default authority preflight failed." }
+        }
+        else {
+            Invoke-LabCourt @(
+                "feishu", "demo-card", "--check", "--config", $configPath
+            )
+            Write-Host "Quick PERSONAL DEMO preflight passed. No network call was made."
+        }
     }
 }
 catch {

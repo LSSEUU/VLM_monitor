@@ -1,0 +1,111 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-personal-demo-probe-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Static, visibly simulated card request with no domain authority.",
+  "properties": {
+    "app_id_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "App Id Sha256",
+      "type": "string"
+    },
+    "case_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "direct_disciplinary_action_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "display_badge": {
+      "const": "PERSONAL DEMO · SIMULATED SAFETY EVENT",
+      "default": "PERSONAL DEMO · SIMULATED SAFETY EVENT",
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "external_call_permitted": {
+      "const": false,
+      "default": false,
+      "title": "External Call Permitted",
+      "type": "boolean"
+    },
+    "notification_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Notification Transition Permitted",
+      "type": "boolean"
+    },
+    "probe_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Probe Id",
+      "type": "string"
+    },
+    "probe_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Probe Manifest Id",
+      "type": "string"
+    },
+    "provider_content_json": {
+      "readOnly": true,
+      "title": "Provider Content Json",
+      "type": "string"
+    },
+    "provider_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Provider Content Sha256",
+      "type": "string"
+    },
+    "provider_uuid": {
+      "readOnly": true,
+      "title": "Provider Uuid",
+      "type": "string"
+    },
+    "recipient_open_id_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Recipient Open Id Sha256",
+      "type": "string"
+    },
+    "requested_at": {
+      "format": "date-time",
+      "title": "Requested At",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-feishu-personal-demo-probe-v1",
+      "default": "m8-feishu-personal-demo-probe-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "simulated": {
+      "const": true,
+      "default": true,
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "timeout_ms": {
+      "default": 5000,
+      "maximum": 10000,
+      "minimum": 1000,
+      "title": "Timeout Ms",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "app_id_sha256",
+    "recipient_open_id_sha256",
+    "requested_at",
+    "probe_manifest_id",
+    "provider_uuid",
+    "provider_content_json",
+    "provider_content_sha256",
+    "probe_id"
+  ],
+  "title": "M8FeishuPersonalDemoProbeV1",
+  "type": "object"
+}

@@ -42,10 +42,18 @@
           "writeOnly": true
         },
         "encrypt_key": {
-          "format": "password",
-          "title": "Encrypt Key",
-          "type": "string",
-          "writeOnly": true
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Encrypt Key"
         },
         "test_open_id": {
           "format": "password",
@@ -54,10 +62,18 @@
           "writeOnly": true
         },
         "verification_token": {
-          "format": "password",
-          "title": "Verification Token",
-          "type": "string",
-          "writeOnly": true
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verification Token"
         },
         "worker_token": {
           "format": "password",
@@ -70,8 +86,6 @@
         "app_id",
         "app_secret",
         "test_open_id",
-        "encrypt_key",
-        "verification_token",
         "worker_token"
       ],
       "title": "M8FeishuLocalDemoCredentialsV1",
@@ -214,7 +228,15 @@
       "$ref": "#/$defs/M8FeishuLocalDemoEnvironmentNamesV1"
     },
     "outbox_activation": {
-      "$ref": "#/$defs/M8FeishuLocalDemoActivationFilesV1"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuLocalDemoActivationFilesV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "personal_demo_only": {
       "const": true,
@@ -241,7 +263,15 @@
       "type": "boolean"
     },
     "runtime": {
-      "$ref": "#/$defs/M8FeishuLocalDemoRuntimeV1"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuLocalDemoRuntimeV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "schema_version": {
       "const": "m8-feishu-local-demo-config-v1",
@@ -250,15 +280,20 @@
       "type": "string"
     },
     "webhook_activation": {
-      "$ref": "#/$defs/M8FeishuLocalDemoActivationFilesV1"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuLocalDemoActivationFilesV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [
     "credentials",
-    "environment_names",
-    "runtime",
-    "outbox_activation",
-    "webhook_activation"
+    "environment_names"
   ],
   "title": "M8FeishuLocalDemoConfigV1",
   "type": "object"

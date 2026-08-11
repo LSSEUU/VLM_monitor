@@ -15,7 +15,24 @@
 - 脚本只消费已经存在的 typed 双人 activation intent 与 canonical runtime config；它不会生成、代填或
   伪造 operations/safety 两份确认。个人 Demo 的存储方式被简化，授权语义没有被放宽。
 
-## 前置条件
+## 最快可见 Demo
+
+首次展示只需要企业自建应用的三个值，不需要先准备 LabCourt 数据库或双人 activation 工件：
+
+1. 在飞书开发者后台为企业自建应用启用机器人能力，申请 `im:message:send_as_bot` 权限，发布一个
+   对测试账号可用的版本。App ID 和 App Secret 位于“凭证与基础信息”。参考
+   [飞书访问凭证说明](https://open.feishu.cn/document/ukTMukTMukTM/uMTNz4yM1MjLzUzM)和
+   [机器人能力说明](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/bot-v3/bot-overview)。
+2. 准备该应用作用域内测试账号的 `open_id`。不要使用真实学生资料。
+3. 双击 `feishu-setup.cmd`，依次遮罩输入 App ID、App Secret、测试 `open_id`。默认只配置快速 Demo，
+   不再询问 database、manifest、Encrypt Key 或 Verification Token，并自动完成无网络检查。
+4. 双击 `feishu-demo-card.cmd`。本地检查通过后输入 `SEND`，程序只发送一张固定、显著标注模拟事件的
+   LabCourt 卡片。运行回执与脱敏响应保存在 `.labcourt-local/feishu-demo-runs/`。
+
+该卡片只证明应用凭据、权限、可用范围和目标 `open_id` 能完成一次 API 调用，不属于案件通知，不证明
+真实送达，也不能改变任何 LabCourt 状态。
+
+## 完整通知闭环前置条件
 
 1. 已在仓库根目录创建 `.venv` 并安装当前项目；`.venv\Scripts\labcourt.exe` 必须存在。
 2. 飞书企业自建应用已建立，测试学生已在应用可用范围内；只使用测试人员的 `open_id`。
@@ -26,18 +43,19 @@
 
 不要把真实学生自由文本、真实人员图片或生产租户凭据用于此个人 Demo。
 
-## 四个入口
+## 五个入口
 
 从资源管理器双击仓库根目录的命令文件，或在 PowerShell 中运行对应 `.ps1`：
 
-1. `feishu-setup.cmd`：遮罩采集凭据和本地 authority 引用，生成随机 worker token，原子写入本机配置，
-   严格校验后默认执行完整预检。只想先保存配置时可直接运行
-   `scripts\windows\feishu-setup.ps1 -ConfigureOnly`；这不会授权 webhook 或发送。
-2. `feishu-preflight.cmd`：校验 Git ignore、配置契约、必需工件、双人 activation authority、secret 引用、
+1. `feishu-setup.cmd`：默认只遮罩采集 App ID、App Secret 和测试 `open_id`，原子写入后执行快速 Demo
+   的无网络检查。完整 authority 配置使用
+   `scripts\windows\feishu-setup.ps1 -FullAuthority`；只保存则附加 `-ConfigureOnly`。
+2. `feishu-demo-card.cmd`：先做无网络检查，通过后要求输入 `SEND`，向测试账号尝试发送一张固定模拟卡片。
+3. `feishu-preflight.cmd`：校验 Git ignore、配置契约、必需工件、双人 activation authority、secret 引用、
    exact notification/binding/workflow，并分别运行 webhook 与 outbox check mode。不会连接飞书。
-3. `feishu-webhook.cmd`：先执行 webhook 预检，通过后才启动 loopback listener。终端需保持打开；
+4. `feishu-webhook.cmd`：先执行 webhook 预检，通过后才启动 loopback listener。终端需保持打开；
    `Ctrl+C` 停止。公网 HTTPS 仍由外部受审计设施负责。
-4. `feishu-send-one.cmd`：先执行 outbox 预检，通过后要求输入 `SEND`，随后进行一次 sandbox 调用尝试。
+5. `feishu-send-one.cmd`：先执行 outbox 预检，通过后要求输入 `SEND`，随后进行一次 sandbox 调用尝试。
    provider acceptance 仍显示 `real_delivery_confirmed=false`；超时或未知结果不得自动重试，应先对账。
 
 脚本可以从任意当前目录启动，所有相对路径都以仓库根目录解析。`.cmd` 包装器会在退出时暂停，便于
@@ -45,14 +63,15 @@
 
 ## 首次配置字段来源
 
-- App ID、App Secret、Encrypt Key、Verification Token：来自该测试自建应用的飞书管理后台。
+- App ID、App Secret：快速 Demo 必填，来自该测试自建应用的飞书管理后台。
+- Encrypt Key、Verification Token：只有 `-FullAuthority` 的 inbound webhook 闭环需要。
 - 测试 `open_id`：必须与 outbound runtime config 中唯一 allowlisted recipient binding 对应。
 - candidate/binding/notification/manifest ID：复制既有 LabCourt authority 工件中的 64 位小写 SHA-256 ID，
   不要临时编造。
 - activation intent/runtime config：分别提供 outbound 与 inbound 的既有 canonical JSON 文件；两类授权
   彼此独立。
 
-配置后可再次运行 `feishu-preflight.cmd`。只要工件、人员 authority、收件人 binding、secret reference 或
+完整配置后可再次运行 `feishu-preflight.cmd`。只要工件、人员 authority、收件人 binding、secret reference 或
 manifest 有漂移，预检就会 fail closed，不会进入监听或发送阶段。
 
 ## 本机清理

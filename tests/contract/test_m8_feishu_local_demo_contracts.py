@@ -108,6 +108,22 @@ def test_local_demo_config_rejects_claims_that_widen_demo_authority() -> None:
         M8FeishuLocalDemoConfigV1.model_validate(payload)
 
 
+def test_local_demo_config_allows_minimal_outbound_connectivity_credentials() -> None:
+    payload = _payload()
+    credentials = payload["credentials"]
+    assert isinstance(credentials, dict)
+    credentials["encrypt_key"] = None
+    credentials["verification_token"] = None
+    payload["runtime"] = None
+    payload["outbox_activation"] = None
+    payload["webhook_activation"] = None
+
+    config = M8FeishuLocalDemoConfigV1.model_validate(payload)
+
+    assert config.runtime is None
+    assert config.credentials.encrypt_key is None
+
+
 def test_local_demo_schema_is_registered_and_validates_serialized_shape() -> None:
     assert SCHEMA_MODELS["m8-feishu-local-demo-config-v1"] is M8FeishuLocalDemoConfigV1
     schema = M8FeishuLocalDemoConfigV1.model_json_schema(mode="serialization")

@@ -135,6 +135,34 @@ class StdlibM8FeishuHttpTransport:
             M8FeishuHttpCallStage.TOKEN,
         )
 
+    def acquire_personal_demo_token(
+        self,
+        app_id: bytes,
+        app_secret: bytes,
+        timeout_ms: int,
+    ) -> M8FeishuHttpResponse:
+        """Acquire one token for the isolated static-card connectivity probe."""
+
+        body = (
+            canonical_json(
+                {
+                    "app_id": _decode_secret(app_id, M8FeishuHttpCallStage.TOKEN),
+                    "app_secret": _decode_secret(
+                        app_secret,
+                        M8FeishuHttpCallStage.TOKEN,
+                    ),
+                }
+            )
+            + "\n"
+        ).encode("utf-8")
+        return self._post(
+            "/open-apis/auth/v3/tenant_access_token/internal",
+            body,
+            {"Accept": "application/json", "Content-Type": "application/json"},
+            timeout_ms,
+            M8FeishuHttpCallStage.TOKEN,
+        )
+
     def send_interactive_message(
         self,
         preflight: M8FeishuCardDispatchPreflightV1,
@@ -180,6 +208,51 @@ class StdlibM8FeishuHttpTransport:
                 "Content-Type": "application/json",
             },
             preflight.notification_request.timeout_ms,
+            M8FeishuHttpCallStage.MESSAGE,
+        )
+
+    def send_personal_demo_card(
+        self,
+        open_id: bytes,
+        tenant_access_token: bytes,
+        provider_uuid: str,
+        rendered_card: bytes,
+        timeout_ms: int,
+    ) -> M8FeishuHttpResponse:
+        """Send one static demo card; this method has no LabCourt case authority."""
+
+        if not isinstance(provider_uuid, str) or not 1 <= len(provider_uuid) <= 50:
+            raise ValueError("M8 Feishu personal demo UUID is invalid")
+        token = _decode_secret(tenant_access_token, M8FeishuHttpCallStage.MESSAGE)
+        recipient = _decode_secret(open_id, M8FeishuHttpCallStage.MESSAGE)
+        try:
+            card_content = rendered_card.decode("utf-8", errors="strict")
+        except UnicodeDecodeError:
+            raise M8FeishuHttpError(
+                M8FeishuHttpCallStage.MESSAGE,
+                M8FeishuHttpFailureCode.TRANSPORT_UNAVAILABLE,
+                M8FeishuHttpDeliveryCertainty.UNKNOWN,
+            ) from None
+        body = (
+            canonical_json(
+                {
+                    "content": card_content,
+                    "msg_type": "interactive",
+                    "receive_id": recipient,
+                    "uuid": provider_uuid,
+                }
+            )
+            + "\n"
+        ).encode("utf-8")
+        return self._post(
+            "/open-apis/im/v1/messages?receive_id_type=open_id",
+            body,
+            {
+                "Accept": "application/json",
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+            timeout_ms,
             M8FeishuHttpCallStage.MESSAGE,
         )
 

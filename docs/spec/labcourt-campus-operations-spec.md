@@ -282,6 +282,14 @@ loopback，单条发送还必须在预检后取得操作者明确确认，且不
 本机脚本可消费既有 typed 双人 intent 并幂等提交 activation，但不得生成或代填两名确认人。它不管理
 公网 HTTPS/TLS/反向代理，不证明真实租户已联调，也不扩大 reply、Case 或纪律处分权限。
 
+为缩短企业自建应用首次联调，可增加与通知 authority 完全隔离的个人 Demo 连通性探针。探针只允许发送
+一张固定且显著标注 `PERSONAL DEMO`/模拟事件的卡片，不接受 case/notification 输入，不读写 SQLite，
+不生成 commissioning 或 activation 工件，不支持回复、队列、扫描或重试。它必须先提供无网络 check，
+Windows live 入口还需操作者明确输入 `SEND`；token 响应只能保存脱敏摘要，message 响应与 typed receipt
+仅落被忽略的本机目录。无论 provider 结果如何，回执必须固定禁止 notification/case/处分迁移且不得声称
+真实送达。该探针不得作为正式 adapter、通知回执或 commissioning evidence，完整闭环仍必须回到既有
+双人 activation-gated outbox/webhook 路径。
+
 不得跳过前置切片。每个切片只在聚焦 contract/unit/integration 门通过后进入下一项；完成 M8
 必须另行定义全量 e2e、迁移回滚、断网、权限、并发和灾备验收，不能继承 M6 demo 成绩冒充生产结果。
 
