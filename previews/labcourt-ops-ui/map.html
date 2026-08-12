@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea">
+<title>校园地图 · LabCourt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/nav.css">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --scene: oklch(0.70 0.006 70);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --maxw: 1180px;
+    --rule: 1px solid var(--border);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--font-serif);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--accent);color:var(--surface)}
+  a,button{color:inherit;font-family:inherit}
+  .mono{font-family:var(--font-mono)}
+  .ribbon{background:var(--fg);color:var(--bg);display:flex;justify-content:space-between;gap:16px;padding:6px 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:30px 32px 96px}
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  .page-head .ey{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .page-head h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(28px,3.4vw,38px);line-height:1.3}
+  .page-head .sub{font-size:15px;color:var(--muted);max-width:54ch;margin-top:6px}
+  /* 楼层切换 */
+  .floors{display:inline-flex;border:1.5px solid var(--fg)}
+  .floors button{background:none;border:0;border-right:1.5px solid var(--fg);font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;color:var(--muted);padding:11px 16px;cursor:pointer;transition:.2s}
+  .floors button:last-child{border-right:0}
+  .floors button:hover{color:var(--fg)}
+  .floors button.active{background:var(--fg);color:var(--bg)}
+  .floors button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .mapgrid{display:grid;grid-template-columns:1fr 320px;gap:30px;align-items:start;margin-top:26px}
+  .plan-wrap{position:relative}
+  .plan{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(3,1fr);gap:8px;aspect-ratio:16/10;background:var(--surface);border:var(--rule);padding:8px}
+  .room{position:relative;background:var(--bg);border:1px solid var(--border);cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;padding:10px;text-align:left;transition:border-color .2s,background .2s,transform .2s;animation:room-in .4s ease both;animation-delay:calc(var(--i,0)*60ms)}
+  @keyframes room-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+  .room:hover{border-color:var(--fg);transform:translateY(-1px)}
+  .room.active{border-color:var(--fg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--fg)}
+  .room.attention{border-color:var(--accent)}
+  .room.attention.active{box-shadow:inset 0 0 0 1px var(--accent)}
+  .room:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .room__name{font-family:var(--font-serif);font-weight:600;font-size:13.5px;line-height:1.3;color:var(--fg)}
+  .room__code{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.04em}
+  .room__row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .room__status{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.04em;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+  .room__status::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--muted)}
+  .room.attention .room__status{color:var(--accent)}
+  .room.attention .room__status::before{background:var(--accent);animation:dot-pulse 2s ease-in-out infinite}
+  @keyframes dot-pulse{0%,100%{box-shadow:0 0 0 0 oklch(0.42 0.09 250 / .35)}50%{box-shadow:0 0 0 4px oklch(0.42 0.09 250 / 0)}}
+  .room__cams{font-family:var(--font-mono);font-size:9.5px;color:var(--muted)}
+  /* 传感器呼吸点 */
+  .sensors{position:absolute;top:8px;right:8px;display:flex;gap:4px}
+  .sensors i{width:5px;height:5px;border-radius:50%;background:var(--scene);animation:sensor-breath 4s ease-in-out infinite}
+  .sensors i:nth-child(2){animation-delay:.8s}
+  .sensors i:nth-child(3){animation-delay:1.6s}
+  @keyframes sensor-breath{0%,100%{opacity:.3}50%{opacity:.85}}
+  /* 匿名轨迹光点 */
+  .traj{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--fg);opacity:.7;animation:traj-drift 7s ease-in-out infinite}
+  @keyframes traj-drift{0%,100%{transform:translate(0,0);opacity:.5}50%{transform:translate(10px,-6px);opacity:.85}}
+
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:8px;height:8px;border-radius:50%}
+  .legend .l-ok{background:var(--muted)} .legend .l-att{background:var(--accent)} .legend .l-traj{background:var(--fg);opacity:.7}
+
+  /* 详情面板 */
+  .detail{border:var(--rule);background:var(--surface);padding:26px 24px;min-height:300px}
+  .detail.in{animation:det-in .4s ease both}
+  @keyframes det-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .detail .chip{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;border:1px solid var(--border);color:var(--muted);padding:3px 8px;display:inline-block;margin-bottom:12px;text-transform:uppercase}
+  .detail .chip.att{color:var(--accent);border-color:var(--accent)}
+  .detail h2{font-family:var(--font-serif);font-weight:600;font-size:22px;line-height:1.35;margin-bottom:4px}
+  .detail .code{font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-bottom:18px;padding-bottom:18px;border-bottom:var(--rule)}
+  .detail dl{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:18px}
+  .detail dt{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);letter-spacing:.06em}
+  .detail dd{font-family:var(--font-mono);font-size:15px;color:var(--fg);margin-top:2px}
+  .detail h3{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:400;margin:18px 0 10px}
+  .detail .ev{display:block;padding:11px 0;border-top:var(--rule);font-family:var(--font-mono);font-size:12px;color:var(--fg);transition:padding-left .2s}
+  .detail .ev:last-child{border-bottom:var(--rule)}
+  .detail .ev:hover{padding-left:8px}
+  .detail .ev small{color:var(--muted);display:block;margin-top:3px;font-size:11px}
+  .detail .go{display:inline-flex;align-items:center;gap:6px;margin-top:18px;font-family:var(--font-mono);font-size:12px;color:var(--fg);border-bottom:1px solid var(--fg);padding-bottom:2px;transition:.2s}
+  .detail .go:hover{color:var(--accent);border-color:var(--accent)}
+  .detail .empty{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+
+  .foot-note{margin-top:40px;padding-top:16px;border-top:var(--rule);font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  @media(max-width:900px){.mapgrid{grid-template-columns:1fr}.detail{min-height:auto}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.detail.in{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ribbon" role="status"><span>PREVIEW · 演示数据</span><span>SCHEMATIC</span></div>
+<div id="gnav-mount"></div>
+
+<main>
+
+  <div class="page-head" data-od-id="map-head">
+    <div>
+      <p class="ey">校园地图 · 活体建筑</p>
+      <h1>海南大学 · 信通楼</h1>
+      <p class="sub">从校区逐级定位到房间、机位与传感器；不展示人员身份或行动轨迹（匿名）。</p>
+    </div>
+    <div class="floors" id="floors" role="group" aria-label="切换楼层">
+      <button type="button" data-f="1F">一层</button>
+      <button type="button" data-f="2F">二层</button>
+      <button type="button" class="active" data-f="3F">三层</button>
+      <button type="button" data-f="4F">四层</button>
+    </div>
+  </div>
+
+  <div class="mapgrid">
+    <div class="plan-wrap">
+      <div class="plan" id="plan" aria-label="楼层平面示意" data-od-id="map-plan"></div>
+      <div class="legend">
+        <span><i class="l-ok"></i>正常</span>
+        <span><i class="l-att"></i>待处理</span>
+        <span><i class="l-traj"></i>匿名轨迹</span>
+        <span><i style="background:var(--scene)"></i>传感器</span>
+      </div>
+    </div>
+    <aside class="detail in" id="detail" data-od-id="map-detail"></aside>
+  </div>
+
+  <div class="foot-note">
+    <span>预览 · 非工程图；空间、设备与状态均为本地模拟</span>
+    <span>PREVIEW · LOCAL MOCK</span>
+  </div>
+</main>
+
+<script src="assets/nav.js" defer></script>
+<script>
+  var FLOORS={
+    '3F':[
+      {id:'chem',name:'化学实验区',code:'ROOM-CHEM-301',col:'1/5',row:'1/3',status:'attention',statusLabel:'待确认',cams:'4 / 4',sensors:'12 / 12',sensDots:3,traj:true,
+       events:[{t:'护目镜缺失候选',s:'等待人工确认 · T-07',href:'case-file.html'},{t:'温度与烟雾联动',s:'模拟告警 · 已派单',href:'case-file.html'}]},
+      {id:'instr',name:'仪器分析室',code:'ROOM-INSTR-302',col:'5/7',row:'1/2',status:'attention',statusLabel:'待补证',cams:'3 / 3',sensors:'8 / 8',sensDots:2,
+       events:[{t:'实验服闭合候选',s:'待补充证据',href:'case-file.html'}]},
+      {id:'storage',name:'试剂暂存间',code:'ROOM-STOR-303',col:'5/7',row:'2/3',status:'ok',statusLabel:'正常',cams:'1 / 1',sensors:'3 / 3',sensDots:1,events:[]},
+      {id:'prep',name:'准备间',code:'ROOM-PREP-301B',col:'1/3',row:'3/4',status:'ok',statusLabel:'正常',cams:'1 / 1',sensors:'2 / 2',sensDots:1,events:[]},
+      {id:'corridor',name:'公共走廊',code:'CORRIDOR-3F',col:'3/7',row:'3/4',status:'ok',statusLabel:'正常',cams:'—',sensors:'1 / 1',sensDots:0,events:[]}
+    ],
+    '2F':[
+      {id:'instr2',name:'仪器分析区',code:'ROOM-INSTR-2F',col:'1/4',row:'1/3',status:'ok',statusLabel:'正常',cams:'3 / 3',sensors:'8 / 8',sensDots:2,events:[]},
+      {id:'discuss',name:'讨论室',code:'ROOM-MEET-2F',col:'4/7',row:'1/2',status:'ok',statusLabel:'正常',cams:'1 / 1',sensors:'2 / 2',sensDots:1,events:[]},
+      {id:'common',name:'公共区',code:'COMMON-2F',col:'4/7',row:'2/4',status:'ok',statusLabel:'正常',cams:'—',sensors:'2 / 2',sensDots:1,events:[]},
+      {id:'corridor2',name:'走廊',code:'CORRIDOR-2F',col:'1/4',row:'3/4',status:'ok',statusLabel:'正常',cams:'—',sensors:'1 / 1',sensDots:0,events:[]}
+    ],
+    '1F':[
+      {id:'lobby',name:'大堂',code:'LOBBY-1F',col:'1/5',row:'1/3',status:'ok',statusLabel:'正常',cams:'2 / 2',sensors:'4 / 4',sensDots:2,events:[]},
+      {id:'reception',name:'接待',code:'RECEPT-1F',col:'5/7',row:'1/3',status:'ok',statusLabel:'正常',cams:'1 / 1',sensors:'2 / 2',sensDots:1,events:[]},
+      {id:'entry',name:'门厅走廊',code:'ENTRY-1F',col:'1/7',row:'3/4',status:'ok',statusLabel:'正常',cams:'—',sensors:'2 / 2',sensDots:1,events:[]}
+    ],
+    '4F':[
+      {id:'store',name:'储藏间',code:'STORE-4F',col:'1/4',row:'1/3',status:'ok',statusLabel:'正常',cams:'1 / 1',sensors:'2 / 2',sensDots:1,events:[]},
+      {id:'corridor4',name:'走廊',code:'CORRIDOR-4F',col:'4/7',row:'1/2',status:'ok',statusLabel:'正常',cams:'—',sensors:'1 / 1',sensDots:0,events:[]},
+      {id:'equip',name:'设备间',code:'EQUIP-4F',col:'4/7',row:'2/4',status:'ok',statusLabel:'正常',cams:'1 / 1',sensors:'3 / 3',sensDots:2,events:[]},
+      {id:'misc',name:'杂物间',code:'MISC-4F',col:'1/4',row:'3/4',status:'ok',statusLabel:'正常',cams:'—',sensors:'1 / 1',sensDots:0,events:[]}
+    ]
+  };
+
+  var curFloor='3F', curRoom='chem';
+  var planEl=document.getElementById('plan'), detailEl=document.getElementById('detail'), floorsEl=document.getElementById('floors');
+
+  function renderPlan(){
+    var rooms=FLOORS[curFloor];
+    planEl.innerHTML=rooms.map(function(r,i){
+      var sens = r.sensDots? '<span class="sensors">'+Array(r.sensDots+1).join('<i></i>')+'</span>' : '';
+      var traj = r.traj? '<span class="traj" style="top:55%;left:40%" aria-hidden="true"></span>' : '';
+      return '<button class="room '+(r.status==='attention'?'attention':'')+' '+(r.id===curRoom?'active':'')+'" type="button" data-room="'+r.id+'" style="grid-column:'+r.col+';grid-row:'+r.row+';--i:'+i+'">'+
+        sens+traj+
+        '<span class="room__name">'+r.name+'</span>'+
+        '<span class="room__row"><span class="room__status">'+r.statusLabel+'</span><span class="room__cams">CAM '+r.cams+'</span></span>'+
+        '<span class="room__code">'+r.code+'</span>'+
+      '</button>';
+    }).join('');
+  }
+
+  function renderDetail(){
+    var rooms=FLOORS[curFloor];
+    var r=rooms.filter(function(x){return x.id===curRoom;})[0]||rooms[0];
+    if(!r) return;
+    var evHtml = r.events.length ? r.events.map(function(e){return '<a class="ev" href="'+e.href+'">'+e.t+'<small>'+e.s+'</small></a>';}).join('') : '<div class="empty">该区域当前无开放事件。</div>';
+    detailEl.innerHTML=
+      '<span class="chip '+(r.status==='attention'?'att':'')+'">'+r.statusLabel+'</span>'+
+      '<h2>'+r.name+'</h2>'+
+      '<p class="code">'+r.code+' · '+curFloor+' · 信通楼</p>'+
+      '<dl><div><dt>摄像头</dt><dd>'+r.cams+'</dd></div><div><dt>传感器</dt><dd>'+r.sensors+'</dd></div><div><dt>开放事件</dt><dd>'+(r.events.length?r.events.length:'0')+'</dd></div><div><dt>楼层</dt><dd>'+curFloor+'</dd></div></dl>'+
+      '<h3>事件</h3>'+evHtml+
+      '<a class="go" href="monitor.html">查看区域画面 →</a>';
+    detailEl.classList.remove('in'); void detailEl.offsetWidth; detailEl.classList.add('in');
+  }
+
+  function refresh(){ renderPlan(); renderDetail(); }
+
+  floorsEl.addEventListener('click', function(e){ var b=e.target.closest('button'); if(!b) return; curFloor=b.dataset.f; var first=FLOORS[curFloor][0].id; curRoom=first; floorsEl.querySelectorAll('button').forEach(function(x){x.classList.toggle('active', x===b)}); refresh(); });
+  planEl.addEventListener('click', function(e){ var b=e.target.closest('.room'); if(!b) return; curRoom=b.dataset.room; renderPlan(); renderDetail(); });
+
+  refresh();
+</script>
+</body>
+</html>

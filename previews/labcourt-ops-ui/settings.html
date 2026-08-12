@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea">
+<title>系统设置 · LabCourt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/nav.css">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --maxw: 1180px;
+    --rule: 1px solid var(--border);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--font-serif);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--accent);color:var(--surface)}
+  a,button{color:inherit;font-family:inherit}
+  button{font:inherit}
+  .mono{font-family:var(--font-mono)}
+  .ribbon{background:var(--fg);color:var(--bg);display:flex;justify-content:space-between;gap:16px;padding:6px 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:30px 32px 96px}
+  .shead{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-bottom:22px;border-bottom:2px solid var(--fg)}
+  .shead .ey{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .shead h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(28px,3.4vw,38px);line-height:1.3}
+  .shead .sub{font-size:15px;color:var(--muted);margin-top:6px;max-width:50ch}
+  .btn-save{font-family:var(--font-mono);font-size:13px;letter-spacing:.06em;background:var(--fg);color:var(--bg);border:0;padding:13px 22px;min-height:46px;cursor:pointer;transition:background .2s}
+  .btn-save:hover{background:oklch(0.16 0.01 60)}
+  .btn-save:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+  .sgrid{display:grid;grid-template-columns:230px 1fr;gap:48px;margin-top:34px;align-items:start}
+
+  /* 左索引 */
+  .srail{position:sticky;top:80px;display:flex;flex-direction:column;gap:0;border-top:var(--rule)}
+  .srail button{display:flex;flex-direction:column;gap:4px;text-align:left;background:none;border:0;border-bottom:var(--rule);padding:14px 14px 14px 16px;cursor:pointer;color:var(--muted);position:relative;transition:background .2s,color .2s}
+  .srail button::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--fg);transform:scaleY(0);transform-origin:center;transition:transform .25s ease}
+  .srail button:hover{background:oklch(0.94 0.006 80 / .55);color:var(--fg)}
+  .srail button.active{color:var(--fg)}
+  .srail button.active::before{transform:scaleY(.7)}
+  .srail button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .srail b{font-family:var(--font-serif);font-weight:600;font-size:15px}
+  .srail i{font-style:normal;font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.02em}
+
+  /* 右面板 */
+  .spanels{min-height:60vh}
+  .spanel{display:none}
+  .spanel.active{display:block;animation:panel-in .42s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes panel-in{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+  .spanel.active>*{animation:rise .45s ease both}
+  .spanel.active>:nth-child(1){animation-delay:.05s}
+  .spanel.active>:nth-child(2){animation-delay:.1s}
+  .spanel.active>:nth-child(3){animation-delay:.15s}
+  .spanel.active>:nth-child(4){animation-delay:.2s}
+  .spanel.active>:nth-child(5){animation-delay:.25s}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .p-ey{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .p-title{font-family:var(--font-serif);font-weight:600;font-size:22px;margin-bottom:18px}
+  .p-desc{font-size:14.5px;color:var(--muted);max-width:60ch;margin-bottom:24px}
+
+  /* 行 / 字段 */
+  .row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 0;border-top:var(--rule)}
+  .row:first-of-type{border-top:var(--rule)}
+  .row__main b{font-family:var(--font-serif);font-weight:600;font-size:15.5px;display:block}
+  .row__main small{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);margin-top:3px;display:block}
+  .field{margin-bottom:18px}
+  .field>label{display:block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .field input[type=text],.field input[type=password],.field input[type=email],.field input[type=url],.field input[type=tel],.field input[type=number]{width:100%;background:var(--surface);border:0;border-bottom:1.5px solid var(--border);font-family:var(--font-serif);font-size:15px;color:var(--fg);padding:10px 2px;outline:none;transition:border-color .25s}
+  .field input:focus{border-color:var(--accent)}
+  .field input::placeholder{color:oklch(0.65 0.01 70)}
+
+  /* 直角开关 */
+  .switch{width:46px;height:24px;border:1.5px solid var(--fg);background:none;position:relative;cursor:pointer;flex:none;padding:0;transition:background .25s}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;background:var(--fg);transition:left .25s cubic-bezier(.2,.7,.2,1),background .25s}
+  .switch[aria-checked="true"]{background:var(--fg)}
+  .switch[aria-checked="true"]::after{left:24px;background:var(--bg)}
+  .switch:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+  /* 分段（服务商） */
+  .seg-pv{display:inline-flex;border:1.5px solid var(--fg)}
+  .seg-pv button{background:none;border:0;border-right:1.5px solid var(--fg);font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;color:var(--muted);padding:10px 16px;cursor:pointer;transition:.2s}
+  .seg-pv button:last-child{border-right:0}
+  .seg-pv button:hover{color:var(--fg)}
+  .seg-pv button.active{background:var(--fg);color:var(--bg)}
+
+  /* 连接状态 */
+  .conn{display:inline-flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:12px;color:var(--fg);border:1px solid var(--border);padding:6px 12px;margin-bottom:22px}
+  .conn .dot{width:8px;height:8px;border-radius:50%;background:var(--fg);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 oklch(0.22 0.01 60 / .25)}50%{box-shadow:0 0 0 5px oklch(0.22 0.01 60 / 0)}}
+  .conn b{font-weight:500}
+
+  /* 阈值滑块 + 仪表 */
+  .thr{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+  .thr input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--border);outline:none;cursor:pointer}
+  .thr input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--fg);border:0;border-radius:0;cursor:pointer}
+  .thr input[type=range]::-moz-range-thumb{width:16px;height:16px;background:var(--fg);border:0;border-radius:0;cursor:pointer}
+  .thr-v{font-family:var(--font-serif);font-weight:600;font-size:30px;line-height:1;min-width:74px;text-align:right}
+  .thr-v small{font-family:var(--font-mono);font-size:11px;color:var(--muted);font-weight:400}
+
+  /* 通用 segmented 小开关行用 .row */
+
+  /* 列表（知识库/设备） */
+  .slist{border-top:var(--rule)}
+  .sitem{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:15px 2px;border-bottom:var(--rule);transition:padding-left .2s}
+  .sitem.hoverable:hover{padding-left:10px;background:oklch(0.97 0.006 80 / .6)}
+  .sitem__main b{font-family:var(--font-serif);font-weight:600;font-size:15px;display:block}
+  .sitem__main small{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:3px;display:block}
+  .sitem__side{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-align:right;white-space:nowrap}
+  .chip{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;padding:3px 8px;border:1px solid var(--border);color:var(--muted)}
+  .chip.ok{color:var(--fg);border-color:var(--fg)}
+  .text-btn{font-family:var(--font-mono);font-size:12px;background:none;border:0;border-bottom:1px solid var(--fg);padding:6px 0;cursor:pointer;color:var(--fg);transition:color .2s,border-color .2s}
+  .text-btn:hover{color:var(--accent);border-color:var(--accent)}
+
+  .subgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 32px}
+  .note{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:18px}
+
+  @media(max-width:860px){
+    .sgrid{grid-template-columns:1fr;gap:24px}
+    .srail{position:static;flex-direction:row;overflow-x:auto;border-top:var(--rule);border-bottom:var(--rule)}
+    .srail button{border-bottom:0;border-right:var(--rule);min-width:140px}
+    .srail button::before{left:0;top:0;bottom:auto;width:auto;height:3px;transform:scaleX(0);transition:transform .25s}
+    .srail button.active::before{transform:scaleX(1)}
+    .subgrid{grid-template-columns:1fr}
+    .thr{grid-template-columns:1fr}
+    .thr-v{text-align:left}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.spanel.active{clip-path:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ribbon" role="status"><span>PREVIEW · 开发调试</span><span>仅本地预览</span></div>
+<div id="gnav-mount"></div>
+
+<main>
+
+  <div class="shead" data-od-id="settings-head">
+    <div>
+      <p class="ey">开发调试 · ADMIN</p>
+      <h1>系统设置</h1>
+      <p class="sub">系统选项、模型与 API、知识库、通知与设备。演示用模拟配置，不写入真实后端。</p>
+    </div>
+    <button class="btn-save" type="button" id="save" data-od-id="settings-save">保存更改</button>
+  </div>
+
+  <div class="sgrid">
+    <nav class="srail" aria-label="设置分节" data-od-id="settings-rail">
+      <button type="button" class="active" data-sec="system"><b>系统选项</b><i>5 项已启用</i></button>
+      <button type="button" data-sec="model"><b>模型与 API</b><i>Claude · 已连接</i></button>
+      <button type="button" data-sec="kb"><b>知识库管理</b><i>4 条 · v3.2</i></button>
+      <button type="button" data-sec="notify"><b>通知通道</b><i>1 / 3 已启用</i></button>
+      <button type="button" data-sec="devices"><b>设备与网关</b><i>4 机位 · 在线</i></button>
+    </nav>
+
+    <div class="spanels" data-od-id="settings-panels">
+
+      <!-- 系统选项 -->
+      <section class="spanel active" data-sec="system" data-od-id="panel-system">
+        <p class="p-ey">系统选项</p>
+        <h2 class="p-title">运行行为</h2>
+        <p class="p-desc">控制识别、演示与告警的整体行为。开关即时生效（演示）。</p>
+        <div class="row"><div class="row__main"><b>启用 AI 视觉识别</b><small>对每路画面做 PPE / 行为 / 区域识别</small></div><button class="switch" role="switch" aria-checked="true" type="button"></button></div>
+        <div class="row"><div class="row__main"><b>演示模式</b><small>使用模拟视频与数据，不接真机</small></div><button class="switch" role="switch" aria-checked="true" type="button"></button></div>
+        <div class="row"><div class="row__main"><b>减少动效</b><small>关闭转场与装饰动画</small></div><button class="switch" role="switch" aria-checked="false" type="button"></button></div>
+        <div class="row"><div class="row__main"><b>自动派单（紧急告警）</b><small>温度/烟雾联动触发时自动通知值班员</small></div><button class="switch" role="switch" aria-checked="true" type="button"></button></div>
+        <div class="row"><div class="row__main"><b>保存证据原始帧</b><small>对候选案件额外留存未裁切原始帧</small></div><button class="switch" role="switch" aria-checked="true" type="button"></button></div>
+      </section>
+
+      <!-- 模型与 API（亮点） -->
+      <section class="spanel" data-sec="model" data-od-id="panel-model" hidden>
+        <p class="p-ey">模型与 API</p>
+        <h2 class="p-title">视觉识别模型</h2>
+        <div class="conn"><span class="dot"></span><span>已连接 · <b id="pv-name">Claude</b> · <span class="mono" id="pv-model">claude-sonnet-4</span></span></div>
+        <div class="field">
+          <label>服务商</label>
+          <div class="seg-pv" id="pv">
+            <button type="button" data-pv="OpenAI">OpenAI</button>
+            <button type="button" class="active" data-pv="Claude" data-model="claude-sonnet-4">Claude</button>
+            <button type="button" data-pv="本地" data-model="local-vlm-01">本地</button>
+          </div>
+        </div>
+        <div class="subgrid">
+          <div class="field"><label>API Key</label><input type="password" placeholder="sk-••••••••••••••••" autocomplete="off"></div>
+          <div class="field"><label>模型</label><input type="text" id="model-input" value="claude-sonnet-4"></div>
+        </div>
+        <div class="field">
+          <label>识别置信阈值</label>
+          <div class="thr">
+            <input type="range" id="thr" min="0" max="100" value="75">
+            <div class="thr-v"><span id="thr-v">75</span><small>%</small></div>
+          </div>
+          <p class="note">低于此阈值的候选将被自动抑制，不进入案件队列。</p>
+        </div>
+        <div class="subgrid">
+          <div class="field"><label>请求超时（秒）</label><input type="number" value="30" min="1" max="120"></div>
+          <div class="field"><label>最大并发</label><input type="number" value="4" min="1" max="16"></div>
+        </div>
+      </section>
+
+      <!-- 知识库管理 -->
+      <section class="spanel" data-sec="kb" data-od-id="panel-kb" hidden>
+        <p class="p-ey">知识库管理</p>
+        <h2 class="p-title">制度 · SOP · 判例</h2>
+        <p class="p-desc">案件审理引用的知识来源。所有条目保留版本与生效日期。</p>
+        <div class="slist">
+          <div class="sitem"><div class="sitem__main"><b>化学实验室个人防护规范</b><small>制度 · v3.2 · 生效 2026-03-01 · 校级制度库</small></div><div class="sitem__side"><span class="chip">KB-PPE-004</span></div></div>
+          <div class="sitem"><div class="sitem__main"><b>烟雾与温度联动处置</b><small>SOP · v2.1 · 生效 2026-06-15 · 安全管理处</small></div><div class="sitem__side"><span class="chip">SOP-EMG-012</span></div></div>
+          <div class="sitem"><div class="sitem__main"><b>镜片反光导致误报的撤销记录</b><small>判例 · v1.0 · 收录 2026-07-18 · 复核案例库</small></div><div class="sitem__side"><span class="chip">CASE-REF-019</span></div></div>
+          <div class="sitem"><div class="sitem__main"><b>通风橱启动前检查步骤</b><small>SOP · v4.0 · 生效 2026-02-10 · 化学中心</small></div><div class="sitem__side"><span class="chip">SOP-CHEM-022</span></div></div>
+        </div>
+        <p class="note"><button class="text-btn" type="button">＋ 新增条目</button>　　<button class="text-btn" type="button">版本对比</button></p>
+      </section>
+
+      <!-- 通知通道 -->
+      <section class="spanel" data-sec="notify" data-od-id="panel-notify" hidden>
+        <p class="p-ey">通知通道</p>
+        <h2 class="p-title">告警与通知</h2>
+        <p class="p-desc">告警、案件状态、日报的投递通道。演示用占位配置。</p>
+        <div class="row"><div class="row__main"><b>邮件</b><small>向值班员与负责人发送告警摘要</small></div><button class="switch" role="switch" aria-checked="true" type="button"></button></div>
+        <div class="field" style="margin-top:4px"><input type="email" placeholder="ops@hainanu.edu.cn"></div>
+        <div class="row"><div class="row__main"><b>Webhook</b><small>POST 到指定 URL，便于接企业 IM</small></div><button class="switch" role="switch" aria-checked="false" type="button"></button></div>
+        <div class="field" style="margin-top:4px"><input type="url" placeholder="https://im.example.com/hook/labcourt"></div>
+        <div class="row"><div class="row__main"><b>短信</b><small>仅紧急告警，经审批后发送</small></div><button class="switch" role="switch" aria-checked="false" type="button"></button></div>
+        <div class="field" style="margin-top:4px"><input type="tel" placeholder="+86 138 0000 0000"></div>
+      </section>
+
+      <!-- 设备与网关 -->
+      <section class="spanel" data-sec="devices" data-od-id="panel-devices" hidden>
+        <p class="p-ey">设备与网关</p>
+        <h2 class="p-title">摄像头与传感器</h2>
+        <div class="slist">
+          <div class="sitem"><div class="sitem__main"><b>CAM-LAB-301-A · 主操作台</b><small>三层化学实验区 · 1080P · 24FPS</small></div><div class="sitem__side"><span class="chip ok">在线</span></div></div>
+          <div class="sitem"><div class="sitem__main"><b>CAM-LAB-301-B · 通风橱</b><small>三层化学实验区 · 1080P</small></div><div class="sitem__side"><span class="chip ok">在线</span></div></div>
+          <div class="sitem"><div class="sitem__main"><b>CAM-LAB-302-A · 仪器分析室</b><small>三层 · 1080P</small></div><div class="sitem__side"><span class="chip ok">在线</span></div></div>
+          <div class="sitem"><div class="sitem__main"><b>CAM-LAB-303-A · 试剂暂存间</b><small>三层 · 1080P</small></div><div class="sitem__side"><span class="chip ok">在线</span></div></div>
+        </div>
+        <p class="note" style="margin-top:22px">传感器网关：温度 / 烟雾 / 门磁 / 湿度 / 通风橱面风速 · 共 12 路 · 全部心跳正常。</p>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<script src="assets/nav.js" defer></script>
+<script>
+  // 分节切换（左索引 → 右面板擦除）
+  var rails=document.querySelectorAll('.srail button'), panels=document.querySelectorAll('.spanel');
+  function activate(name){
+    rails.forEach(function(b){ b.classList.toggle('active', b.dataset.sec===name); });
+    panels.forEach(function(p){
+      if(p.dataset.sec===name){ p.classList.remove('active'); p.hidden=false; void p.offsetWidth; p.classList.add('active'); }
+      else { p.classList.remove('active'); p.hidden=true; }
+    });
+  }
+  rails.forEach(function(b){ b.addEventListener('click', function(){ activate(b.dataset.sec); }); });
+
+  // 开关
+  document.querySelectorAll('.switch').forEach(function(s){
+    s.addEventListener('click', function(){ this.setAttribute('aria-checked', this.getAttribute('aria-checked')==='true'?'false':'true'); });
+  });
+
+  // 服务商分段（联动模型名 + 连接状态显示）
+  var pv=document.getElementById('pv'), pvName=document.getElementById('pv-name'), pvModel=document.getElementById('pv-model'), modelInput=document.getElementById('model-input');
+  pv.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click', function(){
+      pv.querySelectorAll('button').forEach(function(x){x.classList.remove('active')}); b.classList.add('active');
+      var pvv=b.dataset.pv, mdl=b.dataset.model||modelInput.value;
+      pvName.textContent=pvv; pvModel.textContent=mdl; modelInput.value=mdl;
+    });
+  });
+
+  // 置信阈值滑块（实时 % + 填充）
+  var thr=document.getElementById('thr'), thrV=document.getElementById('thr-v');
+  function updThr(){ var v=thr.value; thrV.textContent=v; thr.style.background='linear-gradient(to right,var(--fg) '+v+'%,var(--border) '+v+'%)'; }
+  thr.addEventListener('input',updThr); updThr();
+
+  // 保存反馈
+  var save=document.getElementById('save');
+  save.addEventListener('click', function(){ var t=this.textContent; this.textContent='已保存 ✓'; var b=this; setTimeout(function(){ b.textContent=t; },1500); });
+</script>
+</body>
+</html>
