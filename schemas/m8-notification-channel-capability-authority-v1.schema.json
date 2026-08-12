@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "M8NotificationChannelKind": {
+      "enum": [
+        "DINGTALK",
+        "FEISHU",
+        "LOCAL_OFFLINE_FAKE",
+        "WECHAT_WORK"
+      ],
+      "title": "M8NotificationChannelKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-channel-capability-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Pinned adapter behavior for one notification channel.",
+  "properties": {
+    "adapter_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "adapter_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Adapter Manifest Id",
+      "type": "string"
+    },
+    "adapter_revision": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Adapter Revision",
+      "type": "string"
+    },
+    "capability_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Capability Authority Id",
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "#/$defs/M8NotificationChannelKind"
+    },
+    "inbound_response_supported": {
+      "title": "Inbound Response Supported",
+      "type": "boolean"
+    },
+    "network_required": {
+      "title": "Network Required",
+      "type": "boolean"
+    },
+    "offline_capable": {
+      "title": "Offline Capable",
+      "type": "boolean"
+    },
+    "provider_idempotency_key": {
+      "const": "notification_id",
+      "default": "notification_id",
+      "title": "Provider Idempotency Key",
+      "type": "string"
+    },
+    "request_timeout_ms": {
+      "exclusiveMinimum": 0,
+      "maximum": 30000,
+      "title": "Request Timeout Ms",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-notification-channel-capability-authority-v1",
+      "default": "m8-notification-channel-capability-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "adapter_id",
+    "adapter_revision",
+    "channel",
+    "request_timeout_ms",
+    "network_required",
+    "offline_capable",
+    "simulated",
+    "inbound_response_supported",
+    "adapter_manifest_id",
+    "capability_authority_id"
+  ],
+  "title": "M8NotificationChannelCapabilityAuthorityV1",
+  "type": "object"
+}

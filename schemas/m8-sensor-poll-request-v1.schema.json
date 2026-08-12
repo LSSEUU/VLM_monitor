@@ -1,0 +1,541 @@
+{
+  "$defs": {
+    "M8OperationalSource": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "raw_reference_required": {
+              "const": true
+            }
+          },
+          "required": [
+            "raw_reference_required"
+          ]
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "LIVE_CAMERA"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "certification_id": {
+                "type": "null"
+              },
+              "display_badge": {
+                "const": "LIVE · CAMERA"
+              },
+              "emergency_authority_enabled": {
+                "const": false
+              },
+              "life_safety_eligible": {
+                "const": false
+              },
+              "sensor_type": {
+                "type": "null"
+              },
+              "simulated": {
+                "const": false
+              },
+              "source_kind": {
+                "const": "CAMERA"
+              },
+              "timebase": {
+                "const": "FRAME_INDEX"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "RECORDED_VIDEO_SIMULATION"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "certification_id": {
+                "type": "null"
+              },
+              "display_badge": {
+                "const": "SIMULATED · RECORDED VIDEO"
+              },
+              "emergency_authority_enabled": {
+                "const": false
+              },
+              "life_safety_eligible": {
+                "const": false
+              },
+              "sensor_type": {
+                "type": "null"
+              },
+              "simulated": {
+                "const": true
+              },
+              "source_kind": {
+                "const": "CAMERA"
+              },
+              "timebase": {
+                "const": "FRAME_INDEX"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "LIVE_SENSOR"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "else": {
+                  "properties": {
+                    "life_safety_eligible": {
+                      "const": false
+                    }
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "emergency_authority_enabled": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "emergency_authority_enabled"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "certification_id": {
+                      "pattern": "^\\S{1,128}$",
+                      "type": "string"
+                    },
+                    "life_safety_eligible": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "certification_id"
+                  ]
+                }
+              }
+            ],
+            "properties": {
+              "certification_id": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "pattern": "^\\S{1,128}$",
+                    "type": "string"
+                  }
+                ]
+              },
+              "display_badge": {
+                "const": "LIVE · SENSOR"
+              },
+              "sensor_type": {
+                "enum": [
+                  "SMOKE",
+                  "TEMPERATURE",
+                  "COMBUSTIBLE_GAS",
+                  "TOXIC_GAS",
+                  "DOOR_CONTACT",
+                  "WATER_LEAK",
+                  "EMERGENCY_BUTTON"
+                ],
+                "type": "string"
+              },
+              "simulated": {
+                "const": false
+              },
+              "source_kind": {
+                "const": "SENSOR"
+              },
+              "timebase": {
+                "const": "DEVICE_TIMESTAMP_UTC"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "SIMULATED_SENSOR"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "certification_id": {
+                "type": "null"
+              },
+              "display_badge": {
+                "const": "SIMULATED · SENSOR"
+              },
+              "emergency_authority_enabled": {
+                "const": false
+              },
+              "life_safety_eligible": {
+                "const": false
+              },
+              "sensor_type": {
+                "enum": [
+                  "SMOKE",
+                  "TEMPERATURE",
+                  "COMBUSTIBLE_GAS",
+                  "TOXIC_GAS",
+                  "DOOR_CONTACT",
+                  "WATER_LEAK",
+                  "EMERGENCY_BUTTON"
+                ],
+                "type": "string"
+              },
+              "simulated": {
+                "const": true
+              },
+              "source_kind": {
+                "const": "SENSOR"
+              },
+              "timebase": {
+                "const": "SIMULATION_TICK"
+              }
+            }
+          }
+        }
+      ],
+      "description": "One camera or sensor source with machine-enforced truth labeling.",
+      "properties": {
+        "adapter_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "certification_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Certification Id"
+        },
+        "device_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Device Id",
+          "type": "string"
+        },
+        "display_badge": {
+          "readOnly": true,
+          "title": "Display Badge",
+          "type": "string"
+        },
+        "emergency_authority_enabled": {
+          "default": false,
+          "title": "Emergency Authority Enabled",
+          "type": "boolean"
+        },
+        "life_safety_eligible": {
+          "readOnly": true,
+          "title": "Life Safety Eligible",
+          "type": "boolean"
+        },
+        "location_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Location Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/M8OperationalSourceMode"
+        },
+        "raw_reference_required": {
+          "default": true,
+          "title": "Raw Reference Required",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-operational-source-v1",
+          "default": "m8-operational-source-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sensor_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8SensorType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "simulated": {
+          "readOnly": true,
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "source_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/M8OperationalSourceKind",
+          "readOnly": true
+        },
+        "timebase": {
+          "$ref": "#/$defs/M8SourceTimebase",
+          "readOnly": true
+        }
+      },
+      "required": [
+        "source_id",
+        "device_id",
+        "location_id",
+        "mode",
+        "adapter_id",
+        "manifest_id",
+        "source_kind",
+        "timebase",
+        "simulated",
+        "display_badge",
+        "life_safety_eligible"
+      ],
+      "title": "M8OperationalSource",
+      "type": "object"
+    },
+    "M8OperationalSourceKind": {
+      "enum": [
+        "CAMERA",
+        "SENSOR"
+      ],
+      "title": "M8OperationalSourceKind",
+      "type": "string"
+    },
+    "M8OperationalSourceMode": {
+      "enum": [
+        "LIVE_CAMERA",
+        "RECORDED_VIDEO_SIMULATION",
+        "LIVE_SENSOR",
+        "SIMULATED_SENSOR"
+      ],
+      "title": "M8OperationalSourceMode",
+      "type": "string"
+    },
+    "M8SensorAdapterCapabilityAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Pinned sensor-adapter modes, types, bounds, and offline/replay behavior.",
+      "properties": {
+        "adapter_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Adapter Manifest Id",
+          "type": "string"
+        },
+        "capability_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "deterministic_replay": {
+          "title": "Deterministic Replay",
+          "type": "boolean"
+        },
+        "max_batch_size": {
+          "maximum": 1024,
+          "minimum": 1,
+          "title": "Max Batch Size",
+          "type": "integer"
+        },
+        "network_required": {
+          "title": "Network Required",
+          "type": "boolean"
+        },
+        "offline_capable": {
+          "title": "Offline Capable",
+          "type": "boolean"
+        },
+        "poll_timeout_ms": {
+          "maximum": 60000,
+          "minimum": 1,
+          "title": "Poll Timeout Ms",
+          "type": "integer"
+        },
+        "raw_reference_required": {
+          "title": "Raw Reference Required",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-sensor-adapter-capability-authority-v1",
+          "default": "m8-sensor-adapter-capability-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "supported_sensor_types": {
+          "items": {
+            "$ref": "#/$defs/M8SensorType"
+          },
+          "minItems": 1,
+          "title": "Supported Sensor Types",
+          "type": "array"
+        },
+        "supported_source_modes": {
+          "items": {
+            "$ref": "#/$defs/M8OperationalSourceMode"
+          },
+          "minItems": 1,
+          "title": "Supported Source Modes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "adapter_id",
+        "adapter_manifest_id",
+        "supported_source_modes",
+        "supported_sensor_types",
+        "offline_capable",
+        "network_required",
+        "deterministic_replay",
+        "raw_reference_required",
+        "max_batch_size",
+        "poll_timeout_ms",
+        "capability_id"
+      ],
+      "title": "M8SensorAdapterCapabilityAuthorityV1",
+      "type": "object"
+    },
+    "M8SensorType": {
+      "enum": [
+        "SMOKE",
+        "TEMPERATURE",
+        "COMBUSTIBLE_GAS",
+        "TOXIC_GAS",
+        "DOOR_CONTACT",
+        "WATER_LEAK",
+        "EMERGENCY_BUTTON"
+      ],
+      "title": "M8SensorType",
+      "type": "string"
+    },
+    "M8SourceTimebase": {
+      "enum": [
+        "FRAME_INDEX",
+        "DEVICE_TIMESTAMP_UTC",
+        "SIMULATION_TICK"
+      ],
+      "title": "M8SourceTimebase",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-sensor-poll-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bounded, manifest-pinned request for samples after one source sequence.",
+  "properties": {
+    "adapter_capability": {
+      "$ref": "#/$defs/M8SensorAdapterCapabilityAuthorityV1"
+    },
+    "after_source_sequence": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "After Source Sequence"
+    },
+    "cache_key": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Cache Key",
+      "type": "string"
+    },
+    "limit": {
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-sensor-poll-request-v1",
+      "default": "m8-sensor-poll-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/M8OperationalSource"
+    },
+    "source_catalog_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Id",
+      "type": "string"
+    },
+    "timeout_ms": {
+      "maximum": 60000,
+      "minimum": 1,
+      "title": "Timeout Ms",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "source_catalog_id",
+    "source",
+    "adapter_capability",
+    "limit",
+    "timeout_ms",
+    "request_id",
+    "cache_key"
+  ],
+  "title": "M8SensorPollRequestV1",
+  "type": "object"
+}

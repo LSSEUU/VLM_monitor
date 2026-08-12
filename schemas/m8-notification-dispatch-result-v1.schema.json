@@ -1,0 +1,752 @@
+{
+  "$defs": {
+    "M8ActorRole": {
+      "enum": [
+        "LEADER",
+        "SAFETY_OFFICER",
+        "STUDENT",
+        "OPERATIONS"
+      ],
+      "title": "M8ActorRole",
+      "type": "string"
+    },
+    "M8NotificationAudienceKind": {
+      "enum": [
+        "CASE_SUBJECT",
+        "LEADER_MAJOR_EVENT",
+        "OPERATIONS_DEVICE_RESPONSE",
+        "SAFETY_RESPONDER"
+      ],
+      "title": "M8NotificationAudienceKind",
+      "type": "string"
+    },
+    "M8NotificationChannelCapabilityAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Pinned adapter behavior for one notification channel.",
+      "properties": {
+        "adapter_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Adapter Manifest Id",
+          "type": "string"
+        },
+        "adapter_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Revision",
+          "type": "string"
+        },
+        "capability_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Capability Authority Id",
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/$defs/M8NotificationChannelKind"
+        },
+        "inbound_response_supported": {
+          "title": "Inbound Response Supported",
+          "type": "boolean"
+        },
+        "network_required": {
+          "title": "Network Required",
+          "type": "boolean"
+        },
+        "offline_capable": {
+          "title": "Offline Capable",
+          "type": "boolean"
+        },
+        "provider_idempotency_key": {
+          "const": "notification_id",
+          "default": "notification_id",
+          "title": "Provider Idempotency Key",
+          "type": "string"
+        },
+        "request_timeout_ms": {
+          "exclusiveMinimum": 0,
+          "maximum": 30000,
+          "title": "Request Timeout Ms",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-notification-channel-capability-authority-v1",
+          "default": "m8-notification-channel-capability-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulated": {
+          "title": "Simulated",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "adapter_id",
+        "adapter_revision",
+        "channel",
+        "request_timeout_ms",
+        "network_required",
+        "offline_capable",
+        "simulated",
+        "inbound_response_supported",
+        "adapter_manifest_id",
+        "capability_authority_id"
+      ],
+      "title": "M8NotificationChannelCapabilityAuthorityV1",
+      "type": "object"
+    },
+    "M8NotificationChannelFailureCode": {
+      "enum": [
+        "CHANNEL_REJECTED",
+        "CHANNEL_TIMEOUT",
+        "CHANNEL_UNAVAILABLE",
+        "DELIVERY_REJECTED",
+        "RECEIPT_INVALID",
+        "UNKNOWN_DELIVERY"
+      ],
+      "title": "M8NotificationChannelFailureCode",
+      "type": "string"
+    },
+    "M8NotificationChannelKind": {
+      "enum": [
+        "DINGTALK",
+        "FEISHU",
+        "LOCAL_OFFLINE_FAKE",
+        "WECHAT_WORK"
+      ],
+      "title": "M8NotificationChannelKind",
+      "type": "string"
+    },
+    "M8NotificationDispatchDisposition": {
+      "enum": [
+        "ACCEPTED",
+        "DEFINITELY_NOT_SENT",
+        "UNKNOWN_DELIVERY"
+      ],
+      "title": "M8NotificationDispatchDisposition",
+      "type": "string"
+    },
+    "M8NotificationDispatchRequestV1": {
+      "additionalProperties": false,
+      "description": "One bounded send attempt over an exact rendered card artifact.",
+      "properties": {
+        "attempt_number": {
+          "exclusiveMinimum": 0,
+          "title": "Attempt Number",
+          "type": "integer"
+        },
+        "channel_capability": {
+          "$ref": "#/$defs/M8NotificationChannelCapabilityAuthorityV1"
+        },
+        "dispatch_request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Dispatch Request Id",
+          "type": "string"
+        },
+        "dispatched_at": {
+          "format": "date-time",
+          "title": "Dispatched At",
+          "type": "string"
+        },
+        "external_delivery_claim_permitted": {
+          "readOnly": true,
+          "title": "External Delivery Claim Permitted",
+          "type": "boolean"
+        },
+        "idempotency_key": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "plan": {
+          "$ref": "#/$defs/M8NotificationPlanAuthorityV1"
+        },
+        "rendered_card_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Rendered Card Ref",
+          "type": "string"
+        },
+        "rendered_card_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Rendered Card Sha256",
+          "type": "string"
+        },
+        "request_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Manifest Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-notification-dispatch-request-v1",
+          "default": "m8-notification-dispatch-request-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_notification_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Notification Authority Sha256",
+          "type": "string"
+        },
+        "source_notification_version": {
+          "exclusiveMinimum": 0,
+          "title": "Source Notification Version",
+          "type": "integer"
+        },
+        "source_status": {
+          "const": "QUEUED",
+          "default": "QUEUED",
+          "title": "Source Status",
+          "type": "string"
+        },
+        "timeout_ms": {
+          "exclusiveMinimum": 0,
+          "maximum": 30000,
+          "title": "Timeout Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "plan",
+        "source_notification_version",
+        "source_notification_authority_sha256",
+        "attempt_number",
+        "channel_capability",
+        "rendered_card_ref",
+        "rendered_card_sha256",
+        "dispatched_at",
+        "timeout_ms",
+        "idempotency_key",
+        "request_manifest_id",
+        "external_delivery_claim_permitted",
+        "dispatch_request_id"
+      ],
+      "title": "M8NotificationDispatchRequestV1",
+      "type": "object"
+    },
+    "M8NotificationEscalationPolicyAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Bounded response deadline and escalation routing policy.",
+      "properties": {
+        "case_transition_permitted": {
+          "readOnly": true,
+          "title": "Case Transition Permitted",
+          "type": "boolean"
+        },
+        "escalation_roles": {
+          "items": {
+            "$ref": "#/$defs/M8ActorRole"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Escalation Roles",
+          "type": "array"
+        },
+        "max_delivery_attempts": {
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "title": "Max Delivery Attempts",
+          "type": "integer"
+        },
+        "policy_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Policy Authority Id",
+          "type": "string"
+        },
+        "policy_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policy Manifest Id",
+          "type": "string"
+        },
+        "policy_rule_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Policy Rule Id",
+          "type": "string"
+        },
+        "requires_human_send_confirmation": {
+          "title": "Requires Human Send Confirmation",
+          "type": "boolean"
+        },
+        "response_timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 604800,
+          "title": "Response Timeout Seconds",
+          "type": "integer"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/M8OperationalRiskLevel"
+        },
+        "schema_version": {
+          "const": "m8-notification-escalation-policy-authority-v1",
+          "default": "m8-notification-escalation-policy-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_rule_id",
+        "risk_level",
+        "response_timeout_seconds",
+        "max_delivery_attempts",
+        "escalation_roles",
+        "requires_human_send_confirmation",
+        "policy_manifest_id",
+        "case_transition_permitted",
+        "policy_authority_id"
+      ],
+      "title": "M8NotificationEscalationPolicyAuthorityV1",
+      "type": "object"
+    },
+    "M8NotificationPlanAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Immutable PLANNED outbox intent for one exact operational Case version.",
+      "properties": {
+        "audience": {
+          "$ref": "#/$defs/M8NotificationAudienceKind"
+        },
+        "case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Authority Sha256",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_status": {
+          "$ref": "#/$defs/M8OperationalCaseStatus"
+        },
+        "case_subject_actor_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Case Subject Actor Id"
+        },
+        "case_transition_permitted": {
+          "readOnly": true,
+          "title": "Case Transition Permitted",
+          "type": "boolean"
+        },
+        "case_version": {
+          "exclusiveMinimum": 0,
+          "title": "Case Version",
+          "type": "integer"
+        },
+        "direct_disciplinary_action_permitted": {
+          "readOnly": true,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "display_badge": {
+          "readOnly": true,
+          "title": "Display Badge",
+          "type": "string"
+        },
+        "escalation_policy": {
+          "$ref": "#/$defs/M8NotificationEscalationPolicyAuthorityV1"
+        },
+        "external_delivery_claim_permitted": {
+          "readOnly": true,
+          "title": "External Delivery Claim Permitted",
+          "type": "boolean"
+        },
+        "idempotency_key": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "location_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Location Id",
+          "type": "string"
+        },
+        "notification_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Notification Id",
+          "type": "string"
+        },
+        "notification_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Notification Manifest Id",
+          "type": "string"
+        },
+        "planned_at": {
+          "format": "date-time",
+          "title": "Planned At",
+          "type": "string"
+        },
+        "purpose": {
+          "$ref": "#/$defs/M8NotificationPurpose"
+        },
+        "response_due_at": {
+          "format": "date-time",
+          "readOnly": true,
+          "title": "Response Due At",
+          "type": "string"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/M8OperationalRiskLevel"
+        },
+        "schema_version": {
+          "const": "m8-notification-plan-authority-v1",
+          "default": "m8-notification-plan-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulated": {
+          "readOnly": true,
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "status": {
+          "const": "PLANNED",
+          "default": "PLANNED",
+          "title": "Status",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/M8NotificationTargetAuthorityV1"
+        },
+        "template": {
+          "$ref": "#/$defs/M8NotificationTemplateAuthorityV1"
+        }
+      },
+      "required": [
+        "case_id",
+        "case_version",
+        "case_authority_sha256",
+        "case_status",
+        "risk_level",
+        "location_id",
+        "purpose",
+        "audience",
+        "target",
+        "template",
+        "escalation_policy",
+        "planned_at",
+        "notification_manifest_id",
+        "simulated",
+        "display_badge",
+        "response_due_at",
+        "direct_disciplinary_action_permitted",
+        "case_transition_permitted",
+        "external_delivery_claim_permitted",
+        "notification_id",
+        "idempotency_key"
+      ],
+      "title": "M8NotificationPlanAuthorityV1",
+      "type": "object"
+    },
+    "M8NotificationPurpose": {
+      "enum": [
+        "APPEAL_UPDATED",
+        "CASE_ACTION_REQUIRED",
+        "CASE_CREATED",
+        "CASE_UPDATED",
+        "DEVICE_ATTENTION_REQUIRED",
+        "ESCALATION",
+        "EVIDENCE_REQUESTED"
+      ],
+      "title": "M8NotificationPurpose",
+      "type": "string"
+    },
+    "M8NotificationTargetAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Versioned privacy-safe mapping from one actor to one delivery channel.",
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "authority_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Authority Revision",
+          "type": "integer"
+        },
+        "channel": {
+          "$ref": "#/$defs/M8NotificationChannelKind"
+        },
+        "display_badge": {
+          "readOnly": true,
+          "title": "Display Badge",
+          "type": "string"
+        },
+        "external_subject_binding_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "External Subject Binding Sha256",
+          "type": "string"
+        },
+        "identity_provider_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Identity Provider Id",
+          "type": "string"
+        },
+        "inbound_response_supported": {
+          "title": "Inbound Response Supported",
+          "type": "boolean"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-notification-target-authority-v1",
+          "default": "m8-notification-target-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulated": {
+          "readOnly": true,
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "target_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Target Authority Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_id",
+        "identity_provider_id",
+        "external_subject_binding_sha256",
+        "channel",
+        "authority_revision",
+        "active",
+        "inbound_response_supported",
+        "manifest_id",
+        "simulated",
+        "display_badge",
+        "target_authority_id"
+      ],
+      "title": "M8NotificationTargetAuthorityV1",
+      "type": "object"
+    },
+    "M8NotificationTemplateAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Versioned message-card template reference, never a Case decision rule.",
+      "properties": {
+        "allowed_channels": {
+          "items": {
+            "$ref": "#/$defs/M8NotificationChannelKind"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Allowed Channels",
+          "type": "array"
+        },
+        "allowed_purposes": {
+          "items": {
+            "$ref": "#/$defs/M8NotificationPurpose"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Allowed Purposes",
+          "type": "array"
+        },
+        "content_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Document Sha256",
+          "type": "string"
+        },
+        "effective_at": {
+          "format": "date-time",
+          "title": "Effective At",
+          "type": "string"
+        },
+        "locale": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Locale",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "ordinary_document_can_define_case_rule": {
+          "readOnly": true,
+          "title": "Ordinary Document Can Define Case Rule",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-notification-template-authority-v1",
+          "default": "m8-notification-template-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "template_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Template Authority Id",
+          "type": "string"
+        },
+        "template_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Template Id",
+          "type": "string"
+        },
+        "template_version": {
+          "exclusiveMinimum": 0,
+          "title": "Template Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "template_id",
+        "template_version",
+        "locale",
+        "effective_at",
+        "content_document_sha256",
+        "allowed_purposes",
+        "allowed_channels",
+        "manifest_id",
+        "ordinary_document_can_define_case_rule",
+        "template_authority_id"
+      ],
+      "title": "M8NotificationTemplateAuthorityV1",
+      "type": "object"
+    },
+    "M8OperationalCaseStatus": {
+      "enum": [
+        "PENDING_VERIFICATION",
+        "CONFIRMED",
+        "REJECTED",
+        "EVIDENCE_REQUESTED",
+        "RESOLVED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "M8OperationalCaseStatus",
+      "type": "string"
+    },
+    "M8OperationalRiskLevel": {
+      "enum": [
+        "REMINDER",
+        "GENERAL",
+        "SEVERE",
+        "EMERGENCY"
+      ],
+      "title": "M8OperationalRiskLevel",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-dispatch-result-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed send acceptance/failure with an exact raw channel response reference.",
+  "properties": {
+    "accepted": {
+      "readOnly": true,
+      "title": "Accepted",
+      "type": "boolean"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "dispatch_result_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Dispatch Result Id",
+      "type": "string"
+    },
+    "disposition": {
+      "$ref": "#/$defs/M8NotificationDispatchDisposition"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8NotificationChannelFailureCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "provider_receipt_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Provider Receipt Id"
+    },
+    "raw_response_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "raw_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Response Sha256",
+      "type": "string"
+    },
+    "real_delivery_confirmed": {
+      "readOnly": true,
+      "title": "Real Delivery Confirmed",
+      "type": "boolean"
+    },
+    "request": {
+      "$ref": "#/$defs/M8NotificationDispatchRequestV1"
+    },
+    "result_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Result Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-notification-dispatch-result-v1",
+      "default": "m8-notification-dispatch-result-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "simulated": {
+      "readOnly": true,
+      "title": "Simulated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "request",
+    "disposition",
+    "raw_response_ref",
+    "raw_response_sha256",
+    "completed_at",
+    "result_manifest_id",
+    "accepted",
+    "simulated",
+    "real_delivery_confirmed",
+    "dispatch_result_id"
+  ],
+  "title": "M8NotificationDispatchResultV1",
+  "type": "object"
+}

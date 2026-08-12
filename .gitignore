@@ -20,3 +20,5 @@ weights/
 *.safetensors
 runs/*
 !runs/.gitkeep
+.labcourt-local/*
+!.labcourt-local/feishu-secrets.example.json

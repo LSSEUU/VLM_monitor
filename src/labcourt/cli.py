@@ -16,6 +16,8 @@ from labcourt.exceptions import ContractViolation
 from labcourt.m3_cli import register_m3_commands
 from labcourt.m4_cli import register_m4_commands
 from labcourt.m5_cli import register_m5_commands
+from labcourt.m8_demo_cli import register_m8_demo_commands
+from labcourt.m8_feishu_cli import register_m8_feishu_commands
 from labcourt.pilot_cli import register_pilot_commands
 
 app = typer.Typer(help="LabCourt auditable laboratory-safety pipeline.")
@@ -28,6 +30,8 @@ app.add_typer(maintenance_app, name="maintenance")
 register_m3_commands(app)
 register_m4_commands(app)
 register_m5_commands(app, artifacts_app)
+register_m8_demo_commands(app)
+register_m8_feishu_commands(app)
 register_pilot_commands(app)
 DEFAULT_SCHEMA_OUTPUT = Path("schemas")
 DEFAULT_CONFIG = Path("configs/default.yaml")

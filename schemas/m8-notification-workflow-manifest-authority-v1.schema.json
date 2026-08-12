@@ -1,0 +1,61 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-workflow-manifest-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Pinned manifests for one notification application workflow deployment.",
+  "properties": {
+    "audit_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Manifest Id",
+      "type": "string"
+    },
+    "card_renderer_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Card Renderer Manifest Id",
+      "type": "string"
+    },
+    "dispatch_request_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dispatch Request Manifest Id",
+      "type": "string"
+    },
+    "raw_storage_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Storage Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-notification-workflow-manifest-authority-v1",
+      "default": "m8-notification-workflow-manifest-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "transition_command_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Transition Command Manifest Id",
+      "type": "string"
+    },
+    "workflow_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Workflow Authority Id",
+      "type": "string"
+    },
+    "workflow_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Workflow Manifest Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "card_renderer_manifest_id",
+    "dispatch_request_manifest_id",
+    "transition_command_manifest_id",
+    "raw_storage_manifest_id",
+    "audit_manifest_id",
+    "workflow_manifest_id",
+    "workflow_authority_id"
+  ],
+  "title": "M8NotificationWorkflowManifestAuthorityV1",
+  "type": "object"
+}

@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "M8OperationalSourceMode": {
+      "enum": [
+        "LIVE_CAMERA",
+        "RECORDED_VIDEO_SIMULATION",
+        "LIVE_SENSOR",
+        "SIMULATED_SENSOR"
+      ],
+      "title": "M8OperationalSourceMode",
+      "type": "string"
+    },
+    "M8SensorType": {
+      "enum": [
+        "SMOKE",
+        "TEMPERATURE",
+        "COMBUSTIBLE_GAS",
+        "TOXIC_GAS",
+        "DOOR_CONTACT",
+        "WATER_LEAK",
+        "EMERGENCY_BUTTON"
+      ],
+      "title": "M8SensorType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-sensor-adapter-capability-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Pinned sensor-adapter modes, types, bounds, and offline/replay behavior.",
+  "properties": {
+    "adapter_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "adapter_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Adapter Manifest Id",
+      "type": "string"
+    },
+    "capability_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Capability Id",
+      "type": "string"
+    },
+    "deterministic_replay": {
+      "title": "Deterministic Replay",
+      "type": "boolean"
+    },
+    "max_batch_size": {
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Max Batch Size",
+      "type": "integer"
+    },
+    "network_required": {
+      "title": "Network Required",
+      "type": "boolean"
+    },
+    "offline_capable": {
+      "title": "Offline Capable",
+      "type": "boolean"
+    },
+    "poll_timeout_ms": {
+      "maximum": 60000,
+      "minimum": 1,
+      "title": "Poll Timeout Ms",
+      "type": "integer"
+    },
+    "raw_reference_required": {
+      "title": "Raw Reference Required",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-sensor-adapter-capability-authority-v1",
+      "default": "m8-sensor-adapter-capability-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "supported_sensor_types": {
+      "items": {
+        "$ref": "#/$defs/M8SensorType"
+      },
+      "minItems": 1,
+      "title": "Supported Sensor Types",
+      "type": "array"
+    },
+    "supported_source_modes": {
+      "items": {
+        "$ref": "#/$defs/M8OperationalSourceMode"
+      },
+      "minItems": 1,
+      "title": "Supported Source Modes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "adapter_id",
+    "adapter_manifest_id",
+    "supported_source_modes",
+    "supported_sensor_types",
+    "offline_capable",
+    "network_required",
+    "deterministic_replay",
+    "raw_reference_required",
+    "max_batch_size",
+    "poll_timeout_ms",
+    "capability_id"
+  ],
+  "title": "M8SensorAdapterCapabilityAuthorityV1",
+  "type": "object"
+}

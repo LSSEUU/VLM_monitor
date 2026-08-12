@@ -1,0 +1,232 @@
+{
+  "$defs": {
+    "M8ActorRole": {
+      "enum": [
+        "LEADER",
+        "SAFETY_OFFICER",
+        "STUDENT",
+        "OPERATIONS"
+      ],
+      "title": "M8ActorRole",
+      "type": "string"
+    },
+    "M8PersonalDemoActorBindingV1": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_commit_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Actor Commit Receipt Id",
+          "type": "string"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/M8ActorRole"
+        },
+        "schema_version": {
+          "const": "m8-personal-demo-actor-binding-v1",
+          "default": "m8-personal-demo-actor-binding-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_id",
+        "role",
+        "actor_commit_receipt_id"
+      ],
+      "title": "M8PersonalDemoActorBindingV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-bootstrap-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Small content-addressed receipt over the complete persisted demo cut.",
+  "properties": {
+    "actor_bindings": {
+      "items": {
+        "$ref": "#/$defs/M8PersonalDemoActorBindingV1"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Actor Bindings",
+      "type": "array"
+    },
+    "bootstrap_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Bootstrap Manifest Id",
+      "type": "string"
+    },
+    "bootstrap_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Bootstrap Receipt Id",
+      "type": "string"
+    },
+    "campus_id": {
+      "const": "campus-demo",
+      "default": "campus-demo",
+      "title": "Campus Id",
+      "type": "string"
+    },
+    "case_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Commit Receipt Id",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_location_id": {
+      "const": "room-chem-301",
+      "default": "room-chem-301",
+      "title": "Case Location Id",
+      "type": "string"
+    },
+    "case_status": {
+      "const": "PENDING_VERIFICATION",
+      "default": "PENDING_VERIFICATION",
+      "title": "Case Status",
+      "type": "string"
+    },
+    "case_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "certified_fire_detection_claim_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Certified Fire Detection Claim Permitted",
+      "type": "boolean"
+    },
+    "current_case_count": {
+      "const": 1,
+      "default": 1,
+      "title": "Current Case Count",
+      "type": "integer"
+    },
+    "direct_disciplinary_action_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "display_badge": {
+      "const": "PERSONAL DEMO · SIMULATED CAMPUS OPERATIONS",
+      "default": "PERSONAL DEMO · SIMULATED CAMPUS OPERATIONS",
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "human_verification_required": {
+      "const": true,
+      "default": true,
+      "title": "Human Verification Required",
+      "type": "boolean"
+    },
+    "latest_sensor_sample_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Latest Sensor Sample Commit Receipt Id",
+      "type": "string"
+    },
+    "location_count": {
+      "const": 4,
+      "default": 4,
+      "title": "Location Count",
+      "type": "integer"
+    },
+    "observed_sensor_count": {
+      "const": 1,
+      "default": 1,
+      "title": "Observed Sensor Count",
+      "type": "integer"
+    },
+    "operations_projection_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Operations Projection Id",
+      "type": "string"
+    },
+    "pending_verification_case_count": {
+      "const": 1,
+      "default": 1,
+      "title": "Pending Verification Case Count",
+      "type": "integer"
+    },
+    "raw_signal_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Raw Signal Refs",
+      "type": "array"
+    },
+    "risk_level": {
+      "const": "EMERGENCY",
+      "default": "EMERGENCY",
+      "title": "Risk Level",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-bootstrap-receipt-v1",
+      "default": "m8-personal-demo-bootstrap-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sensor_poll_cache_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sensor Poll Cache Commit Receipt Id",
+      "type": "string"
+    },
+    "simulated": {
+      "const": true,
+      "default": true,
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "source_catalog_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Commit Receipt Id",
+      "type": "string"
+    },
+    "source_count": {
+      "const": 1,
+      "default": 1,
+      "title": "Source Count",
+      "type": "integer"
+    },
+    "source_id": {
+      "const": "sensor-simulated-smoke-01",
+      "default": "sensor-simulated-smoke-01",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "topology_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Topology Commit Receipt Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "topology_commit_receipt_id",
+    "source_catalog_commit_receipt_id",
+    "actor_bindings",
+    "sensor_poll_cache_commit_receipt_id",
+    "latest_sensor_sample_commit_receipt_id",
+    "raw_signal_refs",
+    "case_commit_receipt_id",
+    "case_id",
+    "operations_projection_id",
+    "bootstrap_manifest_id",
+    "bootstrap_receipt_id"
+  ],
+  "title": "M8PersonalDemoBootstrapReceiptV1",
+  "type": "object"
+}

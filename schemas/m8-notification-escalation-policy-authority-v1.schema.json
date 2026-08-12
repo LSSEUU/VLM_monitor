@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "M8ActorRole": {
+      "enum": [
+        "LEADER",
+        "SAFETY_OFFICER",
+        "STUDENT",
+        "OPERATIONS"
+      ],
+      "title": "M8ActorRole",
+      "type": "string"
+    },
+    "M8OperationalRiskLevel": {
+      "enum": [
+        "REMINDER",
+        "GENERAL",
+        "SEVERE",
+        "EMERGENCY"
+      ],
+      "title": "M8OperationalRiskLevel",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-escalation-policy-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bounded response deadline and escalation routing policy.",
+  "properties": {
+    "case_transition_permitted": {
+      "readOnly": true,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "escalation_roles": {
+      "items": {
+        "$ref": "#/$defs/M8ActorRole"
+      },
+      "maxItems": 4,
+      "minItems": 1,
+      "title": "Escalation Roles",
+      "type": "array"
+    },
+    "max_delivery_attempts": {
+      "exclusiveMinimum": 0,
+      "maximum": 10,
+      "title": "Max Delivery Attempts",
+      "type": "integer"
+    },
+    "policy_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Policy Authority Id",
+      "type": "string"
+    },
+    "policy_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Manifest Id",
+      "type": "string"
+    },
+    "policy_rule_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Policy Rule Id",
+      "type": "string"
+    },
+    "requires_human_send_confirmation": {
+      "title": "Requires Human Send Confirmation",
+      "type": "boolean"
+    },
+    "response_timeout_seconds": {
+      "exclusiveMinimum": 0,
+      "maximum": 604800,
+      "title": "Response Timeout Seconds",
+      "type": "integer"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/M8OperationalRiskLevel"
+    },
+    "schema_version": {
+      "const": "m8-notification-escalation-policy-authority-v1",
+      "default": "m8-notification-escalation-policy-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_rule_id",
+    "risk_level",
+    "response_timeout_seconds",
+    "max_delivery_attempts",
+    "escalation_roles",
+    "requires_human_send_confirmation",
+    "policy_manifest_id",
+    "case_transition_permitted",
+    "policy_authority_id"
+  ],
+  "title": "M8NotificationEscalationPolicyAuthorityV1",
+  "type": "object"
+}

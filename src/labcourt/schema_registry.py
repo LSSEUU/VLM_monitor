@@ -271,6 +271,177 @@ from labcourt.contracts.m6_upgrade_pending_sample_commitment import (
     M6UpgradePendingSampleCommitmentAuthority,
 )
 from labcourt.contracts.m6_upgrade_physical import M6UpgradePhysicalArtifactRef
+from labcourt.contracts.m8_access_cases import (
+    M8ActorAuthorityV1,
+    M8AuthorityReference,
+    M8OperationalCaseAuditIntentV1,
+    M8OperationalCaseCreateCommandV1,
+    M8OperationalCaseTransitionCommandV1,
+)
+from labcourt.contracts.m8_adapter_commissioning import (
+    M8AdapterActivationIntentV1,
+    M8AdapterReadinessAssessmentV1,
+    M8CommissioningEvidenceAuthorityV1,
+    M8CommissioningEvidenceCommitReceiptV1,
+    M8ProductionAdapterCandidateAuthorityV1,
+    M8ProductionAdapterCandidateCommitReceiptV1,
+)
+from labcourt.contracts.m8_api import (
+    M8ApiCaseTransitionRequestV1,
+    M8ApiCredentialAuthorityV1,
+    M8ApiCredentialCatalogAuthorityV1,
+    M8ApiErrorResponseV1,
+    M8ApiKnowledgeQueryRequestV1,
+    M8ApiPrincipalV1,
+)
+from labcourt.contracts.m8_case_persistence import (
+    M8ActorAuthorityCommitReceiptV1,
+    M8OperationalCaseAuditEventV1,
+    M8OperationalCaseAuthorityV1,
+    M8OperationalCaseCommitReceiptV1,
+)
+from labcourt.contracts.m8_feishu_activation import (
+    M8FeishuSandboxActivationCommitReceiptV1,
+    M8FeishuSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuSandboxActivationStatusV1,
+    M8FeishuSandboxRuntimeConfigV1,
+)
+from labcourt.contracts.m8_feishu_challenge import (
+    M8FeishuLoopbackChallengeListenerProfileV1,
+    M8FeishuUrlChallengeCommitReceiptV1,
+    M8FeishuUrlChallengeIngressRequestV1,
+    M8FeishuUrlChallengeVerificationReceiptV1,
+)
+from labcourt.contracts.m8_feishu_emergency_demo import (
+    M8FeishuEmergencyDemoProbeReceiptV1,
+    M8FeishuEmergencyDemoProbeV1,
+)
+from labcourt.contracts.m8_feishu_inbound import (
+    M8FeishuInboundMessageCommitReceiptV1,
+    M8FeishuInboundMessageVerificationReceiptV1,
+    M8FeishuInboundWebhookProfileV1,
+    M8FeishuWebhookIngressRequestV1,
+)
+from labcourt.contracts.m8_feishu_inbound_activation import (
+    M8FeishuInboundSandboxActivationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationStatusV1,
+    M8FeishuInboundSandboxRuntimeConfigV1,
+)
+from labcourt.contracts.m8_feishu_inbound_reply import (
+    M8FeishuInboundReplyCommitReceiptV1,
+    M8FeishuInboundReplyCorrelationAuthorityV1,
+)
+from labcourt.contracts.m8_feishu_local_demo import M8FeishuLocalDemoConfigV1
+from labcourt.contracts.m8_feishu_notification import (
+    M8FeishuAdapterProfileV1,
+    M8FeishuCardDispatchPreflightV1,
+    M8FeishuConformanceResultV1,
+    M8FeishuNotificationCardV1,
+    M8FeishuRecipientBindingAuthorityV1,
+)
+from labcourt.contracts.m8_feishu_outbox import M8FeishuSandboxOutboxRunReceiptV1
+from labcourt.contracts.m8_feishu_personal_demo import (
+    M8FeishuPersonalDemoProbeReceiptV1,
+    M8FeishuPersonalDemoProbeV1,
+)
+from labcourt.contracts.m8_feishu_transport import (
+    M8FeishuSandboxSendReceiptV1,
+    M8FeishuTokenAcquisitionReceiptV1,
+)
+from labcourt.contracts.m8_inventory_persistence import (
+    M8CampusTopologyCommitReceiptV1,
+    M8OperationalSourceCatalogCommitReceiptV1,
+)
+from labcourt.contracts.m8_knowledge import (
+    M8KnowledgeAnswerV1,
+    M8KnowledgeCatalogAuthorityV1,
+    M8KnowledgeCitationV1,
+    M8KnowledgeDocumentAuthorityV1,
+    M8KnowledgeQueryV1,
+)
+from labcourt.contracts.m8_knowledge_persistence import (
+    M8KnowledgeAnswerCommitReceiptV1,
+    M8KnowledgeCatalogCommitReceiptV1,
+    M8KnowledgeDocumentCommitReceiptV1,
+)
+from labcourt.contracts.m8_notification_cards import (
+    M8NotificationWorkflowManifestAuthorityV1,
+    M8OfflineNotificationCardV1,
+)
+from labcourt.contracts.m8_notification_dispatch_claims import (
+    M8NotificationDispatchCallFenceReceiptV1,
+    M8NotificationDispatchClaimReceiptV1,
+    M8NotificationDispatchClaimStatusV1,
+    M8NotificationDispatchCompletionReceiptV1,
+)
+from labcourt.contracts.m8_notification_escalation import (
+    M8NotificationEscalationAssessmentV1,
+)
+from labcourt.contracts.m8_notification_lifecycle import (
+    M8NotificationChannelCapabilityAuthorityV1,
+    M8NotificationDeliveryReceiptV1,
+    M8NotificationDispatchRequestV1,
+    M8NotificationDispatchResultV1,
+    M8NotificationReplyAuthorityV1,
+    M8NotificationTransitionCommandV1,
+)
+from labcourt.contracts.m8_notification_persistence import (
+    M8NotificationAuditEventV1,
+    M8NotificationAuthorityV1,
+    M8NotificationCommitReceiptV1,
+    M8NotificationRawArtifactCommitReceiptV1,
+    M8NotificationTargetCommitReceiptV1,
+)
+from labcourt.contracts.m8_notifications import (
+    M8NotificationEscalationPolicyAuthorityV1,
+    M8NotificationPlanAuthorityV1,
+    M8NotificationTargetAuthorityV1,
+    M8NotificationTemplateAuthorityV1,
+)
+from labcourt.contracts.m8_operations import (
+    M8CampusLocation,
+    M8CampusTopologyAuthorityV1,
+    M8OperationalSource,
+    M8OperationalSourceCatalogAuthorityV1,
+)
+from labcourt.contracts.m8_personal_demo import (
+    M8PersonalDemoActorBindingV1,
+    M8PersonalDemoBootstrapReceiptV1,
+    M8PersonalDemoCameraReceiptV1,
+    M8PersonalDemoCameraViewV1,
+    M8PersonalDemoKnowledgeReceiptV1,
+    M8PersonalDemoNotificationReceiptV1,
+    M8PersonalDemoPpeCaseReceiptV1,
+    M8PersonalDemoPpeNotificationReceiptV1,
+    M8PersonalDemoPpeOutcomeNotificationReceiptV1,
+    M8PersonalDemoRecordedMediaReceiptV1,
+)
+from labcourt.contracts.m8_personal_demo_api import (
+    M8PersonalDemoApiProfileV1,
+    M8PersonalDemoLocalAccessV1,
+    M8PersonalDemoRoleTokensV1,
+)
+from labcourt.contracts.m8_projection_views import M8OperationsProjectionViewV1
+from labcourt.contracts.m8_projections import (
+    M8OperationsProjectionV1,
+    M8ProjectionMapNodeV1,
+    M8ProjectionOverviewV1,
+    M8ProjectionSourceV1,
+)
+from labcourt.contracts.m8_sensor_persistence import (
+    M8SensorPollCacheCommitReceiptV1,
+    M8SensorSampleCommitReceiptV1,
+)
+from labcourt.contracts.m8_sensor_signals import (
+    M8SensorAdapterCapabilityAuthorityV1,
+    M8SensorPollRequestV1,
+    M8SensorPollResultV1,
+    M8SensorRiskAssessmentV1,
+    M8SensorRiskPolicyAuthorityV1,
+    M8SensorSample,
+    M8SimulatedSensorScenarioAuthorityV1,
+)
 from labcourt.contracts.manifests import RunManifest, StreamManifest
 from labcourt.contracts.model_call_failures import ModelCallFailureAuthority
 from labcourt.contracts.model_response_recovery import (
@@ -570,6 +741,141 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m6-upgrade-sample-execution-record": M6UpgradeSampleExecutionRecord,
     "m6-upgrade-sample-execution-record-v2": M6UpgradeSampleExecutionRecordV2,
     "model-cache-entry": ModelCacheEntry,
+    "m8-adapter-activation-intent-v1": M8AdapterActivationIntentV1,
+    "m8-adapter-readiness-assessment-v1": M8AdapterReadinessAssessmentV1,
+    "m8-api-case-transition-request-v1": M8ApiCaseTransitionRequestV1,
+    "m8-api-credential-authority-v1": M8ApiCredentialAuthorityV1,
+    "m8-api-credential-catalog-authority-v1": M8ApiCredentialCatalogAuthorityV1,
+    "m8-api-error-response-v1": M8ApiErrorResponseV1,
+    "m8-api-knowledge-query-request-v1": M8ApiKnowledgeQueryRequestV1,
+    "m8-api-principal-v1": M8ApiPrincipalV1,
+    "m8-campus-location": M8CampusLocation,
+    "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
+    "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,
+    "m8-commissioning-evidence-authority-v1": M8CommissioningEvidenceAuthorityV1,
+    "m8-commissioning-evidence-commit-receipt-v1": (M8CommissioningEvidenceCommitReceiptV1),
+    "m8-feishu-adapter-profile-v1": M8FeishuAdapterProfileV1,
+    "m8-feishu-card-dispatch-preflight-v1": M8FeishuCardDispatchPreflightV1,
+    "m8-feishu-conformance-result-v1": M8FeishuConformanceResultV1,
+    "m8-feishu-inbound-message-commit-receipt-v1": M8FeishuInboundMessageCommitReceiptV1,
+    "m8-feishu-inbound-message-verification-receipt-v1": (
+        M8FeishuInboundMessageVerificationReceiptV1
+    ),
+    "m8-feishu-inbound-reply-commit-receipt-v1": M8FeishuInboundReplyCommitReceiptV1,
+    "m8-feishu-inbound-reply-correlation-authority-v1": (
+        M8FeishuInboundReplyCorrelationAuthorityV1
+    ),
+    "m8-feishu-inbound-sandbox-activation-commit-receipt-v1": (
+        M8FeishuInboundSandboxActivationCommitReceiptV1
+    ),
+    "m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1": (
+        M8FeishuInboundSandboxActivationRevocationCommitReceiptV1
+    ),
+    "m8-feishu-inbound-sandbox-activation-status-v1": (M8FeishuInboundSandboxActivationStatusV1),
+    "m8-feishu-inbound-sandbox-runtime-config-v1": (M8FeishuInboundSandboxRuntimeConfigV1),
+    "m8-feishu-inbound-webhook-profile-v1": M8FeishuInboundWebhookProfileV1,
+    "m8-feishu-local-demo-config-v1": M8FeishuLocalDemoConfigV1,
+    "m8-feishu-emergency-demo-probe-receipt-v1": M8FeishuEmergencyDemoProbeReceiptV1,
+    "m8-feishu-emergency-demo-probe-v1": M8FeishuEmergencyDemoProbeV1,
+    "m8-feishu-personal-demo-probe-receipt-v1": M8FeishuPersonalDemoProbeReceiptV1,
+    "m8-feishu-personal-demo-probe-v1": M8FeishuPersonalDemoProbeV1,
+    "m8-feishu-notification-card-v1": M8FeishuNotificationCardV1,
+    "m8-feishu-recipient-binding-authority-v1": M8FeishuRecipientBindingAuthorityV1,
+    "m8-feishu-sandbox-activation-commit-receipt-v1": (M8FeishuSandboxActivationCommitReceiptV1),
+    "m8-feishu-sandbox-activation-revocation-commit-receipt-v1": (
+        M8FeishuSandboxActivationRevocationCommitReceiptV1
+    ),
+    "m8-feishu-sandbox-activation-status-v1": M8FeishuSandboxActivationStatusV1,
+    "m8-feishu-sandbox-outbox-run-receipt-v1": M8FeishuSandboxOutboxRunReceiptV1,
+    "m8-feishu-sandbox-runtime-config-v1": M8FeishuSandboxRuntimeConfigV1,
+    "m8-feishu-sandbox-send-receipt-v1": M8FeishuSandboxSendReceiptV1,
+    "m8-feishu-token-acquisition-receipt-v1": M8FeishuTokenAcquisitionReceiptV1,
+    "m8-feishu-loopback-challenge-listener-profile-v1": (
+        M8FeishuLoopbackChallengeListenerProfileV1
+    ),
+    "m8-feishu-url-challenge-ingress-request-v1": (M8FeishuUrlChallengeIngressRequestV1),
+    "m8-feishu-url-challenge-commit-receipt-v1": M8FeishuUrlChallengeCommitReceiptV1,
+    "m8-feishu-url-challenge-verification-receipt-v1": (M8FeishuUrlChallengeVerificationReceiptV1),
+    "m8-feishu-webhook-ingress-request-v1": M8FeishuWebhookIngressRequestV1,
+    "m8-knowledge-answer-v1": M8KnowledgeAnswerV1,
+    "m8-knowledge-answer-commit-receipt-v1": M8KnowledgeAnswerCommitReceiptV1,
+    "m8-knowledge-catalog-authority-v1": M8KnowledgeCatalogAuthorityV1,
+    "m8-knowledge-catalog-commit-receipt-v1": M8KnowledgeCatalogCommitReceiptV1,
+    "m8-knowledge-citation-v1": M8KnowledgeCitationV1,
+    "m8-knowledge-document-authority-v1": M8KnowledgeDocumentAuthorityV1,
+    "m8-knowledge-document-commit-receipt-v1": M8KnowledgeDocumentCommitReceiptV1,
+    "m8-knowledge-query-v1": M8KnowledgeQueryV1,
+    "m8-actor-authority-v1": M8ActorAuthorityV1,
+    "m8-actor-authority-commit-receipt-v1": M8ActorAuthorityCommitReceiptV1,
+    "m8-authority-reference": M8AuthorityReference,
+    "m8-operational-case-audit-intent-v1": M8OperationalCaseAuditIntentV1,
+    "m8-operational-case-audit-event-v1": M8OperationalCaseAuditEventV1,
+    "m8-operational-case-authority-v1": M8OperationalCaseAuthorityV1,
+    "m8-operational-case-commit-receipt-v1": M8OperationalCaseCommitReceiptV1,
+    "m8-notification-audit-event-v1": M8NotificationAuditEventV1,
+    "m8-notification-authority-v1": M8NotificationAuthorityV1,
+    "m8-notification-channel-capability-authority-v1": (M8NotificationChannelCapabilityAuthorityV1),
+    "m8-notification-commit-receipt-v1": M8NotificationCommitReceiptV1,
+    "m8-notification-delivery-receipt-v1": M8NotificationDeliveryReceiptV1,
+    "m8-notification-dispatch-call-fence-receipt-v1": (M8NotificationDispatchCallFenceReceiptV1),
+    "m8-notification-dispatch-claim-receipt-v1": M8NotificationDispatchClaimReceiptV1,
+    "m8-notification-dispatch-claim-status-v1": M8NotificationDispatchClaimStatusV1,
+    "m8-notification-dispatch-completion-receipt-v1": (M8NotificationDispatchCompletionReceiptV1),
+    "m8-notification-dispatch-request-v1": M8NotificationDispatchRequestV1,
+    "m8-notification-dispatch-result-v1": M8NotificationDispatchResultV1,
+    "m8-notification-escalation-policy-authority-v1": (M8NotificationEscalationPolicyAuthorityV1),
+    "m8-notification-escalation-assessment-v1": M8NotificationEscalationAssessmentV1,
+    "m8-notification-plan-authority-v1": M8NotificationPlanAuthorityV1,
+    "m8-notification-reply-authority-v1": M8NotificationReplyAuthorityV1,
+    "m8-notification-raw-artifact-commit-receipt-v1": (M8NotificationRawArtifactCommitReceiptV1),
+    "m8-notification-target-authority-v1": M8NotificationTargetAuthorityV1,
+    "m8-notification-target-commit-receipt-v1": M8NotificationTargetCommitReceiptV1,
+    "m8-notification-template-authority-v1": M8NotificationTemplateAuthorityV1,
+    "m8-notification-transition-command-v1": M8NotificationTransitionCommandV1,
+    "m8-notification-workflow-manifest-authority-v1": (M8NotificationWorkflowManifestAuthorityV1),
+    "m8-offline-notification-card-v1": M8OfflineNotificationCardV1,
+    "m8-operational-case-create-command-v1": M8OperationalCaseCreateCommandV1,
+    "m8-operational-case-transition-command-v1": M8OperationalCaseTransitionCommandV1,
+    "m8-operational-source": M8OperationalSource,
+    "m8-operational-source-catalog-authority-v1": M8OperationalSourceCatalogAuthorityV1,
+    "m8-operational-source-catalog-commit-receipt-v1": (M8OperationalSourceCatalogCommitReceiptV1),
+    "m8-personal-demo-actor-binding-v1": M8PersonalDemoActorBindingV1,
+    "m8-personal-demo-api-profile-v1": M8PersonalDemoApiProfileV1,
+    "m8-personal-demo-bootstrap-receipt-v1": M8PersonalDemoBootstrapReceiptV1,
+    "m8-personal-demo-camera-receipt-v1": M8PersonalDemoCameraReceiptV1,
+    "m8-personal-demo-camera-view-v1": M8PersonalDemoCameraViewV1,
+    "m8-personal-demo-recorded-media-receipt-v1": (
+        M8PersonalDemoRecordedMediaReceiptV1
+    ),
+    "m8-personal-demo-knowledge-receipt-v1": M8PersonalDemoKnowledgeReceiptV1,
+    "m8-personal-demo-notification-receipt-v1": M8PersonalDemoNotificationReceiptV1,
+    "m8-personal-demo-ppe-case-receipt-v1": M8PersonalDemoPpeCaseReceiptV1,
+    "m8-personal-demo-ppe-notification-receipt-v1": (
+        M8PersonalDemoPpeNotificationReceiptV1
+    ),
+    "m8-personal-demo-ppe-outcome-notification-receipt-v1": (
+        M8PersonalDemoPpeOutcomeNotificationReceiptV1
+    ),
+    "m8-personal-demo-local-access-v1": M8PersonalDemoLocalAccessV1,
+    "m8-personal-demo-role-tokens-v1": M8PersonalDemoRoleTokensV1,
+    "m8-operations-projection-v1": M8OperationsProjectionV1,
+    "m8-operations-projection-view-v1": M8OperationsProjectionViewV1,
+    "m8-projection-map-node-v1": M8ProjectionMapNodeV1,
+    "m8-projection-overview-v1": M8ProjectionOverviewV1,
+    "m8-projection-source-v1": M8ProjectionSourceV1,
+    "m8-production-adapter-candidate-authority-v1": (M8ProductionAdapterCandidateAuthorityV1),
+    "m8-production-adapter-candidate-commit-receipt-v1": (
+        M8ProductionAdapterCandidateCommitReceiptV1
+    ),
+    "m8-sensor-adapter-capability-authority-v1": M8SensorAdapterCapabilityAuthorityV1,
+    "m8-sensor-poll-request-v1": M8SensorPollRequestV1,
+    "m8-sensor-poll-result-v1": M8SensorPollResultV1,
+    "m8-sensor-poll-cache-commit-receipt-v1": M8SensorPollCacheCommitReceiptV1,
+    "m8-sensor-risk-assessment-v1": M8SensorRiskAssessmentV1,
+    "m8-sensor-risk-policy-authority-v1": M8SensorRiskPolicyAuthorityV1,
+    "m8-sensor-sample": M8SensorSample,
+    "m8-sensor-sample-commit-receipt-v1": M8SensorSampleCommitReceiptV1,
+    "m8-simulated-sensor-scenario-authority-v1": M8SimulatedSensorScenarioAuthorityV1,
     "model-call-failure-authority": ModelCallFailureAuthority,
     "model-parse-receipt": ModelParseReceipt,
     "model-response-recovery-report": ModelResponseRecoveryReport,

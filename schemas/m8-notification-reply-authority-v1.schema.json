@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "M8NotificationChannelKind": {
+      "enum": [
+        "DINGTALK",
+        "FEISHU",
+        "LOCAL_OFFLINE_FAKE",
+        "WECHAT_WORK"
+      ],
+      "title": "M8NotificationChannelKind",
+      "type": "string"
+    },
+    "M8NotificationReplyKind": {
+      "enum": [
+        "APPEAL_REQUEST",
+        "EXPLANATION"
+      ],
+      "title": "M8NotificationReplyKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-reply-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Privacy-safe inbound reply reference; never a direct Case command.",
+  "properties": {
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "case_transition_permitted": {
+      "readOnly": true,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "channel": {
+      "$ref": "#/$defs/M8NotificationChannelKind"
+    },
+    "direct_disciplinary_action_permitted": {
+      "readOnly": true,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "notification_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Notification Id",
+      "type": "string"
+    },
+    "raw_reply_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Raw Reply Ref",
+      "type": "string"
+    },
+    "raw_reply_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Reply Sha256",
+      "type": "string"
+    },
+    "received_at": {
+      "format": "date-time",
+      "title": "Received At",
+      "type": "string"
+    },
+    "reply_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Reply Authority Id",
+      "type": "string"
+    },
+    "reply_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Reply Document Sha256",
+      "type": "string"
+    },
+    "reply_kind": {
+      "$ref": "#/$defs/M8NotificationReplyKind"
+    },
+    "reply_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Reply Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-notification-reply-authority-v1",
+      "default": "m8-notification-reply-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "target_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Target Authority Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "notification_id",
+    "target_authority_id",
+    "actor_id",
+    "channel",
+    "reply_kind",
+    "reply_document_sha256",
+    "raw_reply_ref",
+    "raw_reply_sha256",
+    "received_at",
+    "simulated",
+    "reply_manifest_id",
+    "direct_disciplinary_action_permitted",
+    "case_transition_permitted",
+    "reply_authority_id"
+  ],
+  "title": "M8NotificationReplyAuthorityV1",
+  "type": "object"
+}

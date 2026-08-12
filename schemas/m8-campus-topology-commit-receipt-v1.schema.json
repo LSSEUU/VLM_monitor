@@ -1,0 +1,184 @@
+{
+  "$defs": {
+    "M8CampusLocation": {
+      "additionalProperties": false,
+      "description": "One stable node in the campus/building/floor/room hierarchy.",
+      "properties": {
+        "display_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M8CampusLocationKind"
+        },
+        "location_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Location Id",
+          "type": "string"
+        },
+        "parent_location_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parent Location Id"
+        },
+        "schema_version": {
+          "const": "m8-campus-location-v1",
+          "default": "m8-campus-location-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location_id",
+        "kind",
+        "parent_location_id",
+        "display_name"
+      ],
+      "title": "M8CampusLocation",
+      "type": "object"
+    },
+    "M8CampusLocationKind": {
+      "enum": [
+        "CAMPUS",
+        "BUILDING",
+        "FLOOR",
+        "ROOM"
+      ],
+      "title": "M8CampusLocationKind",
+      "type": "string"
+    },
+    "M8CampusTopologyAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Complete parent-first campus topology snapshot.",
+      "properties": {
+        "campus_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Campus Id",
+          "type": "string"
+        },
+        "location_count": {
+          "readOnly": true,
+          "title": "Location Count",
+          "type": "integer"
+        },
+        "locations": {
+          "items": {
+            "$ref": "#/$defs/M8CampusLocation"
+          },
+          "maxItems": 10000,
+          "minItems": 4,
+          "title": "Locations",
+          "type": "array"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-campus-topology-authority-v1",
+          "default": "m8-campus-topology-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "topology_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Topology Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "locations",
+        "manifest_id",
+        "campus_id",
+        "location_count",
+        "topology_id"
+      ],
+      "title": "M8CampusTopologyAuthorityV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-campus-topology-commit-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Append receipt for one complete campus topology snapshot.",
+  "properties": {
+    "commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Commit Receipt Id",
+      "type": "string"
+    },
+    "prior_document_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Document Sha256"
+    },
+    "prior_topology_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Topology Id"
+    },
+    "repository_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Repository Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-campus-topology-commit-receipt-v1",
+      "default": "m8-campus-topology-commit-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "topology": {
+      "$ref": "#/$defs/M8CampusTopologyAuthorityV1"
+    },
+    "topology_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Topology Document Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "topology",
+    "repository_manifest_id",
+    "topology_document_sha256",
+    "commit_receipt_id"
+  ],
+  "title": "M8CampusTopologyCommitReceiptV1",
+  "type": "object"
+}

@@ -1,0 +1,95 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-projection-overview-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_major_case_count": {
+      "minimum": 0,
+      "title": "Active Major Case Count",
+      "type": "integer"
+    },
+    "camera_count": {
+      "minimum": 0,
+      "title": "Camera Count",
+      "type": "integer"
+    },
+    "case_audit_event_count": {
+      "minimum": 0,
+      "title": "Case Audit Event Count",
+      "type": "integer"
+    },
+    "current_case_count": {
+      "minimum": 0,
+      "title": "Current Case Count",
+      "type": "integer"
+    },
+    "current_notification_count": {
+      "minimum": 0,
+      "title": "Current Notification Count",
+      "type": "integer"
+    },
+    "location_count": {
+      "minimum": 0,
+      "title": "Location Count",
+      "type": "integer"
+    },
+    "notification_audit_event_count": {
+      "minimum": 0,
+      "title": "Notification Audit Event Count",
+      "type": "integer"
+    },
+    "observed_sensor_count": {
+      "minimum": 0,
+      "title": "Observed Sensor Count",
+      "type": "integer"
+    },
+    "pending_verification_case_count": {
+      "minimum": 0,
+      "title": "Pending Verification Case Count",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-projection-overview-v1",
+      "default": "m8-projection-overview-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sensor_count": {
+      "minimum": 0,
+      "title": "Sensor Count",
+      "type": "integer"
+    },
+    "simulated_source_count": {
+      "minimum": 0,
+      "title": "Simulated Source Count",
+      "type": "integer"
+    },
+    "source_count": {
+      "minimum": 0,
+      "title": "Source Count",
+      "type": "integer"
+    },
+    "unresolved_notification_count": {
+      "minimum": 0,
+      "title": "Unresolved Notification Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "location_count",
+    "source_count",
+    "camera_count",
+    "sensor_count",
+    "simulated_source_count",
+    "observed_sensor_count",
+    "current_case_count",
+    "pending_verification_case_count",
+    "active_major_case_count",
+    "current_notification_count",
+    "unresolved_notification_count",
+    "case_audit_event_count",
+    "notification_audit_event_count"
+  ],
+  "title": "M8ProjectionOverviewV1",
+  "type": "object"
+}

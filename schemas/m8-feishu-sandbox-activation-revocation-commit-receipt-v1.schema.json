@@ -1,0 +1,1675 @@
+{
+  "$defs": {
+    "M8ActorAuthorityCommitReceiptV1": {
+      "additionalProperties": false,
+      "description": "Append receipt for one persisted actor authority revision.",
+      "properties": {
+        "authority": {
+          "$ref": "#/$defs/M8ActorAuthorityV1"
+        },
+        "authority_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Authority Document Sha256",
+          "type": "string"
+        },
+        "commit_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Commit Receipt Id",
+          "type": "string"
+        },
+        "prior_authority_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prior Authority Id"
+        },
+        "prior_document_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prior Document Sha256"
+        },
+        "repository_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Repository Manifest Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-actor-authority-commit-receipt-v1",
+          "default": "m8-actor-authority-commit-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authority",
+        "repository_manifest_id",
+        "authority_document_sha256",
+        "commit_receipt_id"
+      ],
+      "title": "M8ActorAuthorityCommitReceiptV1",
+      "type": "object"
+    },
+    "M8ActorAuthorityV1": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "LEADER"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "properties": {
+              "capabilities": {
+                "const": [
+                  "VIEW_GLOBAL_OVERVIEW",
+                  "VIEW_MAJOR_EVENTS",
+                  "VIEW_AUDIT"
+                ]
+              },
+              "scope_kind": {
+                "const": "CAMPUS_WIDE"
+              },
+              "scope_location_ids": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "SAFETY_OFFICER"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "else": {
+                  "properties": {
+                    "scope_location_ids": {
+                      "maxItems": 0
+                    }
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "scope_kind": {
+                      "const": "LOCATIONS"
+                    }
+                  },
+                  "required": [
+                    "scope_kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "scope_location_ids": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "capabilities": {
+                "const": [
+                  "VIEW_GLOBAL_OVERVIEW",
+                  "VIEW_MAJOR_EVENTS",
+                  "VIEW_AUDIT",
+                  "CONFIRM_CASE",
+                  "REJECT_CASE",
+                  "REQUEST_CASE_EVIDENCE",
+                  "RETURN_CASE_TO_VERIFICATION",
+                  "RESOLVE_CASE",
+                  "RESOLVE_APPEAL",
+                  "MANAGE_RULES"
+                ]
+              },
+              "scope_kind": {
+                "enum": [
+                  "CAMPUS_WIDE",
+                  "LOCATIONS"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "STUDENT"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "properties": {
+              "capabilities": {
+                "const": [
+                  "VIEW_OWN_CASE",
+                  "SUBMIT_EXPLANATION",
+                  "SUBMIT_APPEAL"
+                ]
+              },
+              "scope_kind": {
+                "const": "SELF_ONLY"
+              },
+              "scope_location_ids": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "OPERATIONS"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "else": {
+                  "properties": {
+                    "scope_location_ids": {
+                      "maxItems": 0
+                    }
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "scope_kind": {
+                      "const": "LOCATIONS"
+                    }
+                  },
+                  "required": [
+                    "scope_kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "scope_location_ids": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "capabilities": {
+                "const": [
+                  "MANAGE_DEVICES",
+                  "VIEW_DEVICE_HEALTH"
+                ]
+              },
+              "scope_kind": {
+                "enum": [
+                  "CAMPUS_WIDE",
+                  "LOCATIONS"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "description": "Versioned actor role, scope, and derived capability authority.",
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "actor_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Actor Authority Id",
+          "type": "string"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "authority_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Authority Revision",
+          "type": "integer"
+        },
+        "capabilities": {
+          "items": {
+            "$ref": "#/$defs/M8Capability"
+          },
+          "readOnly": true,
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "identity_provider_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Identity Provider Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/M8ActorRole"
+        },
+        "schema_version": {
+          "const": "m8-actor-authority-v1",
+          "default": "m8-actor-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope_kind": {
+          "$ref": "#/$defs/M8ActorScopeKind"
+        },
+        "scope_location_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "title": "Scope Location Ids",
+          "type": "array"
+        },
+        "subject_binding_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Subject Binding Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_id",
+        "role",
+        "scope_kind",
+        "identity_provider_id",
+        "subject_binding_sha256",
+        "authority_revision",
+        "active",
+        "manifest_id",
+        "capabilities",
+        "actor_authority_id"
+      ],
+      "title": "M8ActorAuthorityV1",
+      "type": "object"
+    },
+    "M8ActorRole": {
+      "enum": [
+        "LEADER",
+        "SAFETY_OFFICER",
+        "STUDENT",
+        "OPERATIONS"
+      ],
+      "title": "M8ActorRole",
+      "type": "string"
+    },
+    "M8ActorScopeKind": {
+      "enum": [
+        "CAMPUS_WIDE",
+        "LOCATIONS",
+        "SELF_ONLY"
+      ],
+      "title": "M8ActorScopeKind",
+      "type": "string"
+    },
+    "M8AdapterActivationIntentV1": {
+      "additionalProperties": false,
+      "description": "Dual-human intent to persist activation; it cannot call the adapter itself.",
+      "properties": {
+        "activation_commit_permitted": {
+          "readOnly": true,
+          "title": "Activation Commit Permitted",
+          "type": "boolean"
+        },
+        "activation_intent_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Activation Intent Id",
+          "type": "string"
+        },
+        "activation_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Activation Manifest Id",
+          "type": "string"
+        },
+        "automatic_activation_permitted": {
+          "readOnly": true,
+          "title": "Automatic Activation Permitted",
+          "type": "boolean"
+        },
+        "credential_reference_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Credential Reference Id"
+        },
+        "cross_camera_reidentification_permitted": {
+          "readOnly": true,
+          "title": "Cross Camera Reidentification Permitted",
+          "type": "boolean"
+        },
+        "direct_disciplinary_action_permitted": {
+          "readOnly": true,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "external_call_permitted": {
+          "readOnly": true,
+          "title": "External Call Permitted",
+          "type": "boolean"
+        },
+        "face_recognition_permitted": {
+          "readOnly": true,
+          "title": "Face Recognition Permitted",
+          "type": "boolean"
+        },
+        "life_safety_action_permitted": {
+          "readOnly": true,
+          "title": "Life Safety Action Permitted",
+          "type": "boolean"
+        },
+        "operations_actor_receipt": {
+          "$ref": "#/$defs/M8ActorAuthorityCommitReceiptV1"
+        },
+        "operations_explicit_confirmation": {
+          "const": true,
+          "default": true,
+          "title": "Operations Explicit Confirmation",
+          "type": "boolean"
+        },
+        "readiness_assessment": {
+          "$ref": "#/$defs/M8AdapterReadinessAssessmentV1"
+        },
+        "requested_at": {
+          "format": "date-time",
+          "title": "Requested At",
+          "type": "string"
+        },
+        "runtime_config_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Runtime Config Ref",
+          "type": "string"
+        },
+        "runtime_config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Runtime Config Sha256",
+          "type": "string"
+        },
+        "runtime_config_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 1048576,
+          "title": "Runtime Config Size Bytes",
+          "type": "integer"
+        },
+        "safety_actor_receipt": {
+          "$ref": "#/$defs/M8ActorAuthorityCommitReceiptV1"
+        },
+        "safety_explicit_confirmation": {
+          "const": true,
+          "default": true,
+          "title": "Safety Explicit Confirmation",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-adapter-activation-intent-v1",
+          "default": "m8-adapter-activation-intent-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "secret_material_embedded": {
+          "const": false,
+          "default": false,
+          "title": "Secret Material Embedded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "readiness_assessment",
+        "operations_actor_receipt",
+        "safety_actor_receipt",
+        "runtime_config_ref",
+        "runtime_config_sha256",
+        "runtime_config_size_bytes",
+        "requested_at",
+        "activation_manifest_id",
+        "activation_commit_permitted",
+        "external_call_permitted",
+        "automatic_activation_permitted",
+        "life_safety_action_permitted",
+        "direct_disciplinary_action_permitted",
+        "face_recognition_permitted",
+        "cross_camera_reidentification_permitted",
+        "activation_intent_id"
+      ],
+      "title": "M8AdapterActivationIntentV1",
+      "type": "object"
+    },
+    "M8AdapterReadinessAssessmentV1": {
+      "additionalProperties": false,
+      "description": "A read-only readiness result that still cannot activate an external adapter.",
+      "properties": {
+        "assessed_at": {
+          "format": "date-time",
+          "title": "Assessed At",
+          "type": "string"
+        },
+        "assessment_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Assessment Id",
+          "type": "string"
+        },
+        "assessment_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Assessment Manifest Id",
+          "type": "string"
+        },
+        "assessor_actor_receipt": {
+          "$ref": "#/$defs/M8ActorAuthorityCommitReceiptV1"
+        },
+        "candidate": {
+          "$ref": "#/$defs/M8ProductionAdapterCandidateAuthorityV1"
+        },
+        "direct_disciplinary_action_permitted": {
+          "readOnly": true,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/M8CommissioningEvidenceCommitReceiptV1"
+          },
+          "maxItems": 5,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "evidence_inventory_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Evidence Inventory Sha256",
+          "type": "string"
+        },
+        "expired_evidence_kinds": {
+          "items": {
+            "$ref": "#/$defs/M8CommissioningEvidenceKind"
+          },
+          "readOnly": true,
+          "title": "Expired Evidence Kinds",
+          "type": "array"
+        },
+        "failed_evidence_kinds": {
+          "items": {
+            "$ref": "#/$defs/M8CommissioningEvidenceKind"
+          },
+          "readOnly": true,
+          "title": "Failed Evidence Kinds",
+          "type": "array"
+        },
+        "human_activation_required": {
+          "readOnly": true,
+          "title": "Human Activation Required",
+          "type": "boolean"
+        },
+        "life_safety_action_permitted": {
+          "readOnly": true,
+          "title": "Life Safety Action Permitted",
+          "type": "boolean"
+        },
+        "missing_evidence_kinds": {
+          "items": {
+            "$ref": "#/$defs/M8CommissioningEvidenceKind"
+          },
+          "readOnly": true,
+          "title": "Missing Evidence Kinds",
+          "type": "array"
+        },
+        "production_activation_permitted": {
+          "readOnly": true,
+          "title": "Production Activation Permitted",
+          "type": "boolean"
+        },
+        "readiness": {
+          "$ref": "#/$defs/M8CommissioningReadiness",
+          "readOnly": true
+        },
+        "required_evidence_kinds": {
+          "items": {
+            "$ref": "#/$defs/M8CommissioningEvidenceKind"
+          },
+          "readOnly": true,
+          "title": "Required Evidence Kinds",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "m8-adapter-readiness-assessment-v1",
+          "default": "m8-adapter-readiness-assessment-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate",
+        "evidence",
+        "assessor_actor_receipt",
+        "assessed_at",
+        "assessment_manifest_id",
+        "required_evidence_kinds",
+        "missing_evidence_kinds",
+        "failed_evidence_kinds",
+        "expired_evidence_kinds",
+        "evidence_inventory_sha256",
+        "readiness",
+        "human_activation_required",
+        "production_activation_permitted",
+        "life_safety_action_permitted",
+        "direct_disciplinary_action_permitted",
+        "assessment_id"
+      ],
+      "title": "M8AdapterReadinessAssessmentV1",
+      "type": "object"
+    },
+    "M8Capability": {
+      "enum": [
+        "VIEW_GLOBAL_OVERVIEW",
+        "VIEW_MAJOR_EVENTS",
+        "VIEW_AUDIT",
+        "CONFIRM_CASE",
+        "REJECT_CASE",
+        "REQUEST_CASE_EVIDENCE",
+        "RETURN_CASE_TO_VERIFICATION",
+        "RESOLVE_CASE",
+        "RESOLVE_APPEAL",
+        "MANAGE_RULES",
+        "VIEW_OWN_CASE",
+        "SUBMIT_EXPLANATION",
+        "SUBMIT_APPEAL",
+        "MANAGE_DEVICES",
+        "VIEW_DEVICE_HEALTH"
+      ],
+      "title": "M8Capability",
+      "type": "string"
+    },
+    "M8CommissioningEvidenceAuthorityV1": {
+      "additionalProperties": false,
+      "description": "One human-attested evidence reference for an exact adapter candidate.",
+      "properties": {
+        "artifact_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Artifact Ref",
+          "type": "string"
+        },
+        "artifact_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Sha256",
+          "type": "string"
+        },
+        "artifact_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 16777216,
+          "title": "Artifact Size Bytes",
+          "type": "integer"
+        },
+        "candidate": {
+          "$ref": "#/$defs/M8ProductionAdapterCandidateAuthorityV1"
+        },
+        "evidence_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Evidence Authority Id",
+          "type": "string"
+        },
+        "evidence_kind": {
+          "$ref": "#/$defs/M8CommissioningEvidenceKind"
+        },
+        "evidence_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Evidence Manifest Id",
+          "type": "string"
+        },
+        "human_attested": {
+          "const": true,
+          "default": true,
+          "title": "Human Attested",
+          "type": "boolean"
+        },
+        "model_generated": {
+          "const": false,
+          "default": false,
+          "title": "Model Generated",
+          "type": "boolean"
+        },
+        "outcome": {
+          "$ref": "#/$defs/M8CommissioningEvidenceOutcome"
+        },
+        "reviewed_at": {
+          "format": "date-time",
+          "title": "Reviewed At",
+          "type": "string"
+        },
+        "reviewer_actor_receipt": {
+          "$ref": "#/$defs/M8ActorAuthorityCommitReceiptV1"
+        },
+        "schema_version": {
+          "const": "m8-commissioning-evidence-authority-v1",
+          "default": "m8-commissioning-evidence-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulated": {
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "valid_through": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Through"
+        }
+      },
+      "required": [
+        "candidate",
+        "evidence_kind",
+        "outcome",
+        "artifact_ref",
+        "artifact_sha256",
+        "artifact_size_bytes",
+        "reviewer_actor_receipt",
+        "reviewed_at",
+        "simulated",
+        "evidence_manifest_id",
+        "evidence_authority_id"
+      ],
+      "title": "M8CommissioningEvidenceAuthorityV1",
+      "type": "object"
+    },
+    "M8CommissioningEvidenceCommitReceiptV1": {
+      "additionalProperties": false,
+      "description": "Commit proof binding one evidence authority to persisted raw artifact bytes.",
+      "properties": {
+        "artifact_storage_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Storage Manifest Id",
+          "type": "string"
+        },
+        "commit_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Commit Receipt Id",
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/M8CommissioningEvidenceAuthorityV1"
+        },
+        "evidence_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Evidence Document Sha256",
+          "type": "string"
+        },
+        "repository_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Repository Manifest Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-commissioning-evidence-commit-receipt-v1",
+          "default": "m8-commissioning-evidence-commit-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence",
+        "artifact_storage_manifest_id",
+        "repository_manifest_id",
+        "evidence_document_sha256",
+        "commit_receipt_id"
+      ],
+      "title": "M8CommissioningEvidenceCommitReceiptV1",
+      "type": "object"
+    },
+    "M8CommissioningEvidenceKind": {
+      "enum": [
+        "LICENSE_REVIEW",
+        "OFFLINE_FALLBACK_DRILL",
+        "SAFETY_REVIEW",
+        "SECURITY_REVIEW",
+        "SITE_ACCEPTANCE"
+      ],
+      "title": "M8CommissioningEvidenceKind",
+      "type": "string"
+    },
+    "M8CommissioningEvidenceOutcome": {
+      "enum": [
+        "FAILED",
+        "PASSED"
+      ],
+      "title": "M8CommissioningEvidenceOutcome",
+      "type": "string"
+    },
+    "M8CommissioningReadiness": {
+      "enum": [
+        "BLOCKED",
+        "READY_FOR_HUMAN_ACTIVATION"
+      ],
+      "title": "M8CommissioningReadiness",
+      "type": "string"
+    },
+    "M8ExternalIdempotencyKey": {
+      "enum": [
+        "BACKUP_GENERATION_ID",
+        "EXPORT_BATCH_ID",
+        "NOTIFICATION_ID",
+        "REQUEST_ID",
+        "SOURCE_SEQUENCE",
+        "SUBJECT_ASSERTION_ID"
+      ],
+      "title": "M8ExternalIdempotencyKey",
+      "type": "string"
+    },
+    "M8FeishuAdapterProfileV1": {
+      "additionalProperties": false,
+      "description": "Pinned custom-app API profile that contains references, never Feishu secrets.",
+      "properties": {
+        "api_origin": {
+          "const": "https://open.feishu.cn",
+          "default": "https://open.feishu.cn",
+          "title": "Api Origin",
+          "type": "string"
+        },
+        "app_id_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "App Id Sha256",
+          "type": "string"
+        },
+        "authentication_kind": {
+          "const": "TENANT_ACCESS_TOKEN_INTERNAL",
+          "default": "TENANT_ACCESS_TOKEN_INTERNAL",
+          "title": "Authentication Kind",
+          "type": "string"
+        },
+        "bot_capability_required": {
+          "const": true,
+          "default": true,
+          "title": "Bot Capability Required",
+          "type": "boolean"
+        },
+        "candidate": {
+          "$ref": "#/$defs/M8ProductionAdapterCandidateAuthorityV1"
+        },
+        "credential_bundle_reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Credential Bundle Reference Id",
+          "type": "string"
+        },
+        "external_call_permitted": {
+          "const": false,
+          "default": false,
+          "title": "External Call Permitted",
+          "type": "boolean"
+        },
+        "max_card_content_bytes": {
+          "const": 30720,
+          "default": 30720,
+          "title": "Max Card Content Bytes",
+          "type": "integer"
+        },
+        "message_path": {
+          "const": "/open-apis/im/v1/messages",
+          "default": "/open-apis/im/v1/messages",
+          "title": "Message Path",
+          "type": "string"
+        },
+        "profile_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "profile_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Manifest Id",
+          "type": "string"
+        },
+        "provider_uuid_dedup_window_seconds": {
+          "const": 3600,
+          "default": 3600,
+          "title": "Provider Uuid Dedup Window Seconds",
+          "type": "integer"
+        },
+        "provider_uuid_max_characters": {
+          "const": 50,
+          "default": 50,
+          "title": "Provider Uuid Max Characters",
+          "type": "integer"
+        },
+        "published_app_version_required": {
+          "const": true,
+          "default": true,
+          "title": "Published App Version Required",
+          "type": "boolean"
+        },
+        "raw_response_required": {
+          "const": true,
+          "default": true,
+          "title": "Raw Response Required",
+          "type": "boolean"
+        },
+        "receive_id_type": {
+          "const": "open_id",
+          "default": "open_id",
+          "title": "Receive Id Type",
+          "type": "string"
+        },
+        "required_scope": {
+          "const": "im:message:send_as_bot",
+          "default": "im:message:send_as_bot",
+          "title": "Required Scope",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-feishu-adapter-profile-v1",
+          "default": "m8-feishu-adapter-profile-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "secret_material_embedded": {
+          "const": false,
+          "default": false,
+          "title": "Secret Material Embedded",
+          "type": "boolean"
+        },
+        "token_cache_required": {
+          "const": true,
+          "default": true,
+          "title": "Token Cache Required",
+          "type": "boolean"
+        },
+        "token_path": {
+          "const": "/open-apis/auth/v3/tenant_access_token/internal",
+          "default": "/open-apis/auth/v3/tenant_access_token/internal",
+          "title": "Token Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate",
+        "credential_bundle_reference_id",
+        "app_id_sha256",
+        "profile_manifest_id",
+        "profile_id"
+      ],
+      "title": "M8FeishuAdapterProfileV1",
+      "type": "object"
+    },
+    "M8FeishuRecipientBindingAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Authorized target-to-open-ID hash binding without persisting the clear identifier.",
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Binding Authority Id",
+          "type": "string"
+        },
+        "clear_receive_id_persisted": {
+          "readOnly": true,
+          "title": "Clear Receive Id Persisted",
+          "type": "boolean"
+        },
+        "mapping_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Mapping Manifest Id",
+          "type": "string"
+        },
+        "mapping_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Mapping Revision",
+          "type": "integer"
+        },
+        "profile_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "receive_id_reference": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Receive Id Reference",
+          "type": "string"
+        },
+        "receive_id_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Receive Id Sha256",
+          "type": "string"
+        },
+        "receive_id_type": {
+          "const": "open_id",
+          "default": "open_id",
+          "title": "Receive Id Type",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-feishu-recipient-binding-authority-v1",
+          "default": "m8-feishu-recipient-binding-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/M8NotificationTargetAuthorityV1"
+        }
+      },
+      "required": [
+        "target",
+        "profile_id",
+        "receive_id_reference",
+        "receive_id_sha256",
+        "mapping_revision",
+        "active",
+        "mapping_manifest_id",
+        "clear_receive_id_persisted",
+        "binding_authority_id"
+      ],
+      "title": "M8FeishuRecipientBindingAuthorityV1",
+      "type": "object"
+    },
+    "M8FeishuSandboxActivationCommitReceiptV1": {
+      "additionalProperties": false,
+      "description": "Persisted dual-human authority for allowlisted sandbox calls only.",
+      "properties": {
+        "activation_commit_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Activation Commit Id",
+          "type": "string"
+        },
+        "activation_intent": {
+          "$ref": "#/$defs/M8AdapterActivationIntentV1"
+        },
+        "activation_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Activation Revision",
+          "type": "integer"
+        },
+        "activation_state": {
+          "readOnly": true,
+          "title": "Activation State",
+          "type": "string"
+        },
+        "automatic_activation_permitted": {
+          "readOnly": true,
+          "title": "Automatic Activation Permitted",
+          "type": "boolean"
+        },
+        "committed_at": {
+          "format": "date-time",
+          "title": "Committed At",
+          "type": "string"
+        },
+        "credential_material_persisted": {
+          "readOnly": true,
+          "title": "Credential Material Persisted",
+          "type": "boolean"
+        },
+        "cross_camera_reidentification_permitted": {
+          "readOnly": true,
+          "title": "Cross Camera Reidentification Permitted",
+          "type": "boolean"
+        },
+        "current_operations_actor_receipt": {
+          "$ref": "#/$defs/M8ActorAuthorityCommitReceiptV1"
+        },
+        "current_readiness_assessment": {
+          "$ref": "#/$defs/M8AdapterReadinessAssessmentV1"
+        },
+        "current_safety_actor_receipt": {
+          "$ref": "#/$defs/M8ActorAuthorityCommitReceiptV1"
+        },
+        "direct_disciplinary_action_permitted": {
+          "readOnly": true,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "face_recognition_permitted": {
+          "readOnly": true,
+          "title": "Face Recognition Permitted",
+          "type": "boolean"
+        },
+        "life_safety_action_permitted": {
+          "readOnly": true,
+          "title": "Life Safety Action Permitted",
+          "type": "boolean"
+        },
+        "prior_activation_commit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prior Activation Commit Id"
+        },
+        "production_external_call_permitted": {
+          "readOnly": true,
+          "title": "Production External Call Permitted",
+          "type": "boolean"
+        },
+        "repository_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Repository Manifest Id",
+          "type": "string"
+        },
+        "runtime_config": {
+          "$ref": "#/$defs/M8FeishuSandboxRuntimeConfigV1"
+        },
+        "runtime_config_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Runtime Config Document Sha256",
+          "type": "string"
+        },
+        "runtime_config_size_bytes": {
+          "readOnly": true,
+          "title": "Runtime Config Size Bytes",
+          "type": "integer"
+        },
+        "runtime_config_storage_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Runtime Config Storage Manifest Id",
+          "type": "string"
+        },
+        "sandbox_external_call_permitted": {
+          "readOnly": true,
+          "title": "Sandbox External Call Permitted",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-feishu-sandbox-activation-commit-receipt-v1",
+          "default": "m8-feishu-sandbox-activation-commit-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "test_recipient_allowlist_only": {
+          "readOnly": true,
+          "title": "Test Recipient Allowlist Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "activation_intent",
+        "runtime_config",
+        "current_readiness_assessment",
+        "current_operations_actor_receipt",
+        "current_safety_actor_receipt",
+        "activation_revision",
+        "committed_at",
+        "runtime_config_storage_manifest_id",
+        "repository_manifest_id",
+        "runtime_config_document_sha256",
+        "runtime_config_size_bytes",
+        "activation_state",
+        "sandbox_external_call_permitted",
+        "production_external_call_permitted",
+        "test_recipient_allowlist_only",
+        "automatic_activation_permitted",
+        "credential_material_persisted",
+        "life_safety_action_permitted",
+        "direct_disciplinary_action_permitted",
+        "face_recognition_permitted",
+        "cross_camera_reidentification_permitted",
+        "activation_commit_id"
+      ],
+      "title": "M8FeishuSandboxActivationCommitReceiptV1",
+      "type": "object"
+    },
+    "M8FeishuSandboxRevocationReason": {
+      "enum": [
+        "COMMISSIONING_INVALIDATED",
+        "CONFIGURATION_REPLACED",
+        "CREDENTIAL_ROTATION",
+        "MANUAL_OPERATIONS_STOP",
+        "MANUAL_SAFETY_STOP"
+      ],
+      "title": "M8FeishuSandboxRevocationReason",
+      "type": "string"
+    },
+    "M8FeishuSandboxRuntimeConfigV1": {
+      "additionalProperties": false,
+      "description": "Secret-free, allowlist-only runtime configuration; never call authority alone.",
+      "properties": {
+        "clear_receive_id_persisted": {
+          "const": false,
+          "default": false,
+          "title": "Clear Receive Id Persisted",
+          "type": "boolean"
+        },
+        "environment": {
+          "const": "SANDBOX",
+          "default": "SANDBOX",
+          "title": "Environment",
+          "type": "string"
+        },
+        "external_call_permitted": {
+          "const": false,
+          "default": false,
+          "title": "External Call Permitted",
+          "type": "boolean"
+        },
+        "profile": {
+          "$ref": "#/$defs/M8FeishuAdapterProfileV1"
+        },
+        "provider_response_max_bytes": {
+          "const": 262144,
+          "default": 262144,
+          "title": "Provider Response Max Bytes",
+          "type": "integer"
+        },
+        "recipient_allowlist": {
+          "items": {
+            "$ref": "#/$defs/M8FeishuRecipientBindingAuthorityV1"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Recipient Allowlist",
+          "type": "array"
+        },
+        "recipient_allowlist_enforced": {
+          "const": true,
+          "default": true,
+          "title": "Recipient Allowlist Enforced",
+          "type": "boolean"
+        },
+        "recipient_allowlist_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Recipient Allowlist Sha256",
+          "type": "string"
+        },
+        "recipient_binding_ids": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "readOnly": true,
+          "title": "Recipient Binding Ids",
+          "type": "array"
+        },
+        "recipient_target_ids": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "readOnly": true,
+          "title": "Recipient Target Ids",
+          "type": "array"
+        },
+        "runtime_config_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Runtime Config Id",
+          "type": "string"
+        },
+        "runtime_config_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Runtime Config Manifest Id",
+          "type": "string"
+        },
+        "runtime_config_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Runtime Config Ref",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-feishu-sandbox-runtime-config-v1",
+          "default": "m8-feishu-sandbox-runtime-config-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "secret_material_embedded": {
+          "const": false,
+          "default": false,
+          "title": "Secret Material Embedded",
+          "type": "boolean"
+        },
+        "tls_certificate_validation_required": {
+          "const": true,
+          "default": true,
+          "title": "Tls Certificate Validation Required",
+          "type": "boolean"
+        },
+        "transport_kind": {
+          "const": "HTTPS_JSON",
+          "default": "HTTPS_JSON",
+          "title": "Transport Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile",
+        "recipient_allowlist",
+        "runtime_config_ref",
+        "runtime_config_manifest_id",
+        "recipient_binding_ids",
+        "recipient_target_ids",
+        "recipient_allowlist_sha256",
+        "runtime_config_id"
+      ],
+      "title": "M8FeishuSandboxRuntimeConfigV1",
+      "type": "object"
+    },
+    "M8NotificationChannelKind": {
+      "enum": [
+        "DINGTALK",
+        "FEISHU",
+        "LOCAL_OFFLINE_FAKE",
+        "WECHAT_WORK"
+      ],
+      "title": "M8NotificationChannelKind",
+      "type": "string"
+    },
+    "M8NotificationTargetAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Versioned privacy-safe mapping from one actor to one delivery channel.",
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "authority_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Authority Revision",
+          "type": "integer"
+        },
+        "channel": {
+          "$ref": "#/$defs/M8NotificationChannelKind"
+        },
+        "display_badge": {
+          "readOnly": true,
+          "title": "Display Badge",
+          "type": "string"
+        },
+        "external_subject_binding_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "External Subject Binding Sha256",
+          "type": "string"
+        },
+        "identity_provider_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Identity Provider Id",
+          "type": "string"
+        },
+        "inbound_response_supported": {
+          "title": "Inbound Response Supported",
+          "type": "boolean"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-notification-target-authority-v1",
+          "default": "m8-notification-target-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulated": {
+          "readOnly": true,
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "target_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Target Authority Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_id",
+        "identity_provider_id",
+        "external_subject_binding_sha256",
+        "channel",
+        "authority_revision",
+        "active",
+        "inbound_response_supported",
+        "manifest_id",
+        "simulated",
+        "display_badge",
+        "target_authority_id"
+      ],
+      "title": "M8NotificationTargetAuthorityV1",
+      "type": "object"
+    },
+    "M8ProductionAdapterCandidateAuthorityV1": {
+      "additionalProperties": false,
+      "description": "A pinned external adapter candidate; it is never activation authority by itself.",
+      "properties": {
+        "adapter_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_kind": {
+          "$ref": "#/$defs/M8ProductionAdapterKind"
+        },
+        "adapter_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Adapter Manifest Id",
+          "type": "string"
+        },
+        "adapter_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Revision",
+          "type": "string"
+        },
+        "campus_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Campus Id",
+          "type": "string"
+        },
+        "candidate_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Candidate Authority Id",
+          "type": "string"
+        },
+        "cross_camera_reidentification_permitted": {
+          "readOnly": true,
+          "title": "Cross Camera Reidentification Permitted",
+          "type": "boolean"
+        },
+        "declared_license_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Declared License Id",
+          "type": "string"
+        },
+        "direct_disciplinary_action_permitted": {
+          "readOnly": true,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "external_io_required": {
+          "const": true,
+          "default": true,
+          "title": "External Io Required",
+          "type": "boolean"
+        },
+        "face_recognition_permitted": {
+          "readOnly": true,
+          "title": "Face Recognition Permitted",
+          "type": "boolean"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/M8ExternalIdempotencyKey"
+        },
+        "life_safety_action_permitted": {
+          "readOnly": true,
+          "title": "Life Safety Action Permitted",
+          "type": "boolean"
+        },
+        "network_required": {
+          "title": "Network Required",
+          "type": "boolean"
+        },
+        "offline_fallback_adapter_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Offline Fallback Adapter Id",
+          "type": "string"
+        },
+        "offline_fallback_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Offline Fallback Manifest Id",
+          "type": "string"
+        },
+        "offline_fallback_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Offline Fallback Revision",
+          "type": "string"
+        },
+        "product_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Product Revision",
+          "type": "string"
+        },
+        "production_activation_permitted": {
+          "readOnly": true,
+          "title": "Production Activation Permitted",
+          "type": "boolean"
+        },
+        "provider_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "raw_receipt_required": {
+          "const": true,
+          "default": true,
+          "title": "Raw Receipt Required",
+          "type": "boolean"
+        },
+        "request_timeout_ms": {
+          "exclusiveMinimum": 0,
+          "maximum": 120000,
+          "title": "Request Timeout Ms",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-production-adapter-candidate-authority-v1",
+          "default": "m8-production-adapter-candidate-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope_kind": {
+          "$ref": "#/$defs/M8ActorScopeKind"
+        },
+        "scope_location_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Scope Location Ids",
+          "type": "array"
+        },
+        "secret_material_embedded": {
+          "const": false,
+          "default": false,
+          "title": "Secret Material Embedded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "adapter_id",
+        "adapter_revision",
+        "adapter_kind",
+        "provider_id",
+        "product_revision",
+        "campus_id",
+        "scope_kind",
+        "declared_license_id",
+        "request_timeout_ms",
+        "idempotency_key",
+        "network_required",
+        "offline_fallback_adapter_id",
+        "offline_fallback_revision",
+        "adapter_manifest_id",
+        "offline_fallback_manifest_id",
+        "production_activation_permitted",
+        "life_safety_action_permitted",
+        "direct_disciplinary_action_permitted",
+        "face_recognition_permitted",
+        "cross_camera_reidentification_permitted",
+        "candidate_authority_id"
+      ],
+      "title": "M8ProductionAdapterCandidateAuthorityV1",
+      "type": "object"
+    },
+    "M8ProductionAdapterKind": {
+      "enum": [
+        "DISASTER_RECOVERY",
+        "EXTERNAL_NOTIFICATION",
+        "OBSERVABILITY",
+        "OIDC_IDENTITY",
+        "PHYSICAL_SENSOR",
+        "RTSP_CAMERA"
+      ],
+      "title": "M8ProductionAdapterKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-sandbox-activation-revocation-commit-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Append-only one-person kill switch for a persisted sandbox activation.",
+  "properties": {
+    "activation_receipt": {
+      "$ref": "#/$defs/M8FeishuSandboxActivationCommitReceiptV1"
+    },
+    "activation_state": {
+      "readOnly": true,
+      "title": "Activation State",
+      "type": "string"
+    },
+    "automatic_reactivation_permitted": {
+      "readOnly": true,
+      "title": "Automatic Reactivation Permitted",
+      "type": "boolean"
+    },
+    "explicit_confirmation": {
+      "const": true,
+      "default": true,
+      "title": "Explicit Confirmation",
+      "type": "boolean"
+    },
+    "production_external_call_permitted": {
+      "readOnly": true,
+      "title": "Production External Call Permitted",
+      "type": "boolean"
+    },
+    "reason": {
+      "$ref": "#/$defs/M8FeishuSandboxRevocationReason"
+    },
+    "reason_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Reason Ref",
+      "type": "string"
+    },
+    "repository_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Repository Manifest Id",
+      "type": "string"
+    },
+    "revocation_commit_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Revocation Commit Id",
+      "type": "string"
+    },
+    "revocation_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Revocation Manifest Id",
+      "type": "string"
+    },
+    "revoked_at": {
+      "format": "date-time",
+      "title": "Revoked At",
+      "type": "string"
+    },
+    "revoked_by_actor_receipt": {
+      "$ref": "#/$defs/M8ActorAuthorityCommitReceiptV1"
+    },
+    "sandbox_external_call_permitted": {
+      "readOnly": true,
+      "title": "Sandbox External Call Permitted",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-feishu-sandbox-activation-revocation-commit-receipt-v1",
+      "default": "m8-feishu-sandbox-activation-revocation-commit-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "activation_receipt",
+    "revoked_by_actor_receipt",
+    "reason",
+    "reason_ref",
+    "revoked_at",
+    "revocation_manifest_id",
+    "repository_manifest_id",
+    "activation_state",
+    "sandbox_external_call_permitted",
+    "production_external_call_permitted",
+    "automatic_reactivation_permitted",
+    "revocation_commit_id"
+  ],
+  "title": "M8FeishuSandboxActivationRevocationCommitReceiptV1",
+  "type": "object"
+}

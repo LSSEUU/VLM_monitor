@@ -1,0 +1,55 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-api-principal-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Authenticated identity only; authorization still resolves persisted actor authority.",
+  "properties": {
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "authentication_context_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Authentication Context Id",
+      "type": "string"
+    },
+    "authentication_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authentication Manifest Id",
+      "type": "string"
+    },
+    "credential_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Credential Authority Id",
+      "type": "string"
+    },
+    "credential_catalog_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Credential Catalog Id",
+      "type": "string"
+    },
+    "credential_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Credential Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-api-principal-v1",
+      "default": "m8-api-principal-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "actor_id",
+    "credential_id",
+    "credential_authority_id",
+    "credential_catalog_id",
+    "authentication_manifest_id",
+    "authentication_context_id"
+  ],
+  "title": "M8ApiPrincipalV1",
+  "type": "object"
+}

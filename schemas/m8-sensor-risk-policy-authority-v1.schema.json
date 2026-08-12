@@ -1,0 +1,272 @@
+{
+  "$defs": {
+    "M8OperationalRiskLevel": {
+      "enum": [
+        "REMINDER",
+        "GENERAL",
+        "SEVERE",
+        "EMERGENCY"
+      ],
+      "title": "M8OperationalRiskLevel",
+      "type": "string"
+    },
+    "M8SensorRiskOperator": {
+      "enum": [
+        "BOOLEAN_EQUALS",
+        "INTEGER_GTE"
+      ],
+      "title": "M8SensorRiskOperator",
+      "type": "string"
+    },
+    "M8SensorRiskPolicyPurpose": {
+      "enum": [
+        "DEMONSTRATION",
+        "OPERATIONAL"
+      ],
+      "title": "M8SensorRiskPolicyPurpose",
+      "type": "string"
+    },
+    "M8SensorRiskRule": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "boolean_threshold": {
+                "type": "null"
+              },
+              "integer_threshold": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "integer_threshold"
+            ]
+          },
+          "if": {
+            "properties": {
+              "operator": {
+                "const": "BOOLEAN_EQUALS"
+              }
+            },
+            "required": [
+              "operator"
+            ]
+          },
+          "then": {
+            "properties": {
+              "boolean_threshold": {
+                "type": "boolean"
+              },
+              "integer_threshold": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "boolean_threshold"
+            ]
+          }
+        },
+        {
+          "else": {
+            "properties": {
+              "response_deadline_seconds": {
+                "type": "null"
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "create_pending_case": {
+                "const": true
+              }
+            },
+            "required": [
+              "create_pending_case"
+            ]
+          },
+          "then": {
+            "properties": {
+              "response_deadline_seconds": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "response_deadline_seconds"
+            ]
+          }
+        }
+      ],
+      "description": "One explicitly configured typed threshold; never free-text parsed.",
+      "properties": {
+        "boolean_threshold": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Boolean Threshold"
+        },
+        "create_pending_case": {
+          "title": "Create Pending Case",
+          "type": "boolean"
+        },
+        "integer_threshold": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Integer Threshold"
+        },
+        "operator": {
+          "$ref": "#/$defs/M8SensorRiskOperator"
+        },
+        "priority": {
+          "minimum": 0,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "response_deadline_seconds": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Deadline Seconds"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/M8OperationalRiskLevel"
+        },
+        "rule_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-sensor-risk-rule-v1",
+          "default": "m8-sensor-risk-rule-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sensor_type": {
+          "$ref": "#/$defs/M8SensorType"
+        },
+        "unit": {
+          "$ref": "#/$defs/M8SensorUnit",
+          "readOnly": true
+        }
+      },
+      "required": [
+        "rule_id",
+        "sensor_type",
+        "priority",
+        "operator",
+        "risk_level",
+        "create_pending_case",
+        "unit"
+      ],
+      "title": "M8SensorRiskRule",
+      "type": "object"
+    },
+    "M8SensorType": {
+      "enum": [
+        "SMOKE",
+        "TEMPERATURE",
+        "COMBUSTIBLE_GAS",
+        "TOXIC_GAS",
+        "DOOR_CONTACT",
+        "WATER_LEAK",
+        "EMERGENCY_BUTTON"
+      ],
+      "title": "M8SensorType",
+      "type": "string"
+    },
+    "M8SensorUnit": {
+      "enum": [
+        "BOOLEAN",
+        "MILLI_CELSIUS",
+        "MILLI_PERCENT_LFL",
+        "MILLI_PPM"
+      ],
+      "title": "M8SensorUnit",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-sensor-risk-policy-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned, ordered rule inventory separate from ordinary documents.",
+  "properties": {
+    "policy_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Policy Authority Id",
+      "type": "string"
+    },
+    "policy_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "policy_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Manifest Id",
+      "type": "string"
+    },
+    "purpose": {
+      "$ref": "#/$defs/M8SensorRiskPolicyPurpose"
+    },
+    "revision": {
+      "exclusiveMinimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "rule_inventory_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Rule Inventory Sha256",
+      "type": "string"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/M8SensorRiskRule"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "title": "Rules",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m8-sensor-risk-policy-authority-v1",
+      "default": "m8-sensor-risk-policy-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_id",
+    "revision",
+    "purpose",
+    "rules",
+    "policy_manifest_id",
+    "rule_inventory_sha256",
+    "policy_authority_id"
+  ],
+  "title": "M8SensorRiskPolicyAuthorityV1",
+  "type": "object"
+}

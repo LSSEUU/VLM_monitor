@@ -142,6 +142,110 @@ from labcourt.contracts.m6_upgrade_pending_sample_commitment import (
     M6UpgradePendingSampleCommitmentAuthority,
 )
 from labcourt.contracts.m6_upgrade_physical import M6UpgradePhysicalArtifactRef
+from labcourt.contracts.m8_access_cases import (
+    M8ActorAuthorityV1,
+    M8AuthorityReference,
+    M8OperationalCaseCreateCommandV1,
+    M8OperationalCaseTransitionCommandV1,
+)
+from labcourt.contracts.m8_adapter_commissioning import (
+    M8AdapterActivationIntentV1,
+    M8CommissioningEvidenceAuthorityV1,
+    M8CommissioningEvidenceCommitReceiptV1,
+    M8ProductionAdapterCandidateAuthorityV1,
+    M8ProductionAdapterCandidateCommitReceiptV1,
+)
+from labcourt.contracts.m8_api import M8ApiPrincipalV1
+from labcourt.contracts.m8_case_persistence import (
+    M8ActorAuthorityCommitReceiptV1,
+    M8OperationalCaseAuditEventV1,
+    M8OperationalCaseCommitReceiptV1,
+)
+from labcourt.contracts.m8_feishu_activation import (
+    M8FeishuSandboxActivationCommitReceiptV1,
+    M8FeishuSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuSandboxActivationStatusV1,
+    M8FeishuSandboxRevocationReason,
+    M8FeishuSandboxRuntimeConfigV1,
+)
+from labcourt.contracts.m8_feishu_challenge import (
+    M8FeishuUrlChallengeCommitReceiptV1,
+    M8FeishuUrlChallengeVerificationReceiptV1,
+)
+from labcourt.contracts.m8_feishu_inbound import (
+    M8FeishuInboundMessageCommitReceiptV1,
+    M8FeishuInboundMessageVerificationReceiptV1,
+    M8FeishuInboundWebhookProfileV1,
+)
+from labcourt.contracts.m8_feishu_inbound_activation import (
+    M8FeishuInboundRevocationReason,
+    M8FeishuInboundSandboxActivationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationRevocationCommitReceiptV1,
+    M8FeishuInboundSandboxActivationStatusV1,
+    M8FeishuInboundSandboxRuntimeConfigV1,
+)
+from labcourt.contracts.m8_feishu_inbound_reply import (
+    M8FeishuInboundReplyCommitReceiptV1,
+    M8FeishuInboundReplyCorrelationAuthorityV1,
+)
+from labcourt.contracts.m8_feishu_notification import (
+    M8FeishuAdapterProfileV1,
+    M8FeishuCardDispatchPreflightV1,
+    M8FeishuConformanceResultV1,
+    M8FeishuRecipientBindingAuthorityV1,
+)
+from labcourt.contracts.m8_feishu_transport import M8FeishuSandboxSendReceiptV1
+from labcourt.contracts.m8_inventory_persistence import (
+    M8CampusTopologyCommitReceiptV1,
+    M8OperationalSourceCatalogCommitReceiptV1,
+)
+from labcourt.contracts.m8_knowledge import (
+    M8KnowledgeAnswerV1,
+    M8KnowledgeCatalogAuthorityV1,
+    M8KnowledgeQueryV1,
+)
+from labcourt.contracts.m8_knowledge_persistence import (
+    M8KnowledgeAnswerCommitReceiptV1,
+    M8KnowledgeCatalogCommitReceiptV1,
+)
+from labcourt.contracts.m8_notification_dispatch_claims import (
+    M8NotificationDispatchCallFenceReceiptV1,
+    M8NotificationDispatchClaimReceiptV1,
+    M8NotificationDispatchClaimStatusV1,
+    M8NotificationDispatchCompletionReceiptV1,
+)
+from labcourt.contracts.m8_notification_lifecycle import (
+    M8NotificationChannelCapabilityAuthorityV1,
+    M8NotificationDeliveryReceiptV1,
+    M8NotificationDispatchRequestV1,
+    M8NotificationDispatchResultV1,
+    M8NotificationTransitionCommandV1,
+)
+from labcourt.contracts.m8_notification_persistence import (
+    M8NotificationAuditEventV1,
+    M8NotificationCommitReceiptV1,
+    M8NotificationTargetCommitReceiptV1,
+)
+from labcourt.contracts.m8_notifications import (
+    M8NotificationChannelKind,
+    M8NotificationPlanAuthorityV1,
+    M8NotificationStatus,
+    M8NotificationTargetAuthorityV1,
+)
+from labcourt.contracts.m8_operations import (
+    M8CampusTopologyAuthorityV1,
+    M8OperationalSourceCatalogAuthorityV1,
+)
+from labcourt.contracts.m8_projections import M8OperationsProjectionV1
+from labcourt.contracts.m8_sensor_persistence import (
+    M8SensorPollCacheCommitReceiptV1,
+    M8SensorSampleCommitReceiptV1,
+)
+from labcourt.contracts.m8_sensor_signals import (
+    M8SensorAdapterCapabilityAuthorityV1,
+    M8SensorPollRequestV1,
+    M8SensorPollResultV1,
+)
 from labcourt.contracts.manifests import (
     ModelManifest,
     RunManifest,
@@ -366,6 +470,46 @@ from labcourt.ports.m6_upgrade_pending_sample_commitment import (
 from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
     M6UpgradeWholeSampleRecordBuilder,
 )
+from labcourt.ports.m8_adapter_commissioning_repository import (
+    M8AdapterCommissioningRepository,
+)
+from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
+from labcourt.ports.m8_feishu_activation_repository import M8FeishuActivationRepository
+from labcourt.ports.m8_feishu_challenge_receipts import M8FeishuUrlChallengeReceiptSink
+from labcourt.ports.m8_feishu_http import (
+    M8FeishuHttpResponse,
+    M8FeishuHttpTransport,
+)
+from labcourt.ports.m8_feishu_inbound_activation_repository import (
+    M8FeishuInboundActivationRepository,
+)
+from labcourt.ports.m8_feishu_inbound_crypto import M8FeishuInboundCrypto
+from labcourt.ports.m8_feishu_inbound_reply_repository import (
+    M8FeishuInboundReplyRepository,
+)
+from labcourt.ports.m8_feishu_inbound_repository import M8FeishuInboundRepository
+from labcourt.ports.m8_feishu_inbound_secrets import (
+    M8FeishuInboundSecretLease,
+    M8FeishuInboundSecretResolver,
+)
+from labcourt.ports.m8_feishu_notification_adapter import M8FeishuConformanceAdapter
+from labcourt.ports.m8_feishu_sandbox_sender import M8FeishuSandboxSender
+from labcourt.ports.m8_feishu_secrets import (
+    M8FeishuResolvedSecrets,
+    M8FeishuSecretResolver,
+)
+from labcourt.ports.m8_inventory_repository import M8InventoryRepository
+from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
+from labcourt.ports.m8_knowledge_repository import M8KnowledgeRepository
+from labcourt.ports.m8_notification_channel import M8NotificationChannelAdapter
+from labcourt.ports.m8_notification_dispatch_claim_repository import (
+    M8NotificationDispatchClaimRepository,
+)
+from labcourt.ports.m8_notification_repository import M8NotificationRepository
+from labcourt.ports.m8_operations_repository import M8OperationsRepository
+from labcourt.ports.m8_projection_reader import M8OperationsProjectionReader
+from labcourt.ports.m8_sensor_persistence_repository import M8SensorPersistenceRepository
+from labcourt.ports.m8_sensors import M8SensorAdapter
 from labcourt.ports.model_response_artifacts import (
     ModelResponseArtifactCandidate,
     ModelResponseArtifactFileOps,
@@ -421,6 +565,752 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8FeishuInboundActivationRepository: {
+        "commit_inbound_activation": (
+            (
+                "self",
+                "activation_intent",
+                "runtime_config",
+                "runtime_config_bytes",
+                "runtime_config_storage_manifest_id",
+                "current_assessed_at",
+                "committed_at",
+            ),
+            {
+                "activation_intent": M8AdapterActivationIntentV1,
+                "runtime_config": M8FeishuInboundSandboxRuntimeConfigV1,
+                "runtime_config_bytes": bytes,
+                "runtime_config_storage_manifest_id": str,
+                "current_assessed_at": datetime,
+                "committed_at": datetime,
+                "return": M8FeishuInboundSandboxActivationCommitReceiptV1,
+            },
+        ),
+        "get_inbound_activation": (
+            ("self", "activation_commit_id"),
+            {
+                "activation_commit_id": str,
+                "return": M8FeishuInboundSandboxActivationCommitReceiptV1,
+            },
+        ),
+        "get_current_inbound_status": (
+            ("self", "candidate_authority_id", "assessed_at"),
+            {
+                "candidate_authority_id": str,
+                "assessed_at": datetime,
+                "return": M8FeishuInboundSandboxActivationStatusV1,
+            },
+        ),
+        "revoke_inbound_activation": (
+            (
+                "self",
+                "activation_commit_id",
+                "revoker_actor_id",
+                "reason",
+                "reason_ref",
+                "revoked_at",
+                "revocation_manifest_id",
+            ),
+            {
+                "activation_commit_id": str,
+                "revoker_actor_id": str,
+                "reason": M8FeishuInboundRevocationReason,
+                "reason_ref": str,
+                "revoked_at": datetime,
+                "revocation_manifest_id": str,
+                "return": M8FeishuInboundSandboxActivationRevocationCommitReceiptV1,
+            },
+        ),
+        "read_inbound_runtime_config": (
+            ("self", "runtime_config_ref"),
+            {"runtime_config_ref": str, "return": bytes},
+        ),
+    },
+    M8FeishuUrlChallengeReceiptSink: {
+        "record_verification": (
+            ("self", "receipt"),
+            {
+                "receipt": M8FeishuUrlChallengeVerificationReceiptV1,
+                "return": M8FeishuUrlChallengeCommitReceiptV1,
+            },
+        ),
+    },
+    M8FeishuInboundCrypto: {
+        "decrypt_aes_256_cbc": (
+            ("self", "ciphertext_with_iv", "key_sha256"),
+            {
+                "ciphertext_with_iv": bytes,
+                "key_sha256": bytes,
+                "return": bytes,
+            },
+        ),
+    },
+    M8FeishuInboundSecretLease: {
+        "encrypt_key_bytes": (("self",), {"return": bytes}),
+        "verification_token_bytes": (("self",), {"return": bytes}),
+    },
+    M8FeishuInboundSecretResolver: {
+        "resolve": (
+            ("self", "profile"),
+            {
+                "profile": M8FeishuInboundWebhookProfileV1,
+                "return": AbstractContextManager[M8FeishuInboundSecretLease],
+            },
+        ),
+    },
+    M8FeishuInboundRepository: {
+        "commit_verification": (
+            (
+                "self",
+                "verification_receipt",
+                "raw_artifacts",
+                "raw_storage_manifest_id",
+                "committed_at",
+                "commit_manifest_id",
+            ),
+            {
+                "verification_receipt": M8FeishuInboundMessageVerificationReceiptV1,
+                "raw_artifacts": tuple[bytes, bytes, bytes],
+                "raw_storage_manifest_id": str,
+                "committed_at": datetime,
+                "commit_manifest_id": str,
+                "return": M8FeishuInboundMessageCommitReceiptV1,
+            },
+        ),
+        "get_by_provider_message_id": (
+            ("self", "provider_message_id"),
+            {
+                "provider_message_id": str,
+                "return": M8FeishuInboundMessageCommitReceiptV1,
+            },
+        ),
+        "read_raw_artifact": (
+            ("self", "raw_artifact_ref"),
+            {"raw_artifact_ref": str, "return": bytes},
+        ),
+    },
+    M8FeishuInboundReplyRepository: {
+        "get_notification_chain_by_provider_message_id": (
+            ("self", "provider_message_id", "adapter_id"),
+            {
+                "provider_message_id": str,
+                "adapter_id": str,
+                "return": tuple[M8NotificationCommitReceiptV1, ...],
+            },
+        ),
+        "commit_reply": (
+            (
+                "self",
+                "correlation_authority",
+                "notification_raw_storage_manifest_id",
+                "notification_audit_manifest_id",
+                "transition_command_manifest_id",
+                "reply_commit_manifest_id",
+            ),
+            {
+                "correlation_authority": M8FeishuInboundReplyCorrelationAuthorityV1,
+                "notification_raw_storage_manifest_id": str,
+                "notification_audit_manifest_id": str,
+                "transition_command_manifest_id": str,
+                "reply_commit_manifest_id": str,
+                "return": M8FeishuInboundReplyCommitReceiptV1,
+            },
+        ),
+        "get_reply_by_provider_message_id": (
+            ("self", "provider_message_id"),
+            {
+                "provider_message_id": str,
+                "return": M8FeishuInboundReplyCommitReceiptV1,
+            },
+        ),
+    },
+    M8FeishuHttpTransport: {
+        "acquire_tenant_access_token": (
+            ("self", "profile", "secrets"),
+            {
+                "profile": M8FeishuAdapterProfileV1,
+                "secrets": M8FeishuResolvedSecrets,
+                "return": M8FeishuHttpResponse,
+            },
+        ),
+        "send_interactive_message": (
+            (
+                "self",
+                "preflight",
+                "secrets",
+                "tenant_access_token",
+                "rendered_card",
+            ),
+            {
+                "preflight": M8FeishuCardDispatchPreflightV1,
+                "secrets": M8FeishuResolvedSecrets,
+                "tenant_access_token": bytes,
+                "rendered_card": bytes,
+                "return": M8FeishuHttpResponse,
+            },
+        ),
+    },
+    M8FeishuSecretResolver: {
+        "resolve": (
+            ("self", "profile", "recipient_binding"),
+            {
+                "profile": M8FeishuAdapterProfileV1,
+                "recipient_binding": M8FeishuRecipientBindingAuthorityV1,
+                "return": AbstractContextManager[M8FeishuResolvedSecrets],
+            },
+        ),
+    },
+    M8FeishuActivationRepository: {
+        "commit_activation": (
+            (
+                "self",
+                "activation_intent",
+                "runtime_config",
+                "runtime_config_bytes",
+                "runtime_config_storage_manifest_id",
+                "current_assessed_at",
+                "committed_at",
+            ),
+            {
+                "activation_intent": M8AdapterActivationIntentV1,
+                "runtime_config": M8FeishuSandboxRuntimeConfigV1,
+                "runtime_config_bytes": bytes,
+                "runtime_config_storage_manifest_id": str,
+                "current_assessed_at": datetime,
+                "committed_at": datetime,
+                "return": M8FeishuSandboxActivationCommitReceiptV1,
+            },
+        ),
+        "get_activation": (
+            ("self", "activation_commit_id"),
+            {
+                "activation_commit_id": str,
+                "return": M8FeishuSandboxActivationCommitReceiptV1,
+            },
+        ),
+        "get_current_status": (
+            ("self", "candidate_authority_id", "assessed_at"),
+            {
+                "candidate_authority_id": str,
+                "assessed_at": datetime,
+                "return": M8FeishuSandboxActivationStatusV1,
+            },
+        ),
+        "revoke_activation": (
+            (
+                "self",
+                "activation_commit_id",
+                "revoker_actor_id",
+                "reason",
+                "reason_ref",
+                "revoked_at",
+                "revocation_manifest_id",
+            ),
+            {
+                "activation_commit_id": str,
+                "revoker_actor_id": str,
+                "reason": M8FeishuSandboxRevocationReason,
+                "reason_ref": str,
+                "revoked_at": datetime,
+                "revocation_manifest_id": str,
+                "return": M8FeishuSandboxActivationRevocationCommitReceiptV1,
+            },
+        ),
+        "read_runtime_config": (
+            ("self", "runtime_config_ref"),
+            {"runtime_config_ref": str, "return": bytes},
+        ),
+    },
+    M8FeishuSandboxSender: {
+        "send_authorized": (
+            (
+                "self",
+                "preflight",
+                "rendered_card",
+                "dispatch_authorization_id",
+            ),
+            {
+                "preflight": M8FeishuCardDispatchPreflightV1,
+                "rendered_card": bytes,
+                "dispatch_authorization_id": str,
+                "return": M8FeishuSandboxSendReceiptV1,
+            },
+        ),
+        "read_raw_response": (
+            ("self", "raw_response_ref"),
+            {"raw_response_ref": str, "return": bytes},
+        ),
+    },
+    M8FeishuConformanceAdapter: {
+        "profile_authority": (
+            ("self",),
+            {"return": M8FeishuAdapterProfileV1},
+        ),
+        "conform": (
+            ("self", "preflight", "rendered_card"),
+            {
+                "preflight": M8FeishuCardDispatchPreflightV1,
+                "rendered_card": bytes,
+                "return": M8FeishuConformanceResultV1,
+            },
+        ),
+        "replay": (
+            ("self", "preflight_id"),
+            {"preflight_id": str, "return": M8FeishuConformanceResultV1},
+        ),
+        "read_raw_response": (
+            ("self", "raw_response_ref"),
+            {"raw_response_ref": str, "return": bytes},
+        ),
+    },
+    M8AdapterCommissioningRepository: {
+        "register_candidate": (
+            ("self", "candidate", "registrar_actor_id"),
+            {
+                "candidate": M8ProductionAdapterCandidateAuthorityV1,
+                "registrar_actor_id": str,
+                "return": M8ProductionAdapterCandidateCommitReceiptV1,
+            },
+        ),
+        "get_candidate": (
+            ("self", "candidate_authority_id"),
+            {
+                "candidate_authority_id": str,
+                "return": M8ProductionAdapterCandidateCommitReceiptV1,
+            },
+        ),
+        "commit_evidence": (
+            ("self", "evidence", "artifact_bytes", "artifact_storage_manifest_id"),
+            {
+                "evidence": M8CommissioningEvidenceAuthorityV1,
+                "artifact_bytes": bytes,
+                "artifact_storage_manifest_id": str,
+                "return": M8CommissioningEvidenceCommitReceiptV1,
+            },
+        ),
+        "get_evidence": (
+            ("self", "evidence_authority_id"),
+            {
+                "evidence_authority_id": str,
+                "return": M8CommissioningEvidenceCommitReceiptV1,
+            },
+        ),
+        "list_candidate_evidence": (
+            ("self", "candidate_authority_id", "limit"),
+            {
+                "candidate_authority_id": str,
+                "limit": int,
+                "return": tuple[M8CommissioningEvidenceCommitReceiptV1, ...],
+            },
+        ),
+        "read_artifact": (
+            ("self", "artifact_ref"),
+            {"artifact_ref": str, "return": bytes},
+        ),
+    },
+    M8KnowledgeRepository: {
+        "publish_catalog": (
+            (
+                "self",
+                "catalog",
+                "raw_contents",
+                "expected_prior_revision",
+                "raw_storage_manifest_id",
+            ),
+            {
+                "catalog": M8KnowledgeCatalogAuthorityV1,
+                "raw_contents": tuple[bytes, ...],
+                "expected_prior_revision": int | None,
+                "raw_storage_manifest_id": str,
+                "return": M8KnowledgeCatalogCommitReceiptV1,
+            },
+        ),
+        "get_current_catalog": (
+            ("self", "catalog_id"),
+            {"catalog_id": str, "return": M8KnowledgeCatalogCommitReceiptV1},
+        ),
+        "read_content": (
+            ("self", "content_ref"),
+            {"content_ref": str, "return": bytes},
+        ),
+        "commit_answer": (
+            ("self", "answer"),
+            {"answer": M8KnowledgeAnswerV1, "return": M8KnowledgeAnswerCommitReceiptV1},
+        ),
+        "get_answer": (
+            ("self", "query_id"),
+            {"query_id": str, "return": M8KnowledgeAnswerCommitReceiptV1},
+        ),
+    },
+    M8KnowledgeRetriever: {
+        "catalog_authority": (
+            ("self",),
+            {"return": M8KnowledgeCatalogAuthorityV1},
+        ),
+        "query": (
+            ("self", "request"),
+            {"request": M8KnowledgeQueryV1, "return": M8KnowledgeAnswerV1},
+        ),
+        "replay": (
+            ("self", "query_id"),
+            {"query_id": str, "return": M8KnowledgeAnswerV1},
+        ),
+        "read_content": (
+            ("self", "content_ref"),
+            {"content_ref": str, "return": bytes},
+        ),
+    },
+    M8NotificationChannelAdapter: {
+        "capability_authority": (
+            ("self",),
+            {"return": M8NotificationChannelCapabilityAuthorityV1},
+        ),
+        "dispatch": (
+            ("self", "request", "rendered_card"),
+            {
+                "request": M8NotificationDispatchRequestV1,
+                "rendered_card": bytes,
+                "return": M8NotificationDispatchResultV1,
+            },
+        ),
+        "confirm_simulated_delivery": (
+            ("self", "dispatch_result", "occurred_at"),
+            {
+                "dispatch_result": M8NotificationDispatchResultV1,
+                "occurred_at": datetime,
+                "return": M8NotificationDeliveryReceiptV1,
+            },
+        ),
+        "replay_dispatch": (
+            ("self", "dispatch_request_id"),
+            {
+                "dispatch_request_id": str,
+                "return": M8NotificationDispatchResultV1,
+            },
+        ),
+        "replay_delivery": (
+            ("self", "dispatch_result_id"),
+            {
+                "dispatch_result_id": str,
+                "return": M8NotificationDeliveryReceiptV1,
+            },
+        ),
+        "read_raw_response": (
+            ("self", "raw_response_ref"),
+            {"raw_response_ref": str, "return": bytes},
+        ),
+    },
+    M8NotificationDispatchClaimRepository: {
+        "claim_dispatch": (
+            (
+                "self",
+                "request",
+                "worker_owner_token",
+                "lease_expires_at",
+                "claim_manifest_id",
+            ),
+            {
+                "request": M8NotificationDispatchRequestV1,
+                "worker_owner_token": bytes,
+                "lease_expires_at": datetime,
+                "claim_manifest_id": str,
+                "return": M8NotificationDispatchClaimReceiptV1,
+            },
+        ),
+        "fence_dispatch_call": (
+            (
+                "self",
+                "claim_id",
+                "worker_owner_token",
+                "dispatch_authorization_id",
+                "fenced_at",
+                "call_fence_manifest_id",
+            ),
+            {
+                "claim_id": str,
+                "worker_owner_token": bytes,
+                "dispatch_authorization_id": str,
+                "fenced_at": datetime,
+                "call_fence_manifest_id": str,
+                "return": M8NotificationDispatchCallFenceReceiptV1,
+            },
+        ),
+        "complete_dispatch": (
+            (
+                "self",
+                "claim_id",
+                "call_fence_id",
+                "worker_owner_token",
+                "dispatch_result",
+                "raw_artifacts",
+                "raw_storage_manifest_id",
+                "supporting_authorities",
+                "command_manifest_id",
+                "audit_manifest_id",
+                "committed_at",
+                "completion_manifest_id",
+            ),
+            {
+                "claim_id": str,
+                "call_fence_id": str,
+                "worker_owner_token": bytes,
+                "dispatch_result": M8NotificationDispatchResultV1,
+                "raw_artifacts": tuple[bytes, ...],
+                "raw_storage_manifest_id": str,
+                "supporting_authorities": tuple[M8AuthorityReference, ...],
+                "command_manifest_id": str,
+                "audit_manifest_id": str,
+                "committed_at": datetime,
+                "completion_manifest_id": str,
+                "return": M8NotificationDispatchCompletionReceiptV1,
+            },
+        ),
+        "get_dispatch_claim_status": (
+            ("self", "claim_id", "assessed_at"),
+            {
+                "claim_id": str,
+                "assessed_at": datetime,
+                "return": M8NotificationDispatchClaimStatusV1,
+            },
+        ),
+        "get_dispatch_claim_status_for_source": (
+            (
+                "self",
+                "notification_id",
+                "source_notification_version",
+                "assessed_at",
+            ),
+            {
+                "notification_id": str,
+                "source_notification_version": int,
+                "assessed_at": datetime,
+                "return": M8NotificationDispatchClaimStatusV1,
+            },
+        ),
+    },
+    M8NotificationRepository: {
+        "publish_target_authority": (
+            ("self", "target", "expected_prior_revision"),
+            {
+                "target": M8NotificationTargetAuthorityV1,
+                "expected_prior_revision": int | None,
+                "return": M8NotificationTargetCommitReceiptV1,
+            },
+        ),
+        "get_current_target_authority": (
+            ("self", "actor_id", "channel"),
+            {
+                "actor_id": str,
+                "channel": M8NotificationChannelKind,
+                "return": M8NotificationTargetCommitReceiptV1,
+            },
+        ),
+        "create_notification": (
+            ("self", "plan", "audit_manifest_id"),
+            {
+                "plan": M8NotificationPlanAuthorityV1,
+                "audit_manifest_id": str,
+                "return": M8NotificationCommitReceiptV1,
+            },
+        ),
+        "get_current_notification": (
+            ("self", "notification_id"),
+            {"notification_id": str, "return": M8NotificationCommitReceiptV1},
+        ),
+        "transition_notification": (
+            (
+                "self",
+                "command",
+                "raw_artifacts",
+                "raw_storage_manifest_id",
+                "audit_manifest_id",
+            ),
+            {
+                "command": M8NotificationTransitionCommandV1,
+                "raw_artifacts": tuple[bytes, ...],
+                "raw_storage_manifest_id": str,
+                "audit_manifest_id": str,
+                "return": M8NotificationCommitReceiptV1,
+            },
+        ),
+        "list_notifications_by_status": (
+            ("self", "status", "limit"),
+            {
+                "status": M8NotificationStatus,
+                "limit": int,
+                "return": tuple[M8NotificationCommitReceiptV1, ...],
+            },
+        ),
+        "list_current_notifications": (
+            ("self", "limit"),
+            {"limit": int, "return": tuple[M8NotificationCommitReceiptV1, ...]},
+        ),
+        "list_notification_audit": (
+            ("self", "notification_id"),
+            {
+                "notification_id": str,
+                "return": tuple[M8NotificationAuditEventV1, ...],
+            },
+        ),
+        "read_raw_artifact": (
+            ("self", "raw_artifact_ref"),
+            {"raw_artifact_ref": str, "return": bytes},
+        ),
+    },
+    M8RequestAuthenticator: {
+        "authenticate": (
+            ("self", "authorization_header"),
+            {
+                "authorization_header": str | None,
+                "return": M8ApiPrincipalV1,
+            },
+        ),
+    },
+    M8OperationsProjectionReader: {
+        "current_projection": (
+            ("self", "campus_id"),
+            {"campus_id": str, "return": M8OperationsProjectionV1},
+        ),
+    },
+    M8InventoryRepository: {
+        "publish_topology": (
+            ("self", "topology", "expected_prior_revision"),
+            {
+                "topology": M8CampusTopologyAuthorityV1,
+                "expected_prior_revision": int | None,
+                "return": M8CampusTopologyCommitReceiptV1,
+            },
+        ),
+        "get_current_topology": (
+            ("self", "campus_id"),
+            {"campus_id": str, "return": M8CampusTopologyCommitReceiptV1},
+        ),
+        "publish_source_catalog": (
+            ("self", "catalog", "expected_prior_revision"),
+            {
+                "catalog": M8OperationalSourceCatalogAuthorityV1,
+                "expected_prior_revision": int | None,
+                "return": M8OperationalSourceCatalogCommitReceiptV1,
+            },
+        ),
+        "get_current_source_catalog": (
+            ("self", "campus_id"),
+            {"campus_id": str, "return": M8OperationalSourceCatalogCommitReceiptV1},
+        ),
+        "get_source_catalog": (
+            ("self", "catalog_id"),
+            {"catalog_id": str, "return": M8OperationalSourceCatalogCommitReceiptV1},
+        ),
+    },
+    M8OperationsRepository: {
+        "publish_actor_authority": (
+            ("self", "authority", "expected_prior_revision"),
+            {
+                "authority": M8ActorAuthorityV1,
+                "expected_prior_revision": int | None,
+                "return": M8ActorAuthorityCommitReceiptV1,
+            },
+        ),
+        "get_current_actor_authority": (
+            ("self", "actor_id"),
+            {"actor_id": str, "return": M8ActorAuthorityCommitReceiptV1},
+        ),
+        "create_operational_case": (
+            (
+                "self",
+                "command",
+                "subject_actor_id",
+                "case_manifest_id",
+                "audit_manifest_id",
+            ),
+            {
+                "command": M8OperationalCaseCreateCommandV1,
+                "subject_actor_id": str | None,
+                "case_manifest_id": str,
+                "audit_manifest_id": str,
+                "return": M8OperationalCaseCommitReceiptV1,
+            },
+        ),
+        "get_current_operational_case": (
+            ("self", "case_id"),
+            {"case_id": str, "return": M8OperationalCaseCommitReceiptV1},
+        ),
+        "list_current_operational_cases": (
+            ("self", "limit"),
+            {"limit": int, "return": tuple[M8OperationalCaseCommitReceiptV1, ...]},
+        ),
+        "transition_operational_case": (
+            ("self", "command", "case_manifest_id", "audit_manifest_id"),
+            {
+                "command": M8OperationalCaseTransitionCommandV1,
+                "case_manifest_id": str,
+                "audit_manifest_id": str,
+                "return": M8OperationalCaseCommitReceiptV1,
+            },
+        ),
+        "list_operational_case_audit": (
+            ("self", "case_id"),
+            {
+                "case_id": str,
+                "return": tuple[M8OperationalCaseAuditEventV1, ...],
+            },
+        ),
+    },
+    M8SensorPersistenceRepository: {
+        "commit_poll_result": (
+            (
+                "self",
+                "result",
+                "raw_signals",
+                "raw_storage_manifest_id",
+                "cache_manifest_id",
+            ),
+            {
+                "result": M8SensorPollResultV1,
+                "raw_signals": tuple[bytes, ...],
+                "raw_storage_manifest_id": str,
+                "cache_manifest_id": str,
+                "return": M8SensorPollCacheCommitReceiptV1,
+            },
+        ),
+        "get_poll_cache": (
+            ("self", "request_id"),
+            {"request_id": str, "return": M8SensorPollCacheCommitReceiptV1},
+        ),
+        "get_sample": (
+            ("self", "sample_id"),
+            {"sample_id": str, "return": M8SensorSampleCommitReceiptV1},
+        ),
+        "list_latest_sensor_samples": (
+            ("self", "limit"),
+            {"limit": int, "return": tuple[M8SensorSampleCommitReceiptV1, ...]},
+        ),
+        "read_raw_signal": (
+            ("self", "raw_signal_ref"),
+            {"raw_signal_ref": str, "return": bytes},
+        ),
+    },
+    M8SensorAdapter: {
+        "capability_authority": (
+            ("self",),
+            {"return": M8SensorAdapterCapabilityAuthorityV1},
+        ),
+        "poll": (
+            ("self", "request"),
+            {
+                "request": M8SensorPollRequestV1,
+                "return": M8SensorPollResultV1,
+            },
+        ),
+        "replay": (
+            ("self", "request_id"),
+            {"request_id": str, "return": M8SensorPollResultV1},
+        ),
+        "read_raw_signal": (
+            ("self", "raw_signal_ref"),
+            {"raw_signal_ref": str, "return": bytes},
+        ),
+    },
     AutomaticPrecedentVerifier: {
         "rebuild": (
             ("self", "case", "manifest", "alert_authority", "created_at"),

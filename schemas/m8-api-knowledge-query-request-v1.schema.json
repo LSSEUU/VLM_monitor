@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "M8KnowledgeDocumentType": {
+      "enum": [
+        "DEVICE_MANUAL",
+        "EMERGENCY_PLAN",
+        "FAQ",
+        "HISTORICAL_PRECEDENT",
+        "POLICY",
+        "SOP"
+      ],
+      "title": "M8KnowledgeDocumentType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-api-knowledge-query-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Knowledge query intent excluding actor, role, capability, catalog, and manifests.",
+  "properties": {
+    "allowed_document_types": {
+      "items": {
+        "$ref": "#/$defs/M8KnowledgeDocumentType"
+      },
+      "maxItems": 6,
+      "minItems": 1,
+      "title": "Allowed Document Types",
+      "type": "array"
+    },
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "client_actor_authority_permitted": {
+      "readOnly": true,
+      "title": "Client Actor Authority Permitted",
+      "type": "boolean"
+    },
+    "client_catalog_authority_permitted": {
+      "readOnly": true,
+      "title": "Client Catalog Authority Permitted",
+      "type": "boolean"
+    },
+    "direct_case_decision_permitted": {
+      "readOnly": true,
+      "title": "Direct Case Decision Permitted",
+      "type": "boolean"
+    },
+    "knowledge_query_request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Knowledge Query Request Id",
+      "type": "string"
+    },
+    "locale": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Locale",
+      "type": "string"
+    },
+    "max_citations": {
+      "exclusiveMinimum": 0,
+      "maximum": 10,
+      "title": "Max Citations",
+      "type": "integer"
+    },
+    "query_text": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Query Text",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-api-knowledge-query-request-v1",
+      "default": "m8-api-knowledge-query-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "query_text",
+    "locale",
+    "as_of",
+    "allowed_document_types",
+    "max_citations",
+    "client_actor_authority_permitted",
+    "client_catalog_authority_permitted",
+    "direct_case_decision_permitted",
+    "knowledge_query_request_id"
+  ],
+  "title": "M8ApiKnowledgeQueryRequestV1",
+  "type": "object"
+}

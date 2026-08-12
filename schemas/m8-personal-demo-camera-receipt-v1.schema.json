@@ -1,0 +1,145 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-camera-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Receipt for the additive recorded-video camera Demo catalog revision.",
+  "properties": {
+    "camera_count": {
+      "const": 1,
+      "default": 1,
+      "title": "Camera Count",
+      "type": "integer"
+    },
+    "camera_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Camera Manifest Id",
+      "type": "string"
+    },
+    "camera_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Camera Receipt Id",
+      "type": "string"
+    },
+    "campus_id": {
+      "const": "campus-demo",
+      "default": "campus-demo",
+      "title": "Campus Id",
+      "type": "string"
+    },
+    "device_id": {
+      "const": "device-recorded-camera-01",
+      "default": "device-recorded-camera-01",
+      "title": "Device Id",
+      "type": "string"
+    },
+    "display_badge": {
+      "const": "SIMULATED · RECORDED VIDEO",
+      "default": "SIMULATED · RECORDED VIDEO",
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "gpu_used": {
+      "const": false,
+      "default": false,
+      "title": "Gpu Used",
+      "type": "boolean"
+    },
+    "life_safety_eligible": {
+      "const": false,
+      "default": false,
+      "title": "Life Safety Eligible",
+      "type": "boolean"
+    },
+    "live_camera_claim_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Live Camera Claim Permitted",
+      "type": "boolean"
+    },
+    "location_id": {
+      "const": "room-chem-301",
+      "default": "room-chem-301",
+      "title": "Location Id",
+      "type": "string"
+    },
+    "media_attached": {
+      "const": false,
+      "default": false,
+      "title": "Media Attached",
+      "type": "boolean"
+    },
+    "mode": {
+      "const": "RECORDED_VIDEO_SIMULATION",
+      "default": "RECORDED_VIDEO_SIMULATION",
+      "title": "Mode",
+      "type": "string"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "raw_media_reference_required": {
+      "const": true,
+      "default": true,
+      "title": "Raw Media Reference Required",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-camera-receipt-v1",
+      "default": "m8-personal-demo-camera-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sensor_refresh_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sensor Refresh Commit Receipt Id",
+      "type": "string"
+    },
+    "simulated_source_count": {
+      "const": 2,
+      "default": 2,
+      "title": "Simulated Source Count",
+      "type": "integer"
+    },
+    "source_catalog_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Commit Receipt Id",
+      "type": "string"
+    },
+    "source_catalog_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Id",
+      "type": "string"
+    },
+    "source_catalog_revision": {
+      "const": 2,
+      "default": 2,
+      "title": "Source Catalog Revision",
+      "type": "integer"
+    },
+    "source_count": {
+      "const": 2,
+      "default": 2,
+      "title": "Source Count",
+      "type": "integer"
+    },
+    "source_id": {
+      "const": "camera-recorded-demo-01",
+      "default": "camera-recorded-demo-01",
+      "title": "Source Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_catalog_id",
+    "source_catalog_commit_receipt_id",
+    "sensor_refresh_commit_receipt_id",
+    "camera_manifest_id",
+    "camera_receipt_id"
+  ],
+  "title": "M8PersonalDemoCameraReceiptV1",
+  "type": "object"
+}

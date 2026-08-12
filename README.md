@@ -12,6 +12,78 @@ M0 工程骨架、M1 确定性感知核心、M2 隐私证据包/可审计存储�
 历史训练数据集闭环均已完成并冻结。M6 的 0014/V3 恢复链、CLOSED `REPLAY_LOCKED`
 回归发布、隐私安全静态报告与 16 场景完整离线 demo 也已完成全量门禁并冻结。
 
+M8 校园安全运营产品化现按
+[`docs/spec/labcourt-campus-operations-spec.md`](docs/spec/labcourt-campus-operations-spec.md)
+以 additive 方式推进，不修改上述冻结能力。M8.0–M8.5 的拓扑/来源、人员权限、案件状态流、
+离线传感器、SQLite 权威记录、本机 API、通知闭环与版本化知识库已经完成；M8.6 的只读运营投影、
+稳定读取、服务端角色裁剪和 authenticated loopback API 也已完成后端验收。M8.7a 已完成六类生产
+adapter 的准入契约、append-only commissioning evidence、可重算 readiness 与双人 activation intent；
+它只建立人工启用前的 fail-closed 边界，不会自动激活或发起外部调用。M8.7b 另以
+`GET /api/m8/adapter-candidates/{candidate_authority_id}/readiness` 向当前运维角色提供服务端时点的
+只读准入状态，不返回原始评审工件或凭据。M8.7c 已选择飞书企业自建应用并完成厂商专用卡片、
+`open_id` binding、`uuid` 去重、typed failure/raw response 与 SQLite outbox 的全离线 preflight；模拟
+provider 接受不会把通知推进到 `SENT`。M8.7d 进一步冻结了飞书 sandbox 的无密钥 runtime config 与
+双人 activation commit：首次外部调用只可面向显式测试收件人 allowlist，生产发送仍禁止。M8.7d2 已
+用 append-only SQLite 持久化 activation 与单人 kill switch；当前证据、双人权限或收件人 authority 变化
+会动态变为 `INVALIDATED`，不再授权调用。M8.7e1 已实现可注入的 secret lease、token cache 与 sandbox
+send core；默认只配内存 fake，token 明文不
+进入 schema/SQLite/raw store，消息 timeout 保持 unknown-delivery。M8.7e2 已增加可选的显式环境引用
+resolver 与固定 `open.feishu.cn`、系统 CA、单次 POST、0 自动重试的标准库 TLS transport；默认产品 wiring
+仍不装配它，也尚无真实租户调用证据。M8.7e3a 已冻结通用 dispatch claim/call fence/completion：并发
+worker 不得共享调用权，call fence 后崩溃必须待对账而不能自动重试；M8.7e3b 已用 migration 0008 和
+SQLite repository 实现 source-version 唯一 claim、one-shot fence 及 completion/notification 原子提交。
+M8.7e4a 进一步冻结 Feishu outbox run 组合回执，防止跨 preflight/activation/send/completion 拼接，同时保持
+provider acceptance 不等于真实送达。M8.7e4b 已实现显式注入的单条 sandbox runner：claim 前与 call fence
+前均重读 current activation，send core 再次核对 exact profile/测试收件人 allowlist；accepted 或 typed failure
+会与 raw artifacts、`SENT`/`FAILED` 在 SQLite 原子提交，围栏后异常则进入待对账且不自动重试。默认产品
+wiring 仍不装配 live secret/TLS adapter，仓库也尚无真实租户调用证据。M8.7f1 已开始补齐回复闭环：新增
+encrypted webhook profile、未验证 ingress request 与 hash-only verified
+`im.message.receive_v1` receipt；按 provider `message_id` 防重放、按 `parent_id` 关联 outbound message，且
+验证回执本身不能提交 reply 或改变 Case。M8.7f2 已增加短生命周期可清零 secret lease、原始 body
+SHA-256 签名/严格事件验证服务，以及 migration 0009 的 append-only encrypted/decrypted/content raw store；
+provider `message_id` 在 SQLite 中唯一，异证据重放 fail closed。M8.7f3 已按当前 target/actor、连续通知历史与
+exact outbound provider receipt 授权学生普通说明，并在同一 SQLite 事务中追加 `RESPONDED` 与 reply ledger；
+它不会推断申诉、改变 Case 或形成处分。M8.7f4 增加了显式环境 secret resolver、可选且审计锁定的
+`cryptography` AES-256-CBC adapter，以及独立的 encrypted URL challenge 验证边界。challenge 清文仅存在于
+瞬时 JSON 响应，receipt 只保存 hash/reference；它不激活公网入口或业务事件。M8.7f5 增加了需显式启动的
+`127.0.0.1` challenge-only HTTP listener：固定路径、有界 JSON、禁止压缩/分块传输，收到业务事件签名头时
+明确返回入口未激活。仓库仍未开放公网 webhook、
+保存真实学生自由文本或取得真实飞书租户验证证据。M8.7f6 已冻结 sandbox 公网回调配置与双人 activation
+commit：精确绑定 callback URL/TLS/profile/commissioning/current actor，配置本身仍不开放入口，commit 也不允许
+自动启动、生产入口、回复提交或案件动作；当前状态会重算人员与 commissioning authority，并支持当前运维或
+安全负责人单人 kill switch，撤销后不得自动重启。独立 UI 任务
+M8.7f7 已通过 migration 0011 将 ingress activation/revocation 做成 append-only SQLite authority：同一 intent
+幂等、未撤销时禁止第二次启用、撤销后只允许连续 revision；进程重启后仍会重读当前 actor 与 commissioning
+证据决定 `SANDBOX_INBOUND_ACTIVE` / `INVALIDATED` / `REVOKED`。仓库尚未把公网 HTTP listener 接到该状态。
+M8.7f8 已增加显式构建的 activation-gated webhook backend：只监听 runtime config 的本机端口，逐请求重读
+current ingress status；无事件头走 challenge，完整三件套签名头才走 `im.message.receive_v1` 验证/SQLite evidence
+commit。任一缺头、坏签名、撤销或 authority 漂移均 fail closed；HTTP 200 仅表示入站证据已提交，不会自动
+提交学生说明、改变案件或声称公网 TLS 已部署。
+M8.7f9 已通过 migration 0012 将 URL challenge verification receipt 持久化为 hash-only append-only audit；
+clear challenge 与原始解密载荷不落该 ledger，exact retry 幂等，审计提交仍不能激活入口或改变案件。
+M8.7f10 已增加显式的 `labcourt feishu webhook-serve` 运行时装配：它只读取既有 SQLite activation，按
+exact inbound profile 解析两个具名环境变量引用，装配可选 AES adapter、入站证据库和 challenge audit 后
+绑定 activation 指定的 loopback 端口。`--check` 只完成校验、绑定与关闭；命令不会创建 activation、管理
+公网 TLS、自动提交学生说明或执行案件动作。
+M8.7f11 已把既有双人 activation 与单人 kill-switch 状态机接入显式运维命令：`webhook-activate` 只接受
+已形成 typed intent 的两份当前人员确认和 canonical runtime config，`webhook-status` 从当前数据库 cut 重算，
+`webhook-revoke` 只允许当前 in-scope 运维或安全负责人撤销。三者都不读取 secret、不自动启动 listener，
+撤销由运行中的 backend 在下一次请求前观察并 fail closed。
+M8.7f12 以独立的 `outbox-activate` / `outbox-status` / `outbox-revoke` 暴露同样严格的 sandbox 发送 authority：
+发送 allowlist 还会重算当前收件人 target，activation 不会发送消息，稳定 UTC kill-switch 可精确重试；入站与
+出站授权互不替代，真实联调必须分别满足各自的 current authority。
+M8.7f13 已增加显式 `outbox-run-one`：一次只消费一条 current `QUEUED` 通知和一个 exact allowlisted binding，
+从具名环境变量短暂解析 App ID/App Secret/open_id/worker token，使用固定 `open.feishu.cn`、系统 CA、零自动
+重试 transport 完成 claim→call fence→send→SQLite completion。provider acceptance 只推进通知状态，仍明确
+`real_delivery_confirmed=false`；围栏后的未知结果不得自动重试。`--check` 会验证同一输入但不 claim、不联网、
+不发送，真实联调必须先通过该模式。
+个人 Demo 产品装配已新增 `labcourt demo bootstrap`：它通过既有仓库幂等生成四层校园、四角色、模拟烟雾
+raw signal、紧急待核实案件和运营投影，供后续本机 API 与独立 UI 任务消费；bootstrap 本身不执行案件迁移。
+可直接消费
+`GET /api/m8/campuses/{campus_id}/operations-projection` 的 typed view；仓库尚未声称真实摄像头、
+消防系统、身份平台、外部消息平台或公网生产部署已经就绪。首个真实 adapter 的选择与输入要求见
+[`docs/m8-production-adapter-intake.md`](docs/m8-production-adapter-intake.md)。
+
 ## 核心原则
 
 - 安全底线不依赖 VLM。
@@ -36,6 +108,83 @@ M0 工程骨架、M1 确定性感知核心、M2 隐私证据包/可审计存储�
 
 ## 开发命令
 
+完整校园运营 Demo 数据可先双击 `labcourt-demo-bootstrap.cmd`。它在被 Git 忽略的
+`.labcourt-local/labcourt-demo/` 中幂等初始化 SQLite、校园四层拓扑、四角色、模拟烟雾原始信号、紧急
+`PENDING_VERIFICATION` 案件及只读运营投影；不会联网、调用模型、发送消息或执行案件迁移。详见
+[`docs/m8-personal-demo.md`](docs/m8-personal-demo.md)。
+双击 `labcourt-demo-api.cmd` 会先绑定后关闭完成预检，再在 `127.0.0.1:8877` 启动现有 authenticated M8
+API；四角色的本机演示 token 只写入同一 ignored 目录的 `api-access.json`，终端不显示明文。
+API 装配还会幂等装载六类离线知识文档；问答返回来源、版本和生效时间，不使用模型或网络，也不把文档
+静默转换为案件规则。
+双击 `labcourt-demo-notification.cmd` 会把原始模拟紧急案件确定性路由给安全负责人，生成本地模拟卡片并
+推进到 `QUEUED`；该入口不联网、不声称送达，也不改变案件。随后运营投影会显示该通知及审计链。
+再双击 `labcourt-demo-notification-deliver.cmd`，现有离线 fake channel 会依次提交 `SENT` 和 `DELIVERED`；
+结果始终标为模拟且 `real_delivery_confirmed=false`，不调用飞书。
+双击 `labcourt-demo-notification-acknowledge.cmd` 并输入 `APPLY` 后，安全负责人可把通知闭环为
+`ACKNOWLEDGED`；该动作不会确认、驳回或结案案件。
+双击 `labcourt-demo-camera.cmd` 可增量注册一个 `RECORDED_VIDEO_SIMULATION` 摄像头，并把
+`inputs/goggles-missing.mp4`（缺失时按文件名选择首个 MP4）按原始字节绑定到 ignored 本机播放目录；原文件不变，
+绑定回执记录输入/播放副本哈希且显著显示 `SIMULATED · RECORDED VIDEO`，不伪装成实时画面。
+日常演示可直接双击 `labcourt-demo-start.cmd`：它依次准备基础数据、摄像头、离线通知，完成 API bind-and-close
+预检后在 `127.0.0.1:8877` 启动服务。已有回执会复用，派生的本机 API 访问文件会按当前 authority 刷新。
+安全负责人或运维可用 authenticated `GET /api/m8/cameras/camera-recorded-demo-01/media-metadata`
+读取绑定回执，并通过 `GET /api/m8/cameras/camera-recorded-demo-01/media` 获取 `video/mp4`；媒体接口支持标准
+single-byte `Range` 与 `206 Partial Content`。领导和学生不自动获得一般风险摄像头媒体访问权。
+设备页应先调用 authenticated `GET /api/m8/cameras`：安全负责人和运维会得到当前 catalog camera、媒体绑定
+状态和上述播放入口；领导和学生得到空集合。未绑定媒体的 camera 仍会返回，但明确 `media_attached=false`。
+双击 `labcourt-demo-ppe-case.cmd` 可把已绑定媒体作为 `VIDEO_EVENT` 创建一个 `GENERAL` 风险的学生 PPE
+候选案件；它固定标注 `SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION`，不验证视频内容、
+不使用文件名作为证据、不把弱标签当 ground truth，也不能自动确认或处分。`labcourt-demo-start.cmd` 会幂等包含该步骤。
+集成界面可先调用 authenticated `GET /api/m8/session` 获取当前 actor、role、scope 与 capability，无需在前端
+根据 token 猜测角色；响应不包含 bearer token。
+案件列表使用 `GET /api/m8/cases`：安全负责人只看辖区案件、领导只看重大事件、学生只看本人案件，运维
+返回空列表；列表权限由服务端当前 authority 裁剪。
+通知中心可使用 `GET /api/m8/notifications`、`GET /api/m8/notifications/{id}` 和 `/audit`；当前模拟紧急
+通知仅对辖区安全负责人及重大事件领导可见，学生与运维无法读取。
+API 运行时可双击 `labcourt-demo-case-action.cmd`，选择确认、驳回、请求补证、返回核实或结案，并输入
+案件目标 `EMERGENCY_SMOKE` / `PPE_CANDIDATE` 后输入 `APPLY` 完成一次安全负责人显式动作；默认目标仍是
+烟雾案件，脚本不提供领导或运维审批入口，也不会被一键启动自动调用。
+PPE 案件经安全负责人明确确认后，学生可双击 `labcourt-demo-student-appeal.cmd`，填写争议理由并独立输入
+`APPLY`；客户端只读取 exact PPE receipt、只使用 student token，并提交现有
+`SUBMIT_APPEAL/SUBJECT_DISPUTE` transition。未确认的候选案会被状态机拒绝，申诉不会自动撤销或结案。
+PPE 案件确认后可双击 `labcourt-demo-ppe-notification.cmd`：它向 `student-demo` 幂等路由一张默认离线的
+`CASE_UPDATED/CASE_SUBJECT` 卡片并停在 `QUEUED`，学生通知中心可见；卡片允许确认、提交说明或请求申诉，
+但回复和卡片本身均不能迁移案件。该入口不联网，也不在默认启动中自动执行。
+随后双击 `labcourt-demo-ppe-notification-deliver.cmd`，可将 exact route receipt 通过离线 fake channel
+显式推进到 `DELIVERED`；该状态固定不代表飞书或真实人员已收到，也不会迁移案件。
+学生再双击 `labcourt-demo-ppe-notification-reply.cmd`，可明确选择 `EXPLANATION` 或 `APPEAL_REQUEST`、
+填写内容并输入 `APPLY`。原始 UTF-8 回复会进入通知审计链，但只把通知推进到 `RESPONDED`；申诉案件仍须
+单独执行 `labcourt-demo-student-appeal.cmd`，消息回复本身没有案件或处分权限。
+案件进入 `APPEALED` 后，安全负责人可双击 `labcourt-demo-ppe-appeal-resolve.cmd`，选择
+`UPHELD` 或 `OVERTURNED`、填写理由并输入 `APPLY`。该动作使用既有 `RESOLVE_APPEAL` 契约，最终
+`APPEAL_RESOLVED` 即本申诉路径的结案状态；不会伪造一个状态矩阵不允许的二次 `RESOLVE`。
+结案后可双击 `labcourt-demo-ppe-outcome-notification.cmd`，为学生创建一张独立、只读的离线结果卡；
+它绑定 exact terminal Case 与 `UPHELD|OVERTURNED` 结果，停在 `QUEUED`，不会覆盖原说明/申诉审计。
+再双击 `labcourt-demo-ppe-outcome-deliver.cmd` 可通过离线 fake channel 显式推进到 `DELIVERED`；该状态仍
+固定 `real_delivery_confirmed=false`，不代表飞书送达，也不会改变已结案案件。
+学生最后可双击 `labcourt-demo-ppe-outcome-acknowledge.cmd` 并输入 `APPLY`，将结果通知推进到
+`ACKNOWLEDGED`。这只关闭通知闭环，案件继续保持终态 `APPEAL_RESOLVED`。
+个人 Demo API 的 `GET /api/m8/users` 向领导和安全负责人返回当前 typed actor receipts，可直接展示
+角色、scope、capabilities、active 与 revision；运维/学生无权读取全量清单，且该端点不提供权限变更。
+`GET /api/m8/campuses/campus-demo/sensors` 与 `/device-health` 直接复用当前 role-scoped operations
+projection：前者发现 typed sensor sources，后者返回全部 source、latest persisted sample 与
+`observation_state`。领导/安全负责人/运维可读，学生禁止；模拟与非认证生命安全边界始终保留。
+`GET /api/m8/rules` 向领导和安全负责人返回当前 typed smoke Demo risk policy，可展示阈值、风险等级、
+自动待核实建案与响应期限。它不是从知识库文档解析出来的，本切片只读；后续写入须先增加持久化 revision。
+双击 `labcourt-demo-e2e.cmd` 可启动全新的 ignored run，并引导完成 PPE 确认、学生卡、说明、申诉、
+安全负责人裁定、结案结果卡与学生确认。每个关键动作仍分别要求输入 `APPLY`；脚本最后核验案件、通知、
+用户、规则、传感器和设备健康，并生成 `acceptance.json`。全程仅 loopback，默认不调用飞书。
+
+Windows 个人 Demo 可先使用 `feishu-setup.cmd`、`feishu-demo-card.cmd` 和
+`feishu-demo-emergency.cmd`，只配置企业自建应用的 App ID、App Secret 与测试 `open_id`，即可在明确
+确认后尝试发送固定连通卡片，或演示“离线模拟烟雾 → 紧急候选 → 待核实案件建议”卡片。两者都不创建
+正式案件或通知状态。完整闭环再使用
+仓库根目录的 `feishu-preflight.cmd`、
+`feishu-webhook.cmd` 和 `feishu-send-one.cmd`。真实测试凭据只保存在被 Git 强制忽略的
+`.labcourt-local/feishu-secrets.json`；仓库中的示例保持全空。webhook 与单条发送入口都先执行无网络
+预检，发送还要求人工输入 `SEND`。详细前置工件、飞书后台配置和安全边界见
+[`docs/m8-feishu-windows-personal-demo.md`](docs/m8-feishu-windows-personal-demo.md)。
+
 支持 Python 3.11–3.12；本仓库的 `.python-version` 按规格固定为 3.11。依赖与命令由
 [uv](https://docs.astral.sh/uv/) 管理。
 
@@ -46,6 +195,58 @@ make e2e
 make m4-coverage
 make demo
 ```
+
+The audited AES provider for encrypted Feishu inbound events is an explicit optional install;
+it does not enable a public webhook or change the default offline wiring:
+
+```bash
+uv sync --all-groups --extra feishu-inbound --locked
+```
+
+已有 current sandbox inbound activation 时，可先让获批的 secret loader 注入 Encrypt Key 与 Verification
+Token，再以环境变量名（不是 secret 值）执行一次只读运行时预检：
+
+```powershell
+.\.venv\Scripts\labcourt.exe feishu webhook-serve `
+  --database <activated-authority.db> `
+  --candidate-authority-id <candidate-authority-id> `
+  --encrypt-key-env LABCOURT_FEISHU_ENCRYPT_KEY `
+  --verification-token-env LABCOURT_FEISHU_VERIFICATION_TOKEN `
+  --runtime-manifest-id <lowercase-sha256> `
+  --check --json
+```
+
+去掉 `--check` 才会阻塞运行本机 backend；公网 HTTPS、域名、证书、反向代理与飞书后台 Request URL
+仍由外部受审计部署负责，且必须与 activation 中的引用和哈希一致。
+
+首次 sandbox activation 必须消费外部双人确认流程生成的 typed intent 和 canonical runtime config，不能在
+命令行内临时拼接权限：
+
+```powershell
+.\.venv\Scripts\labcourt.exe feishu webhook-activate `
+  --database <commissioned-authority.db> `
+  --activation-intent <dual-human-activation-intent.json> `
+  --runtime-config <canonical-inbound-runtime-config.json> `
+  --runtime-config-storage-manifest-id <lowercase-sha256> `
+  --repository-manifest-id <lowercase-sha256> `
+  --assessment-manifest-id <lowercase-sha256> `
+  --json
+```
+
+当前状态可用 `webhook-status` 重算；紧急停用使用 `webhook-revoke` 并显式提供 current activation commit、
+当前 revoker actor、closed reason、reason reference、稳定的 ISO-8601 UTC `revoked_at` 和 revocation manifest；
+精确重试必须复用同一 `revoked_at`。kill-switch 不直接操作其他进程，但运行中的 backend 会逐请求重读
+authority，因此撤销后 challenge 与业务事件立即拒绝。
+
+outbound sandbox 使用同样的外部双人 intent 流程，但配置是包含测试收件人 allowlist 的
+`M8FeishuSandboxRuntimeConfigV1`；以 `outbox-activate` 提交、`outbox-status` 重算、`outbox-revoke` 停用。
+这三个命令不会读取 App Secret 或调用飞书，webhook activation 也不能替代 outbox activation。
+
+发送一条已排队测试通知时，使用 `outbox-run-one` 并显式提供 notification/candidate/binding、canonical
+`M8NotificationWorkflowManifestAuthorityV1`、四个环境变量名和三个 manifest ID。命令没有扫描/批量模式；
+App ID/App Secret/open_id/worker token 的值只能由获批 secret loader 注入环境，不能作为命令行参数。先附加
+`--check --json` 确认输出中的 `dispatch_claim_created=false` 与 `external_call_attempted=false`，人工确认后才可
+去掉 `--check` 执行一次真实调用。
 
 没有 `make` 的 Windows 环境可直接运行：
 

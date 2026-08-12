@@ -1,0 +1,650 @@
+{
+  "$defs": {
+    "M8CampusLocation": {
+      "additionalProperties": false,
+      "description": "One stable node in the campus/building/floor/room hierarchy.",
+      "properties": {
+        "display_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/M8CampusLocationKind"
+        },
+        "location_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Location Id",
+          "type": "string"
+        },
+        "parent_location_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parent Location Id"
+        },
+        "schema_version": {
+          "const": "m8-campus-location-v1",
+          "default": "m8-campus-location-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location_id",
+        "kind",
+        "parent_location_id",
+        "display_name"
+      ],
+      "title": "M8CampusLocation",
+      "type": "object"
+    },
+    "M8CampusLocationKind": {
+      "enum": [
+        "CAMPUS",
+        "BUILDING",
+        "FLOOR",
+        "ROOM"
+      ],
+      "title": "M8CampusLocationKind",
+      "type": "string"
+    },
+    "M8CampusTopologyAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Complete parent-first campus topology snapshot.",
+      "properties": {
+        "campus_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Campus Id",
+          "type": "string"
+        },
+        "location_count": {
+          "readOnly": true,
+          "title": "Location Count",
+          "type": "integer"
+        },
+        "locations": {
+          "items": {
+            "$ref": "#/$defs/M8CampusLocation"
+          },
+          "maxItems": 10000,
+          "minItems": 4,
+          "title": "Locations",
+          "type": "array"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-campus-topology-authority-v1",
+          "default": "m8-campus-topology-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "topology_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Topology Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "locations",
+        "manifest_id",
+        "campus_id",
+        "location_count",
+        "topology_id"
+      ],
+      "title": "M8CampusTopologyAuthorityV1",
+      "type": "object"
+    },
+    "M8OperationalSource": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "raw_reference_required": {
+              "const": true
+            }
+          },
+          "required": [
+            "raw_reference_required"
+          ]
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "LIVE_CAMERA"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "certification_id": {
+                "type": "null"
+              },
+              "display_badge": {
+                "const": "LIVE · CAMERA"
+              },
+              "emergency_authority_enabled": {
+                "const": false
+              },
+              "life_safety_eligible": {
+                "const": false
+              },
+              "sensor_type": {
+                "type": "null"
+              },
+              "simulated": {
+                "const": false
+              },
+              "source_kind": {
+                "const": "CAMERA"
+              },
+              "timebase": {
+                "const": "FRAME_INDEX"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "RECORDED_VIDEO_SIMULATION"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "certification_id": {
+                "type": "null"
+              },
+              "display_badge": {
+                "const": "SIMULATED · RECORDED VIDEO"
+              },
+              "emergency_authority_enabled": {
+                "const": false
+              },
+              "life_safety_eligible": {
+                "const": false
+              },
+              "sensor_type": {
+                "type": "null"
+              },
+              "simulated": {
+                "const": true
+              },
+              "source_kind": {
+                "const": "CAMERA"
+              },
+              "timebase": {
+                "const": "FRAME_INDEX"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "LIVE_SENSOR"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "else": {
+                  "properties": {
+                    "life_safety_eligible": {
+                      "const": false
+                    }
+                  }
+                },
+                "if": {
+                  "properties": {
+                    "emergency_authority_enabled": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "emergency_authority_enabled"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "certification_id": {
+                      "pattern": "^\\S{1,128}$",
+                      "type": "string"
+                    },
+                    "life_safety_eligible": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "certification_id"
+                  ]
+                }
+              }
+            ],
+            "properties": {
+              "certification_id": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "pattern": "^\\S{1,128}$",
+                    "type": "string"
+                  }
+                ]
+              },
+              "display_badge": {
+                "const": "LIVE · SENSOR"
+              },
+              "sensor_type": {
+                "enum": [
+                  "SMOKE",
+                  "TEMPERATURE",
+                  "COMBUSTIBLE_GAS",
+                  "TOXIC_GAS",
+                  "DOOR_CONTACT",
+                  "WATER_LEAK",
+                  "EMERGENCY_BUTTON"
+                ],
+                "type": "string"
+              },
+              "simulated": {
+                "const": false
+              },
+              "source_kind": {
+                "const": "SENSOR"
+              },
+              "timebase": {
+                "const": "DEVICE_TIMESTAMP_UTC"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "SIMULATED_SENSOR"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "certification_id": {
+                "type": "null"
+              },
+              "display_badge": {
+                "const": "SIMULATED · SENSOR"
+              },
+              "emergency_authority_enabled": {
+                "const": false
+              },
+              "life_safety_eligible": {
+                "const": false
+              },
+              "sensor_type": {
+                "enum": [
+                  "SMOKE",
+                  "TEMPERATURE",
+                  "COMBUSTIBLE_GAS",
+                  "TOXIC_GAS",
+                  "DOOR_CONTACT",
+                  "WATER_LEAK",
+                  "EMERGENCY_BUTTON"
+                ],
+                "type": "string"
+              },
+              "simulated": {
+                "const": true
+              },
+              "source_kind": {
+                "const": "SENSOR"
+              },
+              "timebase": {
+                "const": "SIMULATION_TICK"
+              }
+            }
+          }
+        }
+      ],
+      "description": "One camera or sensor source with machine-enforced truth labeling.",
+      "properties": {
+        "adapter_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "certification_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Certification Id"
+        },
+        "device_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Device Id",
+          "type": "string"
+        },
+        "display_badge": {
+          "readOnly": true,
+          "title": "Display Badge",
+          "type": "string"
+        },
+        "emergency_authority_enabled": {
+          "default": false,
+          "title": "Emergency Authority Enabled",
+          "type": "boolean"
+        },
+        "life_safety_eligible": {
+          "readOnly": true,
+          "title": "Life Safety Eligible",
+          "type": "boolean"
+        },
+        "location_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Location Id",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/M8OperationalSourceMode"
+        },
+        "raw_reference_required": {
+          "default": true,
+          "title": "Raw Reference Required",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-operational-source-v1",
+          "default": "m8-operational-source-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sensor_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8SensorType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "simulated": {
+          "readOnly": true,
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "source_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/M8OperationalSourceKind",
+          "readOnly": true
+        },
+        "timebase": {
+          "$ref": "#/$defs/M8SourceTimebase",
+          "readOnly": true
+        }
+      },
+      "required": [
+        "source_id",
+        "device_id",
+        "location_id",
+        "mode",
+        "adapter_id",
+        "manifest_id",
+        "source_kind",
+        "timebase",
+        "simulated",
+        "display_badge",
+        "life_safety_eligible"
+      ],
+      "title": "M8OperationalSource",
+      "type": "object"
+    },
+    "M8OperationalSourceCatalogAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Complete topology-bound source catalog for one M8 revision.",
+      "properties": {
+        "catalog_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Catalog Id",
+          "type": "string"
+        },
+        "catalog_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Manifest Id",
+          "type": "string"
+        },
+        "life_safety_eligible_source_count": {
+          "readOnly": true,
+          "title": "Life Safety Eligible Source Count",
+          "type": "integer"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-operational-source-catalog-authority-v1",
+          "default": "m8-operational-source-catalog-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulated_source_count": {
+          "readOnly": true,
+          "title": "Simulated Source Count",
+          "type": "integer"
+        },
+        "source_count": {
+          "readOnly": true,
+          "title": "Source Count",
+          "type": "integer"
+        },
+        "source_inventory_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Source Inventory Sha256",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/M8OperationalSource"
+          },
+          "maxItems": 20000,
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "topology": {
+          "$ref": "#/$defs/M8CampusTopologyAuthorityV1"
+        }
+      },
+      "required": [
+        "revision",
+        "topology",
+        "sources",
+        "catalog_manifest_id",
+        "source_count",
+        "simulated_source_count",
+        "life_safety_eligible_source_count",
+        "source_inventory_sha256",
+        "catalog_id"
+      ],
+      "title": "M8OperationalSourceCatalogAuthorityV1",
+      "type": "object"
+    },
+    "M8OperationalSourceKind": {
+      "enum": [
+        "CAMERA",
+        "SENSOR"
+      ],
+      "title": "M8OperationalSourceKind",
+      "type": "string"
+    },
+    "M8OperationalSourceMode": {
+      "enum": [
+        "LIVE_CAMERA",
+        "RECORDED_VIDEO_SIMULATION",
+        "LIVE_SENSOR",
+        "SIMULATED_SENSOR"
+      ],
+      "title": "M8OperationalSourceMode",
+      "type": "string"
+    },
+    "M8SensorType": {
+      "enum": [
+        "SMOKE",
+        "TEMPERATURE",
+        "COMBUSTIBLE_GAS",
+        "TOXIC_GAS",
+        "DOOR_CONTACT",
+        "WATER_LEAK",
+        "EMERGENCY_BUTTON"
+      ],
+      "title": "M8SensorType",
+      "type": "string"
+    },
+    "M8SourceTimebase": {
+      "enum": [
+        "FRAME_INDEX",
+        "DEVICE_TIMESTAMP_UTC",
+        "SIMULATION_TICK"
+      ],
+      "title": "M8SourceTimebase",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-operational-source-catalog-commit-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Append receipt for a source catalog resolved against persisted topology.",
+  "properties": {
+    "catalog": {
+      "$ref": "#/$defs/M8OperationalSourceCatalogAuthorityV1"
+    },
+    "catalog_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Catalog Document Sha256",
+      "type": "string"
+    },
+    "commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Commit Receipt Id",
+      "type": "string"
+    },
+    "prior_catalog_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Catalog Id"
+    },
+    "prior_document_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Document Sha256"
+    },
+    "repository_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Repository Manifest Id",
+      "type": "string"
+    },
+    "resolved_topology_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Resolved Topology Commit Receipt Id",
+      "type": "string"
+    },
+    "resolved_topology_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Resolved Topology Document Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-operational-source-catalog-commit-receipt-v1",
+      "default": "m8-operational-source-catalog-commit-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "catalog",
+    "resolved_topology_commit_receipt_id",
+    "repository_manifest_id",
+    "resolved_topology_document_sha256",
+    "catalog_document_sha256",
+    "commit_receipt_id"
+  ],
+  "title": "M8OperationalSourceCatalogCommitReceiptV1",
+  "type": "object"
+}

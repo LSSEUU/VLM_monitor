@@ -1192,6 +1192,696 @@
       "name": "m6-upgrade-selected-case-audit-anchor"
     },
     {
+      "file": "m8-actor-authority-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_case_persistence.M8ActorAuthorityCommitReceiptV1",
+      "name": "m8-actor-authority-commit-receipt-v1"
+    },
+    {
+      "file": "m8-actor-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_access_cases.M8ActorAuthorityV1",
+      "name": "m8-actor-authority-v1"
+    },
+    {
+      "file": "m8-adapter-activation-intent-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8AdapterActivationIntentV1",
+      "name": "m8-adapter-activation-intent-v1"
+    },
+    {
+      "file": "m8-adapter-readiness-assessment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8AdapterReadinessAssessmentV1",
+      "name": "m8-adapter-readiness-assessment-v1"
+    },
+    {
+      "file": "m8-api-case-transition-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiCaseTransitionRequestV1",
+      "name": "m8-api-case-transition-request-v1"
+    },
+    {
+      "file": "m8-api-credential-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiCredentialAuthorityV1",
+      "name": "m8-api-credential-authority-v1"
+    },
+    {
+      "file": "m8-api-credential-catalog-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiCredentialCatalogAuthorityV1",
+      "name": "m8-api-credential-catalog-authority-v1"
+    },
+    {
+      "file": "m8-api-error-response-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiErrorResponseV1",
+      "name": "m8-api-error-response-v1"
+    },
+    {
+      "file": "m8-api-knowledge-query-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiKnowledgeQueryRequestV1",
+      "name": "m8-api-knowledge-query-request-v1"
+    },
+    {
+      "file": "m8-api-principal-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_api.M8ApiPrincipalV1",
+      "name": "m8-api-principal-v1"
+    },
+    {
+      "file": "m8-authority-reference.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_access_cases.M8AuthorityReference",
+      "name": "m8-authority-reference"
+    },
+    {
+      "file": "m8-campus-location.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_operations.M8CampusLocation",
+      "name": "m8-campus-location"
+    },
+    {
+      "file": "m8-campus-topology-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_operations.M8CampusTopologyAuthorityV1",
+      "name": "m8-campus-topology-authority-v1"
+    },
+    {
+      "file": "m8-campus-topology-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_inventory_persistence.M8CampusTopologyCommitReceiptV1",
+      "name": "m8-campus-topology-commit-receipt-v1"
+    },
+    {
+      "file": "m8-commissioning-evidence-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8CommissioningEvidenceAuthorityV1",
+      "name": "m8-commissioning-evidence-authority-v1"
+    },
+    {
+      "file": "m8-commissioning-evidence-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8CommissioningEvidenceCommitReceiptV1",
+      "name": "m8-commissioning-evidence-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-adapter-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuAdapterProfileV1",
+      "name": "m8-feishu-adapter-profile-v1"
+    },
+    {
+      "file": "m8-feishu-card-dispatch-preflight-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuCardDispatchPreflightV1",
+      "name": "m8-feishu-card-dispatch-preflight-v1"
+    },
+    {
+      "file": "m8-feishu-conformance-result-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuConformanceResultV1",
+      "name": "m8-feishu-conformance-result-v1"
+    },
+    {
+      "file": "m8-feishu-emergency-demo-probe-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_emergency_demo.M8FeishuEmergencyDemoProbeReceiptV1",
+      "name": "m8-feishu-emergency-demo-probe-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-emergency-demo-probe-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_emergency_demo.M8FeishuEmergencyDemoProbeV1",
+      "name": "m8-feishu-emergency-demo-probe-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-message-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuInboundMessageCommitReceiptV1",
+      "name": "m8-feishu-inbound-message-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-message-verification-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuInboundMessageVerificationReceiptV1",
+      "name": "m8-feishu-inbound-message-verification-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-reply-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound_reply.M8FeishuInboundReplyCommitReceiptV1",
+      "name": "m8-feishu-inbound-reply-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-reply-correlation-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound_reply.M8FeishuInboundReplyCorrelationAuthorityV1",
+      "name": "m8-feishu-inbound-reply-correlation-authority-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-sandbox-activation-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound_activation.M8FeishuInboundSandboxActivationCommitReceiptV1",
+      "name": "m8-feishu-inbound-sandbox-activation-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound_activation.M8FeishuInboundSandboxActivationRevocationCommitReceiptV1",
+      "name": "m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-sandbox-activation-status-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound_activation.M8FeishuInboundSandboxActivationStatusV1",
+      "name": "m8-feishu-inbound-sandbox-activation-status-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-sandbox-runtime-config-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound_activation.M8FeishuInboundSandboxRuntimeConfigV1",
+      "name": "m8-feishu-inbound-sandbox-runtime-config-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-webhook-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuInboundWebhookProfileV1",
+      "name": "m8-feishu-inbound-webhook-profile-v1"
+    },
+    {
+      "file": "m8-feishu-local-demo-config-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_local_demo.M8FeishuLocalDemoConfigV1",
+      "name": "m8-feishu-local-demo-config-v1"
+    },
+    {
+      "file": "m8-feishu-loopback-challenge-listener-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_challenge.M8FeishuLoopbackChallengeListenerProfileV1",
+      "name": "m8-feishu-loopback-challenge-listener-profile-v1"
+    },
+    {
+      "file": "m8-feishu-notification-card-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuNotificationCardV1",
+      "name": "m8-feishu-notification-card-v1"
+    },
+    {
+      "file": "m8-feishu-personal-demo-probe-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_personal_demo.M8FeishuPersonalDemoProbeReceiptV1",
+      "name": "m8-feishu-personal-demo-probe-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-personal-demo-probe-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_personal_demo.M8FeishuPersonalDemoProbeV1",
+      "name": "m8-feishu-personal-demo-probe-v1"
+    },
+    {
+      "file": "m8-feishu-recipient-binding-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_notification.M8FeishuRecipientBindingAuthorityV1",
+      "name": "m8-feishu-recipient-binding-authority-v1"
+    },
+    {
+      "file": "m8-feishu-sandbox-activation-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxActivationCommitReceiptV1",
+      "name": "m8-feishu-sandbox-activation-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-sandbox-activation-revocation-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxActivationRevocationCommitReceiptV1",
+      "name": "m8-feishu-sandbox-activation-revocation-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-sandbox-activation-status-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxActivationStatusV1",
+      "name": "m8-feishu-sandbox-activation-status-v1"
+    },
+    {
+      "file": "m8-feishu-sandbox-outbox-run-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_outbox.M8FeishuSandboxOutboxRunReceiptV1",
+      "name": "m8-feishu-sandbox-outbox-run-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-sandbox-runtime-config-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_activation.M8FeishuSandboxRuntimeConfigV1",
+      "name": "m8-feishu-sandbox-runtime-config-v1"
+    },
+    {
+      "file": "m8-feishu-sandbox-send-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_transport.M8FeishuSandboxSendReceiptV1",
+      "name": "m8-feishu-sandbox-send-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-token-acquisition-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_transport.M8FeishuTokenAcquisitionReceiptV1",
+      "name": "m8-feishu-token-acquisition-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-url-challenge-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_challenge.M8FeishuUrlChallengeCommitReceiptV1",
+      "name": "m8-feishu-url-challenge-commit-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-url-challenge-ingress-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_challenge.M8FeishuUrlChallengeIngressRequestV1",
+      "name": "m8-feishu-url-challenge-ingress-request-v1"
+    },
+    {
+      "file": "m8-feishu-url-challenge-verification-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_challenge.M8FeishuUrlChallengeVerificationReceiptV1",
+      "name": "m8-feishu-url-challenge-verification-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-webhook-ingress-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuWebhookIngressRequestV1",
+      "name": "m8-feishu-webhook-ingress-request-v1"
+    },
+    {
+      "file": "m8-knowledge-answer-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeAnswerCommitReceiptV1",
+      "name": "m8-knowledge-answer-commit-receipt-v1"
+    },
+    {
+      "file": "m8-knowledge-answer-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge.M8KnowledgeAnswerV1",
+      "name": "m8-knowledge-answer-v1"
+    },
+    {
+      "file": "m8-knowledge-catalog-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge.M8KnowledgeCatalogAuthorityV1",
+      "name": "m8-knowledge-catalog-authority-v1"
+    },
+    {
+      "file": "m8-knowledge-catalog-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeCatalogCommitReceiptV1",
+      "name": "m8-knowledge-catalog-commit-receipt-v1"
+    },
+    {
+      "file": "m8-knowledge-citation-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge.M8KnowledgeCitationV1",
+      "name": "m8-knowledge-citation-v1"
+    },
+    {
+      "file": "m8-knowledge-document-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge.M8KnowledgeDocumentAuthorityV1",
+      "name": "m8-knowledge-document-authority-v1"
+    },
+    {
+      "file": "m8-knowledge-document-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeDocumentCommitReceiptV1",
+      "name": "m8-knowledge-document-commit-receipt-v1"
+    },
+    {
+      "file": "m8-knowledge-query-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge.M8KnowledgeQueryV1",
+      "name": "m8-knowledge-query-v1"
+    },
+    {
+      "file": "m8-notification-audit-event-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationAuditEventV1",
+      "name": "m8-notification-audit-event-v1"
+    },
+    {
+      "file": "m8-notification-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationAuthorityV1",
+      "name": "m8-notification-authority-v1"
+    },
+    {
+      "file": "m8-notification-channel-capability-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationChannelCapabilityAuthorityV1",
+      "name": "m8-notification-channel-capability-authority-v1"
+    },
+    {
+      "file": "m8-notification-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationCommitReceiptV1",
+      "name": "m8-notification-commit-receipt-v1"
+    },
+    {
+      "file": "m8-notification-delivery-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationDeliveryReceiptV1",
+      "name": "m8-notification-delivery-receipt-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-call-fence-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_dispatch_claims.M8NotificationDispatchCallFenceReceiptV1",
+      "name": "m8-notification-dispatch-call-fence-receipt-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-claim-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_dispatch_claims.M8NotificationDispatchClaimReceiptV1",
+      "name": "m8-notification-dispatch-claim-receipt-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-claim-status-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_dispatch_claims.M8NotificationDispatchClaimStatusV1",
+      "name": "m8-notification-dispatch-claim-status-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-completion-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_dispatch_claims.M8NotificationDispatchCompletionReceiptV1",
+      "name": "m8-notification-dispatch-completion-receipt-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationDispatchRequestV1",
+      "name": "m8-notification-dispatch-request-v1"
+    },
+    {
+      "file": "m8-notification-dispatch-result-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationDispatchResultV1",
+      "name": "m8-notification-dispatch-result-v1"
+    },
+    {
+      "file": "m8-notification-escalation-assessment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_escalation.M8NotificationEscalationAssessmentV1",
+      "name": "m8-notification-escalation-assessment-v1"
+    },
+    {
+      "file": "m8-notification-escalation-policy-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notifications.M8NotificationEscalationPolicyAuthorityV1",
+      "name": "m8-notification-escalation-policy-authority-v1"
+    },
+    {
+      "file": "m8-notification-plan-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notifications.M8NotificationPlanAuthorityV1",
+      "name": "m8-notification-plan-authority-v1"
+    },
+    {
+      "file": "m8-notification-raw-artifact-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationRawArtifactCommitReceiptV1",
+      "name": "m8-notification-raw-artifact-commit-receipt-v1"
+    },
+    {
+      "file": "m8-notification-reply-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationReplyAuthorityV1",
+      "name": "m8-notification-reply-authority-v1"
+    },
+    {
+      "file": "m8-notification-target-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notifications.M8NotificationTargetAuthorityV1",
+      "name": "m8-notification-target-authority-v1"
+    },
+    {
+      "file": "m8-notification-target-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_persistence.M8NotificationTargetCommitReceiptV1",
+      "name": "m8-notification-target-commit-receipt-v1"
+    },
+    {
+      "file": "m8-notification-template-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notifications.M8NotificationTemplateAuthorityV1",
+      "name": "m8-notification-template-authority-v1"
+    },
+    {
+      "file": "m8-notification-transition-command-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationTransitionCommandV1",
+      "name": "m8-notification-transition-command-v1"
+    },
+    {
+      "file": "m8-notification-workflow-manifest-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_cards.M8NotificationWorkflowManifestAuthorityV1",
+      "name": "m8-notification-workflow-manifest-authority-v1"
+    },
+    {
+      "file": "m8-offline-notification-card-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_notification_cards.M8OfflineNotificationCardV1",
+      "name": "m8-offline-notification-card-v1"
+    },
+    {
+      "file": "m8-operational-case-audit-event-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_case_persistence.M8OperationalCaseAuditEventV1",
+      "name": "m8-operational-case-audit-event-v1"
+    },
+    {
+      "file": "m8-operational-case-audit-intent-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_access_cases.M8OperationalCaseAuditIntentV1",
+      "name": "m8-operational-case-audit-intent-v1"
+    },
+    {
+      "file": "m8-operational-case-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_case_persistence.M8OperationalCaseAuthorityV1",
+      "name": "m8-operational-case-authority-v1"
+    },
+    {
+      "file": "m8-operational-case-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_case_persistence.M8OperationalCaseCommitReceiptV1",
+      "name": "m8-operational-case-commit-receipt-v1"
+    },
+    {
+      "file": "m8-operational-case-create-command-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_access_cases.M8OperationalCaseCreateCommandV1",
+      "name": "m8-operational-case-create-command-v1"
+    },
+    {
+      "file": "m8-operational-case-transition-command-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_access_cases.M8OperationalCaseTransitionCommandV1",
+      "name": "m8-operational-case-transition-command-v1"
+    },
+    {
+      "file": "m8-operational-source.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_operations.M8OperationalSource",
+      "name": "m8-operational-source"
+    },
+    {
+      "file": "m8-operational-source-catalog-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_operations.M8OperationalSourceCatalogAuthorityV1",
+      "name": "m8-operational-source-catalog-authority-v1"
+    },
+    {
+      "file": "m8-operational-source-catalog-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_inventory_persistence.M8OperationalSourceCatalogCommitReceiptV1",
+      "name": "m8-operational-source-catalog-commit-receipt-v1"
+    },
+    {
+      "file": "m8-operations-projection-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projections.M8OperationsProjectionV1",
+      "name": "m8-operations-projection-v1"
+    },
+    {
+      "file": "m8-operations-projection-view-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projection_views.M8OperationsProjectionViewV1",
+      "name": "m8-operations-projection-view-v1"
+    },
+    {
+      "file": "m8-personal-demo-actor-binding-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoActorBindingV1",
+      "name": "m8-personal-demo-actor-binding-v1"
+    },
+    {
+      "file": "m8-personal-demo-api-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo_api.M8PersonalDemoApiProfileV1",
+      "name": "m8-personal-demo-api-profile-v1"
+    },
+    {
+      "file": "m8-personal-demo-bootstrap-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoBootstrapReceiptV1",
+      "name": "m8-personal-demo-bootstrap-receipt-v1"
+    },
+    {
+      "file": "m8-personal-demo-camera-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoCameraReceiptV1",
+      "name": "m8-personal-demo-camera-receipt-v1"
+    },
+    {
+      "file": "m8-personal-demo-camera-view-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoCameraViewV1",
+      "name": "m8-personal-demo-camera-view-v1"
+    },
+    {
+      "file": "m8-personal-demo-knowledge-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoKnowledgeReceiptV1",
+      "name": "m8-personal-demo-knowledge-receipt-v1"
+    },
+    {
+      "file": "m8-personal-demo-local-access-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo_api.M8PersonalDemoLocalAccessV1",
+      "name": "m8-personal-demo-local-access-v1"
+    },
+    {
+      "file": "m8-personal-demo-notification-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoNotificationReceiptV1",
+      "name": "m8-personal-demo-notification-receipt-v1"
+    },
+    {
+      "file": "m8-personal-demo-ppe-case-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoPpeCaseReceiptV1",
+      "name": "m8-personal-demo-ppe-case-receipt-v1"
+    },
+    {
+      "file": "m8-personal-demo-ppe-notification-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoPpeNotificationReceiptV1",
+      "name": "m8-personal-demo-ppe-notification-receipt-v1"
+    },
+    {
+      "file": "m8-personal-demo-ppe-outcome-notification-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoPpeOutcomeNotificationReceiptV1",
+      "name": "m8-personal-demo-ppe-outcome-notification-receipt-v1"
+    },
+    {
+      "file": "m8-personal-demo-recorded-media-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo.M8PersonalDemoRecordedMediaReceiptV1",
+      "name": "m8-personal-demo-recorded-media-receipt-v1"
+    },
+    {
+      "file": "m8-personal-demo-role-tokens-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_personal_demo_api.M8PersonalDemoRoleTokensV1",
+      "name": "m8-personal-demo-role-tokens-v1"
+    },
+    {
+      "file": "m8-production-adapter-candidate-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8ProductionAdapterCandidateAuthorityV1",
+      "name": "m8-production-adapter-candidate-authority-v1"
+    },
+    {
+      "file": "m8-production-adapter-candidate-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_adapter_commissioning.M8ProductionAdapterCandidateCommitReceiptV1",
+      "name": "m8-production-adapter-candidate-commit-receipt-v1"
+    },
+    {
+      "file": "m8-projection-map-node-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projections.M8ProjectionMapNodeV1",
+      "name": "m8-projection-map-node-v1"
+    },
+    {
+      "file": "m8-projection-overview-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projections.M8ProjectionOverviewV1",
+      "name": "m8-projection-overview-v1"
+    },
+    {
+      "file": "m8-projection-source-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_projections.M8ProjectionSourceV1",
+      "name": "m8-projection-source-v1"
+    },
+    {
+      "file": "m8-sensor-adapter-capability-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorAdapterCapabilityAuthorityV1",
+      "name": "m8-sensor-adapter-capability-authority-v1"
+    },
+    {
+      "file": "m8-sensor-poll-cache-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_persistence.M8SensorPollCacheCommitReceiptV1",
+      "name": "m8-sensor-poll-cache-commit-receipt-v1"
+    },
+    {
+      "file": "m8-sensor-poll-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorPollRequestV1",
+      "name": "m8-sensor-poll-request-v1"
+    },
+    {
+      "file": "m8-sensor-poll-result-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorPollResultV1",
+      "name": "m8-sensor-poll-result-v1"
+    },
+    {
+      "file": "m8-sensor-risk-assessment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorRiskAssessmentV1",
+      "name": "m8-sensor-risk-assessment-v1"
+    },
+    {
+      "file": "m8-sensor-risk-policy-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorRiskPolicyAuthorityV1",
+      "name": "m8-sensor-risk-policy-authority-v1"
+    },
+    {
+      "file": "m8-sensor-sample.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SensorSample",
+      "name": "m8-sensor-sample"
+    },
+    {
+      "file": "m8-sensor-sample-commit-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_persistence.M8SensorSampleCommitReceiptV1",
+      "name": "m8-sensor-sample-commit-receipt-v1"
+    },
+    {
+      "file": "m8-simulated-sensor-scenario-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_sensor_signals.M8SimulatedSensorScenarioAuthorityV1",
+      "name": "m8-simulated-sensor-scenario-authority-v1"
+    },
+    {
       "file": "maintenance-recovery-report.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.model_response_recovery.MaintenanceRecoveryReport",

@@ -1,0 +1,169 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-recorded-media-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Content-addressed binding of one local MP4 to the simulated Demo camera.",
+  "properties": {
+    "container_signature": {
+      "const": "ISO_BMFF_FTYP",
+      "default": "ISO_BMFF_FTYP",
+      "title": "Container Signature",
+      "type": "string"
+    },
+    "cross_camera_reidentification_performed": {
+      "const": false,
+      "default": false,
+      "title": "Cross Camera Reidentification Performed",
+      "type": "boolean"
+    },
+    "decoder_preflight_performed": {
+      "const": false,
+      "default": false,
+      "title": "Decoder Preflight Performed",
+      "type": "boolean"
+    },
+    "display_badge": {
+      "const": "SIMULATED · RECORDED VIDEO",
+      "default": "SIMULATED · RECORDED VIDEO",
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "exact_byte_copy": {
+      "const": true,
+      "default": true,
+      "title": "Exact Byte Copy",
+      "type": "boolean"
+    },
+    "face_recognition_performed": {
+      "const": false,
+      "default": false,
+      "title": "Face Recognition Performed",
+      "type": "boolean"
+    },
+    "gpu_used": {
+      "const": false,
+      "default": false,
+      "title": "Gpu Used",
+      "type": "boolean"
+    },
+    "input_file_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input File Sha256",
+      "type": "string"
+    },
+    "input_size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Input Size Bytes",
+      "type": "integer"
+    },
+    "life_safety_eligible": {
+      "const": false,
+      "default": false,
+      "title": "Life Safety Eligible",
+      "type": "boolean"
+    },
+    "live_camera_claim_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Live Camera Claim Permitted",
+      "type": "boolean"
+    },
+    "media_attached": {
+      "const": true,
+      "default": true,
+      "title": "Media Attached",
+      "type": "boolean"
+    },
+    "media_binding_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Media Binding Manifest Id",
+      "type": "string"
+    },
+    "media_binding_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Media Binding Receipt Id",
+      "type": "string"
+    },
+    "mode": {
+      "const": "RECORDED_VIDEO_SIMULATION",
+      "default": "RECORDED_VIDEO_SIMULATION",
+      "title": "Mode",
+      "type": "string"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "original_media_modified": {
+      "const": false,
+      "default": false,
+      "title": "Original Media Modified",
+      "type": "boolean"
+    },
+    "playback_file_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Playback File Sha256",
+      "type": "string"
+    },
+    "playback_media_ref": {
+      "const": "media/camera-recorded-demo-01.mp4",
+      "default": "media/camera-recorded-demo-01.mp4",
+      "title": "Playback Media Ref",
+      "type": "string"
+    },
+    "playback_size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Playback Size Bytes",
+      "type": "integer"
+    },
+    "raw_media_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Raw Media Ref",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-recorded-media-receipt-v1",
+      "default": "m8-personal-demo-recorded-media-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_catalog_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Commit Receipt Id",
+      "type": "string"
+    },
+    "source_catalog_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Catalog Id",
+      "type": "string"
+    },
+    "source_id": {
+      "const": "camera-recorded-demo-01",
+      "default": "camera-recorded-demo-01",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "transcoding_performed": {
+      "const": false,
+      "default": false,
+      "title": "Transcoding Performed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "source_catalog_id",
+    "source_catalog_commit_receipt_id",
+    "raw_media_ref",
+    "input_file_sha256",
+    "input_size_bytes",
+    "playback_file_sha256",
+    "playback_size_bytes",
+    "media_binding_manifest_id",
+    "media_binding_receipt_id"
+  ],
+  "title": "M8PersonalDemoRecordedMediaReceiptV1",
+  "type": "object"
+}

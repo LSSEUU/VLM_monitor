@@ -1,0 +1,163 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-personal-demo-notification-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Compact authority for one deterministic emergency notification route.",
+  "properties": {
+    "audience": {
+      "const": "SAFETY_RESPONDER",
+      "default": "SAFETY_RESPONDER",
+      "title": "Audience",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "channel": {
+      "const": "LOCAL_OFFLINE_FAKE",
+      "default": "LOCAL_OFFLINE_FAKE",
+      "title": "Channel",
+      "type": "string"
+    },
+    "direct_disciplinary_action_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "display_badge": {
+      "const": "SIMULATED · LOCAL MESSAGE CARD",
+      "default": "SIMULATED · LOCAL MESSAGE CARD",
+      "title": "Display Badge",
+      "type": "string"
+    },
+    "model_used": {
+      "const": false,
+      "default": false,
+      "title": "Model Used",
+      "type": "boolean"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "notification_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Notification Commit Receipt Id",
+      "type": "string"
+    },
+    "notification_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Notification Id",
+      "type": "string"
+    },
+    "notification_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Notification Manifest Id",
+      "type": "string"
+    },
+    "notification_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Notification Receipt Id",
+      "type": "string"
+    },
+    "notification_status": {
+      "const": "QUEUED",
+      "default": "QUEUED",
+      "title": "Notification Status",
+      "type": "string"
+    },
+    "notification_version": {
+      "const": 2,
+      "default": 2,
+      "title": "Notification Version",
+      "type": "integer"
+    },
+    "offline_card_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Offline Card Id",
+      "type": "string"
+    },
+    "purpose": {
+      "const": "CASE_ACTION_REQUIRED",
+      "default": "CASE_ACTION_REQUIRED",
+      "title": "Purpose",
+      "type": "string"
+    },
+    "real_delivery_confirmed": {
+      "const": false,
+      "default": false,
+      "title": "Real Delivery Confirmed",
+      "type": "boolean"
+    },
+    "routed_at": {
+      "format": "date-time",
+      "title": "Routed At",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-personal-demo-notification-receipt-v1",
+      "default": "m8-personal-demo-notification-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "simulated": {
+      "const": true,
+      "default": true,
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "source_case_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Case Authority Sha256",
+      "type": "string"
+    },
+    "source_case_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Source Case Version",
+      "type": "integer"
+    },
+    "target_actor_id": {
+      "const": "safety-officer-demo",
+      "default": "safety-officer-demo",
+      "title": "Target Actor Id",
+      "type": "string"
+    },
+    "target_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Target Authority Id",
+      "type": "string"
+    },
+    "target_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Target Commit Receipt Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "source_case_authority_sha256",
+    "target_commit_receipt_id",
+    "target_authority_id",
+    "notification_id",
+    "notification_commit_receipt_id",
+    "routed_at",
+    "offline_card_id",
+    "notification_manifest_id",
+    "notification_receipt_id"
+  ],
+  "title": "M8PersonalDemoNotificationReceiptV1",
+  "type": "object"
+}

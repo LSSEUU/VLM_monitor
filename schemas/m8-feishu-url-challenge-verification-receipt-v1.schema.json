@@ -1,0 +1,739 @@
+{
+  "$defs": {
+    "M8ActorScopeKind": {
+      "enum": [
+        "CAMPUS_WIDE",
+        "LOCATIONS",
+        "SELF_ONLY"
+      ],
+      "title": "M8ActorScopeKind",
+      "type": "string"
+    },
+    "M8ExternalIdempotencyKey": {
+      "enum": [
+        "BACKUP_GENERATION_ID",
+        "EXPORT_BATCH_ID",
+        "NOTIFICATION_ID",
+        "REQUEST_ID",
+        "SOURCE_SEQUENCE",
+        "SUBJECT_ASSERTION_ID"
+      ],
+      "title": "M8ExternalIdempotencyKey",
+      "type": "string"
+    },
+    "M8FeishuAdapterProfileV1": {
+      "additionalProperties": false,
+      "description": "Pinned custom-app API profile that contains references, never Feishu secrets.",
+      "properties": {
+        "api_origin": {
+          "const": "https://open.feishu.cn",
+          "default": "https://open.feishu.cn",
+          "title": "Api Origin",
+          "type": "string"
+        },
+        "app_id_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "App Id Sha256",
+          "type": "string"
+        },
+        "authentication_kind": {
+          "const": "TENANT_ACCESS_TOKEN_INTERNAL",
+          "default": "TENANT_ACCESS_TOKEN_INTERNAL",
+          "title": "Authentication Kind",
+          "type": "string"
+        },
+        "bot_capability_required": {
+          "const": true,
+          "default": true,
+          "title": "Bot Capability Required",
+          "type": "boolean"
+        },
+        "candidate": {
+          "$ref": "#/$defs/M8ProductionAdapterCandidateAuthorityV1"
+        },
+        "credential_bundle_reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Credential Bundle Reference Id",
+          "type": "string"
+        },
+        "external_call_permitted": {
+          "const": false,
+          "default": false,
+          "title": "External Call Permitted",
+          "type": "boolean"
+        },
+        "max_card_content_bytes": {
+          "const": 30720,
+          "default": 30720,
+          "title": "Max Card Content Bytes",
+          "type": "integer"
+        },
+        "message_path": {
+          "const": "/open-apis/im/v1/messages",
+          "default": "/open-apis/im/v1/messages",
+          "title": "Message Path",
+          "type": "string"
+        },
+        "profile_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "profile_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Manifest Id",
+          "type": "string"
+        },
+        "provider_uuid_dedup_window_seconds": {
+          "const": 3600,
+          "default": 3600,
+          "title": "Provider Uuid Dedup Window Seconds",
+          "type": "integer"
+        },
+        "provider_uuid_max_characters": {
+          "const": 50,
+          "default": 50,
+          "title": "Provider Uuid Max Characters",
+          "type": "integer"
+        },
+        "published_app_version_required": {
+          "const": true,
+          "default": true,
+          "title": "Published App Version Required",
+          "type": "boolean"
+        },
+        "raw_response_required": {
+          "const": true,
+          "default": true,
+          "title": "Raw Response Required",
+          "type": "boolean"
+        },
+        "receive_id_type": {
+          "const": "open_id",
+          "default": "open_id",
+          "title": "Receive Id Type",
+          "type": "string"
+        },
+        "required_scope": {
+          "const": "im:message:send_as_bot",
+          "default": "im:message:send_as_bot",
+          "title": "Required Scope",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-feishu-adapter-profile-v1",
+          "default": "m8-feishu-adapter-profile-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "secret_material_embedded": {
+          "const": false,
+          "default": false,
+          "title": "Secret Material Embedded",
+          "type": "boolean"
+        },
+        "token_cache_required": {
+          "const": true,
+          "default": true,
+          "title": "Token Cache Required",
+          "type": "boolean"
+        },
+        "token_path": {
+          "const": "/open-apis/auth/v3/tenant_access_token/internal",
+          "default": "/open-apis/auth/v3/tenant_access_token/internal",
+          "title": "Token Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate",
+        "credential_bundle_reference_id",
+        "app_id_sha256",
+        "profile_manifest_id",
+        "profile_id"
+      ],
+      "title": "M8FeishuAdapterProfileV1",
+      "type": "object"
+    },
+    "M8FeishuInboundWebhookProfileV1": {
+      "additionalProperties": false,
+      "description": "Pinned encrypted webhook profile; never an external-ingress activation.",
+      "properties": {
+        "allowed_chat_type": {
+          "const": "p2p",
+          "default": "p2p",
+          "title": "Allowed Chat Type",
+          "type": "string"
+        },
+        "allowed_message_type": {
+          "const": "text",
+          "default": "text",
+          "title": "Allowed Message Type",
+          "type": "string"
+        },
+        "allowed_sender_type": {
+          "const": "user",
+          "default": "user",
+          "title": "Allowed Sender Type",
+          "type": "string"
+        },
+        "clear_sender_identifier_persisted": {
+          "const": false,
+          "default": false,
+          "title": "Clear Sender Identifier Persisted",
+          "type": "boolean"
+        },
+        "delivery_kind": {
+          "const": "HTTPS_WEBHOOK",
+          "default": "HTTPS_WEBHOOK",
+          "title": "Delivery Kind",
+          "type": "string"
+        },
+        "encrypt_key_reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Encrypt Key Reference Id",
+          "type": "string"
+        },
+        "encrypt_key_required": {
+          "const": true,
+          "default": true,
+          "title": "Encrypt Key Required",
+          "type": "boolean"
+        },
+        "encrypt_key_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Encrypt Key Sha256",
+          "type": "string"
+        },
+        "event_schema": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Event Schema",
+          "type": "string"
+        },
+        "event_type": {
+          "const": "im.message.receive_v1",
+          "default": "im.message.receive_v1",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "external_ingress_permitted": {
+          "const": false,
+          "default": false,
+          "title": "External Ingress Permitted",
+          "type": "boolean"
+        },
+        "inbound_profile_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Inbound Profile Id",
+          "type": "string"
+        },
+        "message_id_deduplication_required": {
+          "const": true,
+          "default": true,
+          "title": "Message Id Deduplication Required",
+          "type": "boolean"
+        },
+        "outbound_profile": {
+          "$ref": "#/$defs/M8FeishuAdapterProfileV1"
+        },
+        "profile_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Manifest Id",
+          "type": "string"
+        },
+        "raw_body_max_bytes": {
+          "const": 262144,
+          "default": 262144,
+          "title": "Raw Body Max Bytes",
+          "type": "integer"
+        },
+        "request_signature_required": {
+          "const": true,
+          "default": true,
+          "title": "Request Signature Required",
+          "type": "boolean"
+        },
+        "request_timestamp_max_skew_seconds": {
+          "const": 300,
+          "default": 300,
+          "title": "Request Timestamp Max Skew Seconds",
+          "type": "integer"
+        },
+        "request_url_reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Request Url Reference Id",
+          "type": "string"
+        },
+        "required_scope": {
+          "const": "im:message.p2p_msg:readonly",
+          "default": "im:message.p2p_msg:readonly",
+          "title": "Required Scope",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-feishu-inbound-webhook-profile-v1",
+          "default": "m8-feishu-inbound-webhook-profile-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "secret_material_embedded": {
+          "const": false,
+          "default": false,
+          "title": "Secret Material Embedded",
+          "type": "boolean"
+        },
+        "verification_token_reference_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Verification Token Reference Id",
+          "type": "string"
+        },
+        "verification_token_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Verification Token Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outbound_profile",
+        "request_url_reference_id",
+        "encrypt_key_reference_id",
+        "encrypt_key_sha256",
+        "verification_token_reference_id",
+        "verification_token_sha256",
+        "profile_manifest_id",
+        "inbound_profile_id"
+      ],
+      "title": "M8FeishuInboundWebhookProfileV1",
+      "type": "object"
+    },
+    "M8FeishuUrlChallengeIngressRequestV1": {
+      "additionalProperties": false,
+      "description": "Exact encrypted URL challenge evidence before decryption or token claims.",
+      "properties": {
+        "business_event_accepted": {
+          "readOnly": true,
+          "title": "Business Event Accepted",
+          "type": "boolean"
+        },
+        "credential_material_embedded": {
+          "readOnly": true,
+          "title": "Credential Material Embedded",
+          "type": "boolean"
+        },
+        "encrypted_body_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Encrypted Body Ref",
+          "type": "string"
+        },
+        "encrypted_body_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Encrypted Body Sha256",
+          "type": "string"
+        },
+        "encrypted_body_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 262144,
+          "title": "Encrypted Body Size Bytes",
+          "type": "integer"
+        },
+        "inbound_profile_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Inbound Profile Id",
+          "type": "string"
+        },
+        "ingress_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Ingress Manifest Id",
+          "type": "string"
+        },
+        "ingress_request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Ingress Request Id",
+          "type": "string"
+        },
+        "payload_decrypted": {
+          "readOnly": true,
+          "title": "Payload Decrypted",
+          "type": "boolean"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "request_signature_applicable": {
+          "readOnly": true,
+          "title": "Request Signature Applicable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-feishu-url-challenge-ingress-request-v1",
+          "default": "m8-feishu-url-challenge-ingress-request-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "signature_verified": {
+          "readOnly": true,
+          "title": "Signature Verified",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "inbound_profile_id",
+        "encrypted_body_ref",
+        "encrypted_body_sha256",
+        "encrypted_body_size_bytes",
+        "received_at",
+        "ingress_manifest_id",
+        "request_signature_applicable",
+        "signature_verified",
+        "payload_decrypted",
+        "business_event_accepted",
+        "credential_material_embedded",
+        "ingress_request_id"
+      ],
+      "title": "M8FeishuUrlChallengeIngressRequestV1",
+      "type": "object"
+    },
+    "M8ProductionAdapterCandidateAuthorityV1": {
+      "additionalProperties": false,
+      "description": "A pinned external adapter candidate; it is never activation authority by itself.",
+      "properties": {
+        "adapter_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_kind": {
+          "$ref": "#/$defs/M8ProductionAdapterKind"
+        },
+        "adapter_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Adapter Manifest Id",
+          "type": "string"
+        },
+        "adapter_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Adapter Revision",
+          "type": "string"
+        },
+        "campus_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Campus Id",
+          "type": "string"
+        },
+        "candidate_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Candidate Authority Id",
+          "type": "string"
+        },
+        "cross_camera_reidentification_permitted": {
+          "readOnly": true,
+          "title": "Cross Camera Reidentification Permitted",
+          "type": "boolean"
+        },
+        "declared_license_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Declared License Id",
+          "type": "string"
+        },
+        "direct_disciplinary_action_permitted": {
+          "readOnly": true,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "external_io_required": {
+          "const": true,
+          "default": true,
+          "title": "External Io Required",
+          "type": "boolean"
+        },
+        "face_recognition_permitted": {
+          "readOnly": true,
+          "title": "Face Recognition Permitted",
+          "type": "boolean"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/M8ExternalIdempotencyKey"
+        },
+        "life_safety_action_permitted": {
+          "readOnly": true,
+          "title": "Life Safety Action Permitted",
+          "type": "boolean"
+        },
+        "network_required": {
+          "title": "Network Required",
+          "type": "boolean"
+        },
+        "offline_fallback_adapter_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Offline Fallback Adapter Id",
+          "type": "string"
+        },
+        "offline_fallback_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Offline Fallback Manifest Id",
+          "type": "string"
+        },
+        "offline_fallback_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Offline Fallback Revision",
+          "type": "string"
+        },
+        "product_revision": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Product Revision",
+          "type": "string"
+        },
+        "production_activation_permitted": {
+          "readOnly": true,
+          "title": "Production Activation Permitted",
+          "type": "boolean"
+        },
+        "provider_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "raw_receipt_required": {
+          "const": true,
+          "default": true,
+          "title": "Raw Receipt Required",
+          "type": "boolean"
+        },
+        "request_timeout_ms": {
+          "exclusiveMinimum": 0,
+          "maximum": 120000,
+          "title": "Request Timeout Ms",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-production-adapter-candidate-authority-v1",
+          "default": "m8-production-adapter-candidate-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope_kind": {
+          "$ref": "#/$defs/M8ActorScopeKind"
+        },
+        "scope_location_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Scope Location Ids",
+          "type": "array"
+        },
+        "secret_material_embedded": {
+          "const": false,
+          "default": false,
+          "title": "Secret Material Embedded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "adapter_id",
+        "adapter_revision",
+        "adapter_kind",
+        "provider_id",
+        "product_revision",
+        "campus_id",
+        "scope_kind",
+        "declared_license_id",
+        "request_timeout_ms",
+        "idempotency_key",
+        "network_required",
+        "offline_fallback_adapter_id",
+        "offline_fallback_revision",
+        "adapter_manifest_id",
+        "offline_fallback_manifest_id",
+        "production_activation_permitted",
+        "life_safety_action_permitted",
+        "direct_disciplinary_action_permitted",
+        "face_recognition_permitted",
+        "cross_camera_reidentification_permitted",
+        "candidate_authority_id"
+      ],
+      "title": "M8ProductionAdapterCandidateAuthorityV1",
+      "type": "object"
+    },
+    "M8ProductionAdapterKind": {
+      "enum": [
+        "DISASTER_RECOVERY",
+        "EXTERNAL_NOTIFICATION",
+        "OBSERVABILITY",
+        "OIDC_IDENTITY",
+        "PHYSICAL_SENSOR",
+        "RTSP_CAMERA"
+      ],
+      "title": "M8ProductionAdapterKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-url-challenge-verification-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Hash-only proof that one encrypted URL challenge may be answered.",
+  "properties": {
+    "case_transition_permitted": {
+      "readOnly": true,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "challenge_response_permitted": {
+      "readOnly": true,
+      "title": "Challenge Response Permitted",
+      "type": "boolean"
+    },
+    "challenge_type": {
+      "const": "url_verification",
+      "default": "url_verification",
+      "title": "Challenge Type",
+      "type": "string"
+    },
+    "clear_challenge_value_embedded": {
+      "readOnly": true,
+      "title": "Clear Challenge Value Embedded",
+      "type": "boolean"
+    },
+    "decrypted_challenge_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Decrypted Challenge Ref",
+      "type": "string"
+    },
+    "decrypted_challenge_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Decrypted Challenge Sha256",
+      "type": "string"
+    },
+    "decrypted_challenge_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 262144,
+      "title": "Decrypted Challenge Size Bytes",
+      "type": "integer"
+    },
+    "direct_disciplinary_action_permitted": {
+      "readOnly": true,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "external_ingress_activation_permitted": {
+      "readOnly": true,
+      "title": "External Ingress Activation Permitted",
+      "type": "boolean"
+    },
+    "ingress_request": {
+      "$ref": "#/$defs/M8FeishuUrlChallengeIngressRequestV1"
+    },
+    "notification_reply_commit_permitted": {
+      "readOnly": true,
+      "title": "Notification Reply Commit Permitted",
+      "type": "boolean"
+    },
+    "payload_decrypted": {
+      "readOnly": true,
+      "title": "Payload Decrypted",
+      "type": "boolean"
+    },
+    "profile": {
+      "$ref": "#/$defs/M8FeishuInboundWebhookProfileV1"
+    },
+    "response_content_type": {
+      "readOnly": true,
+      "title": "Response Content Type",
+      "type": "string"
+    },
+    "response_deadline_milliseconds": {
+      "const": 1000,
+      "default": 1000,
+      "title": "Response Deadline Milliseconds",
+      "type": "integer"
+    },
+    "response_document_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Response Document Ref",
+      "type": "string"
+    },
+    "response_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Response Document Sha256",
+      "type": "string"
+    },
+    "response_document_size_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 262144,
+      "title": "Response Document Size Bytes",
+      "type": "integer"
+    },
+    "response_status_code": {
+      "readOnly": true,
+      "title": "Response Status Code",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-feishu-url-challenge-verification-receipt-v1",
+      "default": "m8-feishu-url-challenge-verification-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "verification_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Verification Manifest Id",
+      "type": "string"
+    },
+    "verification_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Verification Receipt Id",
+      "type": "string"
+    },
+    "verification_token_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Verification Token Sha256",
+      "type": "string"
+    },
+    "verification_token_verified": {
+      "readOnly": true,
+      "title": "Verification Token Verified",
+      "type": "boolean"
+    },
+    "verified_at": {
+      "format": "date-time",
+      "title": "Verified At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "profile",
+    "ingress_request",
+    "decrypted_challenge_ref",
+    "decrypted_challenge_sha256",
+    "decrypted_challenge_size_bytes",
+    "response_document_ref",
+    "response_document_sha256",
+    "response_document_size_bytes",
+    "verification_token_sha256",
+    "verified_at",
+    "verification_manifest_id",
+    "payload_decrypted",
+    "verification_token_verified",
+    "response_status_code",
+    "response_content_type",
+    "clear_challenge_value_embedded",
+    "challenge_response_permitted",
+    "external_ingress_activation_permitted",
+    "notification_reply_commit_permitted",
+    "case_transition_permitted",
+    "direct_disciplinary_action_permitted",
+    "verification_receipt_id"
+  ],
+  "title": "M8FeishuUrlChallengeVerificationReceiptV1",
+  "type": "object"
+}
