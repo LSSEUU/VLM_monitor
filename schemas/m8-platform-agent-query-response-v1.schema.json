@@ -1,0 +1,121 @@
+{
+  "$defs": {
+    "M8PlatformAgentActionKind": {
+      "enum": [
+        "CASE_TRANSITION",
+        "RUN_SCENARIO",
+        "RESET_DEMO"
+      ],
+      "title": "M8PlatformAgentActionKind",
+      "type": "string"
+    },
+    "M8PlatformProposedActionV1": {
+      "additionalProperties": false,
+      "properties": {
+        "action_kind": {
+          "$ref": "#/$defs/M8PlatformAgentActionKind"
+        },
+        "current_version": {
+          "minimum": 0,
+          "title": "Current Version",
+          "type": "integer"
+        },
+        "impact_summary": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Impact Summary",
+          "type": "string"
+        },
+        "request_payload": {
+          "additionalProperties": true,
+          "title": "Request Payload",
+          "type": "object"
+        },
+        "requires_confirmation": {
+          "const": true,
+          "default": true,
+          "title": "Requires Confirmation",
+          "type": "boolean"
+        },
+        "target_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Target Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_kind",
+        "target_ref",
+        "current_version",
+        "impact_summary",
+        "request_payload"
+      ],
+      "title": "M8PlatformProposedActionV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-agent-query-response-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "answer": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Answer",
+      "type": "string"
+    },
+    "model_used": {
+      "const": false,
+      "default": false,
+      "title": "Model Used",
+      "type": "boolean"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "outcome": {
+      "enum": [
+        "ANSWERED",
+        "NO_MATCH"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "proposed_action": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8PlatformProposedActionV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": "m8-platform-agent-query-response-v1",
+      "default": "m8-platform-agent-query-response-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_refs": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Source Refs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "outcome",
+    "answer"
+  ],
+  "title": "M8PlatformAgentQueryResponseV1",
+  "type": "object"
+}

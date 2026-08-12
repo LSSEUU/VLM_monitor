@@ -324,7 +324,8 @@
         "M0_CASE",
         "USER_STATEMENT",
         "NOTIFICATION_REPLY",
-        "EVIDENCE_PACK"
+        "EVIDENCE_PACK",
+        "RESERVATION"
       ],
       "title": "M8AuthorityReferenceKind",
       "type": "string"
@@ -1177,6 +1178,7 @@
     },
     "M8NotificationPurpose": {
       "enum": [
+        "APPEAL_OUTCOME",
         "APPEAL_UPDATED",
         "CASE_ACTION_REQUIRED",
         "CASE_CREATED",

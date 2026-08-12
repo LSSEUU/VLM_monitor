@@ -1,0 +1,33 @@
+{
+  "$defs": {
+    "M8ActorRole": {
+      "enum": [
+        "LEADER",
+        "SAFETY_OFFICER",
+        "STUDENT",
+        "OPERATIONS"
+      ],
+      "title": "M8ActorRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-login-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "role": {
+      "$ref": "#/$defs/M8ActorRole"
+    },
+    "schema_version": {
+      "const": "m8-platform-login-request-v1",
+      "default": "m8-platform-login-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "role"
+  ],
+  "title": "M8PlatformLoginRequestV1",
+  "type": "object"
+}

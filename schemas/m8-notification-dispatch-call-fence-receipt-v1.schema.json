@@ -538,6 +538,7 @@
     },
     "M8NotificationPurpose": {
       "enum": [
+        "APPEAL_OUTCOME",
         "APPEAL_UPDATED",
         "CASE_ACTION_REQUIRED",
         "CASE_CREATED",

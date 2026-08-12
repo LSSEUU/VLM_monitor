@@ -1,0 +1,37 @@
+{
+  "$defs": {
+    "M8PlatformScenarioKind": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "SMOKE_TEMPERATURE_EMERGENCY"
+      ],
+      "title": "M8PlatformScenarioKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-scenario-start-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "scenario_kind": {
+      "$ref": "#/$defs/M8PlatformScenarioKind"
+    },
+    "schema_version": {
+      "const": "m8-platform-scenario-start-request-v1",
+      "default": "m8-platform-scenario-start-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scenario_kind",
+    "explicit_human_confirmation"
+  ],
+  "title": "M8PlatformScenarioStartRequestV1",
+  "type": "object"
+}

@@ -422,6 +422,21 @@ from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoLocalAccessV1,
     M8PersonalDemoRoleTokensV1,
 )
+from labcourt.contracts.m8_platform_demo import (
+    M8PlatformAcknowledgementRequestV1,
+    M8PlatformAgentQueryRequestV1,
+    M8PlatformAgentQueryResponseV1,
+    M8PlatformBootstrapReceiptV1,
+    M8PlatformLoginRequestV1,
+    M8PlatformLoginResponseV1,
+    M8PlatformNotificationDispatchRequestV1,
+    M8PlatformNotificationReplyRequestV1,
+    M8PlatformReservationAuthorityV1,
+    M8PlatformResetRequestV1,
+    M8PlatformResetResponseV1,
+    M8PlatformScenarioRunV1,
+    M8PlatformScenarioStartRequestV1,
+)
 from labcourt.contracts.m8_projection_views import M8OperationsProjectionViewV1
 from labcourt.contracts.m8_projections import (
     M8OperationsProjectionV1,
@@ -858,6 +873,21 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     ),
     "m8-personal-demo-local-access-v1": M8PersonalDemoLocalAccessV1,
     "m8-personal-demo-role-tokens-v1": M8PersonalDemoRoleTokensV1,
+    "m8-platform-acknowledgement-request-v1": M8PlatformAcknowledgementRequestV1,
+    "m8-platform-agent-query-request-v1": M8PlatformAgentQueryRequestV1,
+    "m8-platform-agent-query-response-v1": M8PlatformAgentQueryResponseV1,
+    "m8-platform-bootstrap-receipt-v1": M8PlatformBootstrapReceiptV1,
+    "m8-platform-login-request-v1": M8PlatformLoginRequestV1,
+    "m8-platform-login-response-v1": M8PlatformLoginResponseV1,
+    "m8-platform-notification-dispatch-request-v1": (
+        M8PlatformNotificationDispatchRequestV1
+    ),
+    "m8-platform-notification-reply-request-v1": M8PlatformNotificationReplyRequestV1,
+    "m8-platform-reservation-authority-v1": M8PlatformReservationAuthorityV1,
+    "m8-platform-reset-request-v1": M8PlatformResetRequestV1,
+    "m8-platform-reset-response-v1": M8PlatformResetResponseV1,
+    "m8-platform-scenario-run-v1": M8PlatformScenarioRunV1,
+    "m8-platform-scenario-start-request-v1": M8PlatformScenarioStartRequestV1,
     "m8-operations-projection-v1": M8OperationsProjectionV1,
     "m8-operations-projection-view-v1": M8OperationsProjectionViewV1,
     "m8-projection-map-node-v1": M8ProjectionMapNodeV1,
@@ -961,6 +991,13 @@ SCHEMA_VALIDATION_MODELS = {
     "pilot-perception-worker-startup-failure",
     "pilot-run-request",
     "pilot-ui-job-start-request",
+    "m8-platform-acknowledgement-request-v1",
+    "m8-platform-agent-query-request-v1",
+    "m8-platform-login-request-v1",
+    "m8-platform-notification-dispatch-request-v1",
+    "m8-platform-notification-reply-request-v1",
+    "m8-platform-reset-request-v1",
+    "m8-platform-scenario-start-request-v1",
     "prosecutor-model-payload",
     "screening-model-payload",
 }

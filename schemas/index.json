@@ -1798,6 +1798,84 @@
       "name": "m8-personal-demo-role-tokens-v1"
     },
     {
+      "file": "m8-platform-acknowledgement-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformAcknowledgementRequestV1",
+      "name": "m8-platform-acknowledgement-request-v1"
+    },
+    {
+      "file": "m8-platform-agent-query-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformAgentQueryRequestV1",
+      "name": "m8-platform-agent-query-request-v1"
+    },
+    {
+      "file": "m8-platform-agent-query-response-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformAgentQueryResponseV1",
+      "name": "m8-platform-agent-query-response-v1"
+    },
+    {
+      "file": "m8-platform-bootstrap-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformBootstrapReceiptV1",
+      "name": "m8-platform-bootstrap-receipt-v1"
+    },
+    {
+      "file": "m8-platform-login-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformLoginRequestV1",
+      "name": "m8-platform-login-request-v1"
+    },
+    {
+      "file": "m8-platform-login-response-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformLoginResponseV1",
+      "name": "m8-platform-login-response-v1"
+    },
+    {
+      "file": "m8-platform-notification-dispatch-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformNotificationDispatchRequestV1",
+      "name": "m8-platform-notification-dispatch-request-v1"
+    },
+    {
+      "file": "m8-platform-notification-reply-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformNotificationReplyRequestV1",
+      "name": "m8-platform-notification-reply-request-v1"
+    },
+    {
+      "file": "m8-platform-reservation-authority-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformReservationAuthorityV1",
+      "name": "m8-platform-reservation-authority-v1"
+    },
+    {
+      "file": "m8-platform-reset-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformResetRequestV1",
+      "name": "m8-platform-reset-request-v1"
+    },
+    {
+      "file": "m8-platform-reset-response-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformResetResponseV1",
+      "name": "m8-platform-reset-response-v1"
+    },
+    {
+      "file": "m8-platform-scenario-run-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformScenarioRunV1",
+      "name": "m8-platform-scenario-run-v1"
+    },
+    {
+      "file": "m8-platform-scenario-start-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformScenarioStartRequestV1",
+      "name": "m8-platform-scenario-start-request-v1"
+    },
+    {
       "file": "m8-production-adapter-candidate-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8ProductionAdapterCandidateAuthorityV1",

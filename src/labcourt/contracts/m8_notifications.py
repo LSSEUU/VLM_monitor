@@ -47,6 +47,7 @@ class M8NotificationChannelKind(StrEnum):
 
 
 class M8NotificationPurpose(StrEnum):
+    APPEAL_OUTCOME = "APPEAL_OUTCOME"
     APPEAL_UPDATED = "APPEAL_UPDATED"
     CASE_ACTION_REQUIRED = "CASE_ACTION_REQUIRED"
     CASE_CREATED = "CASE_CREATED"

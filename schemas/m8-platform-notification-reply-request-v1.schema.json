@@ -1,0 +1,44 @@
+{
+  "$defs": {
+    "M8NotificationReplyKind": {
+      "enum": [
+        "APPEAL_REQUEST",
+        "EXPLANATION"
+      ],
+      "title": "M8NotificationReplyKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-notification-reply-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "body": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Body",
+      "type": "string"
+    },
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "reply_kind": {
+      "$ref": "#/$defs/M8NotificationReplyKind"
+    },
+    "schema_version": {
+      "const": "m8-platform-notification-reply-request-v1",
+      "default": "m8-platform-notification-reply-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reply_kind",
+    "body",
+    "explicit_human_confirmation"
+  ],
+  "title": "M8PlatformNotificationReplyRequestV1",
+  "type": "object"
+}

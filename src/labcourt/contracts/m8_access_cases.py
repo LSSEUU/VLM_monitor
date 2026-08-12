@@ -109,6 +109,7 @@ class M8AuthorityReferenceKind(StrEnum):
     USER_STATEMENT = "USER_STATEMENT"
     NOTIFICATION_REPLY = "NOTIFICATION_REPLY"
     EVIDENCE_PACK = "EVIDENCE_PACK"
+    RESERVATION = "RESERVATION"
 
 
 _ROLE_CAPABILITIES: dict[M8ActorRole, tuple[M8Capability, ...]] = {

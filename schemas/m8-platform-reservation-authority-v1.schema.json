@@ -1,0 +1,77 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-reservation-authority-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active": {
+      "const": true,
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+    },
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "association_notice": {
+      "const": "预约关联，非视觉身份识别",
+      "default": "预约关联，非视觉身份识别",
+      "title": "Association Notice",
+      "type": "string"
+    },
+    "cross_camera_reidentification_performed": {
+      "const": false,
+      "default": false,
+      "title": "Cross Camera Reidentification Performed",
+      "type": "boolean"
+    },
+    "ends_at": {
+      "format": "date-time",
+      "title": "Ends At",
+      "type": "string"
+    },
+    "face_recognition_performed": {
+      "const": false,
+      "default": false,
+      "title": "Face Recognition Performed",
+      "type": "boolean"
+    },
+    "location_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Location Id",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "reservation_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Reservation Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-platform-reservation-authority-v1",
+      "default": "m8-platform-reservation-authority-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "starts_at": {
+      "format": "date-time",
+      "title": "Starts At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reservation_id",
+    "actor_id",
+    "location_id",
+    "starts_at",
+    "ends_at",
+    "manifest_id"
+  ],
+  "title": "M8PlatformReservationAuthorityV1",
+  "type": "object"
+}

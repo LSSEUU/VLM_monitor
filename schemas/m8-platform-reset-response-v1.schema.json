@@ -1,0 +1,44 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-reset-response-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "archive_ref": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Archive Ref",
+      "type": "string"
+    },
+    "archived_session_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Archived Session Id",
+      "type": "string"
+    },
+    "baseline_summary": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Baseline Summary",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "m8-platform-reset-response-v1",
+      "default": "m8-platform-reset-response-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "session_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Session Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "archived_session_id",
+    "archive_ref",
+    "baseline_summary"
+  ],
+  "title": "M8PlatformResetResponseV1",
+  "type": "object"
+}

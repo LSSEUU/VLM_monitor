@@ -1,0 +1,32 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-notification-dispatch-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "kind": {
+      "enum": [
+        "CASE_UPDATED",
+        "APPEAL_OUTCOME"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-platform-notification-dispatch-request-v1",
+      "default": "m8-platform-notification-dispatch-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "explicit_human_confirmation"
+  ],
+  "title": "M8PlatformNotificationDispatchRequestV1",
+  "type": "object"
+}

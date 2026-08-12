@@ -1,0 +1,277 @@
+{
+  "$defs": {
+    "M8OperationalCaseStatus": {
+      "enum": [
+        "PENDING_VERIFICATION",
+        "CONFIRMED",
+        "REJECTED",
+        "EVIDENCE_REQUESTED",
+        "RESOLVED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "M8OperationalCaseStatus",
+      "type": "string"
+    },
+    "M8PlatformEvidenceViewV1": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "integrity": {
+          "enum": [
+            "VERIFIED",
+            "MISSING",
+            "HASH_MISMATCH",
+            "NOT_AVAILABLE"
+          ],
+          "title": "Integrity",
+          "type": "string"
+        },
+        "media_url": {
+          "title": "Media Url",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "PANORAMA",
+            "SUBJECT",
+            "FOCUS",
+            "TEMPORAL"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "role",
+        "frame_index",
+        "media_url",
+        "integrity"
+      ],
+      "title": "M8PlatformEvidenceViewV1",
+      "type": "object"
+    },
+    "M8PlatformScenarioKind": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "SMOKE_TEMPERATURE_EMERGENCY"
+      ],
+      "title": "M8PlatformScenarioKind",
+      "type": "string"
+    },
+    "M8PlatformScenarioStage": {
+      "enum": [
+        "VIDEO",
+        "PERCEPTION",
+        "EVIDENCE",
+        "SCREENING",
+        "CASE",
+        "NOTIFICATION"
+      ],
+      "title": "M8PlatformScenarioStage",
+      "type": "string"
+    },
+    "M8PlatformScenarioStageV1": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_refs": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Authority Refs",
+          "type": "array"
+        },
+        "stage": {
+          "$ref": "#/$defs/M8PlatformScenarioStage"
+        },
+        "state": {
+          "$ref": "#/$defs/M8PlatformStageState"
+        },
+        "summary": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "summary"
+      ],
+      "title": "M8PlatformScenarioStageV1",
+      "type": "object"
+    },
+    "M8PlatformStageState": {
+      "enum": [
+        "PENDING",
+        "RUNNING",
+        "COMPLETE",
+        "FAILED"
+      ],
+      "title": "M8PlatformStageState",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-scenario-run-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Case Id"
+    },
+    "case_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8OperationalCaseStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "direct_disciplinary_action_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Direct Disciplinary Action Permitted",
+      "type": "boolean"
+    },
+    "evidence": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8PlatformEvidenceViewV1"
+      },
+      "maxItems": 24,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Code"
+    },
+    "machine_output_is_ground_truth": {
+      "const": false,
+      "default": false,
+      "title": "Machine Output Is Ground Truth",
+      "type": "boolean"
+    },
+    "model_or_fixture_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Or Fixture Id"
+    },
+    "notification_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notification Id"
+    },
+    "raw_response_ref": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Response Ref"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scenario_kind": {
+      "$ref": "#/$defs/M8PlatformScenarioKind"
+    },
+    "schema_version": {
+      "const": "m8-platform-scenario-run-v1",
+      "default": "m8-platform-scenario-run-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "simulated": {
+      "const": true,
+      "default": true,
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/$defs/M8PlatformScenarioStageV1"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "title": "Stages",
+      "type": "array"
+    },
+    "state": {
+      "enum": [
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "scenario_kind",
+    "state",
+    "stages"
+  ],
+  "title": "M8PlatformScenarioRunV1",
+  "type": "object"
+}
