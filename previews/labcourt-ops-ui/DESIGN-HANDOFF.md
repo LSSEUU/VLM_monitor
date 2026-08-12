@@ -11,7 +11,7 @@ This archive is the source of truth for turning the design into production code.
 
 ## Source map
 - Primary entry: `index.html`
-- HTML screens detected: 9
+- HTML screens detected: 10
 - Stylesheets detected: 1
 - Script/component files detected: 1
 - Supporting assets detected: 9
@@ -63,6 +63,7 @@ For responsive web exports, treat these as a modern breakpoint system for one ad
 8. Compare final screenshots against the export at 360×800, 390×844, 430×932, 820×1180, 1024×768, 1366×768, 1440×900, and 1920×1080 before declaring done.
 
 ## Entry points
+- `agent.html`
 - `case-file.html`
 - `index.html`
 - `knowledge.html`

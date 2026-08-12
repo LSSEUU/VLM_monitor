@@ -21,6 +21,7 @@ python -m http.server 4173 --directory previews/labcourt-ops-ui
 - `map.html`：校园地图
 - `profile.html`：个人中心
 - `settings.html`：系统设置
+- `agent.html`：通知 Agent 与高影响动作二次确认
 
 共享导航位于 `assets/nav.css` 与 `assets/nav.js`，三段模拟视频位于 `assets/`。页面中的 `PREVIEW / SIMULATED`、无人脸识别、无跨摄像头 ReID、AI 不直接定责等边界均沿用设计稿。
 

@@ -7,6 +7,7 @@
       "1786190627618...mp4",
       "1786190630676...mp4",
       "1786193409682...mp4",
+      "agent.html",
       "assets/feed-301a.mp4",
       "assets/feed-301b.mp4",
       "assets/feed-302a.mp4",
@@ -26,6 +27,7 @@
       "settings.html"
     ],
     "html": [
+      "agent.html",
       "case-file.html",
       "index.html",
       "knowledge.html",
@@ -55,6 +57,11 @@
     ]
   },
   "screens": [
+    {
+      "file": "agent.html",
+      "role": "screen",
+      "implementationNote": "Preserve visual hierarchy, responsive behavior, and interactive states from this screen."
+    },
     {
       "file": "case-file.html",
       "role": "screen",
