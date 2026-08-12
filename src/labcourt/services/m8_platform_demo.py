@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import threading
 import uuid
@@ -77,7 +78,12 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformAgentActionKind,
     M8PlatformAgentQueryResponseV1,
     M8PlatformEvidenceViewV1,
+    M8PlatformExecutionSource,
+    M8PlatformModelComponentV1,
+    M8PlatformModelReadinessComponentV1,
+    M8PlatformModelReadinessV1,
     M8PlatformProposedActionV1,
+    M8PlatformRecognitionMode,
     M8PlatformResetResponseV1,
     M8PlatformScenarioKind,
     M8PlatformScenarioRunV1,
@@ -93,7 +99,7 @@ from labcourt.contracts.m8_sensor_signals import (
     M8SimulatedSensorReading,
     M8SimulatedSensorScenarioAuthorityV1,
 )
-from labcourt.contracts.manifests import RunManifest, StreamManifest
+from labcourt.contracts.manifests import ModelManifest, RunManifest, StreamManifest
 from labcourt.contracts.pilot import PilotA2Report
 from labcourt.contracts.pilot_ui import PilotUiJobStartRequest
 from labcourt.contracts.projection_generation import ProjectionCurrentPointer
@@ -174,7 +180,8 @@ class M8PlatformDemoService:
         input_media_path: Path,
         api_service: M8OperationsApiService,
         knowledge_service: M8KnowledgeApiService,
-        pilot_service: PilotUiService,
+        fixture_pilot_service: PilotUiService,
+        model_pilot_service: PilotUiService,
     ) -> None:
         self.project_root = project_root.absolute()
         self.database_path = database_path.absolute()
@@ -182,11 +189,13 @@ class M8PlatformDemoService:
         self.input_media_path = input_media_path.absolute()
         self.api_service = api_service
         self.knowledge_service = knowledge_service
-        self.pilot_service = pilot_service
+        self.fixture_pilot_service = fixture_pilot_service
+        self.model_pilot_service = model_pilot_service
+        self.pilot_service = fixture_pilot_service
         self._operation_lock = threading.Lock()
         self._screening_transport = DeterministicRecordedPpeScreeningTransport()
         perception = DeterministicRecordedPpePerceptionTransport(
-            build_expected_perception_manifest(pilot_service.config)
+            build_expected_perception_manifest(fixture_pilot_service.config)
         )
 
         def runner(**kwargs):
@@ -196,7 +205,10 @@ class M8PlatformDemoService:
                 screening_transport=self._screening_transport,
             )
 
-        self.pilot_jobs = PilotUiJobManager(service=pilot_service, runner=runner)
+        self.fixture_pilot_jobs = PilotUiJobManager(
+            service=fixture_pilot_service, runner=runner
+        )
+        self.model_pilot_jobs = PilotUiJobManager(service=model_pilot_service)
 
     def reservations(self, principal: M8ApiPrincipalV1) -> tuple[dict[str, object], ...]:
         actor = self._actor(principal)
@@ -209,15 +221,33 @@ class M8PlatformDemoService:
         self,
         principal: M8ApiPrincipalV1,
         kind: M8PlatformScenarioKind,
+        recognition_mode: M8PlatformRecognitionMode | None = None,
+        retry_of_run_id: str | None = None,
     ) -> M8PlatformScenarioRunV1:
         self._require_role(principal, M8ActorRole.OPERATIONS)
         if not self._operation_lock.acquire(blocking=False):
             raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
         try:
-            if self.pilot_jobs.snapshot().state == "RUNNING":
+            if any(
+                jobs.snapshot().state == "RUNNING"
+                for jobs in (self.fixture_pilot_jobs, self.model_pilot_jobs)
+            ):
                 raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
             if kind == M8PlatformScenarioKind.PPE_GOGGLES_MISSING:
-                return self._start_ppe()
+                assert recognition_mode is not None
+                if (
+                    recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+                    and not self.model_readiness(principal).full_model_ready
+                ):
+                    raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
+                if retry_of_run_id is not None:
+                    previous = self._read_run_snapshot(retry_of_run_id)
+                    if (
+                        previous.state != "FAILED"
+                        or previous.recognition_mode != M8PlatformRecognitionMode.FULL_MODEL
+                    ):
+                        raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
+                return self._start_ppe(recognition_mode, retry_of_run_id)
             return self._run_smoke_temperature()
         finally:
             self._operation_lock.release()
@@ -245,10 +275,65 @@ class M8PlatformDemoService:
         principal: M8ApiPrincipalV1,
         run_id: str,
     ) -> M8PlatformScenarioRunV1:
-        run = self.current_run(principal)
-        if run is None or run.run_id != run_id:
-            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
-        return run
+        self._actor(principal)
+        try:
+            run = self._read_run_snapshot(run_id)
+        except (OSError, ValueError):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
+        current = self.current_run(principal)
+        return current if current is not None and current.run_id == run_id else run
+
+    def model_readiness(self, principal: M8ApiPrincipalV1) -> M8PlatformModelReadinessV1:
+        self._actor(principal)
+        config = self.model_pilot_service.config
+        perception = build_expected_perception_manifest(config)
+        worker_env = config.perception.worker.python_executable_env  # type: ignore[union-attr]
+        configured = os.environ.get(worker_env)
+        candidates = tuple(
+            value
+            for value in (
+                Path(configured).absolute() if configured else None,
+                self.project_root / ".venv-perception/Scripts/python.exe",
+                self.project_root / ".venv-perception/bin/python",
+            )
+            if value is not None
+        )
+        perception_ready = any(path.is_file() for path in candidates)
+        profile = config.providers[config.screening.provider_profile]
+        endpoint_ready = bool(profile.endpoint_env and os.environ.get(profile.endpoint_env))
+        key_ready = bool(profile.api_key_env and os.environ.get(profile.api_key_env))
+        screening_ready = endpoint_ready and key_ready
+        screening_manifest = self._model_manifest("screening", profile)
+        components = (
+            M8PlatformModelReadinessComponentV1(
+                component="PERCEPTION",
+                ready=perception_ready,
+                provider="HuggingFace + Roboflow",
+                model=(
+                    f"{perception.detector.model} + "
+                    f"{perception.pose.model if perception.pose is not None else 'pose-disabled'}"
+                ),
+                revision=(
+                    f"{perception.detector.revision} + "
+                    f"{perception.pose.revision if perception.pose is not None else 'none'}"
+                ),
+                manifest_id=perception.manifest_id,
+                failure_code=(None if perception_ready else "PERCEPTION_ENVIRONMENT_UNAVAILABLE"),
+            ),
+            M8PlatformModelReadinessComponentV1(
+                component="SCREENING",
+                ready=screening_ready,
+                provider=profile.provider,
+                model=profile.model,
+                revision=profile.revision,
+                manifest_id=screening_manifest.model_manifest_id,
+                failure_code=(None if screening_ready else "SCREENING_CREDENTIALS_UNAVAILABLE"),
+            ),
+        )
+        return M8PlatformModelReadinessV1(
+            full_model_ready=perception_ready and screening_ready,
+            components=components,
+        )
 
     def read_evidence(
         self,
@@ -260,7 +345,7 @@ class M8PlatformDemoService:
         if not any(item.evidence_id == evidence_id for item in run.evidence):
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
         try:
-            return self.pilot_service.read_evidence(run_id, evidence_id)
+            return self._pilot_service_for(run).read_evidence(run_id, evidence_id)
         except PilotUiBoundaryError as error:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from error
 
@@ -273,7 +358,7 @@ class M8PlatformDemoService:
         if run.perception_preview_url is None:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
         try:
-            return self.pilot_service.preview_source(run_id)
+            return self._pilot_service_for(run).preview_source(run_id)
         except PilotUiBoundaryError as error:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from error
 
@@ -484,7 +569,10 @@ class M8PlatformDemoService:
         if not self._operation_lock.acquire(blocking=False):
             raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
         try:
-            if self.pilot_jobs.snapshot().state == "RUNNING":
+            if any(
+                jobs.snapshot().state == "RUNNING"
+                for jobs in (self.fixture_pilot_jobs, self.model_pilot_jobs)
+            ):
                 raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
             old = load_m8_platform_bootstrap(self.artifact_root)
             new_session = f"session-{uuid.uuid4().hex[:16]}"
@@ -526,8 +614,22 @@ class M8PlatformDemoService:
         finally:
             self._operation_lock.release()
 
-    def _start_ppe(self) -> M8PlatformScenarioRunV1:
-        dashboard = self.pilot_service.dashboard()
+    def _start_ppe(
+        self,
+        recognition_mode: M8PlatformRecognitionMode,
+        retry_of_run_id: str | None,
+    ) -> M8PlatformScenarioRunV1:
+        service = (
+            self.model_pilot_service
+            if recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+            else self.fixture_pilot_service
+        )
+        jobs = (
+            self.model_pilot_jobs
+            if recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+            else self.fixture_pilot_jobs
+        )
+        dashboard = service.dashboard()
         video = next(
             (item for item in dashboard.videos if item.display_name == "goggles-missing.mp4"),
             None,
@@ -535,7 +637,7 @@ class M8PlatformDemoService:
         if video is None:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
         run_id = f"platform-ppe-{uuid.uuid4().hex[:12]}"
-        self.pilot_jobs.start(
+        jobs.start(
             PilotUiJobStartRequest(video_id=video.video_id, run_id=run_id, resume=True)
         )
         run = M8PlatformScenarioRunV1(
@@ -543,7 +645,13 @@ class M8PlatformDemoService:
             scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
             state="RUNNING",
             stages=_pending_stages(),
-            model_or_fixture_id="fixture-ppe-screening-v1",
+            recognition_mode=recognition_mode,
+            retry_of_run_id=retry_of_run_id,
+            model_or_fixture_id=(
+                "qwen3-vl-plus-2025-12-19"
+                if recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+                else "fixture-ppe-screening-v1"
+            ),
         )
         self._write_run(run)
         return run
@@ -551,7 +659,8 @@ class M8PlatformDemoService:
     def _refresh_ppe(self, run: M8PlatformScenarioRunV1) -> M8PlatformScenarioRunV1:
         if run.scenario_kind != M8PlatformScenarioKind.PPE_GOGGLES_MISSING:
             return run
-        job = self.pilot_jobs.snapshot()
+        jobs = self._pilot_jobs_for(run)
+        job = jobs.snapshot()
         if job.run_id != run.run_id:
             failed = run.model_copy(
                 update={
@@ -606,13 +715,36 @@ class M8PlatformDemoService:
             return failed
 
     def _finalize_ppe(self, run: M8PlatformScenarioRunV1) -> M8PlatformScenarioRunV1:
-        dashboard = self.pilot_service.dashboard(run_id=run.run_id)
+        service = self._pilot_service_for(run)
+        dashboard = service.dashboard(run_id=run.run_id)
+        run_root = self.project_root / service.config.run.workspace / run.run_id
+        a2 = PilotA2Report.model_validate_json((run_root / "pilot/a2-report.json").read_bytes())
+        manifest = RunManifest.model_validate_json(
+            (run_root / "pilot/run-manifest.json").read_bytes()
+        )
+        if a2.state == "NO_CANDIDATE":
+            return self._finalize_no_action_ppe(run, a2, manifest)
         if not dashboard.cases or dashboard.metrics_id is None or dashboard.manifest_id is None:
-            raise ValueError("Pilot produced no PPE case artifacts")
+            raise ValueError("Pilot produced incomplete PPE case artifacts")
         pilot_case = dashboard.cases[0]
-        source_case, source_pack, stream, raw_ref = self._pilot_ppe_authorities(run.run_id)
+        source_case, source_pack, stream, raw_ref = self._pilot_ppe_authorities(run)
         if source_case.case_id != pilot_case.case_id:
             raise ValueError("Pilot dashboard Case conflicts with its typed projection")
+        evidence = tuple(
+            M8PlatformEvidenceViewV1(
+                evidence_id=item.crop_id,
+                role=item.role,
+                frame_index=item.frame_index,
+                media_url=(f"/api/m8/demo/scenario-runs/{run.run_id}/evidence/{item.crop_id}"),
+                integrity=item.integrity,
+            )
+            for item in pilot_case.evidence
+            if item.integrity == "VERIFIED"
+        )
+        if source_case.screening_results[-1].decision.value == "NOT_ESTABLISHED":
+            return self._finalize_screening_no_action(
+                run, source_case, source_pack, stream, raw_ref, evidence, manifest
+            )
         bootstrap = load_m8_platform_bootstrap(self.artifact_root)
         reservations = tuple(
             item
@@ -674,17 +806,6 @@ class M8PlatformDemoService:
             audience=M8NotificationAudienceKind.SAFETY_RESPONDER,
             inbound_response_supported=False,
         )
-        evidence = tuple(
-            M8PlatformEvidenceViewV1(
-                evidence_id=item.crop_id,
-                role=item.role,
-                frame_index=item.frame_index,
-                media_url=(f"/api/m8/demo/scenario-runs/{run.run_id}/evidence/{item.crop_id}"),
-                integrity=item.integrity,
-            )
-            for item in pilot_case.evidence
-            if item.integrity == "VERIFIED"
-        )
         stages = (
             self._stage(
                 M8PlatformScenarioStage.VIDEO,
@@ -703,7 +824,11 @@ class M8PlatformDemoService:
             ),
             self._stage(
                 M8PlatformScenarioStage.SCREENING,
-                "结构化 Fixture 初审已保存为弱标签",
+                (
+                    "Qwen3-VL 结构化初审已保存为弱标签"
+                    if run.recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+                    else "结构化 Fixture 初审已保存为弱标签"
+                ),
                 (source_case.screening_results[-1].screening_id,),
             ),
             self._stage(
@@ -725,6 +850,10 @@ class M8PlatformDemoService:
             case_id=case.case_id,
             case_status=case.status,
             notification_id=notification.notification_id,
+            recognition_mode=run.recognition_mode,
+            retry_of_run_id=run.retry_of_run_id,
+            model_components=self._model_components(run, manifest),
+            outcome="ACTIONABLE_RISK",
             evidence=evidence,
             video_profile=M8PlatformVideoProfileV1(
                 input_file_sha256=stream.input_file_sha256,
@@ -741,13 +870,144 @@ class M8PlatformDemoService:
             perception_preview_url=(
                 f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"
             ),
-            model_or_fixture_id="fixture-ppe-screening-v1",
+            model_or_fixture_id=(
+                manifest.models["screening"].model
+                if run.recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+                else "fixture-ppe-screening-v1"
+            ),
             raw_response_ref=raw_ref,
             screening_decision=source_case.screening_results[-1].decision.value,
             screening_summary=(
                 source_case.screening_results[-1].parsed_output.rationale_summary
             ),
             rule_judgment="GENERAL_RISK",
+        )
+        self._write_run(completed)
+        return completed
+
+    def _finalize_screening_no_action(
+        self,
+        run: M8PlatformScenarioRunV1,
+        source_case: Case,
+        source_pack: EvidencePack,
+        stream: StreamManifest,
+        raw_ref: str,
+        evidence: tuple[M8PlatformEvidenceViewV1, ...],
+        manifest: RunManifest,
+    ) -> M8PlatformScenarioRunV1:
+        screening = source_case.screening_results[-1]
+        completed = M8PlatformScenarioRunV1(
+            run_id=run.run_id,
+            scenario_kind=run.scenario_kind,
+            state="SUCCEEDED",
+            stages=(
+                self._stage(M8PlatformScenarioStage.VIDEO, "真实录像已校验", (PLATFORM_CAMERA_ID,)),
+                self._stage(
+                    M8PlatformScenarioStage.PERCEPTION,
+                    "视觉感知和目标定位已生成",
+                    (source_case.manifest_id,),
+                ),
+                self._stage(
+                    M8PlatformScenarioStage.EVIDENCE,
+                    "全景、主体与时序眼部焦点裁剪已校验",
+                    (source_pack.pack_id, *(item.evidence_id for item in evidence)),
+                ),
+                self._stage(
+                    M8PlatformScenarioStage.SCREENING,
+                    "结构化初审未建立可行动风险，已保存为弱标签",  # noqa: RUF001
+                    (screening.screening_id,),
+                ),
+                self._stage(
+                    M8PlatformScenarioStage.CASE,
+                    "规则未建立风险，未自动建案",  # noqa: RUF001
+                    (),
+                ),
+                self._stage(M8PlatformScenarioStage.NOTIFICATION, "无需发送案件通知", ()),
+            ),
+            recognition_mode=run.recognition_mode,
+            retry_of_run_id=run.retry_of_run_id,
+            model_components=self._model_components(run, manifest),
+            outcome="NO_ACTIONABLE_RISK_ESTABLISHED",
+            evidence=evidence,
+            video_profile=M8PlatformVideoProfileV1(
+                input_file_sha256=stream.input_file_sha256,
+                fps_num=stream.fps_num,
+                fps_den=stream.fps_den,
+                frame_count=stream.frame_count,
+                width=stream.width,
+                height=stream.height,
+                duration_millis=(
+                    stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1
+                )
+                // stream.fps_num,
+            ),
+            perception_preview_url=(
+                f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"
+            ),
+            model_or_fixture_id=manifest.models["screening"].model,
+            raw_response_ref=raw_ref,
+            screening_decision="NOT_ESTABLISHED",
+            screening_summary=screening.parsed_output.rationale_summary,
+            rule_judgment="NO_ACTIONABLE_RISK_ESTABLISHED",
+        )
+        self._write_run(completed)
+        return completed
+
+    def _finalize_no_action_ppe(
+        self,
+        run: M8PlatformScenarioRunV1,
+        a2: PilotA2Report,
+        manifest: RunManifest,
+    ) -> M8PlatformScenarioRunV1:
+        if len(manifest.streams) != 1:
+            raise ValueError("no-action Pilot run requires one video stream")
+        stream = manifest.streams[0]
+        stages = tuple(
+            self._stage(stage, summary, refs)
+            for stage, summary, refs in (
+                (M8PlatformScenarioStage.VIDEO, "真实录像已校验", (PLATFORM_CAMERA_ID,)),
+                (
+                    M8PlatformScenarioStage.PERCEPTION,
+                    "真实视觉感知已完成，未产生可行动候选事件",  # noqa: RUF001
+                    (a2.perception_manifest_id, a2.perception_completion_id),
+                ),
+                (M8PlatformScenarioStage.EVIDENCE, "没有需要裁剪的候选证据", ()),
+                (M8PlatformScenarioStage.SCREENING, "没有候选证据需要调用结构化初审", ()),
+                (
+                    M8PlatformScenarioStage.CASE,
+                    "未建立可行动风险，未自动建案",  # noqa: RUF001
+                    (),
+                ),
+                (M8PlatformScenarioStage.NOTIFICATION, "无需发送案件通知", ()),
+            )
+        )
+        completed = M8PlatformScenarioRunV1(
+            run_id=run.run_id,
+            scenario_kind=run.scenario_kind,
+            state="SUCCEEDED",
+            stages=stages,
+            recognition_mode=run.recognition_mode,
+            retry_of_run_id=run.retry_of_run_id,
+            model_components=self._model_components(run, manifest),
+            outcome="NO_ACTIONABLE_RISK_ESTABLISHED",
+            video_profile=M8PlatformVideoProfileV1(
+                input_file_sha256=stream.input_file_sha256,
+                fps_num=stream.fps_num,
+                fps_den=stream.fps_den,
+                frame_count=stream.frame_count,
+                width=stream.width,
+                height=stream.height,
+                duration_millis=(
+                    stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1
+                )
+                // stream.fps_num,
+            ),
+            model_or_fixture_id=(
+                manifest.models["screening"].model
+                if run.recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+                else "fixture-ppe-screening-v1"
+            ),
+            rule_judgment="NO_ACTIONABLE_RISK_ESTABLISHED",
         )
         self._write_run(completed)
         return completed
@@ -1036,8 +1296,86 @@ class M8PlatformDemoService:
     def _write_run(self, run: M8PlatformScenarioRunV1) -> None:
         path = self.artifact_root / PLATFORM_SCENARIO_STATE_NAME
         temporary = path.with_suffix(".json.tmp")
-        temporary.write_text(canonical_json(run.model_dump(mode="json")), encoding="utf-8")
+        body = canonical_json(run.model_dump(mode="json"))
+        temporary.write_text(body, encoding="utf-8")
         temporary.replace(path)
+        snapshots = self.artifact_root / "scenario-runs"
+        snapshots.mkdir(parents=True, exist_ok=True)
+        snapshot = snapshots / f"{run.run_id}.json"
+        snapshot_temporary = snapshot.with_suffix(".json.tmp")
+        snapshot_temporary.write_text(body, encoding="utf-8")
+        snapshot_temporary.replace(snapshot)
+
+    def _read_run_snapshot(self, run_id: str) -> M8PlatformScenarioRunV1:
+        return M8PlatformScenarioRunV1.model_validate_json(
+            (self.artifact_root / "scenario-runs" / f"{run_id}.json").read_bytes()
+        )
+
+    def _pilot_service_for(self, run: M8PlatformScenarioRunV1) -> PilotUiService:
+        return (
+            self.model_pilot_service
+            if run.recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+            else self.fixture_pilot_service
+        )
+
+    def _pilot_jobs_for(self, run: M8PlatformScenarioRunV1) -> PilotUiJobManager:
+        return (
+            self.model_pilot_jobs
+            if run.recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+            else self.fixture_pilot_jobs
+        )
+
+    @staticmethod
+    def _model_manifest(component: str, profile) -> ModelManifest:
+        return ModelManifest(
+            component=component,
+            provider=profile.provider,
+            model=profile.model,
+            revision=profile.revision,
+            quantization=profile.quantization,
+            weights_sha256=None,
+            license_id="no-weights",
+            provider_revision_guarantee=True,
+        )
+
+    def _model_components(
+        self,
+        run: M8PlatformScenarioRunV1,
+        manifest: RunManifest,
+    ) -> tuple[M8PlatformModelComponentV1, ...]:
+        fixture = run.recognition_mode == M8PlatformRecognitionMode.DEMO_FIXTURE
+        perception = manifest.models["detector"]
+        screening = manifest.models["screening"]
+        return (
+            M8PlatformModelComponentV1(
+                component="PERCEPTION",
+                source=(
+                    M8PlatformExecutionSource.FIXTURE
+                    if fixture
+                    else M8PlatformExecutionSource.MODEL
+                ),
+                provider=("labcourt-fixture" if fixture else perception.provider),
+                model=("recorded-ppe-perception-v1" if fixture else perception.model),
+                revision=("1.0.0" if fixture else perception.revision),
+                manifest_id=(
+                    platform_manifest("platform-recorded-ppe-perception-fixture-v1")
+                    if fixture
+                    else perception.model_manifest_id
+                ),
+            ),
+            M8PlatformModelComponentV1(
+                component="SCREENING",
+                source=(
+                    M8PlatformExecutionSource.FIXTURE
+                    if fixture
+                    else M8PlatformExecutionSource.MODEL
+                ),
+                provider=screening.provider,
+                model=screening.model,
+                revision=screening.revision,
+                manifest_id=screening.model_manifest_id,
+            ),
+        )
 
     @staticmethod
     def _document_sha256(value: object) -> str:
@@ -1046,9 +1384,11 @@ class M8PlatformDemoService:
 
     def _pilot_ppe_authorities(
         self,
-        run_id: str,
+        run: M8PlatformScenarioRunV1,
     ) -> tuple[Case, EvidencePack, StreamManifest, str]:
-        run_root = self.project_root / self.pilot_service.config.run.workspace / run_id
+        run_id = run.run_id
+        service = self._pilot_service_for(run)
+        run_root = self.project_root / service.config.run.workspace / run_id
         a2 = PilotA2Report.model_validate_json((run_root / "pilot/a2-report.json").read_bytes())
         if a2.run_id != run_id or len(a2.evidence_packs) != 1:
             raise ValueError("Pilot A2 report does not contain one PPE authority")
@@ -1100,6 +1440,7 @@ class M8PlatformDemoService:
             self.artifact_root / PLATFORM_SCENARIO_STATE_NAME,
             self.artifact_root / "platform-local-access.json",
             self.artifact_root / "media/camera-recorded-demo-01.mp4",
+            self.artifact_root / "scenario-runs",
         ]
         return tuple(values)
 

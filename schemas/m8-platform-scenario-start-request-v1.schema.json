@@ -1,5 +1,13 @@
 {
   "$defs": {
+    "M8PlatformRecognitionMode": {
+      "enum": [
+        "FULL_MODEL",
+        "DEMO_FIXTURE"
+      ],
+      "title": "M8PlatformRecognitionMode",
+      "type": "string"
+    },
     "M8PlatformScenarioKind": {
       "enum": [
         "PPE_GOGGLES_MISSING",
@@ -17,6 +25,30 @@
       "const": true,
       "title": "Explicit Human Confirmation",
       "type": "boolean"
+    },
+    "recognition_mode": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8PlatformRecognitionMode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "retry_of_run_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retry Of Run Id"
     },
     "scenario_kind": {
       "$ref": "#/$defs/M8PlatformScenarioKind"

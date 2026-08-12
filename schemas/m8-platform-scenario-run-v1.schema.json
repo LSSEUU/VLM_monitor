@@ -61,6 +61,71 @@
       "title": "M8PlatformEvidenceViewV1",
       "type": "object"
     },
+    "M8PlatformExecutionSource": {
+      "enum": [
+        "MODEL",
+        "FIXTURE"
+      ],
+      "title": "M8PlatformExecutionSource",
+      "type": "string"
+    },
+    "M8PlatformModelComponentV1": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "enum": [
+            "PERCEPTION",
+            "SCREENING"
+          ],
+          "title": "Component",
+          "type": "string"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "provider": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/M8PlatformExecutionSource"
+        }
+      },
+      "required": [
+        "component",
+        "source",
+        "provider",
+        "model",
+        "revision",
+        "manifest_id"
+      ],
+      "title": "M8PlatformModelComponentV1",
+      "type": "object"
+    },
+    "M8PlatformRecognitionMode": {
+      "enum": [
+        "FULL_MODEL",
+        "DEMO_FIXTURE"
+      ],
+      "title": "M8PlatformRecognitionMode",
+      "type": "string"
+    },
     "M8PlatformScenarioKind": {
       "enum": [
         "PPE_GOGGLES_MISSING",
@@ -246,6 +311,15 @@
       "title": "Machine Output Is Ground Truth",
       "type": "boolean"
     },
+    "model_components": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8PlatformModelComponentV1"
+      },
+      "maxItems": 2,
+      "title": "Model Components",
+      "type": "array"
+    },
     "model_or_fixture_id": {
       "anyOf": [
         {
@@ -272,6 +346,22 @@
       "default": null,
       "title": "Notification Id"
     },
+    "outcome": {
+      "anyOf": [
+        {
+          "enum": [
+            "ACTIONABLE_RISK",
+            "NO_ACTIONABLE_RISK_ESTABLISHED"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Outcome"
+    },
     "perception_preview_url": {
       "anyOf": [
         {
@@ -297,12 +387,37 @@
       "default": null,
       "title": "Raw Response Ref"
     },
+    "recognition_mode": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8PlatformRecognitionMode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "retry_of_run_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retry Of Run Id"
+    },
     "rule_judgment": {
       "anyOf": [
         {
           "enum": [
             "GENERAL_RISK",
-            "EMERGENCY"
+            "EMERGENCY",
+            "NO_ACTIONABLE_RISK_ESTABLISHED"
           ],
           "type": "string"
         },

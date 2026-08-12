@@ -8,6 +8,9 @@ $requirements = Join-Path $projectRoot "requirements\perception-worker.txt"
 $modelId = "IDEA-Research/grounding-dino-tiny"
 $revision = "a2bb814dd30d776dcf7e30523b00659f4f141c71"
 $expectedWeightSha256 = "1a2412ef99bd74bcd3c2a246fa1e48581f8889a1300c9051974741314fc042f3"
+$poseModelId = "usyd-community/vitpose-plus-small"
+$poseRevision = "0c30b6534bb621af0162b481176742577264e36e"
+$poseExpectedWeightSha256 = "f7bad8ed09eeeb2a7de6b38faaa8a88d07838e23e9c06a2a782099bca7467cb9"
 
 function Assert-NativeSuccess {
     param([string]$Step)
@@ -39,6 +42,8 @@ snapshot_download(sys.argv[1], revision=sys.argv[2])
 "@
     & $workerPython -c $downloadCode $modelId $revision
     Assert-NativeSuccess "downloading the pinned Grounding DINO snapshot"
+    & $workerPython -c $downloadCode $poseModelId $poseRevision
+    Assert-NativeSuccess "downloading the pinned ViTPose snapshot"
 
     $verifyCode = @"
 from hashlib import sha256
@@ -52,14 +57,16 @@ with Path(path).open('rb') as source:
         hasher.update(chunk)
 digest = hasher.hexdigest()
 if digest != sys.argv[3]:
-    raise SystemExit('downloaded Grounding DINO weight SHA-256 mismatch')
+    raise SystemExit('downloaded perception weight SHA-256 mismatch')
 import torch
 if not torch.cuda.is_available():
     raise SystemExit('CUDA is unavailable in the isolated perception environment')
 print(f'perception environment ready; torch={torch.__version__}; device={torch.cuda.get_device_name(0)}')
 "@
     & $workerPython -c $verifyCode $modelId $revision $expectedWeightSha256
-    Assert-NativeSuccess "verifying the perception environment"
+    Assert-NativeSuccess "verifying the Grounding DINO environment"
+    & $workerPython -c $verifyCode $poseModelId $poseRevision $poseExpectedWeightSha256
+    Assert-NativeSuccess "verifying the ViTPose environment"
 
     $handshakeCode = @"
 import subprocess

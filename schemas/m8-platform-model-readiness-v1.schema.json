@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "M8PlatformModelReadinessComponentV1": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "enum": [
+            "PERCEPTION",
+            "SCREENING"
+          ],
+          "title": "Component",
+          "type": "string"
+        },
+        "failure_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Code"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "provider": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "ready": {
+          "title": "Ready",
+          "type": "boolean"
+        },
+        "revision": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "ready",
+        "provider",
+        "model",
+        "revision",
+        "manifest_id"
+      ],
+      "title": "M8PlatformModelReadinessComponentV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-model-readiness-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "automatic_fallback_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Automatic Fallback Permitted",
+      "type": "boolean"
+    },
+    "components": {
+      "items": {
+        "$ref": "#/$defs/M8PlatformModelReadinessComponentV1"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Components",
+      "type": "array"
+    },
+    "fixture_available": {
+      "const": true,
+      "default": true,
+      "title": "Fixture Available",
+      "type": "boolean"
+    },
+    "full_model_ready": {
+      "title": "Full Model Ready",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-platform-model-readiness-v1",
+      "default": "m8-platform-model-readiness-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "full_model_ready",
+    "components"
+  ],
+  "title": "M8PlatformModelReadinessV1",
+  "type": "object"
+}

@@ -86,8 +86,8 @@ def _credential_catalog() -> M8ApiCredentialCatalogAuthorityV1:
     )
 
 
-def _pilot_config(project_root: Path) -> AppConfig:
-    """Keep demo.yaml as the base while enabling the existing Pilot service with fixtures."""
+def _pilot_config(project_root: Path, *, fixture: bool) -> AppConfig:
+    """Compose the Pilot scope while retaining an explicit model/fixture choice."""
 
     demo = load_config(project_root / "configs/demo.yaml")
     pilot = load_config(project_root / "configs/pilot.yaml")
@@ -96,24 +96,30 @@ def _pilot_config(project_root: Path) -> AppConfig:
     payload["zones"] = pilot_payload["zones"]
     payload["pilot"] = pilot_payload["pilot"]
     payload["perception"] = pilot_payload["perception"]
-    providers = dict(payload["providers"])
-    profile = dict(pilot_payload["providers"]["pilot-screening"])
-    profile.update(
-        {
-            "provider": "labcourt-fixture",
-            "model": "offline-structured-ppe-screening",
-            "revision": "1.0.0",
-            "endpoint_env": "LABCOURT_PLATFORM_FIXTURE_ENDPOINT",
-            "api_key_env": "LABCOURT_PLATFORM_FIXTURE_API_KEY",
-            "input_cost_per_million_tokens": 0.0,
-            "output_cost_per_million_tokens": 0.0,
-        }
-    )
-    providers["platform-fixture-screening"] = profile
-    payload["providers"] = providers
     screening = dict(payload["screening"])
-    screening["provider_profile"] = "platform-fixture-screening"
-    screening["timeout_seconds"] = 15.0
+    if fixture:
+        providers = dict(payload["providers"])
+        profile = dict(pilot_payload["providers"]["pilot-screening"])
+        profile.update(
+            {
+                "provider": "labcourt-fixture",
+                "model": "offline-structured-ppe-screening",
+                "revision": "1.0.0",
+                "endpoint_env": "LABCOURT_PLATFORM_FIXTURE_ENDPOINT",
+                "api_key_env": "LABCOURT_PLATFORM_FIXTURE_API_KEY",
+                "input_cost_per_million_tokens": 0.0,
+                "output_cost_per_million_tokens": 0.0,
+            }
+        )
+        providers["platform-fixture-screening"] = profile
+        payload["providers"] = providers
+        screening["provider_profile"] = "platform-fixture-screening"
+        screening["timeout_seconds"] = 15.0
+    else:
+        providers = dict(payload["providers"])
+        providers["pilot-screening"] = pilot_payload["providers"]["pilot-screening"]
+        payload["providers"] = providers
+        screening["provider_profile"] = "pilot-screening"
     payload["screening"] = screening
     return AppConfig.model_validate(payload)
 
@@ -194,10 +200,15 @@ def assemble_m8_platform_demo_api(
         platform_manifest("platform-knowledge-query-v1"),
         platform_manifest("platform-knowledge-adapter-v1"),
     )
-    pilot_service = PilotUiService(
+    fixture_pilot_service = PilotUiService(
         project_root=root,
         config_path=root / "configs/demo.yaml",
-        config_override=_pilot_config(root),
+        config_override=_pilot_config(root, fixture=True),
+    )
+    model_pilot_service = PilotUiService(
+        project_root=root,
+        config_path=root / "configs/pilot.yaml",
+        config_override=_pilot_config(root, fixture=False),
     )
     platform_service = M8PlatformDemoService(
         project_root=root,
@@ -205,7 +216,8 @@ def assemble_m8_platform_demo_api(
         input_media_path=input_media_path,
         api_service=operations_api,
         knowledge_service=knowledge_api,
-        pilot_service=pilot_service,
+        fixture_pilot_service=fixture_pilot_service,
+        model_pilot_service=model_pilot_service,
     )
     catalog = inventory.get_current_source_catalog(PLATFORM_CAMPUS_ID)
     smoke_policy = build_offline_smoke_demo_bundle(

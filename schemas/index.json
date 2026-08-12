@@ -1834,6 +1834,12 @@
       "name": "m8-platform-login-response-v1"
     },
     {
+      "file": "m8-platform-model-readiness-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformModelReadinessV1",
+      "name": "m8-platform-model-readiness-v1"
+    },
+    {
       "file": "m8-platform-notification-dispatch-request-v1.schema.json",
       "mode": "validation",
       "model": "labcourt.contracts.m8_platform_demo.M8PlatformNotificationDispatchRequestV1",

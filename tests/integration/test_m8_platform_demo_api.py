@@ -46,6 +46,16 @@ def _request(
     return response.status, json.loads(content) if content else None
 
 
+def _range_request(port: int, path: str) -> tuple[int, bytes, str | None]:
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+    connection.request("GET", path, headers={"Range": "bytes=0-31"})
+    response = connection.getresponse()
+    content = response.read()
+    content_range = response.getheader("Content-Range")
+    connection.close()
+    return response.status, content, content_range
+
+
 def _login(port: int, role: str) -> str:
     status, payload = _request(
         port,
@@ -133,6 +143,25 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
         leader = _login(server.server_port, "LEADER")
         operations = _login(server.server_port, "OPERATIONS")
         student = _login(server.server_port, "STUDENT")
+        media_status, media_bytes, content_range = _range_request(
+            server.server_port, "/api/m8/demo/public-media/recorded-video"
+        )
+        assert media_status == 206
+        assert len(media_bytes) == 32
+        assert content_range is not None and content_range.startswith("bytes 0-31/")
+        readiness_status, readiness = _request(
+            server.server_port,
+            "GET",
+            "/api/m8/demo/model-readiness",
+            token=operations,
+        )
+        assert readiness_status == 200
+        assert isinstance(readiness, dict)
+        assert readiness["automatic_fallback_permitted"] is False
+        assert [item["component"] for item in readiness["components"]] == [
+            "PERCEPTION",
+            "SCREENING",
+        ]
         denied, _ = _request(
             server.server_port,
             "POST",

@@ -429,6 +429,7 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformBootstrapReceiptV1,
     M8PlatformLoginRequestV1,
     M8PlatformLoginResponseV1,
+    M8PlatformModelReadinessV1,
     M8PlatformNotificationDispatchRequestV1,
     M8PlatformNotificationReplyRequestV1,
     M8PlatformReservationAuthorityV1,
@@ -879,6 +880,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-platform-bootstrap-receipt-v1": M8PlatformBootstrapReceiptV1,
     "m8-platform-login-request-v1": M8PlatformLoginRequestV1,
     "m8-platform-login-response-v1": M8PlatformLoginResponseV1,
+    "m8-platform-model-readiness-v1": M8PlatformModelReadinessV1,
     "m8-platform-notification-dispatch-request-v1": (
         M8PlatformNotificationDispatchRequestV1
     ),

@@ -26,6 +26,16 @@ class M8PlatformScenarioKind(StrEnum):
     SMOKE_TEMPERATURE_EMERGENCY = "SMOKE_TEMPERATURE_EMERGENCY"
 
 
+class M8PlatformRecognitionMode(StrEnum):
+    FULL_MODEL = "FULL_MODEL"
+    DEMO_FIXTURE = "DEMO_FIXTURE"
+
+
+class M8PlatformExecutionSource(StrEnum):
+    MODEL = "MODEL"
+    FIXTURE = "FIXTURE"
+
+
 class M8PlatformScenarioStage(StrEnum):
     VIDEO = "VIDEO"
     PERCEPTION = "PERCEPTION"
@@ -102,7 +112,29 @@ class M8PlatformScenarioStartRequestV1(FrozenContractModel):
         "m8-platform-scenario-start-request-v1"
     )
     scenario_kind: M8PlatformScenarioKind
+    recognition_mode: M8PlatformRecognitionMode | None = None
+    retry_of_run_id: ReferenceToken | None = None
     explicit_human_confirmation: Literal[True]
+
+    @field_validator("retry_of_run_id")
+    @classmethod
+    def validate_retry_ref(cls, value: str | None) -> str | None:
+        return (
+            require_portable_run_id(value, "M8 platform retry run")
+            if value is not None
+            else None
+        )
+
+    @model_validator(mode="after")
+    def validate_execution_choice(self) -> Self:
+        is_ppe = self.scenario_kind == M8PlatformScenarioKind.PPE_GOGGLES_MISSING
+        if is_ppe != (self.recognition_mode is not None):
+            raise ValueError("only PPE scenario starts require an explicit recognition mode")
+        if self.retry_of_run_id is not None and (
+            not is_ppe or self.recognition_mode != M8PlatformRecognitionMode.DEMO_FIXTURE
+        ):
+            raise ValueError("only explicit PPE fixture fallback may reference a failed run")
+        return self
 
 
 class M8PlatformScenarioStageV1(FrozenContractModel):
@@ -161,6 +193,51 @@ class M8PlatformVideoProfileV1(FrozenContractModel):
         return self
 
 
+class M8PlatformModelComponentV1(FrozenContractModel):
+    component: Literal["PERCEPTION", "SCREENING"]
+    source: M8PlatformExecutionSource
+    provider: str = Field(min_length=1, max_length=128)
+    model: str = Field(min_length=1, max_length=256)
+    revision: str = Field(min_length=1, max_length=128)
+    manifest_id: Sha256Hex
+
+
+class M8PlatformModelReadinessComponentV1(FrozenContractModel):
+    component: Literal["PERCEPTION", "SCREENING"]
+    ready: bool
+    provider: str = Field(min_length=1, max_length=128)
+    model: str = Field(min_length=1, max_length=256)
+    revision: str = Field(min_length=1, max_length=128)
+    manifest_id: Sha256Hex
+    failure_code: ReferenceToken | None = None
+
+    @model_validator(mode="after")
+    def validate_failure(self) -> Self:
+        if self.ready == (self.failure_code is not None):
+            raise ValueError("model readiness failure code must exist exactly when not ready")
+        return self
+
+
+class M8PlatformModelReadinessV1(FrozenContractModel):
+    schema_version: Literal["m8-platform-model-readiness-v1"] = (
+        "m8-platform-model-readiness-v1"
+    )
+    full_model_ready: bool
+    components: tuple[M8PlatformModelReadinessComponentV1, ...] = Field(
+        min_length=2, max_length=2
+    )
+    fixture_available: Literal[True] = True
+    automatic_fallback_permitted: Literal[False] = False
+
+    @model_validator(mode="after")
+    def validate_components(self) -> Self:
+        if tuple(item.component for item in self.components) != ("PERCEPTION", "SCREENING"):
+            raise ValueError("model readiness components must use stable order")
+        if self.full_model_ready != all(item.ready for item in self.components):
+            raise ValueError("full model readiness must equal component readiness")
+        return self
+
+
 class M8PlatformScenarioRunV1(FrozenContractModel):
     schema_version: Literal["m8-platform-scenario-run-v1"] = "m8-platform-scenario-run-v1"
     run_id: ReferenceToken
@@ -170,6 +247,12 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
     case_id: ReferenceToken | None = None
     case_status: M8OperationalCaseStatus | None = None
     notification_id: ReferenceToken | None = None
+    recognition_mode: M8PlatformRecognitionMode | None = None
+    retry_of_run_id: ReferenceToken | None = None
+    model_components: tuple[M8PlatformModelComponentV1, ...] = Field(
+        default=(), max_length=2
+    )
+    outcome: Literal["ACTIONABLE_RISK", "NO_ACTIONABLE_RISK_ESTABLISHED"] | None = None
     evidence: tuple[M8PlatformEvidenceViewV1, ...] = Field(default=(), max_length=24)
     video_profile: M8PlatformVideoProfileV1 | None = None
     perception_preview_url: str | None = None
@@ -177,7 +260,9 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
     raw_response_ref: str | None = Field(default=None, max_length=512)
     screening_decision: Literal["ESTABLISHED", "NOT_ESTABLISHED", "ESCALATE"] | None = None
     screening_summary: str | None = Field(default=None, max_length=2_048)
-    rule_judgment: Literal["GENERAL_RISK", "EMERGENCY"] | None = None
+    rule_judgment: Literal[
+        "GENERAL_RISK", "EMERGENCY", "NO_ACTIONABLE_RISK_ESTABLISHED"
+    ] | None = None
     failure_code: ReferenceToken | None = None
     simulated: Literal[True] = True
     machine_output_is_ground_truth: Literal[False] = False
@@ -210,9 +295,26 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
             raise ValueError("M8 platform failed scenario requires exactly one failure code")
         if (self.case_id is None) != (self.case_status is None):
             raise ValueError("M8 platform scenario Case projection must be complete")
+        is_ppe = self.scenario_kind == M8PlatformScenarioKind.PPE_GOGGLES_MISSING
+        if is_ppe != (self.recognition_mode is not None):
+            raise ValueError("PPE runs require an explicit recognition mode")
+        if self.retry_of_run_id is not None:
+            require_portable_run_id(self.retry_of_run_id, "M8 platform retry run")
+            if self.recognition_mode != M8PlatformRecognitionMode.DEMO_FIXTURE:
+                raise ValueError("only fixture fallback runs may reference an earlier run")
+        if self.model_components and tuple(item.component for item in self.model_components) != (
+            "PERCEPTION",
+            "SCREENING",
+        ):
+            raise ValueError("model components must use stable order")
+        if self.outcome == "NO_ACTIONABLE_RISK_ESTABLISHED" and any(
+            value is not None for value in (self.case_id, self.notification_id)
+        ):
+            raise ValueError("no-action PPE run cannot create a Case or notification")
         if (
             self.state == "SUCCEEDED"
-            and self.scenario_kind == M8PlatformScenarioKind.PPE_GOGGLES_MISSING
+            and is_ppe
+            and self.outcome == "ACTIONABLE_RISK"
             and any(
                 value is None
                 for value in (
@@ -226,6 +328,10 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
             )
         ):
             raise ValueError("successful M8 PPE run requires complete Pilot projections")
+        if self.state == "SUCCEEDED" and is_ppe and (
+            self.outcome is None or len(self.model_components) != 2
+        ):
+            raise ValueError("successful PPE run requires outcome and component provenance")
         return self
 
 
@@ -357,11 +463,16 @@ __all__ = [
     "M8PlatformAgentQueryResponseV1",
     "M8PlatformBootstrapReceiptV1",
     "M8PlatformEvidenceViewV1",
+    "M8PlatformExecutionSource",
     "M8PlatformLoginRequestV1",
     "M8PlatformLoginResponseV1",
+    "M8PlatformModelComponentV1",
+    "M8PlatformModelReadinessComponentV1",
+    "M8PlatformModelReadinessV1",
     "M8PlatformNotificationDispatchRequestV1",
     "M8PlatformNotificationReplyRequestV1",
     "M8PlatformProposedActionV1",
+    "M8PlatformRecognitionMode",
     "M8PlatformReservationAuthorityV1",
     "M8PlatformResetRequestV1",
     "M8PlatformResetResponseV1",

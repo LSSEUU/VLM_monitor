@@ -80,6 +80,11 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 return
             if self._serve_static():
                 return
+            if self.path.split("?", maxsplit=1)[0] == (
+                "/api/m8/demo/public-media/recorded-video"
+            ):
+                self._public_recorded_video()
+                return
             principal = self.server.api_authenticator.authenticate(
                 self.headers.get("Authorization")
             )
@@ -89,6 +94,10 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     HTTPStatus.OK,
                     self.server.platform_service.reservations(principal),
                 )
+                return
+            if segments == ("api", "m8", "demo", "model-readiness"):
+                readiness = self.server.platform_service.model_readiness(principal)
+                self._json(HTTPStatus.OK, readiness.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "demo", "scenario-runs", "current"):
                 run = self.server.platform_service.current_run(principal)
@@ -168,7 +177,10 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     self._json_body()
                 )
                 run = self.server.platform_service.start_scenario(
-                    principal, request.scenario_kind
+                    principal,
+                    request.scenario_kind,
+                    request.recognition_mode,
+                    request.retry_of_run_id,
                 )
                 self._json(HTTPStatus.ACCEPTED, run.model_dump(mode="json"))
                 return
@@ -278,6 +290,37 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                         remaining -= len(chunk)
             except (BrokenPipeError, ConnectionResetError):
                 return
+
+    def _public_recorded_video(self) -> None:
+        path = self.server.platform_service.input_media_path
+        size = path.stat().st_size
+        requested = self._requested_range(size)
+        if requested is None:
+            return
+        start, end, partial = requested
+        length = end - start + 1
+        self.send_response(HTTPStatus.PARTIAL_CONTENT if partial else HTTPStatus.OK)
+        self.send_header("Cache-Control", "public, max-age=3600")
+        self.send_header("Content-Type", "video/mp4")
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(length))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        if partial:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.end_headers()
+        try:
+            with path.open("rb") as handle:
+                handle.seek(start)
+                remaining = length
+                while remaining:
+                    chunk = handle.read(min(_STREAM_CHUNK_BYTES, remaining))
+                    if not chunk:
+                        raise OSError("recorded demo media ended before inspected size")
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            return
 
     def _serve_static(self) -> bool:
         path = self.path.split("?", maxsplit=1)[0]

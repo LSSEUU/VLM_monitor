@@ -6,8 +6,13 @@ from pydantic import ValidationError
 from labcourt.contracts.m8_access_cases import M8ActorRole, M8AuthorityReferenceKind
 from labcourt.contracts.m8_platform_demo import (
     M8PlatformAgentQueryRequestV1,
+    M8PlatformExecutionSource,
+    M8PlatformModelComponentV1,
+    M8PlatformModelReadinessComponentV1,
+    M8PlatformModelReadinessV1,
     M8PlatformNotificationDispatchRequestV1,
     M8PlatformNotificationReplyRequestV1,
+    M8PlatformRecognitionMode,
     M8PlatformReservationAuthorityV1,
     M8PlatformResetRequestV1,
     M8PlatformScenarioKind,
@@ -34,6 +39,10 @@ def test_platform_demo_roles_scenarios_and_authorities_are_closed() -> None:
         M8PlatformScenarioKind.SMOKE_TEMPERATURE_EMERGENCY,
     )
     assert M8AuthorityReferenceKind.RESERVATION.value == "RESERVATION"
+    assert tuple(M8PlatformRecognitionMode) == (
+        M8PlatformRecognitionMode.FULL_MODEL,
+        M8PlatformRecognitionMode.DEMO_FIXTURE,
+    )
 
 
 def test_reservation_is_typed_and_explicitly_not_visual_identity() -> None:
@@ -74,6 +83,7 @@ def test_scenario_run_requires_all_six_stages_in_stable_order() -> None:
         scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
         state="RUNNING",
         stages=stages,
+        recognition_mode="FULL_MODEL",
     )
     assert tuple(item.stage for item in run.stages) == tuple(M8PlatformScenarioStage)
     with pytest.raises(ValidationError):
@@ -82,7 +92,69 @@ def test_scenario_run_requires_all_six_stages_in_stable_order() -> None:
             scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
             state="RUNNING",
             stages=tuple(reversed(stages)),
+            recognition_mode="FULL_MODEL",
         )
+
+
+def test_ppe_start_requires_explicit_mode_and_fixture_retry_reference() -> None:
+    full = M8PlatformScenarioStartRequestV1(
+        scenario_kind="PPE_GOGGLES_MISSING",
+        recognition_mode="FULL_MODEL",
+        explicit_human_confirmation=True,
+    )
+    assert full.retry_of_run_id is None
+    retry = M8PlatformScenarioStartRequestV1(
+        scenario_kind="PPE_GOGGLES_MISSING",
+        recognition_mode="DEMO_FIXTURE",
+        retry_of_run_id="platform-ppe-failed",
+        explicit_human_confirmation=True,
+    )
+    assert retry.retry_of_run_id == "platform-ppe-failed"
+    with pytest.raises(ValidationError):
+        M8PlatformScenarioStartRequestV1(
+            scenario_kind="PPE_GOGGLES_MISSING",
+            explicit_human_confirmation=True,
+        )
+    with pytest.raises(ValidationError):
+        M8PlatformScenarioStartRequestV1(
+            scenario_kind="SMOKE_TEMPERATURE_EMERGENCY",
+            recognition_mode="FULL_MODEL",
+            explicit_human_confirmation=True,
+        )
+
+
+def test_model_readiness_and_provenance_are_closed_and_secret_free() -> None:
+    perception = M8PlatformModelReadinessComponentV1(
+        component="PERCEPTION",
+        ready=True,
+        provider="HuggingFace",
+        model="IDEA-Research/grounding-dino-tiny + usyd-community/vitpose-plus-small",
+        revision="pinned",
+        manifest_id=SHA,
+    )
+    screening = M8PlatformModelReadinessComponentV1(
+        component="SCREENING",
+        ready=False,
+        provider="alibaba-cloud-model-studio",
+        model="qwen3-vl-plus-2025-12-19",
+        revision="2025-12-19",
+        manifest_id=SHA,
+        failure_code="SCREENING_CREDENTIALS_UNAVAILABLE",
+    )
+    readiness = M8PlatformModelReadinessV1(
+        full_model_ready=False,
+        components=(perception, screening),
+    )
+    assert "api_key" not in readiness.model_dump_json()
+    provenance = M8PlatformModelComponentV1(
+        component="SCREENING",
+        source=M8PlatformExecutionSource.MODEL,
+        provider="alibaba-cloud-model-studio",
+        model="qwen3-vl-plus-2025-12-19",
+        revision="2025-12-19",
+        manifest_id=SHA,
+    )
+    assert provenance.source is M8PlatformExecutionSource.MODEL
 
 
 def test_video_profile_uses_verified_pilot_timing() -> None:
