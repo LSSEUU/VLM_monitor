@@ -22,6 +22,14 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalRiskLevel,
 )
+from labcourt.contracts.m8_platform_demo import (
+    M8PlatformRecognitionMode,
+    M8PlatformScenarioKind,
+    M8PlatformScenarioRunV1,
+    M8PlatformScenarioStage,
+    M8PlatformScenarioStageV1,
+    M8PlatformStageState,
+)
 
 
 def _request(
@@ -149,6 +157,13 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
         assert media_status == 206
         assert len(media_bytes) == 32
         assert content_range is not None and content_range.startswith("bytes 0-31/")
+        head = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=3)
+        head.request("HEAD", "/api/m8/demo/public-media/recorded-video")
+        head_response = head.getresponse()
+        assert head_response.status == 200
+        assert int(head_response.getheader("Content-Length", "0")) > 0
+        assert head_response.read() == b""
+        head.close()
         readiness_status, readiness = _request(
             server.server_port,
             "GET",
@@ -266,6 +281,79 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
             if item["latest_sample_receipt"] is not None
         }
         assert sensor_values == {"SMOKE": True, "TEMPERATURE": 82_000}
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_platform_fixture_fallback_is_explicit_and_preserves_failed_model_run(
+    tmp_path: Path,
+    socket_enabled: None,
+    monkeypatch,
+) -> None:
+    assembly = _assembly(tmp_path)
+    platform = assembly.server.platform_service
+    stages = tuple(
+        M8PlatformScenarioStageV1(
+            stage=stage,
+            state=M8PlatformStageState.PENDING,
+            summary="尚未生成",
+        )
+        for stage in M8PlatformScenarioStage
+    )
+    running = M8PlatformScenarioRunV1(
+        run_id="platform-full-running",
+        scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
+        state="RUNNING",
+        stages=stages,
+        recognition_mode=M8PlatformRecognitionMode.FULL_MODEL,
+    )
+    platform._write_run(running)
+    monkeypatch.setattr(platform.fixture_pilot_jobs, "start", lambda _request: None)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        operations = _login(server.server_port, "OPERATIONS")
+        rejected, _ = _request(
+            server.server_port,
+            "POST",
+            "/api/m8/demo/scenario-runs",
+            token=operations,
+            payload={
+                "scenario_kind": "PPE_GOGGLES_MISSING",
+                "recognition_mode": "DEMO_FIXTURE",
+                "retry_of_run_id": running.run_id,
+                "explicit_human_confirmation": True,
+            },
+        )
+        assert rejected == 400
+
+        failed = running.model_copy(
+            update={"state": "FAILED", "failure_code": "PERCEPTION_WORKER_FAILED"}
+        )
+        platform._write_run(failed)
+        accepted, fallback = _request(
+            server.server_port,
+            "POST",
+            "/api/m8/demo/scenario-runs",
+            token=operations,
+            payload={
+                "scenario_kind": "PPE_GOGGLES_MISSING",
+                "recognition_mode": "DEMO_FIXTURE",
+                "retry_of_run_id": failed.run_id,
+                "explicit_human_confirmation": True,
+            },
+        )
+        assert accepted == 202
+        assert isinstance(fallback, dict)
+        assert fallback["recognition_mode"] == "DEMO_FIXTURE"
+        assert fallback["retry_of_run_id"] == failed.run_id
+        assert fallback["run_id"] != failed.run_id
+        preserved = platform._read_run_snapshot(failed.run_id)
+        assert preserved.state == "FAILED"
+        assert preserved.failure_code == "PERCEPTION_WORKER_FAILED"
     finally:
         server.shutdown()
         server.server_close()

@@ -73,6 +73,21 @@ class M8PlatformHttpServer(M8ApiHttpServer):
 class M8PlatformRequestHandler(M8ApiRequestHandler):
     server: M8PlatformHttpServer
 
+    def do_HEAD(self) -> None:
+        try:
+            if not self._local_host_allowed():
+                self._error(HTTPStatus.FORBIDDEN, M8ApiErrorReason.LOCAL_HOST_REQUIRED)
+                return
+            if self.path.split("?", maxsplit=1)[0] == (
+                "/api/m8/demo/public-media/recorded-video"
+            ):
+                self._public_recorded_video(head_only=True)
+                return
+        except (OSError, ValueError):
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, M8ApiErrorReason.INTERNAL_FAILURE)
+            return
+        self.send_error(HTTPStatus.NOT_FOUND)
+
     def do_GET(self) -> None:
         try:
             if not self._local_host_allowed():
@@ -291,7 +306,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             except (BrokenPipeError, ConnectionResetError):
                 return
 
-    def _public_recorded_video(self) -> None:
+    def _public_recorded_video(self, *, head_only: bool = False) -> None:
         path = self.server.platform_service.input_media_path
         size = path.stat().st_size
         requested = self._requested_range(size)
@@ -309,6 +324,8 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
         if partial:
             self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
         self.end_headers()
+        if head_only:
+            return
         try:
             with path.open("rb") as handle:
                 handle.seek(start)

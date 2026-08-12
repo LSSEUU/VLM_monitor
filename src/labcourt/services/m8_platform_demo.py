@@ -259,7 +259,12 @@ class M8PlatformDemoService:
             return None
         run = M8PlatformScenarioRunV1.model_validate_json(path.read_bytes())
         if run.state == "RUNNING":
-            run = self._refresh_ppe(run)
+            with self._operation_lock:
+                # Another polling request may have finalized this run while this
+                # request waited for the lock. Re-read before creating projections.
+                run = M8PlatformScenarioRunV1.model_validate_json(path.read_bytes())
+                if run.state == "RUNNING":
+                    run = self._refresh_ppe(run)
         if run.case_id is not None:
             try:
                 current_case = self._operations().get_current_operational_case(run.case_id)
@@ -1344,8 +1349,30 @@ class M8PlatformDemoService:
         manifest: RunManifest,
     ) -> tuple[M8PlatformModelComponentV1, ...]:
         fixture = run.recognition_mode == M8PlatformRecognitionMode.DEMO_FIXTURE
-        perception = manifest.models["detector"]
         screening = manifest.models["screening"]
+        perception_pipeline = build_expected_perception_manifest(
+            self.model_pilot_service.config
+        )
+        pose = perception_pipeline.pose
+        tracker = perception_pipeline.tracker
+        pipeline_model = " + ".join(
+            value
+            for value in (
+                perception_pipeline.detector.model,
+                pose.model if pose is not None else None,
+                tracker.model,
+            )
+            if value is not None
+        )
+        pipeline_revision = " + ".join(
+            value
+            for value in (
+                perception_pipeline.detector.revision,
+                pose.revision if pose is not None else None,
+                tracker.revision,
+            )
+            if value is not None
+        )
         return (
             M8PlatformModelComponentV1(
                 component="PERCEPTION",
@@ -1354,13 +1381,15 @@ class M8PlatformDemoService:
                     if fixture
                     else M8PlatformExecutionSource.MODEL
                 ),
-                provider=("labcourt-fixture" if fixture else perception.provider),
-                model=("recorded-ppe-perception-v1" if fixture else perception.model),
-                revision=("1.0.0" if fixture else perception.revision),
+                provider=(
+                    "labcourt-fixture" if fixture else "HuggingFace + Roboflow"
+                ),
+                model=("recorded-ppe-perception-v1" if fixture else pipeline_model),
+                revision=("1.0.0" if fixture else pipeline_revision),
                 manifest_id=(
                     platform_manifest("platform-recorded-ppe-perception-fixture-v1")
                     if fixture
-                    else perception.model_manifest_id
+                    else perception_pipeline.manifest_id
                 ),
             ),
             M8PlatformModelComponentV1(

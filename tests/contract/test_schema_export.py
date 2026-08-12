@@ -321,6 +321,7 @@ EXPECTED_SCHEMA_MODES = {
     "m8-platform-bootstrap-receipt-v1": "serialization",
     "m8-platform-login-request-v1": "validation",
     "m8-platform-login-response-v1": "serialization",
+    "m8-platform-model-readiness-v1": "serialization",
     "m8-platform-notification-dispatch-request-v1": "validation",
     "m8-platform-notification-reply-request-v1": "validation",
     "m8-platform-reservation-authority-v1": "serialization",
