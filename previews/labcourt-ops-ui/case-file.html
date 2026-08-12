@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea">
+<title>护目镜缺失候选 · LC-2026-0810-014 · LabCourt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/nav.css">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --scene: oklch(0.70 0.006 70);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --maxw: 1180px;
+    --rule: 1px solid var(--border);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--font-serif);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--accent);color:var(--surface)}
+  a{color:inherit}
+
+  .ribbon{background:var(--fg);color:var(--bg);display:flex;justify-content:space-between;gap:16px;padding:6px 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+  /* 顶栏 */
+  .topbar{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 32px;border-bottom:2px solid var(--fg);animation:fade-down .5s ease both}
+  @keyframes fade-down{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .topbar .brand{font-family:var(--font-serif);font-weight:600;font-size:18px;text-decoration:none}
+  .topbar .brand small{font-family:var(--font-mono);font-weight:400;font-size:11px;color:var(--muted);margin-left:8px;letter-spacing:.08em}
+  .crumbs{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+  .crumbs a{color:var(--muted);text-decoration:none}
+  .crumbs a:hover{color:var(--fg)}
+  .crumbs b{color:var(--fg);font-weight:400}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .status-pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--muted);border:var(--rule);padding:5px 10px}
+  .status-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  .clock{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+  .clock b{color:var(--fg);font-weight:500}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:30px 32px 96px}
+
+  /* 案件头 */
+  .case-head h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(30px,3.6vw,40px);line-height:1.3;letter-spacing:0;margin:0 0 14px;animation:wipe-in .65s ease both}
+  @keyframes wipe-in{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+  .case-head .deck{font-size:17px;line-height:1.7;color:var(--muted);max-width:60ch;margin:0 0 18px;animation:rise .5s ease .15s both}
+  .meta-row{display:flex;flex-wrap:wrap;gap:10px 30px;font-family:var(--font-mono);font-size:12.5px;color:var(--muted);letter-spacing:.02em;animation:rise .5s ease .25s both}
+  .meta-row span b{color:var(--fg);font-weight:500}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* 流程进度图（脊骨） */
+  .flow-section{margin-top:34px;animation:rise .5s ease .3s both}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--muted);margin:0 0 14px}
+  .flow{display:flex;align-items:flex-start;gap:0;padding:6px 0 4px;overflow-x:auto}
+  .flow__node{flex:0 0 auto;min-width:80px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;animation:rise .4s ease both;animation-delay:calc(var(--i,0)*70ms + 300ms)}
+  .flow__mark{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:10px;border:1.5px solid var(--border);color:var(--muted);background:var(--surface)}
+  .flow__node.done .flow__mark{border-color:var(--fg);background:var(--fg);color:var(--bg)}
+  .flow__node.current .flow__mark{border-color:var(--accent);background:var(--accent);color:var(--surface);animation:here-pulse 2.4s ease-in-out infinite}
+  @keyframes here-pulse{0%,100%{box-shadow:0 0 0 0 oklch(0.42 0.09 250 / .28)}50%{box-shadow:0 0 0 7px oklch(0.42 0.09 250 / 0)}}
+  .flow__num{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.1em}
+  .flow__label{font-family:var(--font-serif);font-size:12.5px;color:var(--muted);line-height:1.3}
+  .flow__node.done .flow__label{color:var(--fg)}
+  .flow__node.current .flow__label{color:var(--fg);font-weight:600}
+  .flow__conn{flex:1 1 0;min-width:16px;height:2px;background:var(--border);margin-top:10px;transform-origin:left;animation:conn-grow .35s ease both;animation-delay:calc(var(--i,0)*70ms + 360ms)}
+  .flow__conn.done{background:var(--fg)}
+  @keyframes conn-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+  /* 选项卡 */
+  .tabs{display:flex;gap:0;border-bottom:var(--rule);margin-top:34px;overflow-x:auto}
+  .tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:14px 22px;margin-bottom:-1px;font-family:var(--font-mono);font-size:12px;letter-spacing:.12em;color:var(--muted);cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s}
+  .tab:hover{color:var(--fg)}
+  .tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .tab sup{font-size:9px;vertical-align:super;margin-left:3px;color:var(--accent)}
+
+  .panel{display:none;margin-top:28px}
+  .panel.active{display:block;animation:rise .4s ease both}
+  .panel h2{font-family:var(--font-serif);font-weight:600;font-size:21px;line-height:1.35;margin:0 0 6px}
+  .panel > .lead{font-size:15.5px;line-height:1.7;color:var(--muted);max-width:62ch;margin:0 0 26px}
+
+  /* 概览 */
+  .status-card{display:flex;align-items:center;gap:22px;flex-wrap:wrap;border:var(--rule);background:var(--surface);padding:22px 24px;margin-bottom:28px}
+  .status-card .role-tag{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg);border:1px solid var(--fg);padding:3px 8px;margin-bottom:10px}
+  .status-card p{font-size:15px;line-height:1.7;color:var(--muted);max-width:54ch;margin:6px 0 0}
+  .status-card .act{margin-left:auto}
+
+  .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:var(--rule);border-bottom:var(--rule)}
+  .facts div{padding:18px 20px;border-right:var(--rule)}
+  .facts div:last-child{border-right:0}
+  .facts span{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--muted)}
+  .facts strong{display:block;font-family:var(--font-serif);font-weight:600;font-size:23px;line-height:1.25;margin-top:8px}
+  .facts small{display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:6px}
+
+  /* 证据 */
+  .evidence-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .frame{background:var(--surface);border:var(--rule);position:relative;overflow:hidden}
+  .frame .stage{aspect-ratio:4/3;position:relative;background:var(--bg)}
+  .frame svg.scene{position:absolute;inset:0;width:100%;height:100%;color:var(--scene)}
+  .frame svg.scene line,.frame svg.scene rect{shape-rendering:crispEdges}
+  .frame .cap{padding:12px 14px;border-top:var(--rule);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .frame .cap b{font-family:var(--font-serif);font-weight:600;font-size:14px}
+  .frame .cap time{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+  .frame .tag{position:absolute;top:10px;left:10px;font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--surface);padding:3px 7px;border:var(--rule)}
+  .attn{position:absolute}
+  .attn .glow{position:absolute;inset:-14px;border-radius:50%;filter:blur(14px);background:var(--scene);animation:glow-breath 5s ease-in-out infinite}
+  @keyframes glow-breath{0%,100%{opacity:.32}50%{opacity:.58}}
+  .attn .outline{position:absolute;inset:0;border:1.5px dashed color-mix(in oklch, var(--fg) 45%, transparent)}
+  .attn .label{position:absolute;top:-22px;left:0;font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  .traj{fill:var(--fg);opacity:.85;animation:traj-breath 4.5s ease-in-out infinite}
+  @keyframes traj-breath{0%,100%{opacity:.55}50%{opacity:.95}}
+
+  /* 会审 */
+  .hearing{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .role{background:var(--surface);border:var(--rule);padding:22px}
+  .role .role-tag{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border:var(--rule);padding:3px 8px;margin-bottom:14px}
+  .role h3{font-family:var(--font-serif);font-weight:600;font-size:18px;line-height:1.4;margin:0 0 10px}
+  .role p{margin:0 0 12px;font-size:15px;line-height:1.7}
+  .role .ref{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.02em}
+  .role code{font-family:var(--font-mono);font-size:12px;color:var(--fg)}
+  .role.verdict{border-color:var(--fg)}
+  .role.verdict .role-tag{color:var(--fg);border-color:var(--fg)}
+
+  .gate{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;margin-top:26px;border-top:var(--rule);padding-top:22px}
+  .gate ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px 28px}
+  .gate li{display:flex;align-items:flex-start;gap:11px;font-size:15px;line-height:1.5}
+  .gate li i{flex:none;width:18px;height:18px;border:1.5px solid var(--fg);display:grid;place-items:center;font-family:var(--font-mono);font-style:normal;font-size:11px;margin-top:2px}
+  .gate li small{display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.02em}
+  .gate-score{text-align:right}
+  .gate-score b{font-family:var(--font-serif);font-weight:600;font-size:42px;line-height:1;display:block}
+  .gate-score span{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;color:var(--muted)}
+
+  /* 处理：表单 */
+  .action-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:34px;align-items:start}
+  .field{display:block;margin-bottom:20px}
+  .field > label{display:block;font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--muted);margin-bottom:7px}
+  .field input[type=text],.field textarea{width:100%;font-family:var(--font-serif);font-size:15px;line-height:1.6;color:var(--fg);background:var(--surface);border:var(--rule);padding:12px 14px}
+  .field textarea{min-height:96px;resize:vertical}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--fg);box-shadow:0 0 0 3px oklch(0.42 0.09 250 / .12)}
+  .upload{display:block;border:1.5px dashed var(--border);padding:22px 18px;text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--muted);cursor:pointer;transition:border-color .2s,color .2s}
+  .upload:hover{border-color:var(--fg);color:var(--fg)}
+  .upload input{display:none}
+  .upload b{display:block;color:var(--fg);font-family:var(--font-serif);font-weight:600;font-size:14px;margin-bottom:4px}
+  .upload small{font-size:10.5px;letter-spacing:.06em}
+  .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .btn{appearance:none;font-family:var(--font-mono);font-size:13px;letter-spacing:.08em;min-height:48px;padding:0 24px;cursor:pointer;border:1.5px solid var(--fg);transition:.2s;display:inline-flex;align-items:center;gap:10px}
+  .btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .btn.primary:hover{background:oklch(0.16 0.01 60);border-color:oklch(0.16 0.01 60)}
+  .btn.ghost{background:transparent;color:var(--fg)}
+  .btn.ghost:hover{background:var(--surface)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .actions small{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.04em;width:100%;margin-top:6px}
+
+  .aside-note{border:var(--rule);background:var(--surface);padding:20px 22px}
+  .aside-note h3{font-family:var(--font-serif);font-weight:600;font-size:15px;margin:0 0 8px}
+  .aside-note p{font-size:13.5px;line-height:1.7;color:var(--muted);margin:0 0 10px}
+  .aside-note .id{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+
+  /* 时间线 */
+  .timeline{list-style:none;display:grid;margin-top:6px}
+  .timeline li{display:grid;grid-template-columns:130px 1fr;gap:24px;padding:16px 0;border-top:var(--rule);align-items:baseline}
+  .timeline li:last-child{border-bottom:var(--rule)}
+  .timeline time{font-family:var(--font-mono);font-size:13px;color:var(--muted);letter-spacing:.02em}
+  .timeline strong{font-family:var(--font-serif);font-weight:600;font-size:16px}
+  .timeline small{display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:5px}
+  .timeline li.active strong::after{content:" · 进行中";font-family:var(--font-mono);font-size:11px;color:var(--accent);font-weight:400;letter-spacing:.06em}
+
+  .reveal{opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (max-width:900px){
+    .evidence-grid,.hearing,.facts,.action-grid{grid-template-columns:1fr}
+    .facts div{border-right:0;border-bottom:var(--rule)}
+    .gate{grid-template-columns:1fr}
+    .gate ul{grid-template-columns:1fr}
+    .topbar{padding:14px 20px}
+    main{padding:24px 20px 80px}
+    .ribbon{padding:6px 20px}
+    .timeline li{grid-template-columns:96px 1fr;gap:14px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+    .reveal{opacity:1!important;transform:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="ribbon" role="status">
+  <span>PREVIEW · 演示数据</span>
+  <span>SIMULATED</span>
+</div>
+
+<div id="gnav-mount"></div>
+<div class="scope-bar">
+  <nav class="crumbs" aria-label="位置"><a href="monitor.html">← 监控</a> / <a href="#">案件中心</a> / <b>护目镜缺失候选</b></nav>
+  <span class="status-pill">等待人工确认</span>
+</div>
+
+<main>
+
+  <section class="case-head" data-od-id="case-head">
+    <h1>护目镜缺失候选</h1>
+    <p class="deck">匿名轨迹 T-07 在化学高风险区驻留约五秒，三张高可观测裁切均未发现明确佩戴证据。请复核证据后决定是否生成安全提醒。</p>
+    <div class="meta-row">
+      <span>案件 <b>LC-2026-0810-014</b></span>
+      <span>机位 <b>CAM-LAB-301-A</b></span>
+      <span>轨迹 <b>T-07（匿名）</b></span>
+      <span>区域 <b>ZONE-CHEM-01 · 高风险</b></span>
+      <span>立案 <b>2026-08-10 14:31</b></span>
+    </div>
+  </section>
+
+  <section class="flow-section" data-od-id="case-flow" aria-label="案件流程进度">
+    <p class="eyebrow">流程进度 · 检测到结案</p>
+    <div class="flow" role="list">
+      <div class="flow__node done" style="--i:0" role="listitem"><span class="flow__mark">✓</span><span class="flow__num">01</span><span class="flow__label">检测触发</span></div>
+      <div class="flow__conn done" style="--i:0"></div>
+      <div class="flow__node done" style="--i:1" role="listitem"><span class="flow__mark">✓</span><span class="flow__num">02</span><span class="flow__label">证据采集</span></div>
+      <div class="flow__conn done" style="--i:1"></div>
+      <div class="flow__node done" style="--i:2" role="listitem"><span class="flow__mark">✓</span><span class="flow__num">03</span><span class="flow__label">AI 初审</span></div>
+      <div class="flow__conn done" style="--i:2"></div>
+      <div class="flow__node done" style="--i:3" role="listitem"><span class="flow__mark">✓</span><span class="flow__num">04</span><span class="flow__label">控辩会审</span></div>
+      <div class="flow__conn done" style="--i:3"></div>
+      <div class="flow__node done" style="--i:4" role="listitem"><span class="flow__mark">✓</span><span class="flow__num">05</span><span class="flow__label">程序守门</span></div>
+      <div class="flow__conn done" style="--i:4"></div>
+      <div class="flow__node current" style="--i:5" role="listitem"><span class="flow__mark">●</span><span class="flow__num">06</span><span class="flow__label">人工确认</span></div>
+      <div class="flow__conn" style="--i:5"></div>
+      <div class="flow__node" style="--i:6" role="listitem"><span class="flow__mark"></span><span class="flow__num">07</span><span class="flow__label">通知送达</span></div>
+      <div class="flow__conn" style="--i:6"></div>
+      <div class="flow__node" style="--i:7" role="listitem"><span class="flow__mark"></span><span class="flow__num">08</span><span class="flow__label">结案归档</span></div>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="案件分区" data-od-id="case-tabs">
+    <button class="tab" role="tab" type="button" data-tab="overview" aria-selected="true" aria-controls="panel-overview">概览</button>
+    <button class="tab" role="tab" type="button" data-tab="evidence" aria-selected="false" aria-controls="panel-evidence">证据</button>
+    <button class="tab" role="tab" type="button" data-tab="review" aria-selected="false" aria-controls="panel-review">会审</button>
+    <button class="tab" role="tab" type="button" data-tab="action" aria-selected="false" aria-controls="panel-action">处理</button>
+  </nav>
+
+  <!-- 概览 -->
+  <section class="panel active" id="panel-overview" role="tabpanel" data-panel="overview" data-od-id="panel-overview">
+    <div class="status-card reveal">
+      <div>
+        <span class="role-tag">当前 · 等待人工确认</span>
+        <h2>证据支持生成安全提醒，仍待你确认</h2>
+        <p>AI 已完成初审、辩方核对与程序守门（6/6 通过）。是否生成安全提醒与可申诉记录，由你决定。</p>
+      </div>
+      <button class="btn ghost" type="button" id="goto-action" data-od-id="goto-action">去处理 →</button>
+    </div>
+    <p class="eyebrow">关键事实</p>
+    <div class="facts reveal">
+      <div><span>涉嫌区间</span><strong>5.0 秒</strong><small>由帧号计算</small></div>
+      <div><span>清晰裁切</span><strong>3 / 3</strong><small>同一匿名轨迹</small></div>
+      <div><span>风险等级</span><strong>高风险区</strong><small>ZONE-CHEM-01</small></div>
+      <div><span>身份信息</span><strong>未采集</strong><small>无脸识别 / 无 ReID</small></div>
+    </div>
+  </section>
+
+  <!-- 证据 -->
+  <section class="panel" id="panel-evidence" role="tabpanel" data-panel="evidence" data-od-id="panel-evidence" hidden>
+    <p class="lead">三张高可观测裁切均来自同一匿名轨迹 T-07，逐帧核对未发现明确佩戴证据。下列画面为抽象合成场景，不含真实人员。</p>
+    <div class="evidence-grid">
+      <article class="frame" data-od-id="evidence-frame-1">
+        <div class="stage">
+          <span class="tag">全景 · FRAME 45812</span>
+          <svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect x="0" y="40" width="400" height="6" fill="currentColor" opacity=".5"/>
+            <rect x="40" y="150" width="150" height="70" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="250" y="120" width="110" height="120" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="250" y1="160" x2="360" y2="160" stroke="currentColor" stroke-width="1"/>
+            <rect x="60" y="165" width="40" height="50" fill="currentColor" opacity=".15"/>
+          </svg>
+          <div class="attn" style="left:13%;top:50%;width:30%;height:34%">
+            <span class="label">注意 · 全景扫描</span>
+            <div class="glow"></div>
+            <div class="outline"></div>
+          </div>
+        </div>
+        <div class="cap"><b>全景帧</b><time>14:31:43.833</time></div>
+      </article>
+
+      <article class="frame" data-od-id="evidence-frame-2">
+        <div class="stage">
+          <span class="tag">PPE 区域 · FRAME 45865</span>
+          <svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect x="40" y="150" width="150" height="70" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <circle class="traj" cx="115" cy="178" r="9"/>
+            <rect x="60" y="165" width="40" height="50" fill="currentColor" opacity=".15"/>
+          </svg>
+          <div class="attn" style="left:20%;top:48%;width:38%;height:40%">
+            <span class="label">注意力 · PPE · 0.84</span>
+            <div class="glow"></div>
+            <div class="outline"></div>
+          </div>
+        </div>
+        <div class="cap"><b>裁切 · PPE</b><time>OBS 0.84</time></div>
+      </article>
+
+      <article class="frame" data-od-id="evidence-frame-3">
+        <div class="stage">
+          <span class="tag">时序反证 · FRAME 45910</span>
+          <svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect x="40" y="150" width="150" height="70" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <circle class="traj" cx="112" cy="180" r="9"/>
+            <rect x="60" y="165" width="40" height="50" fill="currentColor" opacity=".15"/>
+          </svg>
+          <div class="attn" style="left:18%;top:46%;width:42%;height:44%">
+            <span class="label">反证核对 · 0.79</span>
+            <div class="glow"></div>
+            <div class="outline"></div>
+          </div>
+        </div>
+        <div class="cap"><b>反证检查</b><time>OBS 0.79</time></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 会审 -->
+  <section class="panel" id="panel-review" role="tabpanel" data-panel="review" data-od-id="panel-review" hidden>
+    <p class="lead">AI 提供结构化建议与反证核对，不直接形成责任结论；最终由人工裁量。</p>
+    <div class="hearing">
+      <article class="role" data-od-id="role-prosecution">
+        <span class="role-tag">初审建议</span>
+        <h3>涉嫌区间内未发现明确佩戴证据</h3>
+        <p>三张高可观测裁切均标记为 <code>NOT_WORN</code>，置信度 0.79–0.84。</p>
+        <span class="ref">引用 CROP-7A · CROP-91 · CROP-B4</span>
+      </article>
+      <article class="role" data-od-id="role-defense">
+        <span class="role-tag">辩方检查</span>
+        <h3>需排除镜片反光与头部遮挡</h3>
+        <p>已逐帧核对时序裁切，未发现被忽略的佩戴反证；反光与遮挡在现有裁切中可解释。</p>
+        <span class="ref">引用 FRAME 45865 · FRAME 45910</span>
+      </article>
+      <article class="role verdict" data-od-id="role-verdict">
+        <span class="role-tag">裁决摘要</span>
+        <h3>证据支持生成安全提醒，仍待人工确认</h3>
+        <p>反光与遮挡已在现有裁切中核对；本建议不构成人员处分结论。</p>
+        <span class="ref">适用制度 KB-PPE-004 · v3.2</span>
+      </article>
+    </div>
+    <div class="gate">
+      <ul>
+        <li><i>✓</i><span><strong>结构合规</strong><small>字段与枚举有效</small></span></li>
+        <li><i>✓</i><span><strong>证据落地</strong><small>3 个引用均存在</small></span></li>
+        <li><i>✓</i><span><strong>制度引用</strong><small>版本与条目匹配</small></span></li>
+        <li><i>✓</i><span><strong>逻辑一致</strong><small>反证已逐项回应</small></span></li>
+        <li><i>✓</i><span><strong>客观事实</strong><small>帧号、区间由代码核对</small></span></li>
+        <li><i>✓</i><span><strong>观测充分</strong><small>3 张清晰时序裁切</small></span></li>
+      </ul>
+      <div class="gate-score"><b>6 / 6</b><span>全部通过</span></div>
+    </div>
+  </section>
+
+  <!-- 处理 -->
+  <section class="panel" id="panel-action" role="tabpanel" data-panel="action" data-od-id="panel-action" hidden>
+    <div class="action-grid">
+      <div>
+        <p class="eyebrow">处置 · 面向安全管理员</p>
+        <div class="field">
+          <label for="note">处置说明</label>
+          <textarea id="note" placeholder="例如：已与值班员核实，拟生成安全提醒并通知本人补戴…"></textarea>
+        </div>
+        <div class="field">
+          <label>补充证据（可选）</label>
+          <label class="upload" for="upload">
+            <b>选择文件或拖拽到此</b>
+            <small>支持图片 / 视频 · 上限 20MB · 预览不会真实上传</small>
+            <input id="upload" type="file" multiple>
+          </label>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="button" data-od-id="confirm-cta">确认生成安全提醒</button>
+          <button class="btn ghost" type="button">退回补证</button>
+          <button class="btn ghost" type="button">升级处理</button>
+          <small>仅生成安全提醒与可申诉记录 · 预览不执行真实动作</small>
+        </div>
+      </div>
+      <aside class="aside-note" data-od-id="action-citation">
+        <h3>引用制度</h3>
+        <p>进入标记为高风险的化学操作区域时，应按区域要求佩戴护目镜。</p>
+        <span class="id">KB-PPE-004 · 条目 4.2 · v3.2 · 生效 2026-03-01</span>
+      </aside>
+    </div>
+
+    <p class="eyebrow" style="margin-top:34px">案件时间线</p>
+    <ol class="timeline">
+      <li><time>14:31:43</time><div><strong>候选事件形成</strong><small>缺失驻留达到阈值</small></div></li>
+      <li><time>14:31:44</time><div><strong>证据包闭包</strong><small>3 张裁切通过校验</small></div></li>
+      <li><time>14:31:47</time><div><strong>AI 初审完成</strong><small>结构化建议 ESTABLISHED</small></div></li>
+      <li class="active"><time>14:31:51</time><div><strong>等待人工确认</strong><small>生产动作保持禁用</small></div></li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+  (function(){
+    // 选项卡
+    var tabs=Array.prototype.slice.call(document.querySelectorAll('.tab'));
+    var panels=Array.prototype.slice.call(document.querySelectorAll('.panel'));
+    function activate(name){
+      tabs.forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.tab===name)); });
+      panels.forEach(function(p){
+        var on=p.dataset.panel===name;
+        p.classList.toggle('active',on); p.hidden=!on;
+        if(on){ // 重新触发面板内显隐动画 + 重新观察 reveal
+          p.querySelectorAll('.reveal').forEach(function(el){ el.classList.remove('in'); io.observe(el); });
+        }
+      });
+    }
+    tabs.forEach(function(t){ t.addEventListener('click', function(){ activate(t.dataset.tab); }); });
+    document.getElementById('goto-action').addEventListener('click', function(){ activate('action'); });
+
+    // 滚动显隐
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    },{ threshold:.12 });
+    document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  })();
+</script>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#1a1714">
+<title>登录 · LabCourt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --alarm-bright: oklch(0.74 0.18 30);
+    --alarm-ink: oklch(0.985 0.02 30);
+    --ink: oklch(0.16 0.012 55);
+    --hud-glass: oklch(0.22 0.012 60 / .55);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;background:var(--ink);color:var(--alarm-ink);overflow-x:hidden}
+  body{font-family:var(--font-serif);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--alarm);color:var(--alarm-ink)}
+  a{color:inherit;text-decoration:none}
+
+  /* 背景视频 + 取景 */
+  .stage{position:fixed;inset:0;z-index:0;overflow:hidden;will-change:transform}
+  .stage>video{position:absolute;inset:-4%;width:108%;height:108%;object-fit:cover;filter:saturate(.78) brightness(.62)}
+  .stage::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 100% at 50% 40%,oklch(0.16 0.012 55 / .35),oklch(0.16 0.012 55 / .78))}
+
+  /* 背景识别框（呼吸） */
+  .rbox{position:absolute;z-index:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));animation:drift 9s ease-in-out infinite}
+  .rbox.r2{animation-duration:11s;animation-delay:-3s}
+  @keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(10px,-8px)}}
+  .rbox i{position:absolute;width:13px;height:13px;border:1.5px solid var(--alarm-ink);opacity:.8}
+  .rbox i:nth-child(1){top:-1px;left:-1px;border-right:0;border-bottom:0}
+  .rbox i:nth-child(2){top:-1px;right:-1px;border-left:0;border-bottom:0}
+  .rbox i:nth-child(3){bottom:-1px;left:-1px;border-right:0;border-top:0}
+  .rbox i:nth-child(4){bottom:-1px;right:-1px;border-left:0;border-top:0}
+  .rbox .lbl{position:absolute;top:-19px;left:-2px;font-family:var(--font-mono);font-size:10px;color:var(--alarm-ink);background:var(--hud-glass);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.14);padding:2px 7px;white-space:nowrap}
+
+  /* 取景器 HUD */
+  .hud{position:fixed;inset:0;z-index:2;pointer-events:none}
+  .hud__c{position:absolute;width:58px;height:58px;border:2px solid oklch(0.985 0.02 30 / .42);opacity:0;animation:c-in .7s cubic-bezier(.2,.8,.2,1) both}
+  .hud__c--tl{top:26px;left:26px;border-right:0;border-bottom:0}
+  .hud__c--tr{top:26px;right:26px;border-left:0;border-bottom:0;animation-delay:.08s}
+  .hud__c--bl{bottom:26px;left:26px;border-right:0;border-top:0;animation-delay:.16s}
+  .hud__c--br{bottom:26px;right:26px;border-left:0;border-top:0;animation-delay:.24s}
+  @keyframes c-in{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+  .hud__scan{position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,oklch(0.985 0.02 30 / .55),transparent);animation:scan 5.5s linear infinite}
+  @keyframes scan{0%{top:-3%;opacity:0}8%{opacity:.7}92%{opacity:.7}100%{top:103%;opacity:0}}
+  .locking .hud__c{animation:lock .5s ease both}
+  @keyframes lock{0%{border-color:oklch(0.985 0.02 30 / .42);transform:scale(1)}35%{border-color:var(--alarm-bright);transform:scale(.9)}100%{border-color:oklch(0.985 0.02 30 / .42);transform:scale(1)}}
+  .hud__tag{position:fixed;top:30px;left:100px;z-index:4;font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--alarm-ink);background:var(--hud-glass);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.14);padding:4px 9px;display:inline-flex;align-items:center;gap:7px}
+  .hud__tag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--alarm-ink);animation:blink 1.6s steps(2) infinite}
+  @keyframes blink{50%{opacity:.3}}
+  .hud__tc{position:fixed;bottom:30px;left:100px;z-index:4;font-family:var(--font-mono);font-size:11px;color:oklch(0.985 0.02 30 / .55);letter-spacing:.06em}
+  .hud__tc b{color:var(--alarm-ink);font-weight:400}
+
+  /* 登录卡 */
+  .shell{position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+  .card{width:min(430px,100%);background:var(--hud-glass);-webkit-backdrop-filter:blur(18px) saturate(130%);backdrop-filter:blur(18px) saturate(130%);border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px -20px rgba(0,0,0,.5);padding:42px 38px 34px;animation:card-in .8s cubic-bezier(.2,.8,.2,1) .3s both}
+  @keyframes card-in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  .brand{font-family:var(--font-serif);font-weight:600;font-size:21px;color:var(--alarm-ink);margin-bottom:2px}
+  .brand small{font-family:var(--font-mono);font-weight:400;font-size:10px;color:oklch(0.985 0.02 30 / .55);margin-left:8px;letter-spacing:.12em;text-transform:uppercase}
+  .ey{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:oklch(0.985 0.02 30 / .55);margin:22px 0 10px}
+  .card h1{font-family:var(--font-serif);font-weight:600;font-size:27px;line-height:1.3;color:var(--alarm-ink);margin-bottom:22px}
+  .role{display:flex;border:1px solid rgba(255,255,255,.16);margin-bottom:6px}
+  .role button{flex:1;background:none;border:0;border-right:1px solid rgba(255,255,255,.16);color:oklch(0.985 0.02 30 / .55);font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;padding:11px 0;cursor:pointer;transition:.2s}
+  .role button:last-child{border-right:0}
+  .role button:hover{color:var(--alarm-ink)}
+  .role button.active{background:var(--alarm-ink);color:var(--ink)}
+  .role button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .field{margin-top:18px}
+  .field label{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.985 0.02 30 / .5);margin-bottom:7px}
+  .field input{width:100%;background:transparent;border:0;border-bottom:1.5px solid rgba(255,255,255,.2);color:var(--alarm-ink);font-family:var(--font-serif);font-size:16px;padding:8px 0;outline:none;transition:border-color .25s}
+  .field input::placeholder{color:oklch(0.985 0.02 30 / .3)}
+  .field input:focus{border-color:var(--accent)}
+  .btn{margin-top:26px;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-mono);font-size:13px;letter-spacing:.06em;padding:15px;background:var(--alarm-ink);color:var(--ink);border:0;cursor:pointer;min-height:50px;transition:background .2s}
+  .btn:hover{background:oklch(0.99 0.004 85 / .92)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .links{margin-top:16px;display:flex;justify-content:center;gap:14px;font-family:var(--font-mono);font-size:11px;color:oklch(0.985 0.02 30 / .5)}
+  .links a{padding:2px 0;border-bottom:1px solid transparent;transition:.2s}
+  .links a:hover{color:var(--alarm-ink);border-color:oklch(0.985 0.02 30 / .4)}
+  .demo-note{margin-top:18px;text-align:center;font-family:var(--font-mono);font-size:10.5px;color:oklch(0.985 0.02 30 / .35);letter-spacing:.04em}
+  body.locking .card{filter:blur(2.5px) brightness(.78);transform:scale(.99);transition:filter .35s,transform .35s}
+  body.locking .hud__tag,body.locking .hud__tc{opacity:.3;transition:.35s}
+
+  /* 提交：朱砂闪 + 盖章 */
+  .flash{position:fixed;inset:0;z-index:9;background:var(--alarm);opacity:0;pointer-events:none}
+  .flash.go{animation:flash .4s ease}
+  @keyframes flash{0%{opacity:0}18%{opacity:.22}100%{opacity:0}}
+  .stamp{position:fixed;top:50%;left:50%;z-index:10;width:168px;height:168px;border:3px solid var(--alarm);display:grid;place-items:center;opacity:0;pointer-events:none;transform:translate(-50%,-50%) scale(1.6) rotate(-12deg)}
+  .stamp span{font-family:var(--font-serif);font-weight:600;font-size:17px;color:var(--alarm);text-align:center;line-height:1.35;letter-spacing:.04em}
+  .stamp span i{font-style:normal;font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;display:block;margin-top:4px;color:var(--alarm)}
+  .stamp.go{animation:stamp .55s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes stamp{0%{opacity:0;transform:translate(-50%,-50%) scale(1.7) rotate(-14deg)}55%{opacity:.92}100%{opacity:.92;transform:translate(-50%,-50%) scale(1) rotate(-7deg)}}
+
+  @media(max-width:560px){.card{padding:34px 24px 26px}.card h1{font-size:23px}.hud__tag{left:24px;top:24px}.hud__tc{left:24px;bottom:24px}.hud__c{width:42px;height:42px}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.stage{transform:none!important}.card,.hud__c{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage" aria-hidden="true">
+  <video src="assets/feed-301a.mp4" autoplay muted loop playsinline></video>
+  <div class="rbox" style="top:24%;left:28%;width:17%;height:22%"><i></i><i></i><i></i><i></i><span class="lbl">PPE · 0.84</span></div>
+  <div class="rbox r2" style="top:62%;left:64%;width:13%;height:20%"><i></i><i></i><i></i><i></i><span class="lbl">轨迹 T-09</span></div>
+</div>
+
+<div class="hud" id="hud" aria-hidden="true">
+  <span class="hud__c hud__c--tl"></span>
+  <span class="hud__c hud__c--tr"></span>
+  <span class="hud__c hud__c--bl"></span>
+  <span class="hud__c hud__c--br"></span>
+  <div class="hud__scan"></div>
+</div>
+<div class="hud__tag">CAM-LAB-301-A · LIVE · 模拟</div>
+<div class="hud__tc">REC <b id="tc">00:00</b></div>
+
+<main class="shell">
+  <form class="card" id="login-form" data-od-id="login-card">
+    <div class="brand">LabCourt <small>校园实验室安全</small></div>
+    <p class="ey">登录 · LOGIN</p>
+    <h1>进入监控系统</h1>
+    <div class="role" id="role" role="group" aria-label="选择角色">
+      <button type="button" class="active" data-role="管理员">管理员</button>
+      <button type="button" data-role="负责人">实验室负责人</button>
+      <button type="button" data-role="学生">学生</button>
+    </div>
+    <div class="field"><label for="u">工号 / 邮箱</label><input id="u" type="text" placeholder="admin@hainanu.edu.cn" autocomplete="username"></div>
+    <div class="field"><label for="p">密码</label><input id="p" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn" type="button" id="login-go" data-od-id="login-submit">进入监控系统 →</button>
+    <div class="links"><a href="#">忘记密码</a><a href="#">申请账号</a></div>
+    <p class="demo-note">演示：任意输入即可进入</p>
+  </form>
+</main>
+
+<div class="flash" id="flash" aria-hidden="true"></div>
+<div class="stamp" id="stamp" aria-hidden="true"><span>已授权<i>AUTHORIZED</i></span></div>
+
+<script>
+  // 角色选择
+  var role='管理员';
+  document.querySelectorAll('#role button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#role button').forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active'); role=b.dataset.role;
+    });
+  });
+  // 时间码
+  var tc=document.getElementById('tc'), s=0;
+  function pad(n){return (n<10?'0':'')+n}
+  setInterval(function(){ s++; tc.textContent=pad(Math.floor(s/60))+':'+pad(s%60); },1000);
+  // 鼠标视差（取景随光标微动）
+  var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var stage=document.getElementById('stage');
+  if(!reduced){
+    document.addEventListener('mousemove',function(e){
+      var x=(e.clientX/window.innerWidth-.5), y=(e.clientY/window.innerHeight-.5);
+      stage.style.transform='translate('+(x*-14).toFixed(1)+'px,'+(y*-14).toFixed(1)+'px)';
+    });
+  }
+  // 进入：锁定 + 朱砂闪 + 盖章 → 跳落地页
+  function doLogin(){
+    try{ localStorage.setItem('labcourt-role', role); }catch(_){}
+    var go=document.getElementById('login-go'); if(go){ go.disabled=true; go.textContent='进入中…'; }
+    document.getElementById('hud').classList.add('locking');
+    document.body.classList.add('locking');
+    document.getElementById('flash').classList.add('go');
+    setTimeout(function(){ document.getElementById('stamp').classList.add('go'); }, 200);
+    setTimeout(function(){ window.location.assign('landing.html'); }, 1000);
+  }
+  document.getElementById('login-go').addEventListener('click', function(e){ e.preventDefault(); doLogin(); });
+  document.getElementById('login-form').addEventListener('submit', function(e){ e.preventDefault(); doLogin(); });
+</script>
+</body>
+</html>
