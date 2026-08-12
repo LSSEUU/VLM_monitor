@@ -7,7 +7,8 @@
     {href:'monitor.html',label:'实时监控'},
     {href:'case-file.html',label:'案件中心'},
     {href:'knowledge.html',label:'知识库'},
-    {href:'map.html',label:'校园地图'}
+    {href:'map.html',label:'校园地图'},
+    {href:'agent.html',label:'Agent'}
   ];
   var links=PAGES.map(function(p){
     var on = path===p.href.toLowerCase();
