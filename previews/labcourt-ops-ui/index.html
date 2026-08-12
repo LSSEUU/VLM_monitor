@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea">
+<title>LabCourt · 原型总览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --maxw: 1100px;
+    --rule: 1px solid var(--border);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--font-serif);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--accent);color:var(--surface)}
+  a{text-decoration:none;color:inherit}
+  .mono{font-family:var(--font-mono)}
+
+  .ribbon{background:var(--fg);color:var(--bg);display:flex;justify-content:space-between;gap:16px;padding:6px 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:56px 32px 80px}
+
+  /* 头部 */
+  .head{margin-bottom:50px}
+  .head .brand{font-family:var(--font-serif);font-weight:600;font-size:20px;margin-bottom:24px}
+  .head .brand small{font-family:var(--font-mono);font-weight:400;font-size:10px;color:var(--muted);margin-left:8px;letter-spacing:.12em;text-transform:uppercase}
+  .head .ey{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+  .head h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(40px,6vw,68px);line-height:1.3;letter-spacing:0;max-width:16ch;margin-bottom:18px;animation:wipe-in .8s ease both}
+  @keyframes wipe-in{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+  .head .deck{font-size:clamp(16px,1.5vw,19px);line-height:1.7;color:var(--muted);max-width:56ch;margin-bottom:28px;animation:rise .6s ease .2s both}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .head__cta{display:flex;align-items:center;gap:18px;flex-wrap:wrap;animation:rise .6s ease .35s both}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:13px;letter-spacing:.06em;padding:14px 22px;min-height:48px;border:0;cursor:pointer;transition:.2s}
+  .btn--primary{background:var(--fg);color:var(--bg)}
+  .btn--primary:hover{background:oklch(0.16 0.01 60)}
+  .btn--ghost{background:transparent;color:var(--fg);border:1px solid var(--fg)}
+  .btn--ghost:hover{background:var(--surface)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+  .route{margin-top:22px;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);line-height:1.7}
+  .route b{color:var(--fg);font-weight:400}
+
+  /* 分组 */
+  .group{margin-top:46px}
+  .group__ey{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:baseline;gap:12px}
+  .group__ey span{color:var(--muted);font-size:10px}
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .group.core .cards{grid-template-columns:repeat(2,1fr)}
+
+  .card{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;background:var(--surface);border:var(--rule);padding:22px 22px;transition:border-color .2s,transform .2s;position:relative}
+  .card:hover{border-color:var(--fg);transform:translateY(-2px)}
+  .card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .card__n{font-family:var(--font-mono);font-size:13px;color:var(--muted);letter-spacing:.04em;align-self:start;padding-top:2px}
+  .card__main h3{font-family:var(--font-serif);font-weight:600;font-size:18px;margin-bottom:5px}
+  .card__main p{font-size:13.5px;color:var(--muted);line-height:1.6;max-width:42ch}
+  .card__main .tag{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);padding:2px 6px;display:inline-block;margin-bottom:8px}
+  .card__arr{font-family:var(--font-mono);font-size:16px;color:var(--muted);transition:transform .2s,color .2s}
+  .card:hover .card__arr{transform:translateX(4px);color:var(--fg)}
+
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  footer{margin-top:60px;padding-top:18px;border-top:var(--rule);font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  @media(max-width:720px){.cards,.group.core .cards{grid-template-columns:1fr}.head h1{font-size:38px}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ribbon" role="status"><span>PROTOTYPE OVERVIEW · 8 SCREENS</span><span>PREVIEW</span></div>
+
+<main>
+
+  <div class="head" data-od-id="index-head">
+    <div class="brand">LabCourt <small>校园实验室安全</small></div>
+    <p class="ey">原型总览 · Prototype Index</p>
+    <h1>一套可走通的<br>安全 demo。</h1>
+    <p class="deck">视觉大模型 + 传感器守护校园实验室：识别风险、结构化取证、人在环裁决。8 个页面，端到端互联——挑一个进去。</p>
+    <div class="head__cta">
+      <a class="btn btn--primary" href="landing.html">进入产品 →</a>
+      <a class="btn btn--ghost" href="login.html">从登录开始</a>
+    </div>
+    <p class="route"><b>建议路线：</b>登录 → 落地页 → 实时监控 → 案件详情 → 知识库 · 校园地图 · 个人中心 · 系统设置</p>
+  </div>
+
+  <div class="group entry">
+    <p class="group__ey reveal">入口 <span>Entry</span></p>
+    <div class="cards">
+      <a class="card reveal" href="landing.html" data-od-id="ov-landing"><span class="card__n">01</span><div class="card__main"><span class="tag">宣传页</span><h3>落地首页</h3><p>滚动叙事：立意、功能切片、伦理立场、入口。</p></div><span class="card__arr">→</span></a>
+      <a class="card reveal" href="login.html" data-od-id="ov-login"><span class="card__n">02</span><div class="card__main"><span class="tag">取景器登录</span><h3>登录</h3><p>视频背景 + 识别框 HUD + 磨砂玻璃卡 + 盖章进入。</p></div><span class="card__arr">→</span></a>
+    </div>
+  </div>
+
+  <div class="group core">
+    <p class="group__ey reveal">核心应用 <span>Core</span></p>
+    <div class="cards">
+      <a class="card reveal" href="monitor.html" data-od-id="ov-monitor"><span class="card__n">03</span><div class="card__main"><span class="tag">主控制台</span><h3>实时监控</h3><p>多机位视频 + 识别标注 + 时间轴 + 设备联动 + 告警层。</p></div><span class="card__arr">→</span></a>
+      <a class="card reveal" href="case-file.html" data-od-id="ov-case"><span class="card__n">04</span><div class="card__main"><span class="tag">案件卷宗</span><h3>案件详情</h3><p>4 选项卡 + 流程进度图 + 控辩会审 + 人工裁决。</p></div><span class="card__arr">→</span></a>
+      <a class="card reveal" href="knowledge.html" data-od-id="ov-knowledge"><span class="card__n">05</span><div class="card__main"><span class="tag">知识库</span><h3>知识库</h3><p>制度 / SOP / 判例 · 索引 + 文档阅读，带引用边界。</p></div><span class="card__arr">→</span></a>
+      <a class="card reveal" href="map.html" data-od-id="ov-map"><span class="card__n">06</span><div class="card__main"><span class="tag">活体建筑</span><h3>校园地图</h3><p>楼宇 / 楼层 / 房间 · 状态 + 传感器 + 匿名轨迹。</p></div><span class="card__arr">→</span></a>
+    </div>
+  </div>
+
+  <div class="group account">
+    <p class="group__ey reveal">智能与账户 <span>Agent & Account</span></p>
+    <div class="cards">
+      <a class="card reveal" href="agent.html" data-od-id="ov-agent"><span class="card__n">07</span><div class="card__main"><span class="tag">对话助手</span><h3>通知 Agent</h3><p>自然语言下指令 · 结构化解析 · 高影响动作二次确认。</p></div><span class="card__arr">→</span></a>
+      <a class="card reveal" href="profile.html" data-od-id="ov-profile"><span class="card__n">08</span><div class="card__main"><span class="tag">角色感知</span><h3>个人中心</h3><p>管理员 / 负责人 / 学生 三视角切换预览。</p></div><span class="card__arr">→</span></a>
+      <a class="card reveal" href="settings.html" data-od-id="ov-settings"><span class="card__n">09</span><div class="card__main"><span class="tag">开发调试</span><h3>系统设置</h3><p>系统选项 + 模型 API + 知识库 + 通知 + 设备网关。</p></div><span class="card__arr">→</span></a>
+    </div>
+  </div>
+
+  <footer>
+    <span>海南大学 · 信息与通信工程学院 · LabCourt</span>
+    <span>PREVIEW · 演示原型 · 全部数据为模拟</span>
+  </footer>
+
+</main>
+
+<script>
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+</script>
+</body>
+</html>

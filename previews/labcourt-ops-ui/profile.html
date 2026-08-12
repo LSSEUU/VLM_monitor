@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea">
+<title>个人中心 · LabCourt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Noto+Serif+SC:wght@400;500;600&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/nav.css">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --maxw: 1180px;
+    --rule: 1px solid var(--border);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--font-serif);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--accent);color:var(--surface)}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:var(--font-mono)}
+  .ribbon{background:var(--fg);color:var(--bg);display:flex;justify-content:space-between;gap:16px;padding:6px 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:30px 32px 96px}
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:8px}
+  .page-head .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .page-head h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(28px,3.4vw,38px);line-height:1.3}
+  .page-head h1 small{font-family:var(--font-mono);font-weight:400;font-size:13px;color:var(--muted);margin-left:10px;letter-spacing:.04em}
+  .page-head p{font-size:16px;color:var(--muted);max-width:54ch;margin-top:8px}
+
+  /* 角色切换器 */
+  .seg{display:inline-flex;border:1px solid var(--fg)}
+  .seg button{background:none;border:0;border-right:1px solid var(--fg);font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;color:var(--muted);padding:11px 16px;cursor:pointer;transition:.2s}
+  .seg button:last-child{border-right:0}
+  .seg button:hover{color:var(--fg)}
+  .seg button.active{background:var(--fg);color:var(--bg)}
+  .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .panel{margin-top:34px;display:none;animation:rise .4s ease both}
+  .panel.active{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--muted);margin:34px 0 14px;text-transform:uppercase}
+  .eyebrow:first-child{margin-top:0}
+
+  /* 指标条 */
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);border-top:var(--rule);border-bottom:var(--rule)}
+  .metrics div{padding:18px 20px;border-right:var(--rule)}
+  .metrics div:last-child{border-right:0}
+  .metrics span{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--muted)}
+  .metrics b{display:block;font-family:var(--font-serif);font-weight:600;font-size:24px;margin-top:6px}
+  .metrics small{display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:5px}
+
+  /* 快捷入口卡片 */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .shortcut{display:block;border:var(--rule);background:var(--surface);padding:22px 20px;transition:border-color .2s,transform .2s}
+  .shortcut:hover{border-color:var(--fg);transform:translateY(-2px)}
+  .shortcut:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .shortcut .k{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px}
+  .shortcut h3{font-family:var(--font-serif);font-weight:600;font-size:17px;margin-bottom:6px}
+  .shortcut p{font-size:13px;color:var(--muted);line-height:1.6}
+  .shortcut .arr{font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-top:12px;display:block}
+
+  /* 列表 */
+  .list{border-top:var(--rule)}
+  .item{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:16px 2px;border-bottom:var(--rule);transition:padding-left .2s}
+  .item--link{cursor:pointer}
+  .item--link:hover{padding-left:10px}
+  .item--link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .item__main b{font-family:var(--font-serif);font-weight:600;font-size:15.5px;display:block}
+  .item__main small{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);margin-top:3px;display:block}
+  .item__side{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
+  .chip{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;padding:3px 8px;border:1px solid var(--border);color:var(--muted)}
+  .chip.ok{color:var(--fg);border-color:var(--fg)}
+  .chip.warn{color:var(--fg);border-color:var(--alarm);background:oklch(0.50 0.15 28 / .08)}
+
+  /* 合规条 */
+  .bar{border-top:var(--rule);padding-top:18px;display:grid;grid-template-columns:1fr 120px;gap:20px;align-items:center}
+  .bar__track{height:10px;background:var(--surface);border:var(--rule);position:relative}
+  .bar__fill{position:absolute;left:0;top:0;bottom:0;width:92%;background:var(--fg)}
+  .bar__num{font-family:var(--font-serif);font-weight:600;font-size:28px;text-align:right}
+  .bar__num small{font-family:var(--font-mono);font-size:12px;color:var(--muted);font-weight:400}
+
+  .foot-note{margin-top:40px;padding-top:16px;border-top:var(--rule);font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  @media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr)}.metrics div:nth-child(2){border-right:0}.metrics div:nth-child(-n+2){border-bottom:var(--rule)}.grid{grid-template-columns:repeat(2,1fr)}.bar{grid-template-columns:1fr}.bar__num{text-align:left}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}.page-head{align-items:flex-start}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ribbon" role="status"><span>PREVIEW · 演示数据</span><span>SIMULATED</span></div>
+<div id="gnav-mount"></div>
+
+<main>
+
+  <div class="page-head" data-od-id="profile-head">
+    <div>
+      <p class="eyebrow">个人中心</p>
+      <h1>你好，<span id="role-name">安全管理员</span><small id="role-tag">管理员</small></h1>
+      <p id="role-desc">这里是你的工作台概览。切换角色可预览不同视角（演示）。</p>
+    </div>
+    <div class="seg" id="seg" role="group" aria-label="切换角色视角">
+      <button type="button" class="active" data-role="管理员">管理员</button>
+      <button type="button" data-role="负责人">实验室负责人</button>
+      <button type="button" data-role="学生">学生</button>
+    </div>
+  </div>
+
+  <!-- 管理员 -->
+  <section class="panel active" data-panel="管理员" data-od-id="panel-admin">
+    <p class="eyebrow">系统概览</p>
+    <div class="metrics">
+      <div><span>在线机位</span><b class="mono">04 / 04</b><small>全部在线</small></div>
+      <div><span>待人工确认</span><b class="mono">02</b><small>需关注</small></div>
+      <div><span>今日告警</span><b class="mono">01</b><small>模拟 · 已派单</small></div>
+      <div><span>程序守门</span><b class="mono">6 / 6</b><small>全部通过</small></div>
+    </div>
+
+    <p class="eyebrow">快捷入口</p>
+    <div class="grid">
+      <a class="shortcut" href="monitor.html" data-od-id="sc-monitor"><span class="k">01</span><h3>实时监控</h3><p>多机位画面、识别标注、时间轴。</p><span class="arr">进入 →</span></a>
+      <a class="shortcut" href="case-file.html" data-od-id="sc-case"><span class="k">02</span><h3>案件中心</h3><p>控辩会审、流程进度、人工裁决。</p><span class="arr">进入 →</span></a>
+      <a class="shortcut" href="knowledge.html" data-od-id="sc-knowledge"><span class="k">03</span><h3>知识库</h3><p>制度、SOP、判例与引用。</p><span class="arr">稍后</span></a>
+      <a class="shortcut" href="settings.html" data-od-id="sc-settings"><span class="k">04</span><h3>系统设置</h3><p>模型 API、系统选项、知识库管理。</p><span class="arr">进入 →</span></a>
+    </div>
+
+    <p class="eyebrow">最近活动</p>
+    <div class="list">
+      <a class="item item--link" href="case-file.html"><span class="item__main"><b>护目镜缺失候选 · 等待人工确认</b><small>LC-2026-0810-014 · 主操作台 · CAM-301-A</small></span><span class="item__side"><span class="chip warn">待确认</span><br>14:31</span></a>
+      <div class="item"><span class="item__main"><b>温度与烟雾联动 · 已派单值班员</b><small>模拟告警 · 主操作台 · CAM-301-A</small></span><span class="item__side"><span class="chip ok">已处置</span><br>15:03</span></div>
+      <div class="item"><span class="item__main"><b>防护手套候选 · 人工撤销</b><small>反证成立 · 生物实验区</small></span><span class="item__side"><span class="chip">已化解</span><br>15:21</span></div>
+    </div>
+  </section>
+
+  <!-- 实验室负责人 -->
+  <section class="panel" data-panel="负责人" data-od-id="panel-lead" hidden="">
+    <p class="eyebrow">我管辖的实验室</p>
+    <div class="list">
+      <div class="item"><span class="item__main"><b>三层化学实验区</b><small>信通楼 · 4 机位 · 12 传感器</small></span><span class="item__side"><span class="chip warn">1 待确认</span><br>ROOM-CHEM-301</span></div>
+      <div class="item"><span class="item__main"><b>仪器分析室</b><small>信通楼 · 3 机位 · 8 传感器</small></span><span class="item__side"><span class="chip">1 待补证</span><br>ROOM-INSTR-302</span></div>
+      <div class="item"><span class="item__main"><b>生物实验区</b><small>生科楼 · 2 机位 · 6 传感器</small></span><span class="item__side"><span class="chip ok">正常</span><br>ROOM-BIO-204</span></div>
+    </div>
+
+    <p class="eyebrow">待处理事件</p>
+    <div class="list">
+      <a class="item item--link" href="case-file.html"><span class="item__main"><b>护目镜缺失候选</b><small>化学实验区 · 等待人工确认</small></span><span class="item__side"><span class="chip warn">待确认</span></span></a>
+      <div class="item"><span class="item__main"><b>实验服闭合候选</b><small>仪器分析室 · 待补充证据</small></span><span class="item__side"><span class="chip">待补证</span></span></div>
+    </div>
+
+    <p class="eyebrow">团队合规 · 本周</p>
+    <div class="bar">
+      <div class="bar__track"><div class="bar__fill"></div></div>
+      <div class="bar__num">92<small>%</small></div>
+    </div>
+    <p class="foot-note" style="margin-top:14px;border:0;padding:0"><span>PPE 合规率 · 示例数据</span><span>较上周 +4%</span></p>
+  </section>
+
+  <!-- 学生 -->
+  <section class="panel" data-panel="学生" data-od-id="panel-student" hidden="">
+    <p class="eyebrow">我的预约</p>
+    <div class="list">
+      <div class="item"><span class="item__main"><b>化学实验区 · 综合实验</b><small>信通楼 301 · 08-13 09:00–12:00</small></span><span class="item__side"><span class="chip ok">已确认</span></span></div>
+      <div class="item"><span class="item__main"><b>仪器分析室 · 仪器培训</b><small>信通楼 302 · 08-14 14:00–16:00</small></span><span class="item__side"><span class="chip">待审核</span></span></div>
+    </div>
+
+    <p class="eyebrow">我的提醒</p>
+    <div class="list">
+      <div class="item"><span class="item__main"><b>进入化学高风险区前请佩戴护目镜</b><small>系统软提醒 · 不形成记录</small></span><span class="item__side">08-12</span></div>
+      <div class="item"><span class="item__main"><b>实验服闭合状态请保持</b><small>系统软提醒</small></span><span class="item__side">08-11</span></div>
+    </div>
+
+    <p class="eyebrow">实验室状态</p>
+    <div class="list">
+      <div class="item"><span class="item__main"><b>三层化学实验区</b><small>开放中 · 当前 2 人</small></span><span class="item__side"><span class="chip ok">开放</span></span></div>
+      <div class="item"><span class="item__main"><b>仪器分析室</b><small>维护中 · 14:00 起</small></span><span class="item__side"><span class="chip">维护</span></span></div>
+    </div>
+    <p class="foot-note" style="margin-top:24px;border:0;padding:0"><span>如需帮助，联系：<a href="#" style="color:var(--fg);border-bottom:1px solid var(--fg)">安全管理员</a></span></p>
+  </section>
+
+  <div class="foot-note">
+    <span>预览 · 角色与数据均为模拟，切换视角仅用于演示</span>
+    <span>PREVIEW · LOCAL MOCK</span>
+  </div>
+</main>
+
+<script src="assets/nav.js" defer></script>
+<script>
+  var NAMES={'管理员':'安全管理员','负责人':'李老师','学生':'王同学'};
+  var DESCS={
+    '管理员':'这里是你的工作台概览。切换角色可预览不同视角（演示）。',
+    '负责人':'你管辖实验室的安全态势与待办。',
+    '学生':'你的预约、提醒与实验室状态。'
+  };
+  var seg=document.getElementById('seg');
+  var panels=document.querySelectorAll('.panel');
+  var nameEl=document.getElementById('role-name'), tagEl=document.getElementById('role-tag'), descEl=document.getElementById('role-desc');
+  function setRole(r){
+    seg.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.role===r); });
+    panels.forEach(function(p){ var on=p.dataset.panel===r; p.classList.toggle('active',on); p.hidden=!on; });
+    nameEl.textContent=NAMES[r]; tagEl.textContent=r==='负责人'?'实验室负责人':r; descEl.textContent=DESCS[r];
+    try{ localStorage.setItem('labcourt-role', r); }catch(_){}
+  }
+  seg.querySelectorAll('button').forEach(function(b){ b.addEventListener('click', function(){ setRole(b.dataset.role); }); });
+  // 读登录时存的角色
+  try{ var saved=localStorage.getItem('labcourt-role'); if(saved && NAMES[saved]) setRole(saved); }catch(_){}
+</script>
+
+
+</body></html>

@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea">
+<title>知识库 · LabCourt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/nav.css">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --maxw: 1180px;
+    --rule: 1px solid var(--border);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--font-serif);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--accent);color:var(--surface)}
+  a,button{color:inherit;font-family:inherit}
+  .mono{font-family:var(--font-mono)}
+  .ribbon{background:var(--fg);color:var(--bg);display:flex;justify-content:space-between;gap:16px;padding:6px 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:30px 32px 96px}
+  .page-head .ey{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .page-head h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(28px,3.4vw,38px);line-height:1.3}
+  .page-head .sub{font-size:15px;color:var(--muted);max-width:60ch;margin-top:6px}
+
+  /* 工具条：搜索 + 类型筛选 */
+  .toolbar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:22px 0 22px}
+  .search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;border-bottom:1.5px solid var(--border);padding:8px 2px;transition:border-color .25s}
+  .search:focus-within{border-color:var(--accent)}
+  .search svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.6;flex:none}
+  .search input{flex:1;border:0;background:none;outline:none;font-family:var(--font-serif);font-size:15px;color:var(--fg)}
+  .search input::placeholder{color:var(--muted)}
+  .filters{display:flex;gap:8px;flex-wrap:wrap}
+  .filt{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;background:none;border:1px solid var(--border);color:var(--muted);padding:7px 12px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+  .filt:hover{border-color:var(--fg);color:var(--fg)}
+  .filt.active{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .filt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .filt b{font-weight:400;opacity:.6;font-size:10px}
+
+  /* 主网格：列表 + 阅读区 */
+  .kgrid{display:grid;grid-template-columns:340px 1fr;gap:34px;align-items:start}
+
+  /* 列表 */
+  .klist{border-top:2px solid var(--fg)}
+  .klist.in{animation:lfade .3s ease both}
+  @keyframes lfade{from{opacity:.4}to{opacity:1}}
+  .kitem{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:var(--rule);padding:16px 14px 16px 16px;cursor:pointer;position:relative;transition:background .2s,padding-left .2s;color:var(--fg)}
+  .kitem::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--fg);transform:scaleY(0);transition:transform .25s}
+  .kitem:hover{background:oklch(0.96 0.006 80 / .7);padding-left:20px}
+  .kitem.active{background:var(--surface)}
+  .kitem.active::before{transform:scaleY(.8)}
+  .kitem:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .kitem__top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+  .kitem__type{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;color:var(--muted);border:1px solid var(--border);padding:2px 6px;text-transform:uppercase}
+  .kitem__cites{font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+  .kitem b.t{font-family:var(--font-serif);font-weight:600;font-size:15px;display:block;line-height:1.45}
+  .kitem small{font-family:var(--font-mono);font-size:11px;color:var(--muted);display:block;margin-top:5px}
+  .klist__empty{padding:24px 16px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+
+  /* 阅读区（文件排版） */
+  .kread{background:var(--surface);border:var(--rule);padding:40px 46px;min-height:62vh;box-shadow:0 1px 0 var(--border)}
+  .kread.in{animation:read-in .42s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes read-in{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+  .kread__chip{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg);border:1px solid var(--fg);padding:3px 8px;margin-bottom:16px}
+  .kread h2{font-family:var(--font-serif);font-weight:600;font-size:28px;line-height:1.35;margin-bottom:14px;max-width:30ch}
+  .kread__meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);padding-bottom:18px;border-bottom:var(--rule);margin-bottom:22px}
+  .kread__meta b{color:var(--fg);font-weight:400}
+  .kread__sum{font-size:17px;line-height:1.7;color:var(--fg);max-width:62ch;margin-bottom:28px;font-style:italic}
+  .clause{display:grid;grid-template-columns:54px 1fr;gap:18px;padding:16px 0;border-top:var(--rule)}
+  .clause:first-of-type{border-top:0}
+  .clause__n{font-family:var(--font-mono);font-size:13px;color:var(--muted);padding-top:2px}
+  .clause h3{font-family:var(--font-serif);font-weight:600;font-size:16px;margin-bottom:6px}
+  .clause p{font-size:15.5px;line-height:1.8;color:var(--fg);max-width:62ch}
+  .kread__note{margin-top:30px;padding:18px 20px;border-left:3px solid var(--fg);background:var(--bg);font-size:13.5px;line-height:1.7;color:var(--muted);max-width:62ch}
+  .kread__note b{color:var(--fg);font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px;font-weight:400}
+  .kread__cited{margin-top:22px;font-family:var(--font-mono);font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .kread__cited a{color:var(--fg);border-bottom:1px solid var(--fg);padding-bottom:1px;transition:.2s}
+  .kread__cited a:hover{color:var(--accent);border-color:var(--accent)}
+
+  .foot-note{margin-top:40px;padding-top:16px;border-top:var(--rule);font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  @media(max-width:900px){.kgrid{grid-template-columns:1fr}.kread{padding:28px 22px}.kread h2{font-size:23px}.clause{grid-template-columns:40px 1fr;gap:12px}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.kread.in{clip-path:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ribbon" role="status"><span>PREVIEW · 演示数据</span><span>SIMULATED</span></div>
+<div id="gnav-mount"></div>
+
+<main>
+
+  <div class="page-head" data-od-id="kb-head">
+    <p class="ey">知识库 · GROUNDED KNOWLEDGE</p>
+    <h1>制度、SOP、判例与应急</h1>
+    <p class="sub">案件审理引用的知识来源集中于此。所有条目保留来源、版本与生效日期；引用必须记录版本，由程序检查与人工复核。</p>
+  </div>
+
+  <div class="toolbar" data-od-id="kb-toolbar">
+    <label class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="kb-search" type="search" placeholder="搜索标题、来源或编号" aria-label="搜索知识库">
+    </label>
+    <div class="filters" id="kb-filters" role="group" aria-label="类型筛选"></div>
+  </div>
+
+  <div class="kgrid">
+    <nav class="klist" id="kb-list" aria-label="知识条目" data-od-id="kb-list"></nav>
+    <article class="kread" id="kb-read" data-od-id="kb-read"></article>
+  </div>
+
+  <div class="foot-note">
+    <span>预览 · 条目与引用关系均为模拟；普通条目不会自动成为裁判规则</span>
+    <span>PREVIEW · LOCAL MOCK</span>
+  </div>
+</main>
+
+<script src="assets/nav.js" defer></script>
+<script>
+  var TYPES=[
+    {id:'policy',label:'制度'},
+    {id:'sop',label:'SOP'},
+    {id:'case-ref',label:'判例'},
+    {id:'emergency',label:'应急'},
+    {id:'device',label:'设备'},
+    {id:'qa',label:'问答'}
+  ];
+  var KB=[
+    {id:'KB-PPE-004',type:'policy',title:'化学实验室个人防护规范',source:'校级制度库',version:'v3.2',date:'2026-03-01',cites:3,
+     summary:'进入高风险化学操作区域，应按区域要求佩戴护目镜、实验服与防护手套。',
+     clauses:[
+       {n:'4.1',t:'眼部防护',body:'进入标记为高风险的化学操作区域时，应全程佩戴符合标准的护目镜；佩戴方式不得影响视野与密封性。'},
+       {n:'4.2',t:'身体防护',body:'应穿着闭合式实验服；袖口收紧，操作中不得敞开。'},
+       {n:'4.3',t:'手部防护',body:'操作腐蚀性或高温物料时，应佩戴对应材质的防护手套。'}
+     ],
+     note:'本条目仅用于引用结构示例；案件必须记录实际引用版本，并由程序检查与人工复核。',
+     citedBy:[{label:'LC-2026-0810-014 · 护目镜缺失候选',href:'case-file.html'}]},
+    {id:'SOP-CHEM-022',type:'sop',title:'通风橱启动前检查步骤',source:'化学中心',version:'v4.0',date:'2026-02-10',cites:1,
+     summary:'开启通风橱前应完成面风速、视窗高度与排风状态的逐项检查。',
+     clauses:[{n:'1',t:'面风速',body:'面风速应稳定在 0.5–1.0 m/s 之间，低于下限不得开始操作。'},{n:'2',t:'视窗高度',body:'操作时视窗下沿不得高于安全标识线（通常 30–40 cm）。'}],
+     note:'示例 SOP，操作前应核对最新版本。',citedBy:[]},
+    {id:'SOP-EMG-012',type:'emergency',title:'烟雾与温度联动处置',source:'安全管理处',version:'v2.1',date:'2026-06-15',cites:1,
+     summary:'当温度与烟雾信号同时越过阈值，触发可靠告警路径并派单。',
+     clauses:[{n:'1',t:'触发条件',body:'温度 ≥ 60 °C 且烟雾指数 ≥ 0.6，同时持续 ≥ 3 秒。'},{n:'2',t:'处置',body:'系统自动派单值班员；VLM 不参与安全底线；值班员到场后人工确认。'}],
+     note:'紧急路径不依赖 VLM。',citedBy:[{label:'LC-2026-0810-014 · 模拟告警',href:'case-file.html'}]},
+    {id:'CASE-REF-019',type:'case-ref',title:'镜片反光导致误报的撤销记录',source:'复核案例库',version:'v1.0',date:'2026-07-18',cites:0,
+     summary:'镜片反光曾被误判为未佩戴，经反证核对后人工撤销。',
+     clauses:[{n:'要点',t:'',body:'当存在镜片强反光或头部遮挡时，应在裁切中逐帧核对反证；反证成立则撤销候选，不留问责记录。'}],
+     note:'判例不自动成为裁判规则，仅作参考。',citedBy:[]},
+    {id:'DEV-SMK-003',type:'device',title:'模拟烟雾传感器状态字段说明',source:'设备资料库',version:'v1.4',date:'2026-05-20',cites:0,
+     summary:'烟雾指数 0–1，阈值 0.6 触发预警，0.8 触发告警。',
+     clauses:[{n:'字段',t:'',body:'index：浮点 0–1；status：NORMAL / WARN / ALARM；ts：毫秒时间戳。'}],
+     note:'数值为模拟，不代表设备性能。',citedBy:[]},
+    {id:'QA-AI-002',type:'qa',title:'AI 建议是否可以直接确认违规？',source:'平台说明',version:'v1.1',date:'2026-08-01',cites:0,
+     summary:'不可以。AI 仅给出结构化建议，是否生成安全提醒由人工确认。',
+     clauses:[{n:'答',t:'',body:'AI 的输出是"建议"，需经过辩方反证、程序守门（6/6）后，由管理员人工确认才会生成可申诉的安全提醒；AI 不直接形成责任结论。'}],
+     note:'演示用问答。',citedBy:[]}
+  ];
+
+  var typeLabel={}; TYPES.forEach(function(t){typeLabel[t.id]=t.label;});
+  var state={filter:'all', query:'', selected:'KB-PPE-004'};
+
+  var filtersEl=document.getElementById('kb-filters'), listEl=document.getElementById('kb-list'), readEl=document.getElementById('kb-read'), searchEl=document.getElementById('kb-search');
+
+  function counts(){ var c={all:KB.length}; TYPES.forEach(function(t){c[t.id]=0}); KB.forEach(function(e){c[e.type]++;}); return c; }
+
+  function renderFilters(){
+    var c=counts();
+    var html='<button class="filt '+(state.filter==='all'?'active':'')+'" data-f="all" type="button">全部 <b>'+c.all+'</b></button>';
+    TYPES.forEach(function(t){ html+='<button class="filt '+(state.filter===t.id?'active':'')+'" data-f="'+t.id+'" type="button">'+t.label+' <b>'+c[t.id]+'</b></button>'; });
+    filtersEl.innerHTML=html;
+  }
+
+  function filtered(){
+    var q=state.query.trim().toLowerCase();
+    return KB.filter(function(e){
+      if(state.filter!=='all' && e.type!==state.filter) return false;
+      if(!q) return true;
+      return (e.title.toLowerCase().indexOf(q)>=0 || e.source.toLowerCase().indexOf(q)>=0 || e.id.toLowerCase().indexOf(q)>=0);
+    });
+  }
+
+  function renderList(){
+    var arr=filtered();
+    if(!arr.length){ listEl.innerHTML='<div class="klist__empty">没有匹配的条目。</div>'; return; }
+    listEl.innerHTML=arr.map(function(e){
+      return '<button class="kitem '+(e.id===state.selected?'active':'')+'" data-id="'+e.id+'" type="button">'+
+        '<div class="kitem__top"><span class="kitem__type">'+typeLabel[e.type]+'</span><span class="kitem__cites">被引用 '+e.cites+'</span></div>'+
+        '<b class="t">'+e.title+'</b>'+
+        '<small>'+e.source+' · '+e.version+' · '+e.date+' · '+e.id+'</small>'+
+      '</button>';
+    }).join('');
+    listEl.classList.remove('in'); void listEl.offsetWidth; listEl.classList.add('in');
+  }
+
+  function renderRead(){
+    var e=KB.filter(function(x){return x.id===state.selected;})[0] || KB[0];
+    if(!e) return;
+    var clauses=e.clauses.map(function(cl){
+      return '<div class="clause"><span class="clause__n">'+cl.n+'</span><div>'+(cl.t?'<h3>'+cl.t+'</h3>':'')+'<p>'+cl.body+'</p></div></div>';
+    }).join('');
+    var cited=e.citedBy.length? '<div class="kread__cited">被引用：'+e.citedBy.map(function(c){return '<a href="'+c.href+'">'+c.label+' →</a>';}).join('<span>·</span>')+'</div>' : '';
+    readEl.innerHTML=
+      '<span class="kread__chip">'+typeLabel[e.type]+' · '+e.id+'</span>'+
+      '<h2>'+e.title+'</h2>'+
+      '<div class="kread__meta"><span>来源 <b>'+e.source+'</b></span><span>版本 <b>'+e.version+'</b></span><span>生效 <b>'+e.date+'</b></span><span>被引用 <b>'+e.cites+'</b> 次</span></div>'+
+      '<p class="kread__sum">'+e.summary+'</p>'+
+      clauses+
+      '<div class="kread__note"><b>引用边界</b>'+e.note+'</div>'+
+      cited;
+    readEl.classList.remove('in'); void readEl.offsetWidth; readEl.classList.add('in');
+  }
+
+  function refresh(){ renderFilters(); renderList(); renderRead(); }
+
+  filtersEl.addEventListener('click', function(ev){ var b=ev.target.closest('.filt'); if(!b) return; state.filter=b.dataset.f; refresh(); });
+  listEl.addEventListener('click', function(ev){ var b=ev.target.closest('.kitem'); if(!b) return; state.selected=b.dataset.id; renderList(); renderRead(); });
+  searchEl.addEventListener('input', function(){ state.query=searchEl.value; renderList(); });
+
+  refresh();
+</script>
+</body>
+</html>

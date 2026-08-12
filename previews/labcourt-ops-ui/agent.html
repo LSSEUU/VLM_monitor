@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea">
+<title>通知 Agent · LabCourt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/nav.css">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --maxw: 1180px;
+    --rule: 1px solid var(--border);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--font-serif);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--accent);color:var(--surface)}
+  a,button{color:inherit;font-family:inherit}
+  button{font:inherit}
+  .mono{font-family:var(--font-mono)}
+  .ribbon{background:var(--fg);color:var(--bg);display:flex;justify-content:space-between;gap:16px;padding:6px 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:24px 32px 0}
+  .page-head{display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:2px solid var(--fg)}
+  .page-head .mark{width:38px;height:38px;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-family:var(--font-serif);font-weight:600;font-size:18px;flex:none}
+  .page-head h1{font-family:var(--font-serif);font-weight:600;font-size:24px;line-height:1.2}
+  .page-head h1 small{display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);font-weight:400;letter-spacing:.06em;margin-top:2px}
+  .page-head .status{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+  .page-head .status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dot 1.8s ease-in-out infinite}
+  @keyframes dot{0%,100%{box-shadow:0 0 0 0 oklch(0.42 0.09 250/.3)}50%{box-shadow:0 0 0 5px oklch(0.42 0.09 250/0)}}
+
+  .agent-grid{display:grid;grid-template-columns:1fr 280px;gap:28px;align-items:start;margin-top:22px;padding-bottom:24px}
+  /* 消息流 */
+  .stream{display:flex;flex-direction:column;min-height:60vh}
+  .msgs{flex:1;overflow-y:auto;padding-bottom:8px}
+  .msg{display:flex;gap:12px;padding:18px 0;border-bottom:var(--rule);animation:msg-in .4s ease both}
+  @keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .msg__av{width:30px;height:30px;flex:none;display:grid;place-items:center;font-family:var(--font-serif);font-weight:600;font-size:14px;background:var(--fg);color:var(--bg)}
+  .msg--user .msg__av{background:var(--surface);color:var(--fg);border:1px solid var(--fg)}
+  .msg__body{flex:1;min-width:0}
+  .msg__meta{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .msg__meta b{font-family:var(--font-mono);font-size:11.5px;font-weight:500;color:var(--fg)}
+  .msg__meta time{font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+  .msg__tag{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--border);color:var(--muted);padding:2px 6px}
+  .msg__tag.urgent{color:var(--fg);border-color:var(--alarm);background:oklch(0.50 0.15 28 / .08)}
+  .msg__tag.parse{color:var(--accent);border-color:var(--accent)}
+  .msg__tag.done{color:var(--fg);border-color:var(--fg)}
+  .msg__text{font-size:15px;line-height:1.7;color:var(--fg);max-width:62ch}
+  .msg__meta2{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:8px}
+  .msg__link{display:inline-block;font-family:var(--font-mono);font-size:12px;color:var(--fg);border-bottom:1px solid var(--fg);padding-bottom:1px;margin-top:8px;transition:.2s}
+  .msg__link:hover{color:var(--accent);border-color:var(--accent)}
+  /* 解析动作卡 */
+  .actions{margin-top:12px;border:var(--rule);background:var(--surface);padding:16px 18px}
+  .actions h4{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;font-weight:400}
+  .actions ul{list-style:none;margin-bottom:14px}
+  .actions li{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 0;border-top:var(--rule);font-size:14px}
+  .actions li:first-child{border-top:0}
+  .actions li i{font-family:var(--font-mono);font-style:normal;font-size:11px;color:var(--muted);padding-top:2px}
+  .actions li b{font-family:var(--font-serif);font-weight:600;font-size:14px;display:block}
+  .actions li small{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:2px;display:block}
+  .actions .warn{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);margin-bottom:10px}
+  .act-confirm{font-family:var(--font-mono);font-size:12px;background:var(--fg);color:var(--bg);border:0;padding:10px 16px;min-height:42px;cursor:pointer;transition:.2s}
+  .act-confirm:hover{background:oklch(0.16 0.01 60)}
+  .act-confirm:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .act-confirm.done{background:none;color:var(--muted);border:1px solid var(--border);cursor:default}
+  /* 查询列表 */
+  .qlist{margin-top:10px;border-top:var(--rule)}
+  .qlist a{display:block;padding:10px 0;border-bottom:var(--rule);font-family:var(--font-mono);font-size:12.5px;transition:padding-left .2s}
+  .qlist a:hover{padding-left:8px}
+  .qlist a b{font-family:var(--font-serif);font-weight:600;font-size:14px;display:block;color:var(--fg)}
+  .qlist a small{color:var(--muted);font-size:11px}
+  /* typing */
+  .typing{display:flex;gap:4px;padding:6px 0}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:type 1.2s ease-in-out infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes type{0%,100%{opacity:.3}50%{opacity:1}}
+
+  /* composer */
+  .composer{position:sticky;bottom:0;background:var(--bg);padding:14px 0 4px;border-top:2px solid var(--fg);margin-top:8px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .chip{font-family:var(--font-mono);font-size:11px;background:none;border:1px solid var(--border);color:var(--muted);padding:6px 11px;cursor:pointer;transition:.2s}
+  .chip:hover{border-color:var(--fg);color:var(--fg)}
+  .chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .input-row{display:flex;gap:10px;align-items:stretch}
+  .input-row input{flex:1;background:var(--surface);border:1px solid var(--border);font-family:var(--font-serif);font-size:15px;color:var(--fg);padding:12px 14px;outline:none;transition:border-color .2s}
+  .input-row input:focus{border-color:var(--fg)}
+  .send{font-family:var(--font-mono);font-size:12px;background:var(--fg);color:var(--bg);border:0;padding:0 20px;cursor:pointer;transition:.2s}
+  .send:hover{background:oklch(0.16 0.01 60)}
+  .send:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* 右上下文 */
+  .context{display:flex;flex-direction:column;gap:26px;position:sticky;top:80px}
+  .ctx h3{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:400;margin-bottom:12px}
+  .ctx .agent-card{border:var(--rule);background:var(--surface);padding:16px}
+  .ctx .agent-card .row{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11.5px;padding:5px 0}
+  .ctx .agent-card .row span{color:var(--muted)}.ctx .agent-card .row b{font-weight:400;color:var(--fg)}
+  .ctx .clist{border-top:var(--rule)}
+  .ctx .clist a{display:block;padding:10px 0;border-bottom:var(--rule);font-family:var(--font-mono);font-size:12px;transition:padding-left .2s}
+  .ctx .clist a:hover{padding-left:6px}
+  .ctx .clist a b{font-family:var(--font-serif);font-weight:600;font-size:13.5px;display:block;color:var(--fg)}
+  .ctx .clist a small{color:var(--muted);font-size:10.5px}
+
+  /* 二次确认 overlay */
+  .overlay{position:fixed;inset:0;z-index:80;background:oklch(0.16 0.012 55 / .4);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+  .overlay.open{display:flex;animation:fade .15s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .confirm{width:min(440px,100%);background:var(--surface);border:1px solid var(--border);box-shadow:0 28px 72px rgba(0,0,0,.22)}
+  .confirm__in{padding:26px 26px 22px}
+  .confirm .ey{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .confirm h2{font-family:var(--font-serif);font-weight:600;font-size:20px;margin-bottom:6px}
+  .confirm p{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+  .confirm ul{list-style:none;border-top:var(--rule);margin-bottom:20px}
+  .confirm li{padding:11px 0;border-bottom:var(--rule);font-family:var(--font-mono);font-size:12.5px;display:flex;gap:8px;align-items:baseline}
+  .confirm li::before{content:"▸";color:var(--muted)}
+  .confirm__btns{display:flex;gap:10px}
+  .confirm__btns button{flex:1;padding:13px;font-family:var(--font-mono);font-size:12px;cursor:pointer;transition:.2s;min-height:46px}
+  .c-cancel{background:none;border:1px solid var(--fg);color:var(--fg)}
+  .c-cancel:hover{background:var(--bg)}
+  .c-ok{background:var(--fg);color:var(--bg);border:1px solid var(--fg)}
+  .c-ok:hover{background:oklch(0.16 0.01 60)}
+
+  @media(max-width:900px){.agent-grid{grid-template-columns:1fr}.context{display:none}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.msg{opacity:1!important;transform:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ribbon" role="status"><span>PREVIEW · 模拟回复</span><span>不接真模型</span></div>
+<div id="gnav-mount"></div>
+
+<main>
+
+  <div class="page-head" data-od-id="agent-head">
+    <span class="mark">A</span>
+    <div><h1>通知 Agent<small>自然语言下达指令 · 高影响动作二次确认</small></h1></div>
+    <span class="status">在线 · 解析模型 Claude</span>
+  </div>
+
+  <div class="agent-grid">
+    <div class="stream">
+      <div class="msgs" id="msgs" data-od-id="agent-msgs"></div>
+
+      <div class="composer" data-od-id="agent-composer">
+        <div class="chips" id="chips">
+          <button class="chip" type="button">确认并结案</button>
+          <button class="chip" type="button">派单值班员</button>
+          <button class="chip" type="button">查今日案件</button>
+          <button class="chip" type="button">撤销候选</button>
+        </div>
+        <form class="input-row" id="form">
+          <input id="input" type="text" placeholder="回复 Agent…（例如：确认 014 并结案）" autocomplete="off">
+          <button class="send" type="submit">发送</button>
+        </form>
+      </div>
+    </div>
+
+    <aside class="context" data-od-id="agent-context">
+      <div>
+        <h3>Agent 状态</h3>
+        <div class="agent-card">
+          <div class="row"><span>状态</span><b>在线</b></div>
+          <div class="row"><span>解析模型</span><b>Claude</b></div>
+          <div class="row"><span>今日已处理</span><b>12 条</b></div>
+          <div class="row"><span>待确认动作</span><b>1 项</b></div>
+        </div>
+      </div>
+      <div>
+        <h3>相关案件</h3>
+        <div class="clist">
+          <a href="case-file.html"><b>护目镜缺失候选</b><small>LC-2026-0810-014 · 待确认</small></a>
+          <a href="case-file.html"><b>实验服闭合候选</b><small>LC-2026-0810-011 · 待补证</small></a>
+        </div>
+      </div>
+      <div>
+        <h3>知识引用</h3>
+        <div class="clist">
+          <a href="knowledge.html"><b>化学实验室个人防护规范</b><small>KB-PPE-004 · v3.2</small></a>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- 二次确认 -->
+<div class="overlay" id="overlay" data-od-id="agent-confirm">
+  <div class="confirm">
+    <div class="confirm__in">
+      <p class="ey">二次确认 · SECOND CONFIRMATION</p>
+      <h2>确认系统解析的动作</h2>
+      <p id="confirm-copy">这些动作会改变案件状态。请核对后再继续。</p>
+      <ul id="confirm-list"></ul>
+      <div class="confirm__btns">
+        <button class="c-cancel" type="button" id="c-cancel">取消</button>
+        <button class="c-ok" type="button" id="c-ok">确认模拟动作</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/nav.js" defer></script>
+<script>
+  var msgsEl=document.getElementById('msgs'), form=document.getElementById('form'), input=document.getElementById('input');
+  var overlay=document.getElementById('overlay'), confirmList=document.getElementById('confirm-list');
+  var pendingActions=null, pendingBtn=null;
+
+  var SEED=[
+    {from:'agent',tag:'紧急通知',tagCls:'urgent',time:'14:32',text:'主操作台温度与烟雾信号联动（78.4 °C / SMK 0.82）。已自动派单值班员，预计 2 分钟内到场。',meta:'低风险动作：接单状态已直接记录 · VLM 不参与安全底线'},
+    {from:'agent',tag:'案件更新',time:'14:31',text:'护目镜缺失候选 LC-2026-0810-014 进入"等待人工确认"。AI 初审建议已就绪，证据 3/3。',link:{label:'查看案件详情 →',href:'case-file.html'}},
+    {from:'user',tag:'指令',time:'14:33',text:'确认 014 并结案'},
+    {from:'agent',type:'parse',tag:'解析结果',tagCls:'parse',time:'14:33',text:'我识别到 2 个高影响动作，需要你明确确认：',actions:[{label:'确认案件 LC-2026-0810-014 的安全提醒',impact:'生成安全提醒与可申诉记录'},{label:'将案件状态变更为"已结案"',impact:'案件移出待办队列'}]}
+  ];
+
+  function tag(t,cls){return '<span class="msg__tag '+(cls||'')+'">'+t+'</span>';}
+  function av(from){return from==='user'?'管':'A';}
+
+  function renderMsg(m){
+    var html='<div class="msg msg--'+m.from+'"><span class="msg__av">'+av(m.from)+'</span><div class="msg__body">'+
+      '<div class="msg__meta"><b>'+(m.from==='user'?'管理员':'通知 Agent')+'</b>'+tag(m.tag,m.tagCls)+'<time>'+m.time+'</time></div>';
+    html+='<div class="msg__text">'+m.text+'</div>';
+    if(m.meta) html+='<div class="msg__meta2">'+m.meta+'</div>';
+    if(m.link) html+='<a class="msg__link" href="'+m.link.href+'">'+m.link.label+'</a>';
+    if(m.type==='parse' && m.actions){
+      html+='<div class="actions" data-actions=\''+JSON.stringify(m.actions).replace(/'/g,"&#39;")+'\'><h4>解析结果 · 需二次确认</h4><ul>';
+      m.actions.forEach(function(a,i){ html+='<li><i>'+(i+1)+'</i><span><b>'+a.label+'</b><small>影响：'+a.impact+'</small></span></li>'; });
+      html+='</ul><div class="warn">需要二次确认 · 预览不会执行真实动作</div><button class="act-confirm" type="button">检查并确认</button></div>';
+    }
+    if(m.type==='list' && m.items){
+      html+='<div class="qlist">';
+      m.items.forEach(function(it){ html+='<a href="'+(it.href||'case-file.html')+'"><b>'+it.t+'</b><small>'+it.s+'</small></a>'; });
+      html+='</div>';
+    }
+    html+='</div></div>';
+    return html;
+  }
+
+  function renderTyping(){
+    return '<div class="msg msg--agent" id="typing"><span class="msg__av">A</span><div class="msg__body"><div class="msg__meta"><b>通知 Agent</b>'+tag('解析中')+'</div><div class="typing"><i></i><i></i><i></i></div></div></div>';
+  }
+
+  function append(m){ msgsEl.insertAdjacentHTML('beforeend', renderMsg(m)); msgsEl.scrollTop=msgsEl.scrollHeight; }
+  function scrollBottom(){ msgsEl.scrollTop=msgsEl.scrollHeight; }
+
+  // 初始消息
+  SEED.forEach(append);
+
+  // 解析动作 → 二次确认
+  msgsEl.addEventListener('click', function(e){
+    var btn=e.target.closest('.act-confirm'); if(!btn || btn.classList.contains('done')) return;
+    var card=btn.closest('.actions');
+    try{ pendingActions=JSON.parse(card.dataset.actions.replace(/&#39;/g,"'")); }catch(_){ pendingActions=[]; }
+    pendingBtn=btn;
+    confirmList.innerHTML=pendingActions.map(function(a){return '<li>'+a.label+'</li>';}).join('');
+    overlay.classList.add('open');
+  });
+
+  document.getElementById('c-cancel').addEventListener('click', function(){ overlay.classList.remove('open'); });
+  document.getElementById('c-ok').addEventListener('click', function(){
+    overlay.classList.remove('open');
+    if(pendingBtn){ pendingBtn.textContent='已确认 ✓'; pendingBtn.classList.add('done'); }
+    setTimeout(function(){
+      append({from:'agent',tag:'已完成',tagCls:'done',time:'14:34',text:'已完成：安全提醒已生成；案件 LC-2026-0810-014 状态变更为"已结案"。处置说明已留档，可申诉。',meta:'高影响动作：经二次确认后执行 · 已记录操作人与时间'});
+    },350);
+    pendingBtn=null; pendingActions=null;
+  });
+
+  // 模拟回复
+  function simReply(text){
+    var t=(text||'').toLowerCase();
+    if(t.indexOf('确认')>=0||t.indexOf('结案')>=0||t.indexOf('014')>=0){
+      return {type:'parse',tag:'解析结果',tagCls:'parse',text:'我识别到 2 个高影响动作，需要你确认：',actions:[{label:'确认当前候选案件的安全提醒',impact:'生成提醒与可申诉记录'},{label:'将案件状态变更为"已结案"',impact:'移出待办队列'}]};
+    }
+    if(t.indexOf('查')>=0||t.indexOf('今日')>=0||t.indexOf('案件')>=0){
+      return {type:'list',tag:'查询结果',text:'今日候选 7 条（含 5 已抑制），待人工确认 2 条：',items:[{t:'护目镜缺失候选',s:'等待确认 · LC-2026-0810-014'},{t:'实验服闭合候选',s:'待补证 · LC-2026-0810-011'}]};
+    }
+    if(t.indexOf('派单')>=0||t.indexOf('值班')>=0){ return {tag:'派单',text:'已向值班员派单（模拟）。到场前区域画面持续关注，有变化我会再通知你。'}; }
+    if(t.indexOf('撤销')>=0){ return {type:'parse',tag:'解析结果',tagCls:'parse',text:'撤销候选是一个高影响动作，需要你确认：',actions:[{label:'撤销当前候选案件',impact:'不留问责记录，可事后追溯'}]}; }
+    return {tag:'已记录',text:'已记录你的指令。我可以帮你查询案件、派单值班员、或确认处置——直接说就行。'};
+  }
+
+  function nowTime(){var d=new Date();return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}
+
+  function send(text){
+    if(!text.trim()) return;
+    append({from:'user',tag:'指令',time:nowTime(),text:text});
+    input.value='';
+    msgsEl.insertAdjacentHTML('beforeend', renderTyping()); scrollBottom();
+    setTimeout(function(){
+      var t=document.getElementById('typing'); if(t) t.remove();
+      var r=simReply(text); r.from='agent'; r.time=nowTime();
+      append(r);
+    }, 900);
+  }
+
+  form.addEventListener('submit', function(e){ e.preventDefault(); send(input.value); });
+  document.getElementById('chips').addEventListener('click', function(e){ var c=e.target.closest('.chip'); if(!c) return; send(c.textContent); });
+</script>
+</body>
+</html>
