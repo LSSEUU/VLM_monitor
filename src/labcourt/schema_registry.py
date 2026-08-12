@@ -300,6 +300,11 @@ from labcourt.contracts.m8_case_persistence import (
     M8OperationalCaseAuthorityV1,
     M8OperationalCaseCommitReceiptV1,
 )
+from labcourt.contracts.m8_hearing_api import (
+    M8HearingProviderSelectionV1,
+    M8HearingStartRequestV1,
+    M8HearingViewV1,
+)
 from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxActivationCommitReceiptV1,
     M8FeishuSandboxActivationRevocationCommitReceiptV1,
@@ -749,6 +754,9 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-api-error-response-v1": M8ApiErrorResponseV1,
     "m8-api-knowledge-query-request-v1": M8ApiKnowledgeQueryRequestV1,
     "m8-api-principal-v1": M8ApiPrincipalV1,
+    "m8-hearing-provider-selection-v1": M8HearingProviderSelectionV1,
+    "m8-hearing-start-request-v1": M8HearingStartRequestV1,
+    "m8-hearing-view-v1": M8HearingViewV1,
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
     "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,

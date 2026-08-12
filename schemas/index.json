@@ -1474,6 +1474,24 @@
       "name": "m8-feishu-webhook-ingress-request-v1"
     },
     {
+      "file": "m8-hearing-provider-selection-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_hearing_api.M8HearingProviderSelectionV1",
+      "name": "m8-hearing-provider-selection-v1"
+    },
+    {
+      "file": "m8-hearing-start-request-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_hearing_api.M8HearingStartRequestV1",
+      "name": "m8-hearing-start-request-v1"
+    },
+    {
+      "file": "m8-hearing-view-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_hearing_api.M8HearingViewV1",
+      "name": "m8-hearing-view-v1"
+    },
+    {
       "file": "m8-knowledge-answer-commit-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeAnswerCommitReceiptV1",

@@ -20,6 +20,7 @@ from labcourt.contracts.m8_api import (
     M8ApiKnowledgeQueryRequestV1,
     M8ApiPrincipalV1,
 )
+from labcourt.contracts.m8_hearing_api import M8HearingStartRequestV1
 from labcourt.exceptions import ContractViolation
 from labcourt.ports.m8_api_authentication import (
     M8AuthenticationError,
@@ -27,6 +28,7 @@ from labcourt.ports.m8_api_authentication import (
     M8RequestAuthenticator,
 )
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
+from labcourt.services.m8_hearing_api import M8HearingApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_operations_api import (
@@ -61,6 +63,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         recorded_media_service: M8RecordedMediaApiService | None = None,
         user_permission_service: M8UserPermissionApiService | None = None,
         rule_config_service: M8RuleConfigApiService | None = None,
+        hearing_service: M8HearingApiService | None = None,
     ) -> None:
         super().__init__(server_address, M8ApiRequestHandler)
         self.api_service = service
@@ -72,6 +75,7 @@ class M8ApiHttpServer(ThreadingHTTPServer):
         self.recorded_media_service = recorded_media_service
         self.user_permission_service = user_permission_service
         self.rule_config_service = rule_config_service
+        self.hearing_service = hearing_service
 
 
 class M8ApiRequestHandler(BaseHTTPRequestHandler):
@@ -213,15 +217,29 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                     sources = projection.visible_projection.sources
                     if segments[4] == "sensors":
                         sources = tuple(
-                            item
-                            for item in sources
-                            if item.source.source_kind.value == "SENSOR"
+                            item for item in sources if item.source.source_kind.value == "SENSOR"
                         )
                     self._json(
                         HTTPStatus.OK,
                         [item.model_dump(mode="json") for item in sources],
                     )
                     return
+            if (
+                len(segments) == 7
+                and segments[:3] == ("api", "m8", "runs")
+                and segments[4] == "cases"
+                and segments[6] == "hearing"
+            ):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                hearing_service = self.server.hearing_service
+                if hearing_service is None:
+                    self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+                    return
+                hearing = hearing_service.status(principal, segments[3], segments[5])
+                self._json(HTTPStatus.OK, hearing.model_dump(mode="json"))
+                return
             if len(segments) == 4 and segments[:3] == ("api", "m8", "cases"):
                 case = self.server.api_service.case(principal, segments[3])
                 self._json(HTTPStatus.OK, case.model_dump(mode="json"))
@@ -299,6 +317,28 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                 self.headers.get("Authorization")
             )
             segments = self._segments()
+            if (
+                len(segments) == 7
+                and segments[:3] == ("api", "m8", "runs")
+                and segments[4] == "cases"
+                and segments[6] == "hearing"
+            ):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                hearing_service = self.server.hearing_service
+                if hearing_service is None:
+                    self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+                    return
+                hearing_request = M8HearingStartRequestV1.model_validate_json(self._json_body())
+                hearing = hearing_service.start(
+                    principal,
+                    segments[3],
+                    segments[5],
+                    hearing_request,
+                )
+                self._json(HTTPStatus.OK, hearing.model_dump(mode="json"))
+                return
             if (
                 len(segments) == 6
                 and segments[:4] == ("api", "m8", "knowledge", "catalogs")
@@ -539,6 +579,7 @@ def build_m8_api_server(
     recorded_media_service: M8RecordedMediaApiService | None = None,
     user_permission_service: M8UserPermissionApiService | None = None,
     rule_config_service: M8RuleConfigApiService | None = None,
+    hearing_service: M8HearingApiService | None = None,
 ) -> M8ApiHttpServer:
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
         raise ValueError("M8 API port must be from zero through 65535")
@@ -566,6 +607,8 @@ def build_m8_api_server(
         rule_config_service, M8RuleConfigApiService
     ):
         raise TypeError("M8 API requires a rule config service or None")
+    if hearing_service is not None and not isinstance(hearing_service, M8HearingApiService):
+        raise TypeError("M8 API requires a hearing service or None")
     return M8ApiHttpServer(
         ("127.0.0.1", port),
         service=service,
@@ -577,6 +620,7 @@ def build_m8_api_server(
         recorded_media_service=recorded_media_service,
         user_permission_service=user_permission_service,
         rule_config_service=rule_config_service,
+        hearing_service=hearing_service,
     )
 
 

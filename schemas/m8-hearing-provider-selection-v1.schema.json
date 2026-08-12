@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "ExecutionLocation": {
+      "enum": [
+        "LOCAL",
+        "EXTERNAL"
+      ],
+      "title": "ExecutionLocation",
+      "type": "string"
+    },
+    "ProviderTransport": {
+      "enum": [
+        "IN_PROCESS",
+        "HTTP"
+      ],
+      "title": "ProviderTransport",
+      "type": "string"
+    },
+    "VlmRole": {
+      "enum": [
+        "SCREENING",
+        "STRUCTURE_REPAIR",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "VlmRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-hearing-provider-selection-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Exact role profile selected by server configuration and the run manifest.",
+  "properties": {
+    "execution_location": {
+      "$ref": "#/$defs/ExecutionLocation"
+    },
+    "model": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Manifest Id",
+      "type": "string"
+    },
+    "provider": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "provider_profile": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Provider Profile",
+      "type": "string"
+    },
+    "revision": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Revision",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/VlmRole"
+    },
+    "schema_version": {
+      "const": "m8-hearing-provider-selection-v1",
+      "default": "m8-hearing-provider-selection-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selection_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Selection Id",
+      "type": "string"
+    },
+    "transport": {
+      "$ref": "#/$defs/ProviderTransport"
+    }
+  },
+  "required": [
+    "role",
+    "provider_profile",
+    "provider",
+    "model",
+    "revision",
+    "model_manifest_id",
+    "execution_location",
+    "transport",
+    "selection_id"
+  ],
+  "title": "M8HearingProviderSelectionV1",
+  "type": "object"
+}
