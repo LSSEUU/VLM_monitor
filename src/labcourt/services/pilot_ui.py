@@ -127,11 +127,19 @@ def _media_type(path: str) -> str:
 class PilotUiService:
     """Read verified pilot artifacts and project them into a non-authoritative UI model."""
 
-    def __init__(self, *, project_root: Path, config_path: Path) -> None:
+    def __init__(
+        self,
+        *,
+        project_root: Path,
+        config_path: Path,
+        config_override: AppConfig | None = None,
+    ) -> None:
         self.project_root = project_root.absolute()
         self.config_path = config_path.absolute()
         try:
-            self.config: AppConfig = load_config(self.config_path)
+            self.config: AppConfig = config_override or load_config(self.config_path)
+            if not isinstance(self.config, AppConfig):
+                raise TypeError("pilot UI config override must be AppConfig")
             require_pilot_config(self.config)
         except (ContractViolation, OSError, TypeError, ValueError) as error:
             raise PilotUiBoundaryError("CONFIG_INVALID") from error

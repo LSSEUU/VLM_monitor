@@ -39,6 +39,8 @@ from labcourt.application.m8_personal_demo_student_appeal import (
     M8PersonalDemoStudentAppealError,
     execute_m8_personal_demo_student_appeal,
 )
+from labcourt.application.m8_platform_bootstrap import PLATFORM_DATABASE_NAME
+from labcourt.application.m8_platform_demo_api import assemble_m8_platform_demo_api
 from labcourt.contracts.m8_access_cases import M8AppealResolution
 from labcourt.contracts.m8_notification_lifecycle import M8NotificationReplyKind
 from labcourt.contracts.m8_personal_demo import (
@@ -196,6 +198,57 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             assembly.server.serve_forever()
         finally:
             assembly.server.server_close()
+
+    @demo.command("platform")
+    def platform(
+        output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
+            ".labcourt-local/labcourt-platform-demo"
+        ),
+        input_media: Annotated[
+            Path,
+            typer.Option("--input", exists=True, dir_okay=False),
+        ] = Path("inputs/goggles-missing.mp4"),
+        port: Annotated[int, typer.Option("--port", min=1, max=65_535)] = 8877,
+        check: Annotated[
+            bool,
+            typer.Option("--check", help="Assemble the platform, bind the port, then close."),
+        ] = False,
+        json_output: Annotated[bool, typer.Option("--json")] = False,
+    ) -> None:
+        """Run the complete offline campus-operations web Demo."""
+
+        assembly = None
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+            assembly = assemble_m8_platform_demo_api(
+                project_root=Path(__file__).parents[2],
+                database_path=output / PLATFORM_DATABASE_NAME,
+                input_media_path=input_media,
+                port=port,
+            )
+            summary = assembly.local_access_document()
+            summary["check_only"] = check
+            summary["access_file"] = str(assembly.write_local_access().resolve())
+            if json_output:
+                typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+            elif check:
+                typer.echo("LabCourt CAMPUS PLATFORM DEMO check passed; server was closed")
+            else:
+                typer.echo(
+                    f"LabCourt CAMPUS PLATFORM DEMO listening at {summary['base_url']}; "
+                    "choose a role on the local login page"
+                )
+            if check:
+                assembly.server.server_close()
+                return
+            assembly.server.serve_forever()
+        except (LabCourtError, OSError, TypeError, ValueError, sqlite3.DatabaseError) as error:
+            if assembly is not None:
+                assembly.server.server_close()
+            _fail(error)
+        finally:
+            if assembly is not None:
+                assembly.server.server_close()
 
     @demo.command("case-action")
     def case_action(

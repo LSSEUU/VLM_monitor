@@ -24,6 +24,12 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert isinstance(api, TyperCommand)
     api_options = {option for parameter in api.params for option in parameter.opts}
     assert {"--output", "--port", "--check", "--json"} <= api_options
+    platform = demo.commands["platform"]
+    assert isinstance(platform, TyperCommand)
+    platform_options = {
+        option for parameter in platform.params for option in parameter.opts
+    }
+    assert {"--output", "--input", "--port", "--check", "--json"} <= platform_options
     case_action = demo.commands["case-action"]
     assert isinstance(case_action, TyperCommand)
     action_options = {option for parameter in case_action.params for option in parameter.opts}
@@ -93,6 +99,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
         "labcourt-demo-start.ps1",
         "labcourt-demo-student-appeal.ps1",
         "labcourt-demo-e2e.ps1",
+        "labcourt-platform-start.ps1",
     ):
         script = PROJECT_ROOT / "scripts" / "windows" / name
         parsed = subprocess.run(
@@ -108,3 +115,6 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
             check=False,
         )
         assert parsed.returncode == 0
+    platform_cmd = PROJECT_ROOT / "labcourt-platform-start.cmd"
+    assert platform_cmd.is_file()
+    assert "labcourt-platform-start.ps1" in platform_cmd.read_text(encoding="utf-8")
