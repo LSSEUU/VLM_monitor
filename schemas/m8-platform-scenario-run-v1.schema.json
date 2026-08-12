@@ -159,6 +159,19 @@
           "title": "Authority Refs",
           "type": "array"
         },
+        "completed_units": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed Units"
+        },
         "stage": {
           "$ref": "#/$defs/M8PlatformScenarioStage"
         },
@@ -170,6 +183,32 @@
           "minLength": 1,
           "title": "Summary",
           "type": "string"
+        },
+        "total_units": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Units"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "const": "FRAME",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
         }
       },
       "required": [

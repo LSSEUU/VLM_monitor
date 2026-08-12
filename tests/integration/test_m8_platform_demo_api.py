@@ -30,6 +30,8 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformScenarioStageV1,
     M8PlatformStageState,
 )
+from labcourt.contracts.pilot_ui import PilotUiJobStatus
+from labcourt.services.pilot_progress import PilotProgressUpdate
 
 
 def _request(
@@ -358,6 +360,131 @@ def test_platform_fixture_fallback_is_explicit_and_preserves_failed_model_run(
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_platform_projects_truthful_hot_progress_and_failure_stage(
+    tmp_path: Path,
+    socket_enabled: None,
+    monkeypatch,
+) -> None:
+    assembly = _assembly(tmp_path)
+    platform = assembly.server.platform_service
+    running = M8PlatformScenarioRunV1(
+        run_id="platform-progress",
+        scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
+        state="RUNNING",
+        stages=tuple(
+            M8PlatformScenarioStageV1(
+                stage=stage,
+                state=("RUNNING" if stage == M8PlatformScenarioStage.VIDEO else "PENDING"),
+                summary="waiting",
+            )
+            for stage in M8PlatformScenarioStage
+        ),
+        recognition_mode=M8PlatformRecognitionMode.FULL_MODEL,
+    )
+    progress = (
+        PilotProgressUpdate(stage="VIDEO", state="COMPLETE"),
+        PilotProgressUpdate(
+            stage="PERCEPTION",
+            state="COMPLETE",
+            completed_units=241,
+            total_units=241,
+            unit="FRAME",
+        ),
+        PilotProgressUpdate(stage="EVIDENCE", state="COMPLETE"),
+        PilotProgressUpdate(stage="SCREENING", state="RUNNING"),
+    )
+
+    projected = platform._project_ppe_progress(running, progress, "SCREENING")
+    perception = projected.stages[1]
+    assert tuple(item.state for item in projected.stages) == (
+        "COMPLETE",
+        "COMPLETE",
+        "COMPLETE",
+        "RUNNING",
+        "PENDING",
+        "PENDING",
+    )
+    assert (perception.completed_units, perception.total_units, perception.unit) == (
+        241,
+        241,
+        "FRAME",
+    )
+
+    failed = platform._failed_ppe_run(
+        projected,
+        failure_code="SCREENING_FAILED",
+        failed_stage=platform._pilot_failure_stage(
+            "SCREENING_FAILED",
+            progress,
+            projected,
+        ),
+    )
+    assert failed.state == "FAILED"
+    assert failed.stages[3].state == "FAILED"
+    assert failed.stages[4].state == "PENDING"
+    assert failed.stages[1].completed_units == 241
+
+    perception_running = platform._project_ppe_progress(
+        running,
+        (
+            PilotProgressUpdate(stage="VIDEO", state="COMPLETE"),
+            PilotProgressUpdate(
+                stage="PERCEPTION",
+                state="RUNNING",
+                completed_units=7,
+                total_units=241,
+                unit="FRAME",
+            ),
+        ),
+        "PERCEPTION",
+    )
+    hotter_progress = (
+        PilotProgressUpdate(stage="VIDEO", state="COMPLETE"),
+        PilotProgressUpdate(
+            stage="PERCEPTION",
+            state="RUNNING",
+            completed_units=8,
+            total_units=241,
+            unit="FRAME",
+        ),
+    )
+    job = PilotUiJobStatus(
+        job_id="job-platform-progress",
+        state="RUNNING",
+        run_id=running.run_id,
+        video_id="a" * 64,
+        active_stage="PERCEPTION",
+    )
+
+    class _RunningJobs:
+        @staticmethod
+        def snapshot():
+            return job
+
+        @staticmethod
+        def progress_snapshot():
+            return hotter_progress
+
+    writes: list[M8PlatformScenarioRunV1] = []
+    monkeypatch.setattr(platform, "_pilot_jobs_for", lambda _run: _RunningJobs())
+    monkeypatch.setattr(platform, "_write_run", writes.append)
+    refreshed = platform._refresh_ppe(perception_running)
+    assert refreshed.stages[1].completed_units == 8
+    assert writes == []  # hot frame updates remain visible without per-frame disk writes
+
+    completed_stages = tuple(
+        M8PlatformScenarioStageV1(
+            stage=stage,
+            state="COMPLETE",
+            summary="complete",
+        )
+        for stage in M8PlatformScenarioStage
+    )
+    preserved = platform._preserve_perception_progress(completed_stages, projected)
+    assert preserved[1].completed_units == preserved[1].total_units == 241
+    assembly.server.server_close()
 
 
 def test_platform_notification_appeal_outcome_and_acknowledgement_closure(

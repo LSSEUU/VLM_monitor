@@ -24,6 +24,7 @@ from labcourt.services.pilot_operations import (
     build_pilot_run_request,
     run_pilot_perception,
 )
+from labcourt.services.pilot_progress import PilotProgressUpdate
 
 PROJECT_ROOT = Path(__file__).parents[2]
 
@@ -122,6 +123,7 @@ def test_short_real_mp4_produces_frame_bundles_manifest_receipts_and_preview(
         resume=True,
     )
     worker = _TrackingFakeWorker(build_expected_perception_manifest(config))
+    progress: list[PilotProgressUpdate] = []
 
     report = run_pilot_perception(
         config=config,
@@ -129,6 +131,7 @@ def test_short_real_mp4_produces_frame_bundles_manifest_receipts_and_preview(
         config_path=config_path,
         project_root=tmp_path,
         raw_transport=worker,
+        progress_observer=progress.append,
     )
 
     assert report.frames_processed == 3
@@ -138,6 +141,14 @@ def test_short_real_mp4_produces_frame_bundles_manifest_receipts_and_preview(
     assert report.track_count == 1
     assert report.provider_failures == 0
     assert worker.calls == ["INFER", "INFER", "INFER"]
+    assert tuple((item.stage, item.state) for item in progress[:2]) == (
+        ("VIDEO", "RUNNING"),
+        ("VIDEO", "COMPLETE"),
+    )
+    perception_progress = tuple(item for item in progress if item.stage == "PERCEPTION")
+    assert tuple(item.completed_units for item in perception_progress) == (0, 1, 2, 3, 3)
+    assert {item.total_units for item in perception_progress} == {3}
+    assert perception_progress[-1].state == "COMPLETE"
     assert worker.closed
     run = tmp_path / "runs" / "pilot-smoke"
     assert (run / "input" / "video-manifest.json").is_file()

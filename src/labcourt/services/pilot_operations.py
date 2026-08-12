@@ -54,6 +54,7 @@ from labcourt.exceptions import (
     PerceptionWorkerCrashed,
 )
 from labcourt.ports.pixels import RGB8Frame
+from labcourt.services.pilot_progress import PilotProgressObserver, publish_pilot_progress
 
 MAX_PILOT_VIDEO_BYTES = 8 * 1024 * 1024 * 1024
 MAX_PILOT_FRAMES = 108_000
@@ -476,7 +477,7 @@ def _resume_perception_report(
     workspace: SecureWorkspace,
     request: PilotRunRequest,
     expected_manifest: PilotPerceptionExecutionManifest,
-) -> PilotPerceptionReport | None:
+) -> CompletedPilotPerception | None:
     if not request.resume:
         return None
     completion_path = f"{request.run_id}/perception/completion-manifest.json"
@@ -504,7 +505,7 @@ def _resume_perception_report(
         request=request,
         expected_manifest=expected_manifest,
         completion=completion,
-    ).report
+    )
 
 
 def load_completed_pilot_perception(
@@ -549,6 +550,7 @@ def run_pilot_perception(
     project_root: Path,
     decoder_backend: VideoDecoderBackend | None = None,
     raw_transport: RawPerceptionWorkerTransport | None = None,
+    progress_observer: PilotProgressObserver | None = None,
 ) -> PilotPerceptionReport:
     """Decode a verified MP4 and publish a complete, resumable A1 perception run."""
 
@@ -570,13 +572,23 @@ def run_pilot_perception(
             max_file_bytes=config.storage.max_media_bytes,
         ) as run_workspace,
     ):
+        publish_pilot_progress(progress_observer, stage="VIDEO", state="RUNNING")
         resumed = _resume_perception_report(
             workspace=run_workspace,
             request=request,
             expected_manifest=expected_manifest,
         )
         if resumed is not None:
-            return resumed
+            publish_pilot_progress(progress_observer, stage="VIDEO", state="COMPLETE")
+            publish_pilot_progress(
+                progress_observer,
+                stage="PERCEPTION",
+                state="COMPLETE",
+                completed_units=resumed.report.frames_processed,
+                total_units=resumed.stream_manifest.frame_count,
+                unit="FRAME",
+            )
+            return resumed.report
 
         stream_id = f"video-{request.video_sha256[:16]}"
         camera_ids = {zone.camera_id for zone in config.zones}
@@ -595,6 +607,15 @@ def run_pilot_perception(
         )
         if stream_manifest.frame_count > MAX_PILOT_FRAMES:
             raise BudgetExceeded("pilot video exceeds the maximum frame count")
+        publish_pilot_progress(progress_observer, stage="VIDEO", state="COMPLETE")
+        publish_pilot_progress(
+            progress_observer,
+            stage="PERCEPTION",
+            state="RUNNING",
+            completed_units=0,
+            total_units=stream_manifest.frame_count,
+            unit="FRAME",
+        )
         source = OpenCvVideoSource(
             manifest=stream_manifest,
             verified_input=cast(VerifiedVideoInput, input_workspace),
@@ -673,12 +694,20 @@ def run_pilot_perception(
                     ephemeral=True,
                 )
                 detections = tuple(provider.detect(frame_data))
+                frames_processed += 1
+                publish_pilot_progress(
+                    progress_observer,
+                    stage="PERCEPTION",
+                    state="RUNNING",
+                    completed_units=frames_processed,
+                    total_units=stream_manifest.frame_count,
+                    unit="FRAME",
+                )
                 bundle = FrameBundle(frame=rgb8.frame, detections=detections)
                 line = _artifact_bytes(bundle)
                 if len(bundle_lines) + len(line) > config.storage.max_media_bytes:
                     raise BudgetExceeded("pilot FrameBundle artifact exceeded its byte budget")
                 bundle_lines.extend(line)
-                frames_processed += 1
                 detection_count += len(detections)
                 person_count += sum(item.label == "person" for item in detections)
                 goggles_count += sum(item.label == "goggles" for item in detections)
@@ -761,5 +790,13 @@ def run_pilot_perception(
             run_workspace,
             f"{request.run_id}/perception/completion-manifest.json",
             _artifact_bytes(completion),
+        )
+        publish_pilot_progress(
+            progress_observer,
+            stage="PERCEPTION",
+            state="COMPLETE",
+            completed_units=frames_processed,
+            total_units=stream_manifest.frame_count,
+            unit="FRAME",
         )
         return report

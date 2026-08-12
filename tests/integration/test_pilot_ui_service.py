@@ -14,6 +14,7 @@ from labcourt.contracts.pilot import (
 )
 from labcourt.contracts.pilot_report import PilotA4Metrics, PilotLocalAlertDocument
 from labcourt.contracts.pilot_ui import PilotUiJobStartRequest
+from labcourt.services.pilot_progress import PilotProgressUpdate
 from labcourt.services.pilot_ui import (
     PilotUiBoundaryError,
     PilotUiJobManager,
@@ -225,7 +226,19 @@ def test_pilot_ui_job_manager_runs_the_existing_a5_boundary_once(tmp_path: Path)
     release = threading.Event()
     entered = threading.Event()
 
-    def _runner(**_: object) -> object:
+    def _runner(**kwargs: object) -> object:
+        observer = kwargs["progress_observer"]
+        assert callable(observer)
+        observer(PilotProgressUpdate(stage="VIDEO", state="COMPLETE"))
+        observer(
+            PilotProgressUpdate(
+                stage="PERCEPTION",
+                state="RUNNING",
+                completed_units=7,
+                total_units=24,
+                unit="FRAME",
+            )
+        )
         entered.set()
         assert release.wait(timeout=2)
         return _a5_report()
@@ -239,6 +252,9 @@ def test_pilot_ui_job_manager_runs_the_existing_a5_boundary_once(tmp_path: Path)
     started = manager.start(request)
     assert entered.wait(timeout=2)
     assert started.state == "RUNNING"
+    assert manager.snapshot().active_stage == "PERCEPTION"
+    assert manager.progress_snapshot()[-1].completed_units == 7
+    assert manager.progress_snapshot()[-1].total_units == 24
     with pytest.raises(PilotUiBoundaryError, match="JOB_ALREADY_RUNNING"):
         manager.start(request)
 

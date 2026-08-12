@@ -21,6 +21,7 @@ from labcourt.exceptions import LabCourtError, ManifestMismatch, PathBoundaryVio
 from labcourt.services.m3_operations import open_pilot_a3_operations_service
 from labcourt.services.pilot_a4 import publish_pilot_run
 from labcourt.services.pilot_evidence import run_pilot_a2
+from labcourt.services.pilot_progress import PilotProgressObserver, publish_pilot_progress
 
 
 class PilotA5FailureCode(StrEnum):
@@ -80,9 +81,11 @@ def run_pilot_a5(
     perception_transport: RawPerceptionWorkerTransport | None = None,
     screening_transport: OpenAICompatibleTransport | None = None,
     code_commit: str | None = None,
+    progress_observer: PilotProgressObserver | None = None,
 ) -> PilotA5RunReport:
     """Run or resume A2, retry one old backlog item, screen new work, and publish A4."""
 
+    publish_pilot_progress(progress_observer, stage="VIDEO", state="RUNNING")
     if config.run.reproducibility_mode is not ReproducibilityMode.REPLAY_LOCKED:
         raise PilotA5OperationsError(PilotA5FailureCode.REPLAY_MODE_REQUIRED)
     if request.config_sha256 != config.config_sha256:
@@ -102,9 +105,11 @@ def run_pilot_a5(
             runs_root=runs_root,
             override=code_commit,
         ),
+        progress_observer=progress_observer,
     )
     database = runs_root / request.run_id / config.storage.database_filename
 
+    publish_pilot_progress(progress_observer, stage="SCREENING", state="RUNNING")
     try:
         with open_pilot_a3_operations_service(
             config=config,
@@ -118,6 +123,8 @@ def run_pilot_a5(
     except (LabCourtError, sqlite3.Error, OSError, TypeError, ValueError) as error:
         raise PilotA5OperationsError(PilotA5FailureCode.SCREENING_FAILED) from error
 
+    publish_pilot_progress(progress_observer, stage="SCREENING", state="COMPLETE")
+    publish_pilot_progress(progress_observer, stage="REPORT", state="RUNNING")
     try:
         publication = publish_pilot_run(
             config=config,
@@ -127,6 +134,7 @@ def run_pilot_a5(
         )
     except (LabCourtError, sqlite3.Error, OSError, TypeError, ValueError) as error:
         raise PilotA5OperationsError(PilotA5FailureCode.REPORTING_FAILED) from error
+    publish_pilot_progress(progress_observer, stage="REPORT", state="COMPLETE")
 
     return PilotA5RunReport(
         run_id=request.run_id,

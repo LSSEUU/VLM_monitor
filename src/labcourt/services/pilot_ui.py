@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import re
 import threading
 import uuid
@@ -61,6 +62,7 @@ from labcourt.services.pilot_operations import (
     build_pilot_run_request,
     require_pilot_config,
 )
+from labcourt.services.pilot_progress import PilotProgressUpdate
 
 _MAX_JSON_BYTES = 16 * 1024 * 1024
 _MAX_INPUTS = 100
@@ -68,6 +70,7 @@ _MAX_RUNS = 100
 _ALERT_NAME = re.compile(r"^[0-9a-f]{64}\.json$")
 _ContractT = TypeVar("_ContractT", bound=ContractModel)
 _Runner = Callable[..., PilotA5RunReport]
+_PROGRESS_STAGE_ORDER = ("VIDEO", "PERCEPTION", "EVIDENCE", "SCREENING", "REPORT")
 
 
 class PilotUiBoundaryError(LabCourtError):
@@ -833,6 +836,7 @@ class PilotUiJobManager:
         self._lock = threading.Lock()
         self._status = PilotUiJobStatus()
         self._thread: threading.Thread | None = None
+        self._progress: dict[str, PilotProgressUpdate] = {}
 
     def start(self, request: PilotUiJobStartRequest) -> PilotUiJobStatus:
         source = self._service.video_source(request.video_id)
@@ -847,6 +851,7 @@ class PilotUiJobManager:
                 active_stage="VIDEO",
             )
             self._status = status
+            self._progress = {}
             self._thread = threading.Thread(
                 target=self._execute,
                 args=(status, source, request),
@@ -859,18 +864,28 @@ class PilotUiJobManager:
     def snapshot(self) -> PilotUiJobStatus:
         with self._lock:
             status = self._status
+            progress = tuple(self._progress.values())
         if status.state != "RUNNING" or status.run_id is None:
             return status
-        try:
-            active = self._service.infer_active_stage(status.run_id)
-        except (LabCourtError, OSError, TypeError, ValueError):
-            active = status.active_stage or "VIDEO"
+        if progress:
+            active = progress[-1].stage
+        else:
+            try:
+                active = self._service.infer_active_stage(status.run_id)
+            except (LabCourtError, OSError, TypeError, ValueError):
+                active = status.active_stage or "VIDEO"
         refreshed = status.model_copy(update={"active_stage": active})
         with self._lock:
             if self._status.job_id == status.job_id and self._status.state == "RUNNING":
                 self._status = refreshed
                 return refreshed
             return self._status
+
+    def progress_snapshot(self) -> tuple[PilotProgressUpdate, ...]:
+        """Return the in-memory stage history for the current or last bounded job."""
+
+        with self._lock:
+            return tuple(self._progress.values())
 
     def wait(self, timeout: float | None = None) -> PilotUiJobStatus:
         with self._lock:
@@ -893,11 +908,18 @@ class PilotUiJobManager:
                 project_root=self._service.project_root,
                 resume=request.resume,
             )
+            runner_kwargs: dict[str, object] = {
+                "config": self._service.config,
+                "request": run_request,
+                "config_path": self._service.config_path,
+                "project_root": self._service.project_root,
+            }
+            if self._runner_accepts_progress():
+                runner_kwargs["progress_observer"] = lambda update: self._observe_progress(
+                    initial.job_id, update
+                )
             report = self._runner(
-                config=self._service.config,
-                request=run_request,
-                config_path=self._service.config_path,
-                project_root=self._service.project_root,
+                **runner_kwargs,
             )
             if report.run_id != request.run_id:
                 raise PilotUiBoundaryError("RUN_REPORT_MISMATCH")
@@ -919,6 +941,46 @@ class PilotUiJobManager:
         with self._lock:
             if self._status.job_id == initial.job_id:
                 self._status = final
+
+    def _runner_accepts_progress(self) -> bool:
+        try:
+            parameters = inspect.signature(self._runner).parameters.values()
+        except (TypeError, ValueError):
+            return False
+        return any(
+            parameter.name == "progress_observer"
+            or parameter.kind is inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters
+        )
+
+    def _observe_progress(self, job_id: str | None, update: PilotProgressUpdate) -> None:
+        if not isinstance(update, PilotProgressUpdate):
+            raise TypeError("Pilot progress observer requires PilotProgressUpdate")
+        with self._lock:
+            if self._status.job_id != job_id or self._status.state != "RUNNING":
+                return
+            prior = tuple(self._progress.values())
+            if prior:
+                previous = prior[-1]
+                if _PROGRESS_STAGE_ORDER.index(update.stage) < _PROGRESS_STAGE_ORDER.index(
+                    previous.stage
+                ):
+                    raise ValueError("Pilot progress stage cannot move backwards")
+                if (
+                    update.stage == previous.stage == "PERCEPTION"
+                    and update.completed_units is not None
+                    and previous.completed_units is not None
+                    and update.completed_units < previous.completed_units
+                ):
+                    raise ValueError("Pilot frame progress cannot move backwards")
+                if (
+                    update.stage == previous.stage
+                    and previous.state == "COMPLETE"
+                    and update.state == "RUNNING"
+                ):
+                    raise ValueError("Pilot completed stage cannot resume in one job")
+            self._progress[update.stage] = update
+            self._status = self._status.model_copy(update={"active_stage": update.stage})
 
     @staticmethod
     def _failed(initial: PilotUiJobStatus, reason_code: str) -> PilotUiJobStatus:

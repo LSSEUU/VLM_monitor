@@ -113,6 +113,7 @@ from labcourt.services.m8_operations_api import (
 )
 from labcourt.services.pilot_a5 import run_pilot_a5
 from labcourt.services.pilot_operations import build_expected_perception_manifest
+from labcourt.services.pilot_progress import PilotProgressUpdate
 from labcourt.services.pilot_ui import (
     PilotUiBoundaryError,
     PilotUiJobManager,
@@ -192,7 +193,7 @@ class M8PlatformDemoService:
         self.fixture_pilot_service = fixture_pilot_service
         self.model_pilot_service = model_pilot_service
         self.pilot_service = fixture_pilot_service
-        self._operation_lock = threading.Lock()
+        self._operation_lock = threading.RLock()
         self._screening_transport = DeterministicRecordedPpeScreeningTransport()
         perception = DeterministicRecordedPpePerceptionTransport(
             build_expected_perception_manifest(fixture_pilot_service.config)
@@ -666,58 +667,221 @@ class M8PlatformDemoService:
             return run
         jobs = self._pilot_jobs_for(run)
         job = jobs.snapshot()
+        progress = jobs.progress_snapshot()
         if job.run_id != run.run_id:
-            failed = run.model_copy(
-                update={
-                    "state": "FAILED",
-                    "failure_code": "PILOT_JOB_STATE_UNAVAILABLE",
-                    "stages": tuple(
-                        item.model_copy(
-                            update={
-                                "state": M8PlatformStageState.FAILED,
-                                "summary": "服务重启后没有可恢复的进程内 Pilot 作业",
-                            }
-                        )
-                        if item.stage == M8PlatformScenarioStage.PERCEPTION
-                        else item
-                        for item in run.stages
-                    ),
-                }
+            failed = self._failed_ppe_run(
+                run,
+                failure_code="PILOT_JOB_STATE_UNAVAILABLE",
+                failed_stage=self._running_m8_stage(run),
             )
             self._write_run(failed)
             return failed
         if job.state == "RUNNING":
-            return run
+            projected = self._project_ppe_progress(run, progress, job.active_stage)
+            if tuple(item.state for item in projected.stages) != tuple(
+                item.state for item in run.stages
+            ):
+                # Persist stage boundaries, not every in-memory frame update.
+                self._write_run(projected)
+            return projected
         if job.state not in {"SUCCEEDED", "ATTENTION_REQUIRED"}:
-            failed = run.model_copy(
+            failure_code = job.reason_code or "PILOT_RUN_FAILED"
+            projected = self._project_ppe_progress(run, progress, job.active_stage)
+            failed = self._failed_ppe_run(
+                projected,
+                failure_code=failure_code,
+                failed_stage=self._pilot_failure_stage(
+                    failure_code,
+                    progress,
+                    projected,
+                ),
+            )
+            self._write_run(failed)
+            return failed
+        projected = self._project_ppe_progress(run, progress, "REPORT")
+        try:
+            return self._finalize_ppe(projected)
+        except (EvidenceMissing, PilotUiBoundaryError, TypeError, ValueError, OSError) as error:
+            failed = self._failed_ppe_run(
+                projected,
+                failure_code=type(error).__name__,
+                failed_stage=M8PlatformScenarioStage.CASE,
+            )
+            self._write_run(failed)
+            return failed
+
+    @staticmethod
+    def _pilot_to_m8_stage(stage: str) -> M8PlatformScenarioStage:
+        return {
+            "VIDEO": M8PlatformScenarioStage.VIDEO,
+            "PERCEPTION": M8PlatformScenarioStage.PERCEPTION,
+            "EVIDENCE": M8PlatformScenarioStage.EVIDENCE,
+            "SCREENING": M8PlatformScenarioStage.SCREENING,
+            "REPORT": M8PlatformScenarioStage.CASE,
+        }.get(stage, M8PlatformScenarioStage.PERCEPTION)
+
+    @staticmethod
+    def _running_m8_stage(run: M8PlatformScenarioRunV1) -> M8PlatformScenarioStage:
+        return next(
+            (
+                item.stage
+                for item in run.stages
+                if item.state == M8PlatformStageState.RUNNING
+            ),
+            M8PlatformScenarioStage.PERCEPTION,
+        )
+
+    def _project_ppe_progress(
+        self,
+        run: M8PlatformScenarioRunV1,
+        progress: tuple[PilotProgressUpdate, ...],
+        fallback_stage: str | None,
+    ) -> M8PlatformScenarioRunV1:
+        latest = progress[-1] if progress else None
+        pilot_stage = latest.stage if latest is not None else (fallback_stage or "VIDEO")
+        active_stage = self._pilot_to_m8_stage(pilot_stage)
+        active_index = tuple(M8PlatformScenarioStage).index(active_stage)
+        perception = next(
+            (item for item in reversed(progress) if item.stage == "PERCEPTION"),
+            None,
+        )
+        running_summaries = {
+            M8PlatformScenarioStage.VIDEO: "正在校验录像与解码参数",
+            M8PlatformScenarioStage.PERCEPTION: "正在运行本地视觉感知与目标定位",
+            M8PlatformScenarioStage.EVIDENCE: "正在生成并校验证据裁剪",
+            M8PlatformScenarioStage.SCREENING: "正在执行结构化视觉初审",
+            M8PlatformScenarioStage.CASE: "Pilot 汇总已就绪 / 正在准备 M8 案件投影",
+            M8PlatformScenarioStage.NOTIFICATION: "正在准备本地模拟通知",
+        }
+        completed_summaries = {
+            M8PlatformScenarioStage.VIDEO: "真实录像已校验",
+            M8PlatformScenarioStage.PERCEPTION: "本地视觉感知与目标定位已完成",
+            M8PlatformScenarioStage.EVIDENCE: "证据裁剪与完整性校验已完成",
+            M8PlatformScenarioStage.SCREENING: "结构化视觉初审已完成",
+            M8PlatformScenarioStage.CASE: "案件投影阶段已完成",
+            M8PlatformScenarioStage.NOTIFICATION: "通知阶段已完成",
+        }
+        projected: list[M8PlatformScenarioStageV1] = []
+        for index, item in enumerate(run.stages):
+            if index < active_index:
+                state = M8PlatformStageState.COMPLETE
+                summary = completed_summaries[item.stage]
+            elif index == active_index:
+                state = (
+                    M8PlatformStageState.COMPLETE
+                    if latest is not None
+                    and latest.state == "COMPLETE"
+                    and latest.stage != "REPORT"
+                    else M8PlatformStageState.RUNNING
+                )
+                summary = (
+                    completed_summaries[item.stage]
+                    if state == M8PlatformStageState.COMPLETE
+                    else running_summaries[item.stage]
+                )
+            else:
+                state = M8PlatformStageState.PENDING
+                summary = "尚未生成"
+            update: dict[str, object] = {"state": state, "summary": summary}
+            if item.stage == M8PlatformScenarioStage.PERCEPTION and perception is not None:
+                update.update(
+                    {
+                        "completed_units": perception.completed_units,
+                        "total_units": perception.total_units,
+                        "unit": perception.unit,
+                    }
+                )
+                if perception.completed_units is not None and perception.total_units is not None:
+                    update["summary"] = (
+                        f"真实 Worker 响应 {perception.completed_units}/"
+                        f"{perception.total_units} 帧"
+                    )
+            projected.append(item.model_copy(update=update))
+        return run.model_copy(update={"stages": tuple(projected)})
+
+    def _pilot_failure_stage(
+        self,
+        failure_code: str,
+        progress: tuple[PilotProgressUpdate, ...],
+        run: M8PlatformScenarioRunV1,
+    ) -> M8PlatformScenarioStage:
+        if progress:
+            return self._pilot_to_m8_stage(progress[-1].stage)
+        if failure_code == "SCREENING_FAILED":
+            return M8PlatformScenarioStage.SCREENING
+        if failure_code == "REPORTING_FAILED":
+            return M8PlatformScenarioStage.CASE
+        if failure_code == "EVIDENCE_FAILED":
+            return M8PlatformScenarioStage.EVIDENCE
+        if failure_code.startswith("VIDEO_") or failure_code == "REPLAY_MODE_REQUIRED":
+            return M8PlatformScenarioStage.VIDEO
+        return self._running_m8_stage(run)
+
+    @staticmethod
+    def _failed_ppe_run(
+        run: M8PlatformScenarioRunV1,
+        *,
+        failure_code: str,
+        failed_stage: M8PlatformScenarioStage,
+    ) -> M8PlatformScenarioRunV1:
+        failed_index = tuple(M8PlatformScenarioStage).index(failed_stage)
+        stages = tuple(
+            item.model_copy(
                 update={
-                    "state": "FAILED",
-                    "failure_code": job.reason_code or "PILOT_RUN_FAILED",
-                    "stages": tuple(
-                        item.model_copy(
-                            update={
-                                "state": (
-                                    M8PlatformStageState.FAILED
-                                    if item.stage == M8PlatformScenarioStage.PERCEPTION
-                                    else item.state
-                                ),
-                                "summary": job.reason_code or "typed Pilot failure",
-                            }
-                        )
-                        for item in run.stages
+                    "state": (
+                        M8PlatformStageState.COMPLETE
+                        if index < failed_index
+                        else M8PlatformStageState.FAILED
+                        if index == failed_index
+                        else M8PlatformStageState.PENDING
+                    ),
+                    "summary": (
+                        failure_code
+                        if index == failed_index
+                        else item.summary
+                        if index < failed_index
+                        else "尚未生成"
                     ),
                 }
             )
-            self._write_run(failed)
-            return failed
-        try:
-            return self._finalize_ppe(run)
-        except (EvidenceMissing, PilotUiBoundaryError, TypeError, ValueError, OSError) as error:
-            failed = run.model_copy(
-                update={"state": "FAILED", "failure_code": type(error).__name__}
+            for index, item in enumerate(run.stages)
+        )
+        return run.model_copy(
+            update={
+                "state": "FAILED",
+                "failure_code": failure_code,
+                "stages": stages,
+            }
+        )
+
+    @staticmethod
+    def _preserve_perception_progress(
+        stages: tuple[M8PlatformScenarioStageV1, ...],
+        run: M8PlatformScenarioRunV1,
+    ) -> tuple[M8PlatformScenarioStageV1, ...]:
+        progress = next(
+            (
+                item
+                for item in run.stages
+                if item.stage == M8PlatformScenarioStage.PERCEPTION
+                and item.completed_units is not None
+            ),
+            None,
+        )
+        if progress is None:
+            return stages
+        return tuple(
+            item.model_copy(
+                update={
+                    "completed_units": progress.completed_units,
+                    "total_units": progress.total_units,
+                    "unit": progress.unit,
+                }
             )
-            self._write_run(failed)
-            return failed
+            if item.stage == M8PlatformScenarioStage.PERCEPTION
+            else item
+            for item in stages
+        )
 
     def _finalize_ppe(self, run: M8PlatformScenarioRunV1) -> M8PlatformScenarioRunV1:
         service = self._pilot_service_for(run)
@@ -851,7 +1015,7 @@ class M8PlatformDemoService:
             run_id=run.run_id,
             scenario_kind=run.scenario_kind,
             state="SUCCEEDED",
-            stages=stages,
+            stages=self._preserve_perception_progress(stages, run),
             case_id=case.case_id,
             case_status=case.status,
             notification_id=notification.notification_id,
@@ -905,7 +1069,7 @@ class M8PlatformDemoService:
             run_id=run.run_id,
             scenario_kind=run.scenario_kind,
             state="SUCCEEDED",
-            stages=(
+            stages=self._preserve_perception_progress((
                 self._stage(M8PlatformScenarioStage.VIDEO, "真实录像已校验", (PLATFORM_CAMERA_ID,)),
                 self._stage(
                     M8PlatformScenarioStage.PERCEPTION,
@@ -928,7 +1092,7 @@ class M8PlatformDemoService:
                     (),
                 ),
                 self._stage(M8PlatformScenarioStage.NOTIFICATION, "无需发送案件通知", ()),
-            ),
+            ), run),
             recognition_mode=run.recognition_mode,
             retry_of_run_id=run.retry_of_run_id,
             model_components=self._model_components(run, manifest),
@@ -990,7 +1154,7 @@ class M8PlatformDemoService:
             run_id=run.run_id,
             scenario_kind=run.scenario_kind,
             state="SUCCEEDED",
-            stages=stages,
+            stages=self._preserve_perception_progress(stages, run),
             recognition_mode=run.recognition_mode,
             retry_of_run_id=run.retry_of_run_id,
             model_components=self._model_components(run, manifest),
@@ -1299,17 +1463,23 @@ class M8PlatformDemoService:
         )
 
     def _write_run(self, run: M8PlatformScenarioRunV1) -> None:
-        path = self.artifact_root / PLATFORM_SCENARIO_STATE_NAME
-        temporary = path.with_suffix(".json.tmp")
-        body = canonical_json(run.model_dump(mode="json"))
-        temporary.write_text(body, encoding="utf-8")
-        temporary.replace(path)
-        snapshots = self.artifact_root / "scenario-runs"
-        snapshots.mkdir(parents=True, exist_ok=True)
-        snapshot = snapshots / f"{run.run_id}.json"
-        snapshot_temporary = snapshot.with_suffix(".json.tmp")
-        snapshot_temporary.write_text(body, encoding="utf-8")
-        snapshot_temporary.replace(snapshot)
+        with self._operation_lock:
+            path = self.artifact_root / PLATFORM_SCENARIO_STATE_NAME
+            body = canonical_json(run.model_dump(mode="json"))
+            self._replace_text_atomically(path, body)
+            snapshots = self.artifact_root / "scenario-runs"
+            snapshots.mkdir(parents=True, exist_ok=True)
+            self._replace_text_atomically(snapshots / f"{run.run_id}.json", body)
+
+    @staticmethod
+    def _replace_text_atomically(path: Path, body: str) -> None:
+        temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            temporary.write_text(body, encoding="utf-8")
+            temporary.replace(path)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
 
     def _read_run_snapshot(self, run_id: str) -> M8PlatformScenarioRunV1:
         return M8PlatformScenarioRunV1.model_validate_json(

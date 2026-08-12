@@ -142,6 +142,9 @@ class M8PlatformScenarioStageV1(FrozenContractModel):
     state: M8PlatformStageState
     summary: str = Field(min_length=1, max_length=240)
     authority_refs: tuple[ReferenceToken, ...] = Field(default=(), max_length=32)
+    completed_units: int | None = Field(default=None, ge=0, strict=True)
+    total_units: int | None = Field(default=None, gt=0, strict=True)
+    unit: Literal["FRAME"] | None = None
 
     @field_validator("authority_refs")
     @classmethod
@@ -149,6 +152,20 @@ class M8PlatformScenarioStageV1(FrozenContractModel):
         return tuple(
             require_reference_token(value, "M8 platform stage authority") for value in values
         )
+
+    @model_validator(mode="after")
+    def validate_objective_progress(self) -> Self:
+        values = (self.completed_units, self.total_units, self.unit)
+        if all(value is None for value in values):
+            return self
+        if any(value is None for value in values):
+            raise ValueError("M8 platform stage progress must be supplied as one complete group")
+        if self.stage != M8PlatformScenarioStage.PERCEPTION or self.unit != "FRAME":
+            raise ValueError("only M8 perception may expose objective FRAME progress")
+        assert self.completed_units is not None and self.total_units is not None
+        if self.completed_units > self.total_units:
+            raise ValueError("M8 platform completed units cannot exceed total units")
+        return self
 
 
 class M8PlatformEvidenceViewV1(FrozenContractModel):

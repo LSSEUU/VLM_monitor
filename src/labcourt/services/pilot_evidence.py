@@ -76,6 +76,7 @@ from labcourt.services.pilot_operations import (
     load_completed_pilot_perception,
     run_pilot_perception,
 )
+from labcourt.services.pilot_progress import PilotProgressObserver, publish_pilot_progress
 
 
 class _PilotEvidenceVerifier:
@@ -404,6 +405,7 @@ def run_pilot_a2(
     decoder_backend: VideoDecoderBackend | None = None,
     raw_transport: RawPerceptionWorkerTransport | None = None,
     code_commit: str | None = None,
+    progress_observer: PilotProgressObserver | None = None,
 ) -> PilotA2Report:
     """Run or resume A1, then stop after real evidence reaches EVIDENCE_READY."""
 
@@ -421,7 +423,9 @@ def run_pilot_a2(
         project_root=root,
         decoder_backend=selected_backend,
         raw_transport=raw_transport,
+        progress_observer=progress_observer,
     )
+    publish_pilot_progress(progress_observer, stage="EVIDENCE", state="RUNNING")
     runs_root = root / config.run.workspace
     with (
         SecureWorkspace(root, max_file_bytes=MAX_PILOT_VIDEO_BYTES) as input_workspace,
@@ -471,6 +475,7 @@ def run_pilot_a2(
             repository=repository,
         )
         if resumed is not None:
+            publish_pilot_progress(progress_observer, stage="EVIDENCE", state="COMPLETE")
             return resumed
 
         perception = PerceptionPipeline(config=config, run_manifest=manifest).run(
@@ -569,6 +574,7 @@ def run_pilot_a2(
             f"{request.run_id}/pilot/a2-report.json",
             _artifact_bytes(report),
         )
+        publish_pilot_progress(progress_observer, stage="EVIDENCE", state="COMPLETE")
         return report
 
 

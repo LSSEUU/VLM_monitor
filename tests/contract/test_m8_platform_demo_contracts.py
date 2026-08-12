@@ -96,6 +96,33 @@ def test_scenario_run_requires_all_six_stages_in_stable_order() -> None:
         )
 
 
+def test_scenario_stage_progress_is_grouped_bounded_perception_frame_authority() -> None:
+    progress = M8PlatformScenarioStageV1(
+        stage="PERCEPTION",
+        state="RUNNING",
+        summary="24 verified worker responses",
+        completed_units=24,
+        total_units=241,
+        unit="FRAME",
+    )
+    assert progress.completed_units == 24
+    assert progress.total_units == 241
+    assert progress.unit == "FRAME"
+
+    for update in (
+        {"completed_units": 1},
+        {"completed_units": 242, "total_units": 241, "unit": "FRAME"},
+        {"stage": "VIDEO", "completed_units": 1, "total_units": 241, "unit": "FRAME"},
+    ):
+        with pytest.raises(ValidationError):
+            M8PlatformScenarioStageV1(
+                stage=update.pop("stage", "PERCEPTION"),
+                state="RUNNING",
+                summary="invalid objective progress",
+                **update,
+            )
+
+
 def test_ppe_start_requires_explicit_mode_and_fixture_retry_reference() -> None:
     full = M8PlatformScenarioStartRequestV1(
         scenario_kind="PPE_GOGGLES_MISSING",
