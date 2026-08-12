@@ -8,6 +8,7 @@ from importlib.resources import files
 
 from pydantic import ValidationError
 
+from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
 from labcourt.contracts.m8_access_cases import M8ActorRole
 from labcourt.contracts.m8_api import M8ApiErrorReason
@@ -26,6 +27,7 @@ from labcourt.m8_api_server import M8ApiHttpServer, M8ApiRequestHandler
 from labcourt.ports.m8_api_authentication import M8AuthenticationError
 from labcourt.services.m8_operations_api import M8ApiServiceError
 from labcourt.services.m8_platform_demo import M8PlatformDemoService
+from labcourt.services.pilot_ui import PilotUiVideoSource
 
 _PAGE_PATHS = frozenset(
     {
@@ -60,6 +62,7 @@ _ASSETS = {
         "text/plain; charset=utf-8",
     ),
 }
+_STREAM_CHUNK_BYTES = 1024 * 1024
 
 
 class M8PlatformHttpServer(M8ApiHttpServer):
@@ -112,6 +115,16 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     principal, segments[4], segments[6]
                 )
                 self._binary(HTTPStatus.OK, asset.bytes, asset.media_type)
+                return
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "demo", "scenario-runs")
+                and segments[5] == "perception-preview"
+            ):
+                source = self.server.platform_service.perception_preview(
+                    principal, segments[4]
+                )
+                self._pilot_video(source)
                 return
         except M8AuthenticationError as error:
             self._authentication_error(error)
@@ -221,6 +234,50 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             self._error(HTTPStatus.INTERNAL_SERVER_ERROR, M8ApiErrorReason.INTERNAL_FAILURE)
             return
         super().do_POST()
+
+    def _pilot_video(self, source: PilotUiVideoSource) -> None:
+        with (
+            SecureWorkspace(
+                source.workspace_root,
+                max_file_bytes=self.server.platform_service.pilot_service.config.storage.max_media_bytes,
+            ) as workspace,
+            workspace.open_verified_video(
+                source.relative_path,
+                self.server.platform_service.pilot_service.config.storage.max_media_bytes,
+            ) as opened,
+        ):
+            if (
+                opened.input_file_sha256 != source.expected_sha256
+                or opened.size_bytes != source.size_bytes
+            ):
+                raise ValueError("verified Pilot preview changed after inspection")
+            requested = self._requested_range(opened.size_bytes)
+            if requested is None:
+                return
+            start, end, partial = requested
+            length = end - start + 1
+            self.send_response(HTTPStatus.PARTIAL_CONTENT if partial else HTTPStatus.OK)
+            self.send_header("Cache-Control", "private, max-age=3600")
+            self.send_header("Content-Type", "video/mp4")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(length))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+            if partial:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{opened.size_bytes}")
+            self.end_headers()
+            try:
+                with open(opened.decoder_path, "rb") as handle:
+                    handle.seek(start)
+                    remaining = length
+                    while remaining:
+                        chunk = handle.read(min(_STREAM_CHUNK_BYTES, remaining))
+                        if not chunk:
+                            raise OSError("Pilot preview ended before its inspected size")
+                        self.wfile.write(chunk)
+                        remaining -= len(chunk)
+            except (BrokenPipeError, ConnectionResetError):
+                return
 
     def _serve_static(self) -> bool:
         path = self.path.split("?", maxsplit=1)[0]

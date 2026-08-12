@@ -124,6 +124,64 @@
       ],
       "title": "M8PlatformStageState",
       "type": "string"
+    },
+    "M8PlatformVideoProfileV1": {
+      "additionalProperties": false,
+      "description": "Typed playback timing copied from the verified Pilot run manifest.",
+      "properties": {
+        "duration_millis": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Millis",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "frame_count": {
+          "exclusiveMinimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "input_file_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input File Sha256",
+          "type": "string"
+        },
+        "timing_authority": {
+          "const": "PILOT_RUN_MANIFEST",
+          "default": "PILOT_RUN_MANIFEST",
+          "title": "Timing Authority",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_file_sha256",
+        "fps_num",
+        "fps_den",
+        "frame_count",
+        "width",
+        "height",
+        "duration_millis"
+      ],
+      "title": "M8PlatformVideoProfileV1",
+      "type": "object"
     }
   },
   "$id": "https://schemas.labcourt.local/v2/m8-platform-scenario-run-v1.schema.json",
@@ -214,6 +272,18 @@
       "default": null,
       "title": "Notification Id"
     },
+    "perception_preview_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Perception Preview Url"
+    },
     "raw_response_ref": {
       "anyOf": [
         {
@@ -226,6 +296,22 @@
       ],
       "default": null,
       "title": "Raw Response Ref"
+    },
+    "rule_judgment": {
+      "anyOf": [
+        {
+          "enum": [
+            "GENERAL_RISK",
+            "EMERGENCY"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rule Judgment"
     },
     "run_id": {
       "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
@@ -240,6 +326,36 @@
       "default": "m8-platform-scenario-run-v1",
       "title": "Schema Version",
       "type": "string"
+    },
+    "screening_decision": {
+      "anyOf": [
+        {
+          "enum": [
+            "ESTABLISHED",
+            "NOT_ESTABLISHED",
+            "ESCALATE"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Screening Decision"
+    },
+    "screening_summary": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Screening Summary"
     },
     "simulated": {
       "const": true,
@@ -264,6 +380,17 @@
       ],
       "title": "State",
       "type": "string"
+    },
+    "video_profile": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8PlatformVideoProfileV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

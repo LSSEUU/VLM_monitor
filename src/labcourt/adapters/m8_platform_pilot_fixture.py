@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 
@@ -20,8 +21,47 @@ from labcourt.contracts.pilot import (
     PilotWorkerDetection,
 )
 
-_CLEAR_IDS = re.compile(r'"clear_crop_ids"\s*:\s*\[(?P<values>[^]]+)\]')
-_HEX_ID = re.compile(r'"(?P<value>[0-9a-f]{64})"')
+_HEX_ID = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _authorized_clear_crop_ids(body: bytes) -> tuple[str, ...]:
+    """Read the fixture authority from the exact bounded wire request."""
+
+    try:
+        envelope = json.loads(body.decode("utf-8"))
+        messages = envelope["messages"]
+        content = messages[0]["content"]
+        prompt = content[0]["text"]
+    except (KeyError, IndexError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+        raise ValueError("platform PPE screening request envelope is invalid") from None
+    if (
+        not isinstance(messages, list)
+        or len(messages) != 1
+        or not isinstance(content, list)
+        or not content
+        or not isinstance(prompt, str)
+    ):
+        raise ValueError("platform PPE screening request envelope is invalid")
+    evidence_lines = tuple(
+        line.removeprefix("EVIDENCE_JSON=")
+        for line in prompt.splitlines()
+        if line.startswith("EVIDENCE_JSON=")
+    )
+    if len(evidence_lines) != 1:
+        raise ValueError("platform PPE screening prompt lacks evidence authority")
+    try:
+        evidence = json.loads(evidence_lines[0])
+        sufficiency = evidence["observation_sufficiency"]
+        crop_ids = tuple(sufficiency["authoritative_clear_crop_ids"])
+    except (KeyError, TypeError, json.JSONDecodeError):
+        raise ValueError("platform PPE screening prompt lacks clear crop authority") from None
+    if (
+        len(crop_ids) < 2
+        or tuple(sorted(set(crop_ids))) != crop_ids
+        or any(not isinstance(value, str) or _HEX_ID.fullmatch(value) is None for value in crop_ids)
+    ):
+        raise ValueError("platform PPE screening clear crop authority is invalid")
+    return crop_ids
 
 
 class DeterministicRecordedPpePerceptionTransport:
@@ -100,15 +140,7 @@ class DeterministicRecordedPpeScreeningTransport:
         request: OpenAICompatibleTransportRequest,
     ) -> OpenAICompatibleTransportResponse:
         self.calls += 1
-        body_text = request.body.decode("utf-8")
-        matched = _CLEAR_IDS.search(body_text.replace("\\\"", '"'))
-        if matched is None:
-            raise ValueError("platform PPE screening prompt lacks clear crop authority")
-        crop_ids = tuple(
-            match.group("value") for match in _HEX_ID.finditer(matched.group("values"))
-        )
-        if len(crop_ids) < 2:
-            raise ValueError("platform PPE screening requires two clear temporal crops")
+        crop_ids = _authorized_clear_crop_ids(request.body)
         content = canonical_json(
             {
                 "evidence_citations": [

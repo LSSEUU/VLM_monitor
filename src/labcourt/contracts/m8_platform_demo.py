@@ -139,6 +139,28 @@ class M8PlatformEvidenceViewV1(FrozenContractModel):
         return value
 
 
+class M8PlatformVideoProfileV1(FrozenContractModel):
+    """Typed playback timing copied from the verified Pilot run manifest."""
+
+    input_file_sha256: Sha256Hex
+    fps_num: int = Field(gt=0, strict=True)
+    fps_den: int = Field(gt=0, strict=True)
+    frame_count: int = Field(gt=0, strict=True)
+    width: int = Field(gt=0, strict=True)
+    height: int = Field(gt=0, strict=True)
+    duration_millis: int = Field(gt=0, strict=True)
+    timing_authority: Literal["PILOT_RUN_MANIFEST"] = "PILOT_RUN_MANIFEST"
+
+    @model_validator(mode="after")
+    def validate_duration(self) -> Self:
+        expected = (
+            self.frame_count * 1000 * self.fps_den + self.fps_num - 1
+        ) // self.fps_num
+        if self.duration_millis != expected:
+            raise ValueError("M8 platform video duration conflicts with Pilot timing")
+        return self
+
+
 class M8PlatformScenarioRunV1(FrozenContractModel):
     schema_version: Literal["m8-platform-scenario-run-v1"] = "m8-platform-scenario-run-v1"
     run_id: ReferenceToken
@@ -149,8 +171,13 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
     case_status: M8OperationalCaseStatus | None = None
     notification_id: ReferenceToken | None = None
     evidence: tuple[M8PlatformEvidenceViewV1, ...] = Field(default=(), max_length=24)
+    video_profile: M8PlatformVideoProfileV1 | None = None
+    perception_preview_url: str | None = None
     model_or_fixture_id: ReferenceToken | None = None
     raw_response_ref: str | None = Field(default=None, max_length=512)
+    screening_decision: Literal["ESTABLISHED", "NOT_ESTABLISHED", "ESCALATE"] | None = None
+    screening_summary: str | None = Field(default=None, max_length=2_048)
+    rule_judgment: Literal["GENERAL_RISK", "EMERGENCY"] | None = None
     failure_code: ReferenceToken | None = None
     simulated: Literal[True] = True
     machine_output_is_ground_truth: Literal[False] = False
@@ -161,6 +188,20 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
     def validate_run_id(cls, value: str) -> str:
         return require_portable_run_id(value, "M8 platform scenario run")
 
+    @field_validator("perception_preview_url")
+    @classmethod
+    def validate_preview_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if (
+            not value.startswith("/api/m8/demo/scenario-runs/")
+            or not value.endswith("/perception-preview")
+            or ".." in value
+            or "\\" in value
+        ):
+            raise ValueError("M8 platform perception preview URL must remain same-origin")
+        return value
+
     @model_validator(mode="after")
     def validate_state(self) -> Self:
         if tuple(item.stage for item in self.stages) != tuple(M8PlatformScenarioStage):
@@ -169,6 +210,22 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
             raise ValueError("M8 platform failed scenario requires exactly one failure code")
         if (self.case_id is None) != (self.case_status is None):
             raise ValueError("M8 platform scenario Case projection must be complete")
+        if (
+            self.state == "SUCCEEDED"
+            and self.scenario_kind == M8PlatformScenarioKind.PPE_GOGGLES_MISSING
+            and any(
+                value is None
+                for value in (
+                    self.video_profile,
+                    self.perception_preview_url,
+                    self.screening_decision,
+                    self.screening_summary,
+                    self.rule_judgment,
+                    self.raw_response_ref,
+                )
+            )
+        ):
+            raise ValueError("successful M8 PPE run requires complete Pilot projections")
         return self
 
 
@@ -314,4 +371,5 @@ __all__ = [
     "M8PlatformScenarioStageV1",
     "M8PlatformScenarioStartRequestV1",
     "M8PlatformStageState",
+    "M8PlatformVideoProfileV1",
 ]

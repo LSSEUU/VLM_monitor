@@ -16,6 +16,7 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformScenarioStageV1,
     M8PlatformScenarioStartRequestV1,
     M8PlatformStageState,
+    M8PlatformVideoProfileV1,
 )
 
 SHA = "a" * 64
@@ -82,6 +83,22 @@ def test_scenario_run_requires_all_six_stages_in_stable_order() -> None:
             state="RUNNING",
             stages=tuple(reversed(stages)),
         )
+
+
+def test_video_profile_uses_verified_pilot_timing() -> None:
+    profile = M8PlatformVideoProfileV1(
+        input_file_sha256=SHA,
+        fps_num=24,
+        fps_den=1,
+        frame_count=241,
+        width=1280,
+        height=720,
+        duration_millis=10_042,
+    )
+    assert profile.timing_authority == "PILOT_RUN_MANIFEST"
+    invalid = profile.model_dump(mode="json") | {"duration_millis": 10_000}
+    with pytest.raises(ValidationError):
+        M8PlatformVideoProfileV1.model_validate(invalid)
 
 
 @pytest.mark.parametrize(
