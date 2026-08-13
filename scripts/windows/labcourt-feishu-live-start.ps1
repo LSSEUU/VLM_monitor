@@ -33,28 +33,30 @@ try {
         }
     }
 
-    $components = @("LONG_CONNECTION", "AUTHORITY_WORKER", "DELIVERY_WORKER")
-    $processes = @()
-    foreach ($component in $components) {
-        $arguments = @(
-            "feishu", "live-run",
-            "--component", $component,
-            "--output", $output,
-            "--input", $media
-        )
-        $processes += Start-Process `
-            -FilePath $executable `
-            -ArgumentList $arguments `
-            -WindowStyle Hidden `
-            -PassThru
+    $arguments = @(
+        "feishu", "live-supervise",
+        "--output", $output,
+        "--input", $media
+    )
+    & $executable @arguments --check
+    if ($LASTEXITCODE -ne 0) {
+        throw "LabCourt Feishu live supervisor preflight failed."
     }
+
+    $logDirectory = Join-Path $output "feishu-live\logs"
+    New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
+    $supervisor = Start-Process `
+        -FilePath $executable `
+        -ArgumentList $arguments `
+        -WindowStyle Hidden `
+        -RedirectStandardOutput (Join-Path $logDirectory "supervisor.stdout.log") `
+        -RedirectStandardError (Join-Path $logDirectory "supervisor.stderr.log") `
+        -PassThru
     Start-Sleep -Seconds 2
-    $failed = @($processes | Where-Object { $_.HasExited })
-    if ($failed.Count -gt 0) {
-        throw "One or more Feishu live components failed startup validation."
+    if ($supervisor.HasExited) {
+        throw "Feishu live supervisor exited during startup validation."
     }
-    $ids = ($processes | ForEach-Object { $_.Id }) -join ", "
-    Write-Output "LabCourt Feishu live components started. Process IDs: $ids"
+    Write-Output "LabCourt Feishu live supervisor started. Process ID: $($supervisor.Id)"
 }
 catch {
     [Console]::Error.WriteLine($_.Exception.Message)
