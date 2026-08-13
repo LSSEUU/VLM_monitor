@@ -661,3 +661,7 @@
     animation:none!important;
   }
 }
+
+/* Knowledge explainability stays additive to the formal visual system. */
+.kb-explain{display:grid;grid-template-columns:.55fr 1.4fr .45fr;border:var(--rule);margin:14px 0;background:var(--bg)}.kb-explain>div{padding:10px 12px;border-right:var(--rule)}.kb-explain>div:last-child{border-right:0}.kb-explain span,.kb-explain strong{display:block}.kb-explain span{font:8px var(--mono);color:var(--muted)}.kb-explain strong{margin-top:3px;font:9px/1.5 var(--mono);overflow-wrap:anywhere}.kb-memory{margin-top:16px;padding:15px;border:1px solid var(--fg);background:color-mix(in oklch,var(--surface) 92%,var(--accent))}.kb-memory header{display:flex;align-items:end;justify-content:space-between;gap:15px;border-bottom:var(--rule);padding-bottom:9px}.kb-memory h4{margin:0;font-size:16px}.kb-memory article{display:grid;gap:3px;padding:10px 0;border-bottom:var(--rule)}.kb-memory article strong{font-size:12px}.kb-memory article code,.kb-memory>small{font:8px var(--mono);color:var(--muted)}.kb-memory>small{display:block;margin-top:10px}.badge.live{background:var(--success);color:var(--surface)}
+@media(max-width:700px){.kb-explain{grid-template-columns:1fr}.kb-explain>div{border-right:0;border-bottom:var(--rule)}.kb-explain>div:last-child{border-bottom:0}}
