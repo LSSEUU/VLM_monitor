@@ -16,11 +16,17 @@ const state = {
   settingsSection:"models",mapFloor:null,mapLocation:null,confirmationOpen:false,navOpen:false,scrollSaveFrame:0,
   lastRunAnnouncement:"",caseDetail:null,caseRun:null,settingsPanels:null,evidenceWorkspace:null,hearingView:null,conversation:null,confirmationTrigger:null,
   evaluationDashboard:null,evaluationPollTimer:null,evaluationPollInFlight:false,evaluationFingerprint:null,
+  evaluationStartConfirm:null,evaluationStartInFlight:null,evaluationStartMessage:null,
 };
 
 const esc = value => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
 const short = value => value ? `${String(value).slice(0,8)}…${String(value).slice(-6)}` : "—";
 const label = value => STATUS_LABELS[value] || value || "—";
+const localDateTime = value => {
+  const date=value instanceof Date?value:new Date(value);
+  if(Number.isNaN(date.getTime()))return "时间未知";
+  return new Intl.DateTimeFormat("zh-CN",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date).replaceAll("/","-");
+};
 const role = () => state.session?.authority?.role;
 const caseAuthority = item => item?.audit_event?.case_authority;
 const caseCommand = item => caseAuthority(item)?.create_command;
@@ -305,8 +311,14 @@ function renderEvaluation(){
   const operationsPanel=ops?`<section class="evaluation-panel"><div class="panel-head"><h2>导入真实 MP4</h2><span>OPERATIONS · CONTENT ADDRESSED</span></div><div class="evaluation-forms"><form data-evaluation-upload><label class="field"><span>网页上传（可解码 MP4）</span><input name="file" type="file" accept="video/mp4,.mp4" required></label><button class="button primary" type="submit">上传并探测</button></form><form data-evaluation-import><label class="field"><span>受控目录路径（每行一个）</span><textarea name="paths" rows="3" placeholder="evaluation-import/grey-zone.mp4" required></textarea></label><button class="button" type="submit">从服务器目录导入</button></form></div></section>`:"";
   const truthPanel=safety&&media.length?`<section class="evaluation-panel"><div class="panel-head"><h2>人工真值封存</h2><span>SAFETY OFFICER ONLY · MACHINE OUTPUT ≠ TRUTH</span></div><form class="evaluation-truth-form" data-evaluation-truth><label class="field"><span>媒体资产</span><select name="asset">${media.map(item=>`<option value="${item.asset_id}">${esc(item.display_name)} · ${short(item.asset_id)}</option>`).join("")}</select></label><label class="field"><span>PPE 标签</span><select name="ppe"><option>WORN</option><option>NOT_WORN</option><option>UNCLEAR</option></select></label><label class="field"><span>预期路由</span><select name="route"><option>NO_CANDIDATE</option><option>FAST_VERDICT</option><option>HEARING</option><option>HUMAN_REVIEW</option></select></label><label class="field"><span>开始帧</span><input name="start" type="number" min="0" value="0" required></label><label class="field"><span>结束帧（不含）</span><input name="end" type="number" min="1" value="1" required></label><button class="button primary" type="submit">确认并发布新版本</button></form></section>`:"";
   const mediaRows=media.length?media.map(item=>{const truth=truthByAsset.get(item.asset_id),truthMarkup=truth?`<span class="badge">${esc(truth.review_state)}</span><small>${esc(truth.expected_route)} · V${truth.revision}</small>`:`<span class="muted">未标注 / 探索性</span>`;return `<tr><td><b>${esc(item.display_name)}</b><small>${esc(item.origin)}</small></td><td><code>${short(item.media_sha256)}</code></td><td>${item.width}×${item.height}<small>${(item.fps_num/item.fps_den).toFixed(2)} FPS · ${(item.duration_millis/1000).toFixed(1)} 秒</small></td><td>${truthMarkup}</td></tr>`}).join(""):`<tr><td colspan="4">尚未导入媒体</td></tr>`;
-  const campaignPanel=ops&&media.length?`<section class="evaluation-panel"><div class="panel-head"><h2>创建真实评估批次</h2><span>FIFO · SINGLE GPU</span></div><form class="evaluation-campaign-form" data-evaluation-campaign><label class="field"><span>批次标题</span><input name="title" value="真实多视频回归 ${new Date().toISOString().slice(0,10)}" required></label><label class="field"><span>独立重复次数</span><input name="repetitions" type="number" min="1" max="10" value="1" required></label><fieldset><legend>选择不可变媒体</legend>${media.map(item=>`<label><input type="checkbox" name="asset" value="${item.asset_id}"> <span>${esc(item.display_name)}</span><code>${short(item.asset_id)}</code></label>`).join("")}</fieldset><button class="button primary" type="submit">创建草稿批次</button></form></section>`:"";
-  const campaignRows=campaigns.length?campaigns.map(item=>`<article class="evaluation-campaign"><div><span class="eyebrow">${esc(item.state)} · ${item.run_ids.length} RUNS</span><h3>${esc(item.title)}</h3><code>${esc(item.campaign_id)}</code></div>${ops&&item.state==="DRAFT"?`<button class="button primary" data-evaluation-start="${item.campaign_id}" ${state.readiness?.full_model_ready?"":"disabled"}>显式启动真实模型</button>`:""}</article>`).join(""):empty("暂无评估批次","运维人员可选择一个或多个真实 MP4 创建批次。");
+  const campaignPanel=ops&&media.length?`<section class="evaluation-panel"><div class="panel-head"><h2>创建真实评估批次</h2><span>FIFO · SINGLE GPU</span></div><form class="evaluation-campaign-form" data-evaluation-campaign><label class="field"><span>批次备注</span><input name="title" value="真实评估 · ${localDateTime(new Date())}" required></label><label class="field"><span>独立重复次数</span><input name="repetitions" type="number" min="1" max="10" value="1" required></label><fieldset><legend>选择不可变媒体</legend>${media.map(item=>`<label><input type="checkbox" name="asset" value="${item.asset_id}"> <span>${esc(item.display_name)}</span><code>${short(item.asset_id)}</code></label>`).join("")}</fieldset><button class="button primary" type="submit">创建草稿批次</button></form></section>`:"";
+  const mediaById=new Map(media.map(item=>[item.asset_id,item]));
+  const readinessFailures=(state.readiness?.components||[]).filter(item=>!item.ready).map(item=>item.failure_code||item.component).join("、");
+  const campaignRows=campaigns.length?campaigns.slice().sort((left,right)=>new Date(right.created_at)-new Date(left.created_at)).map(item=>{
+    const names=item.asset_ids.map(assetId=>mediaById.get(assetId)?.display_name||short(assetId)),confirming=state.evaluationStartConfirm===item.campaign_id,inFlight=state.evaluationStartInFlight===item.campaign_id,message=state.evaluationStartMessage?.campaignId===item.campaign_id?state.evaluationStartMessage:null;
+    const action=ops&&item.state==="DRAFT"?`<div class="evaluation-campaign__action"><button class="button ${confirming?"alarm":"primary"}" type="button" data-evaluation-start="${item.campaign_id}" ${state.readiness?.full_model_ready&&!inFlight?"":"disabled"} ${inFlight?'aria-busy="true"':""}>${inFlight?"正在创建持久化队列…":confirming?"再次点击确认启动":"显式启动真实模型"}</button>${!state.readiness?.full_model_ready?`<p class="evaluation-action-status error" role="status">真实模型尚未就绪${readinessFailures?`：${esc(readinessFailures)}`:""}</p>`:""}${confirming?'<p class="evaluation-action-status warning" role="status">将调用真实模型且不回退 Fixture。再次点击即确认启动。</p>':""}${message?`<p class="evaluation-action-status ${esc(message.tone)}" role="status">${esc(message.text)}</p>`:""}</div>`:message?`<p class="evaluation-action-status ${esc(message.tone)}" role="status">${esc(message.text)}</p>`:"";
+    return `<article class="evaluation-campaign"><div class="evaluation-campaign__identity"><span class="eyebrow">${esc(item.state)} · ${item.run_ids.length} RUNS</span><h3>${names.map(esc).join("、")}</h3><p class="evaluation-campaign__meta"><time datetime="${esc(item.created_at)}">创建 ${localDateTime(item.created_at)}</time>${item.started_at?`<time datetime="${esc(item.started_at)}">启动 ${localDateTime(item.started_at)}</time>`:""}</p><p class="evaluation-campaign__note">${esc(item.title)}</p><code>${esc(item.campaign_id)}</code></div>${action}</article>`;
+  }).join(""):empty("暂无评估批次","运维人员可选择一个或多个真实 MP4 创建批次。");
   const runRows=runs.length?runs.slice().reverse().map(item=>evaluationRunMarkup(item,truthById)).join(""):empty("队列为空","创建并启动批次后，每个视频与重复次数会生成独立 run。");
   const content=`${pageHead("REAL-MEDIA EVALUATION","测试与评估","多视频全真运行使用正式 EvidencePack、M3、M4、L5、告警策略和权限。不会把模型输出当作真值，也不会在失败时回退 Fixture。",ops?'<span class="badge evaluation">EVALUATION / 全真模拟</span>':"")}<div class="metrics evaluation-metrics">${metric(media.length,"媒体资产","SHA-256 去重")}${metric(`${queued} / ${running}`,"排队 / 运行","持久化 FIFO")}${metric(waiting,"待显式会审","安全负责人启动")}${metric(`${matches} / ${eligible.length}`,"已确认样本路由一致","不足每类 100 段不发布准确率")}</div>${operationsPanel}${truthPanel}<section class="evaluation-panel"><div class="panel-head"><h2>媒体库与真值</h2><span>${media.length} ASSETS · ${truths.filter(item=>item.review_state==="HUMAN_CONFIRMED").length} CONFIRMED</span></div><div class="evaluation-table-wrap"><table class="evaluation-table"><thead><tr><th>媒体</th><th>内容身份</th><th>探测参数</th><th>人工真值</th></tr></thead><tbody>${mediaRows}</tbody></table></div></section>${campaignPanel}<section class="evaluation-panel"><div class="panel-head"><h2>评估批次</h2><span>REAL MODELS ONLY</span></div><div class="evaluation-campaigns">${campaignRows}</div></section><section class="evaluation-panel"><div class="panel-head"><h2>单次结果与全链路</h2><span>${runs.length} RUNS</span></div><div class="evaluation-runs">${runRows}</div></section><section class="evaluation-panel live-boundary"><div><p class="eyebrow">PHASE 2 · RTSP</p><h2>直播采集边界</h2><p>已建立 live session / capture segment 契约；当前没有经人工 activation 的 RTSP 源和 30 分钟性能回执，因此只能标记“尚未验证实时分析”，不会宣称达到 5 FPS 或 P95 ≤ 2 秒。</p></div><span class="status-pill">REALTIME ANALYSIS · UNVERIFIED</span></section>`;
   setRouteContent(content,{mount:scheduleEvaluationPoll,announcement:"测试与评估"});
@@ -733,10 +745,25 @@ async function handleClick(event) {
       await renderCaseDetail(target.dataset.hearingCase);toast(real?"真实 Qwen 会审已按当前 M4 authority 完成或记录类型化状态":"离线合成会审已按当前 M4 authority 完成");return;
     }
     if(target.dataset.evaluationStart){
-      if(!confirm("将按不可变媒体、当前配置和真实模型创建持久化 FIFO 任务。Provider 或解析失败不会回退 Fixture。确认启动？"))return;
-      target.disabled=true;target.setAttribute("aria-busy","true");
-      await api(`/api/m8/evaluation/campaigns/${target.dataset.evaluationStart}/start`,{method:"POST",body:{explicit_human_confirmation:true}});
-      state.evaluationDashboard=await api("/api/m8/evaluation/dashboard");renderEvaluation();toast("真实评估批次已进入持久化 FIFO 队列");return;
+      const campaignId=target.dataset.evaluationStart;
+      if(state.evaluationStartInFlight)return;
+      if(state.evaluationStartConfirm!==campaignId){
+        state.evaluationStartConfirm=campaignId;state.evaluationStartMessage=null;renderEvaluation();return;
+      }
+      state.evaluationStartConfirm=null;state.evaluationStartInFlight=campaignId;state.evaluationStartMessage=null;
+      target.disabled=true;target.setAttribute("aria-busy","true");target.textContent="正在创建持久化队列…";
+      try{
+        const started=await api(`/api/m8/evaluation/campaigns/${campaignId}/start`,{method:"POST",body:{explicit_human_confirmation:true}});
+        state.evaluationDashboard=await api("/api/m8/evaluation/dashboard");
+        state.evaluationStartMessage={campaignId,tone:"success",text:`已入队 ${started.run_ids.length} 个真实运行 · ${localDateTime(started.started_at)}`};
+        toast("真实评估批次已进入持久化 FIFO 队列");
+      }catch(error){
+        state.evaluationStartMessage={campaignId,tone:"error",text:`启动失败：${error.message}`};
+        toast(`启动失败：${error.message}`,"error");
+      }finally{
+        state.evaluationStartInFlight=null;renderEvaluation();
+      }
+      return;
     }
     if(target.dataset.scenario){target.disabled=true;target.setAttribute("aria-busy","true");const payload={scenario_kind:target.dataset.scenario,explicit_human_confirmation:true};if(target.dataset.scenario==="PPE_GOGGLES_MISSING")payload.recognition_mode=target.dataset.mode||"FULL_MODEL";if(target.dataset.retry)payload.retry_of_run_id=target.dataset.retry;state.run=await api("/api/m8/demo/scenario-runs",{method:"POST",body:payload});patchRunUi();schedulePoll();toast(payload.recognition_mode==="FULL_MODEL"?"真实识别已启动，进度将在本页连续更新":"演示模式已明确启动，并创建了独立运行记录");return;}
     if(target.dataset.transition){target.disabled=true;await transitionCase(target.dataset.case,target.dataset.transition);await refresh("案件状态已由服务端状态机更新");return;}
