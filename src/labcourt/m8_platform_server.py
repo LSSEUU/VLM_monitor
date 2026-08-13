@@ -78,9 +78,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             if not self._local_host_allowed():
                 self._error(HTTPStatus.FORBIDDEN, M8ApiErrorReason.LOCAL_HOST_REQUIRED)
                 return
-            if self.path.split("?", maxsplit=1)[0] == (
-                "/api/m8/demo/public-media/recorded-video"
-            ):
+            if self.path.split("?", maxsplit=1)[0] == ("/api/m8/demo/public-media/recorded-video"):
                 self._public_recorded_video(head_only=True)
                 return
         except (OSError, ValueError):
@@ -95,9 +93,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 return
             if self._serve_static():
                 return
-            if self.path.split("?", maxsplit=1)[0] == (
-                "/api/m8/demo/public-media/recorded-video"
-            ):
+            if self.path.split("?", maxsplit=1)[0] == ("/api/m8/demo/public-media/recorded-video"):
                 self._public_recorded_video()
                 return
             principal = self.server.api_authenticator.authenticate(
@@ -120,6 +116,31 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     HTTPStatus.OK,
                     run.model_dump(mode="json") if run is not None else None,
                 )
+                return
+            if segments == ("api", "m8", "notification-conversations"):
+                conversations = self.server.platform_service.notification_conversations(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    tuple(item.model_dump(mode="json") for item in conversations),
+                )
+                return
+            if len(segments) == 4 and segments[:3] == (
+                "api",
+                "m8",
+                "notification-conversations",
+            ):
+                conversation = self.server.platform_service.notification_conversation(
+                    principal, segments[3]
+                )
+                self._json(HTTPStatus.OK, conversation.model_dump(mode="json"))
+                return
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "demo", "scenario-runs")
+                and segments[5] == "evidence-workspace"
+            ):
+                workspace = self.server.platform_service.evidence_workspace(principal, segments[4])
+                self._json(HTTPStatus.OK, workspace.model_dump(mode="json"))
                 return
             if len(segments) == 5 and segments[:4] == (
                 "api",
@@ -145,9 +166,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 and segments[:4] == ("api", "m8", "demo", "scenario-runs")
                 and segments[5] == "perception-preview"
             ):
-                source = self.server.platform_service.perception_preview(
-                    principal, segments[4]
-                )
+                source = self.server.platform_service.perception_preview(principal, segments[4])
                 self._pilot_video(source)
                 return
         except M8AuthenticationError as error:
@@ -188,9 +207,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self.headers.get("Authorization")
             )
             if segments == ("api", "m8", "demo", "scenario-runs"):
-                request = M8PlatformScenarioStartRequestV1.model_validate_json(
-                    self._json_body()
-                )
+                request = M8PlatformScenarioStartRequestV1.model_validate_json(self._json_body())
                 run = self.server.platform_service.start_scenario(
                     principal,
                     request.scenario_kind,
@@ -205,9 +222,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self._json(HTTPStatus.OK, result.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "agent", "queries"):
-                request = M8PlatformAgentQueryRequestV1.model_validate_json(
-                    self._json_body()
-                )
+                request = M8PlatformAgentQueryRequestV1.model_validate_json(self._json_body())
                 response = self.server.platform_service.agent_query(principal, request.query)
                 self._json(HTTPStatus.OK, response.model_dump(mode="json"))
                 return
@@ -343,7 +358,12 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
         path = self.path.split("?", maxsplit=1)[0]
         if path.startswith("/app/cases/") and len(path.split("/")) == 4:
             path = "/app/cases/{case_id}"
-        if path in _PAGE_PATHS or path == "/app/cases/{case_id}":
+        if path.startswith("/app/notifications/") and len(path.split("/")) == 4:
+            path = "/app/notifications/{case_id}"
+        if path in _PAGE_PATHS or path in {
+            "/app/cases/{case_id}",
+            "/app/notifications/{case_id}",
+        }:
             body = files("labcourt.m8_ui_web").joinpath("app.html").read_bytes()
             self._binary(HTTPStatus.OK, body, "text/html; charset=utf-8")
             return True

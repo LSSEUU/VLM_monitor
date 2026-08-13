@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "M8OperationalCaseStatus": {
+      "enum": [
+        "PENDING_VERIFICATION",
+        "CONFIRMED",
+        "REJECTED",
+        "EVIDENCE_REQUESTED",
+        "RESOLVED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "M8OperationalCaseStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-notification-conversation-summary-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_status": {
+      "$ref": "#/$defs/M8OperationalCaseStatus"
+    },
+    "case_version": {
+      "exclusiveMinimum": 0,
+      "title": "Case Version",
+      "type": "integer"
+    },
+    "fake_delivery": {
+      "const": true,
+      "default": true,
+      "title": "Fake Delivery",
+      "type": "boolean"
+    },
+    "last_activity_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Activity At"
+    },
+    "latest_progress": {
+      "maxLength": 240,
+      "minLength": 1,
+      "title": "Latest Progress",
+      "type": "string"
+    },
+    "latest_title": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Latest Title",
+      "type": "string"
+    },
+    "location_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Location Id",
+      "type": "string"
+    },
+    "notification_count": {
+      "minimum": 0,
+      "title": "Notification Count",
+      "type": "integer"
+    },
+    "pending_actor_role": {
+      "enum": [
+        "STUDENT",
+        "SAFETY_OFFICER",
+        "NONE"
+      ],
+      "title": "Pending Actor Role",
+      "type": "string"
+    },
+    "reply_count": {
+      "minimum": 0,
+      "title": "Reply Count",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-notification-conversation-summary-v1",
+      "default": "m8-notification-conversation-summary-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "case_status",
+    "case_version",
+    "location_id",
+    "notification_count",
+    "reply_count",
+    "latest_title",
+    "latest_progress",
+    "pending_actor_role"
+  ],
+  "title": "M8NotificationConversationSummaryV1",
+  "type": "object"
+}

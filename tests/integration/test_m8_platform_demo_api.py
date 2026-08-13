@@ -5,6 +5,7 @@ import http.client
 import json
 import threading
 from pathlib import Path
+from types import SimpleNamespace
 
 from labcourt.application.m8_platform_bootstrap import (
     PLATFORM_CAMERA_ID,
@@ -26,12 +27,14 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalRiskLevel,
 )
 from labcourt.contracts.m8_platform_demo import (
+    M8PlatformEvidenceViewV1,
     M8PlatformRecognitionMode,
     M8PlatformScenarioKind,
     M8PlatformScenarioRunV1,
     M8PlatformScenarioStage,
     M8PlatformScenarioStageV1,
     M8PlatformStageState,
+    M8PlatformVideoProfileV1,
 )
 from labcourt.contracts.pilot_ui import PilotUiJobStatus
 from labcourt.services.pilot_progress import PilotProgressUpdate
@@ -156,7 +159,13 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        for path in ("/", "/login", "/app/monitor", "/app/cases/example"):
+        for path in (
+            "/",
+            "/login",
+            "/app/monitor",
+            "/app/cases/example",
+            "/app/notifications/example",
+        ):
             connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=3)
             connection.request("GET", path)
             response = connection.getresponse()
@@ -235,9 +244,7 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
         assert run["simulated"] is True
         assert [item["state"] for item in run["stages"]] == ["COMPLETE"] * 6
 
-        case_status, cases = _request(
-            server.server_port, "GET", "/api/m8/cases", token=leader
-        )
+        case_status, cases = _request(server.server_port, "GET", "/api/m8/cases", token=leader)
         assert case_status == 200
         assert isinstance(cases, list) and cases[0]["status"] == "PENDING_VERIFICATION"
         student_case_status, student_cases = _request(
@@ -276,9 +283,7 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
             "POST",
             f"/api/m8/cases/{cases[0]['case_id']}/transitions",
             token=safety,
-            payload=_transition_payload(
-                confirmed, action="RESOLVE", reason_code="HAZARD_CLEARED"
-            ),
+            payload=_transition_payload(confirmed, action="RESOLVE", reason_code="HAZARD_CLEARED"),
         )
         assert resolved_status == 200
         assert isinstance(resolved, dict) and resolved["status"] == "RESOLVED"
@@ -561,6 +566,169 @@ def test_platform_projects_truthful_hot_progress_and_failure_stage(
     assembly.server.server_close()
 
 
+def test_platform_evidence_workspace_projects_annotations_and_sealed_privacy(
+    tmp_path: Path,
+    socket_enabled: None,
+    monkeypatch,
+) -> None:
+    assembly = _assembly(tmp_path)
+    platform = assembly.server.platform_service
+    run_id = "platform-workspace-fixture"
+    runs_root = tmp_path / "pilot-runs"
+    run_root = runs_root / run_id
+    (run_root / "perception").mkdir(parents=True)
+    (run_root / "pilot").mkdir()
+    frame = {
+        "frame": {
+            "camera_id": "camera-demo",
+            "stream_id": "stream-demo",
+            "frame_index": 0,
+            "fps_num": 24,
+            "fps_den": 1,
+            "width": 1280,
+            "height": 720,
+        },
+        "detections": [
+            {
+                "detection_id": "detection-demo",
+                "frame_id": "camera-demo:stream-demo:0",
+                "label": "person",
+                "bbox": {"x1": 120, "y1": 40, "x2": 840, "y2": 720},
+                "score": 0.8,
+                "track_ref": "camera-demo:tracker:0",
+                "keypoints": [{"name": "nose", "x": 420.0, "y": 180.0, "score": 0.9}],
+                "attributes": {},
+                "model_manifest_id": "b" * 64,
+            }
+        ],
+    }
+    (run_root / "perception/frame-bundles.jsonl").write_text(
+        canonical_json(frame) + "\n", encoding="utf-8"
+    )
+    (run_root / "pilot/run-manifest.json").write_text("{}", encoding="utf-8")
+    stages = tuple(
+        M8PlatformScenarioStageV1(stage=stage, state="COMPLETE", summary="complete")
+        for stage in M8PlatformScenarioStage
+    )
+    evidence = (
+        M8PlatformEvidenceViewV1(
+            evidence_id="panorama-evidence",
+            role="PANORAMA",
+            frame_index=0,
+            media_url=f"/api/m8/demo/scenario-runs/{run_id}/evidence/panorama-evidence",
+            integrity="VERIFIED",
+        ),
+        M8PlatformEvidenceViewV1(
+            evidence_id="temporal-evidence",
+            role="TEMPORAL",
+            frame_index=0,
+            media_url=f"/api/m8/demo/scenario-runs/{run_id}/evidence/temporal-evidence",
+            integrity="VERIFIED",
+        ),
+    )
+    run = M8PlatformScenarioRunV1(
+        run_id=run_id,
+        scenario_kind="PPE_GOGGLES_MISSING",
+        state="FAILED",
+        stages=stages,
+        recognition_mode="FULL_MODEL",
+        evidence=evidence,
+        video_profile=M8PlatformVideoProfileV1(
+            input_file_sha256="a" * 64,
+            fps_num=24,
+            fps_den=1,
+            frame_count=241,
+            width=1280,
+            height=720,
+            duration_millis=10_042,
+        ),
+        failure_code="SCREENING_PROVIDER_UNAVAILABLE",
+    )
+    fake_service = SimpleNamespace(
+        config=SimpleNamespace(run=SimpleNamespace(workspace=runs_root)),
+        dashboard=lambda **_kwargs: SimpleNamespace(
+            cases=(
+                SimpleNamespace(
+                    evidence=(
+                        SimpleNamespace(
+                            crop_id="panorama-evidence",
+                            role="PANORAMA",
+                            frame_index=0,
+                            time_millis=0,
+                            width=768,
+                            height=432,
+                            integrity="VERIFIED",
+                            media_url="unused",
+                        ),
+                        SimpleNamespace(
+                            crop_id="temporal-evidence",
+                            role="TEMPORAL",
+                            frame_index=0,
+                            time_millis=0,
+                            width=180,
+                            height=140,
+                            integrity="VERIFIED",
+                            media_url="unused",
+                        ),
+                    )
+                ),
+            ),
+            manifest_id="c" * 64,
+            metrics_id="d" * 64,
+        ),
+    )
+    monkeypatch.setattr(platform, "scenario_run", lambda _principal, _run_id: run)
+    monkeypatch.setattr(platform, "_pilot_service_for", lambda _run: fake_service)
+    server = assembly.server
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        operations = _login(server.server_port, "OPERATIONS")
+        status, workspace = _request(
+            server.server_port,
+            "GET",
+            f"/api/m8/demo/scenario-runs/{run_id}/evidence-workspace",
+            token=operations,
+        )
+        assert status == 200 and isinstance(workspace, dict)
+        assert workspace["view_scope"] == "FULL_PIPELINE"
+        assert workspace["media_url"] == "/api/m8/demo/public-media/recorded-video"
+        assert workspace["frame_annotations"][0]["detections"][0]["bbox"] == {
+            "x1": 120,
+            "y1": 40,
+            "x2": 840,
+            "y2": 720,
+        }
+        assert workspace["frame_annotations"][0]["detections"][0]["keypoints"][0][
+            "name"
+        ] == "nose"
+        by_role = {item["role"]: item for item in workspace["evidence"]}
+        assert by_role["PANORAMA"]["access"] == "SEALED_LOCAL"
+        assert by_role["PANORAMA"]["media_url"] is None
+        assert by_role["PANORAMA"]["submitted_to_screening"] is False
+        assert by_role["TEMPORAL"]["access"] == "CLOUD_ALLOWED"
+        assert by_role["TEMPORAL"]["media_url"].endswith("/temporal-evidence")
+
+        leader = _login(server.server_port, "LEADER")
+        leader_status, leader_workspace = _request(
+            server.server_port,
+            "GET",
+            f"/api/m8/demo/scenario-runs/{run_id}/evidence-workspace",
+            token=leader,
+        )
+        assert leader_status == 200 and isinstance(leader_workspace, dict)
+        assert leader_workspace["view_scope"] == "SUMMARY_ONLY"
+        assert leader_workspace["media_url"] is None
+        assert leader_workspace["frame_annotations"] == []
+        assert {item["access"] for item in leader_workspace["evidence"]} == {
+            "SUMMARY_ONLY"
+        }
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
 def test_platform_notification_appeal_outcome_and_acknowledgement_closure(
     tmp_path: Path,
     socket_enabled: None,
@@ -583,16 +751,14 @@ def test_platform_notification_appeal_outcome_and_acknowledgement_closure(
                     kind=M8AuthorityReferenceKind.RESERVATION,
                     authority_id=bootstrap.reservation.reservation_id,
                     document_sha256=hashlib.sha256(
-                        canonical_json(
-                            bootstrap.reservation.model_dump(mode="json")
-                        ).encode("utf-8")
+                        canonical_json(bootstrap.reservation.model_dump(mode="json")).encode(
+                            "utf-8"
+                        )
                     ).hexdigest(),
                 ),
             ),
             automation_component_id="m8-platform-notification-closure-fixture",
-            automation_manifest_id=platform_manifest(
-                "platform-notification-closure-fixture-v1"
-            ),
+            automation_manifest_id=platform_manifest("platform-notification-closure-fixture-v1"),
         ),
         "student-demo",
         platform_manifest("platform-case-authority-v1"),
@@ -701,6 +867,34 @@ def test_platform_notification_appeal_outcome_and_acknowledgement_closure(
         assert acknowledgement_status == 200
         assert isinstance(acknowledgement, dict)
         assert acknowledgement["status"] == "ACKNOWLEDGED"
+
+        safety_conversations_status, safety_conversations = _request(
+            server.server_port,
+            "GET",
+            "/api/m8/notification-conversations",
+            token=safety,
+        )
+        assert safety_conversations_status == 200
+        assert isinstance(safety_conversations, list) and len(safety_conversations) == 1
+        assert safety_conversations[0]["notification_count"] == 2
+        assert safety_conversations[0]["reply_count"] == 1
+        conversation_status, conversation = _request(
+            server.server_port,
+            "GET",
+            f"/api/m8/notification-conversations/{seeded.case_id}",
+            token=student,
+        )
+        assert conversation_status == 200 and isinstance(conversation, dict)
+        kinds = [event["kind"] for event in conversation["events"]]
+        assert "STUDENT_APPEAL" in kinds
+        assert "SAFETY_DECISION" in kinds
+        assert "OUTCOME_NOTIFICATION" in kinds
+        assert "STUDENT_ACKNOWLEDGEMENT" in kinds
+        appeal_event = next(
+            event for event in conversation["events"] if event["kind"] == "STUDENT_APPEAL"
+        )
+        assert appeal_event["body"] == "我请求人工复核录像证据与预约关联。"
+        assert conversation["actions"] == []
     finally:
         server.shutdown()
         server.server_close()
@@ -752,9 +946,7 @@ def test_platform_reset_archives_session_and_restores_empty_baseline(
             "notifications": 0,
         }
         assert (tmp_path / result["archive_ref"] / PLATFORM_DATABASE_NAME).is_file()
-        cases_status, cases = _request(
-            server.server_port, "GET", "/api/m8/cases", token=operations
-        )
+        cases_status, cases = _request(server.server_port, "GET", "/api/m8/cases", token=operations)
         notifications_status, notifications = _request(
             server.server_port, "GET", "/api/m8/notifications", token=operations
         )

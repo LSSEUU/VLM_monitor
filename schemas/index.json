@@ -1546,6 +1546,18 @@
       "name": "m8-notification-commit-receipt-v1"
     },
     {
+      "file": "m8-notification-conversation-summary-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8NotificationConversationSummaryV1",
+      "name": "m8-notification-conversation-summary-v1"
+    },
+    {
+      "file": "m8-notification-conversation-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8NotificationConversationV1",
+      "name": "m8-notification-conversation-v1"
+    },
+    {
       "file": "m8-notification-delivery-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_notification_lifecycle.M8NotificationDeliveryReceiptV1",
@@ -1820,6 +1832,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_platform_demo.M8PlatformBootstrapReceiptV1",
       "name": "m8-platform-bootstrap-receipt-v1"
+    },
+    {
+      "file": "m8-platform-evidence-workspace-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformEvidenceWorkspaceV1",
+      "name": "m8-platform-evidence-workspace-v1"
     },
     {
       "file": "m8-platform-login-request-v1.schema.json",

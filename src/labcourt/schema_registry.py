@@ -423,10 +423,13 @@ from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoRoleTokensV1,
 )
 from labcourt.contracts.m8_platform_demo import (
+    M8NotificationConversationSummaryV1,
+    M8NotificationConversationV1,
     M8PlatformAcknowledgementRequestV1,
     M8PlatformAgentQueryRequestV1,
     M8PlatformAgentQueryResponseV1,
     M8PlatformBootstrapReceiptV1,
+    M8PlatformEvidenceWorkspaceV1,
     M8PlatformLoginRequestV1,
     M8PlatformLoginResponseV1,
     M8PlatformModelReadinessV1,
@@ -860,15 +863,11 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-personal-demo-bootstrap-receipt-v1": M8PersonalDemoBootstrapReceiptV1,
     "m8-personal-demo-camera-receipt-v1": M8PersonalDemoCameraReceiptV1,
     "m8-personal-demo-camera-view-v1": M8PersonalDemoCameraViewV1,
-    "m8-personal-demo-recorded-media-receipt-v1": (
-        M8PersonalDemoRecordedMediaReceiptV1
-    ),
+    "m8-personal-demo-recorded-media-receipt-v1": (M8PersonalDemoRecordedMediaReceiptV1),
     "m8-personal-demo-knowledge-receipt-v1": M8PersonalDemoKnowledgeReceiptV1,
     "m8-personal-demo-notification-receipt-v1": M8PersonalDemoNotificationReceiptV1,
     "m8-personal-demo-ppe-case-receipt-v1": M8PersonalDemoPpeCaseReceiptV1,
-    "m8-personal-demo-ppe-notification-receipt-v1": (
-        M8PersonalDemoPpeNotificationReceiptV1
-    ),
+    "m8-personal-demo-ppe-notification-receipt-v1": (M8PersonalDemoPpeNotificationReceiptV1),
     "m8-personal-demo-ppe-outcome-notification-receipt-v1": (
         M8PersonalDemoPpeOutcomeNotificationReceiptV1
     ),
@@ -878,18 +877,19 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-platform-agent-query-request-v1": M8PlatformAgentQueryRequestV1,
     "m8-platform-agent-query-response-v1": M8PlatformAgentQueryResponseV1,
     "m8-platform-bootstrap-receipt-v1": M8PlatformBootstrapReceiptV1,
+    "m8-platform-evidence-workspace-v1": M8PlatformEvidenceWorkspaceV1,
     "m8-platform-login-request-v1": M8PlatformLoginRequestV1,
     "m8-platform-login-response-v1": M8PlatformLoginResponseV1,
     "m8-platform-model-readiness-v1": M8PlatformModelReadinessV1,
-    "m8-platform-notification-dispatch-request-v1": (
-        M8PlatformNotificationDispatchRequestV1
-    ),
+    "m8-platform-notification-dispatch-request-v1": (M8PlatformNotificationDispatchRequestV1),
     "m8-platform-notification-reply-request-v1": M8PlatformNotificationReplyRequestV1,
     "m8-platform-reservation-authority-v1": M8PlatformReservationAuthorityV1,
     "m8-platform-reset-request-v1": M8PlatformResetRequestV1,
     "m8-platform-reset-response-v1": M8PlatformResetResponseV1,
     "m8-platform-scenario-run-v1": M8PlatformScenarioRunV1,
     "m8-platform-scenario-start-request-v1": M8PlatformScenarioStartRequestV1,
+    "m8-notification-conversation-summary-v1": M8NotificationConversationSummaryV1,
+    "m8-notification-conversation-v1": M8NotificationConversationV1,
     "m8-operations-projection-v1": M8OperationsProjectionV1,
     "m8-operations-projection-view-v1": M8OperationsProjectionViewV1,
     "m8-projection-map-node-v1": M8ProjectionMapNodeV1,

@@ -1,5 +1,7 @@
 """Application service for the complete offline campus-operations Demo."""
 
+# ruff: noqa: RUF001 - Chinese product copy intentionally uses full-width punctuation.
+
 from __future__ import annotations
 
 import hashlib
@@ -44,6 +46,7 @@ from labcourt.application.m8_platform_bootstrap import (
 )
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.cases import Case
+from labcourt.contracts.detections import FrameBundle
 from labcourt.contracts.evidence import EvidencePack
 from labcourt.contracts.m8_access_cases import (
     M8ActorRole,
@@ -62,6 +65,7 @@ from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
 )
 from labcourt.contracts.m8_notification_lifecycle import (
+    M8NotificationAction,
     M8NotificationChannelCapabilityAuthorityV1,
     M8NotificationReplyKind,
 )
@@ -76,9 +80,26 @@ from labcourt.contracts.m8_notifications import (
     M8NotificationTemplateAuthorityV1,
 )
 from labcourt.contracts.m8_platform_demo import (
+    M8NotificationConversationActionKind,
+    M8NotificationConversationActionV1,
+    M8NotificationConversationEventKind,
+    M8NotificationConversationEventV1,
+    M8NotificationConversationSummaryV1,
+    M8NotificationConversationTechnicalV1,
+    M8NotificationConversationV1,
     M8PlatformAgentActionKind,
     M8PlatformAgentQueryResponseV1,
+    M8PlatformEvidenceAccess,
+    M8PlatformEvidenceDetectionV1,
+    M8PlatformEvidenceFrameAnnotationV1,
+    M8PlatformEvidenceItemV1,
+    M8PlatformEvidenceKeypointV1,
+    M8PlatformEvidenceScreeningV1,
+    M8PlatformEvidenceViewScope,
     M8PlatformEvidenceViewV1,
+    M8PlatformEvidenceWorkspaceStage,
+    M8PlatformEvidenceWorkspaceStageV1,
+    M8PlatformEvidenceWorkspaceV1,
     M8PlatformExecutionSource,
     M8PlatformModelComponentV1,
     M8PlatformModelReadinessComponentV1,
@@ -106,6 +127,7 @@ from labcourt.contracts.pilot_ui import PilotUiJobStartRequest
 from labcourt.contracts.projection_generation import ProjectionCurrentPointer
 from labcourt.exceptions import EvidenceMissing
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
+from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_notifications import M8NotificationService
 from labcourt.services.m8_operations_api import (
     M8ApiServiceError,
@@ -207,9 +229,7 @@ class M8PlatformDemoService:
                 screening_transport=self._screening_transport,
             )
 
-        self.fixture_pilot_jobs = PilotUiJobManager(
-            service=fixture_pilot_service, runner=runner
-        )
+        self.fixture_pilot_jobs = PilotUiJobManager(service=fixture_pilot_service, runner=runner)
         self.model_pilot_jobs = PilotUiJobManager(service=model_pilot_service)
 
     def reservations(self, principal: M8ApiPrincipalV1) -> tuple[dict[str, object], ...]:
@@ -367,13 +387,182 @@ class M8PlatformDemoService:
         run_id: str,
         evidence_id: str,
     ):
+        actor = self._actor(principal)
         run = self.scenario_run(principal, run_id)
-        if not any(item.evidence_id == evidence_id for item in run.evidence):
+        item = next((value for value in run.evidence if value.evidence_id == evidence_id), None)
+        if item is None:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        if actor.role == M8ActorRole.LEADER:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+        if actor.role == M8ActorRole.STUDENT:
+            if item.role in {"PANORAMA", "SUBJECT"} or run.case_id is None:
+                raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+            current_case = self._operations().get_current_operational_case(run.case_id)
+            if current_case.audit_event.case_authority.subject_actor_id != actor.actor_id:
+                raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         try:
             return self._pilot_service_for(run).read_evidence(run_id, evidence_id)
         except PilotUiBoundaryError as error:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from error
+
+    def evidence_workspace(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+    ) -> M8PlatformEvidenceWorkspaceV1:
+        actor = self._actor(principal)
+        run = self.scenario_run(principal, run_id)
+        if (
+            run.scenario_kind != M8PlatformScenarioKind.PPE_GOGGLES_MISSING
+            or run.video_profile is None
+        ):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        if actor.role == M8ActorRole.STUDENT:
+            if run.case_id is None:
+                raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+            current_case = self._operations().get_current_operational_case(run.case_id)
+            if current_case.audit_event.case_authority.subject_actor_id != actor.actor_id:
+                raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+            view_scope = M8PlatformEvidenceViewScope.REDACTED_CASE
+        elif actor.role == M8ActorRole.LEADER:
+            view_scope = M8PlatformEvidenceViewScope.SUMMARY_ONLY
+        else:
+            view_scope = M8PlatformEvidenceViewScope.FULL_PIPELINE
+
+        service = self._pilot_service_for(run)
+        run_root = self.project_root / service.config.run.workspace / run.run_id
+        dashboard = service.dashboard(run_id=run.run_id)
+        pilot_case = dashboard.cases[0] if dashboard.cases else None
+        frame_annotations = (
+            self._workspace_annotations(run_root, run.video_profile)
+            if view_scope == M8PlatformEvidenceViewScope.FULL_PIPELINE
+            else ()
+        )
+        evidence = tuple(
+            self._workspace_evidence_item(run, item, view_scope)
+            for item in (pilot_case.evidence if pilot_case is not None else ())
+        )
+        screening = self._workspace_screening(run, evidence)
+        source_available = (run_root / "pilot/run-manifest.json").is_file()
+        stages = (
+            M8PlatformEvidenceWorkspaceStageV1(
+                stage=M8PlatformEvidenceWorkspaceStage.SOURCE_REPLAY,
+                state=(
+                    "AVAILABLE"
+                    if view_scope == M8PlatformEvidenceViewScope.FULL_PIPELINE and source_available
+                    else "RESTRICTED"
+                ),
+                summary=(
+                    "H.264 原始录像可回放；来源为录像模拟机位"
+                    if view_scope == M8PlatformEvidenceViewScope.FULL_PIPELINE
+                    else "原始录像按当前角色隐藏，仅提供案件处理依据"
+                ),
+            ),
+            M8PlatformEvidenceWorkspaceStageV1(
+                stage=M8PlatformEvidenceWorkspaceStage.PERSON_LOCALIZATION,
+                state=(
+                    "AVAILABLE"
+                    if frame_annotations
+                    else (
+                        "RESTRICTED"
+                        if view_scope != M8PlatformEvidenceViewScope.FULL_PIPELINE
+                        else "NOT_GENERATED"
+                    )
+                ),
+                summary=(
+                    f"已读取 {len(frame_annotations)} 帧真实人物框与关键点"
+                    if frame_annotations
+                    else "人物框、匿名轨迹与关键点按当前角色隐藏"
+                ),
+            ),
+            M8PlatformEvidenceWorkspaceStageV1(
+                stage=M8PlatformEvidenceWorkspaceStage.PRIVACY_CROPS,
+                state="AVAILABLE" if evidence else "NOT_GENERATED",
+                summary=(
+                    f"{sum(item.access == M8PlatformEvidenceAccess.CLOUD_ALLOWED for item in evidence)} "  # noqa: E501
+                    "份送审裁剪；全量脱敏件仅本地封存"
+                    if evidence
+                    else "尚未生成隐私裁剪"
+                ),
+            ),
+            M8PlatformEvidenceWorkspaceStageV1(
+                stage=M8PlatformEvidenceWorkspaceStage.VLM_SCREENING,
+                state="AVAILABLE" if screening is not None else "NOT_GENERATED",
+                summary=(
+                    "结构化初审及其输入、模型与原始响应引用已绑定"
+                    if screening is not None
+                    else "尚未生成结构化初审"
+                ),
+            ),
+        )
+        manifests = tuple(
+            dict.fromkeys(
+                (
+                    *(item.manifest_id for item in run.model_components),
+                    *(
+                        item.model_manifest_id
+                        for frame in frame_annotations
+                        for item in frame.detections
+                    ),
+                    *((dashboard.manifest_id,) if dashboard.manifest_id is not None else ()),
+                    *((dashboard.metrics_id,) if dashboard.metrics_id is not None else ()),
+                )
+            )
+        )
+        return M8PlatformEvidenceWorkspaceV1(
+            run_id=run.run_id,
+            case_id=run.case_id,
+            view_scope=view_scope,
+            stages=stages,
+            video_profile=run.video_profile,
+            media_url=(
+                "/api/m8/demo/public-media/recorded-video"
+                if view_scope == M8PlatformEvidenceViewScope.FULL_PIPELINE
+                else None
+            ),
+            frame_annotations=frame_annotations,
+            evidence=evidence,
+            screening=screening,
+            technical_manifest_refs=manifests,
+        )
+
+    def notification_conversations(
+        self,
+        principal: M8ApiPrincipalV1,
+    ) -> tuple[M8NotificationConversationSummaryV1, ...]:
+        current = M8NotificationApiService(self._notifications(), self._operations()).notifications(
+            principal
+        )
+        case_ids = tuple(
+            sorted({item.audit_event.notification_authority.plan.case_id for item in current})
+        )
+        summaries = tuple(
+            self._build_conversation(principal, case_id, current).summary for case_id in case_ids
+        )
+        return tuple(
+            sorted(
+                summaries,
+                key=lambda item: (
+                    item.last_activity_at or datetime.min.replace(tzinfo=UTC),
+                    item.case_id,
+                ),
+                reverse=True,
+            )
+        )
+
+    def notification_conversation(
+        self,
+        principal: M8ApiPrincipalV1,
+        case_id: str,
+    ) -> M8NotificationConversationV1:
+        current = M8NotificationApiService(self._notifications(), self._operations()).notifications(
+            principal
+        )
+        if not any(
+            item.audit_event.notification_authority.plan.case_id == case_id for item in current
+        ):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        return self._build_conversation(principal, case_id, current)
 
     def perception_preview(
         self,
@@ -533,7 +722,7 @@ class M8PlatformDemoService:
             case = pending
             return M8PlatformAgentQueryResponseV1(
                 outcome="ANSWERED",
-                answer="已按当前案件版本生成处置操作卡，确认后仍由案件接口复核权限和版本。",  # noqa: RUF001
+                answer="已按当前案件版本生成处置操作卡，确认后仍由案件接口复核权限和版本。",
                 source_refs=(case.case_id,),
                 proposed_action=M8PlatformProposedActionV1(
                     action_kind=M8PlatformAgentActionKind.CASE_TRANSITION,
@@ -560,8 +749,7 @@ class M8PlatformDemoService:
             return M8PlatformAgentQueryResponseV1(
                 outcome="ANSWERED",
                 answer=(
-                    f"当前校区登记 {len(projection.catalog.sources)} 个数据源，"  # noqa: RUF001
-                    "状态来自运营投影。"
+                    f"当前校区登记 {len(projection.catalog.sources)} 个数据源，状态来自运营投影。"
                 ),
                 source_refs=tuple(item.source_id for item in projection.catalog.sources),
             )
@@ -580,7 +768,7 @@ class M8PlatformDemoService:
         except (EvidenceMissing, M8ApiServiceError, TypeError, ValueError):
             return M8PlatformAgentQueryResponseV1(
                 outcome="NO_MATCH",
-                answer="离线知识库中没有匹配答案；Agent 未执行任何操作。",  # noqa: RUF001
+                answer="离线知识库中没有匹配答案；Agent 未执行任何操作。",
             )
         return M8PlatformAgentQueryResponseV1(
             outcome=answer.answer.outcome.value,
@@ -663,9 +851,7 @@ class M8PlatformDemoService:
         if video is None:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
         run_id = f"platform-ppe-{uuid.uuid4().hex[:12]}"
-        jobs.start(
-            PilotUiJobStartRequest(video_id=video.video_id, run_id=run_id, resume=True)
-        )
+        jobs.start(PilotUiJobStartRequest(video_id=video.video_id, run_id=run_id, resume=True))
         run = M8PlatformScenarioRunV1(
             run_id=run_id,
             scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
@@ -728,9 +914,7 @@ class M8PlatformDemoService:
             failed = self._failed_ppe_run(
                 projected,
                 failure_code=(
-                    "SCREENING_PROJECTION_INVALID"
-                    if attention_required
-                    else type(error).__name__
+                    "SCREENING_PROJECTION_INVALID" if attention_required else type(error).__name__
                 ),
                 failed_stage=(
                     M8PlatformScenarioStage.SCREENING
@@ -769,11 +953,7 @@ class M8PlatformDemoService:
     @staticmethod
     def _running_m8_stage(run: M8PlatformScenarioRunV1) -> M8PlatformScenarioStage:
         return next(
-            (
-                item.stage
-                for item in run.stages
-                if item.state == M8PlatformStageState.RUNNING
-            ),
+            (item.stage for item in run.stages if item.state == M8PlatformStageState.RUNNING),
             M8PlatformScenarioStage.PERCEPTION,
         )
 
@@ -839,8 +1019,7 @@ class M8PlatformDemoService:
                 )
                 if perception.completed_units is not None and perception.total_units is not None:
                     update["summary"] = (
-                        f"真实 Worker 响应 {perception.completed_units}/"
-                        f"{perception.total_units} 帧"
+                        f"真实 Worker 响应 {perception.completed_units}/{perception.total_units} 帧"
                     )
             projected.append(item.model_copy(update=update))
         return run.model_copy(update={"stages": tuple(projected)})
@@ -1077,14 +1256,10 @@ class M8PlatformDemoService:
                 frame_count=stream.frame_count,
                 width=stream.width,
                 height=stream.height,
-                duration_millis=(
-                    stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1
-                )
+                duration_millis=(stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1)
                 // stream.fps_num,
             ),
-            perception_preview_url=(
-                f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"
-            ),
+            perception_preview_url=(f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"),
             model_or_fixture_id=(
                 manifest.models["screening"].model
                 if run.recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
@@ -1092,9 +1267,7 @@ class M8PlatformDemoService:
             ),
             raw_response_ref=raw_ref,
             screening_decision=source_case.screening_results[-1].decision.value,
-            screening_summary=(
-                source_case.screening_results[-1].parsed_output.rationale_summary
-            ),
+            screening_summary=(source_case.screening_results[-1].parsed_output.rationale_summary),
             rule_judgment="GENERAL_RISK",
         )
         self._write_run(completed)
@@ -1122,9 +1295,7 @@ class M8PlatformDemoService:
                 evidence_id=item.crop_id,
                 role=item.role,
                 frame_index=item.frame_index,
-                media_url=(
-                    f"/api/m8/demo/scenario-runs/{run.run_id}/evidence/{item.crop_id}"
-                ),
+                media_url=(f"/api/m8/demo/scenario-runs/{run.run_id}/evidence/{item.crop_id}"),
                 integrity=item.integrity,
             )
             for item in (pilot_case.evidence if pilot_case is not None else ())
@@ -1179,9 +1350,7 @@ class M8PlatformDemoService:
             model_components=self._model_components(run, manifest),
             evidence=evidence,
             video_profile=self._video_profile(stream),
-            perception_preview_url=(
-                f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"
-            ),
+            perception_preview_url=(f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"),
             model_or_fixture_id=manifest.models["screening"].model,
         )
         if persist:
@@ -1219,9 +1388,7 @@ class M8PlatformDemoService:
             frame_count=stream.frame_count,
             width=stream.width,
             height=stream.height,
-            duration_millis=(
-                stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1
-            )
+            duration_millis=(stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1)
             // stream.fps_num,
         )
 
@@ -1240,30 +1407,35 @@ class M8PlatformDemoService:
             run_id=run.run_id,
             scenario_kind=run.scenario_kind,
             state="SUCCEEDED",
-            stages=self._preserve_perception_progress((
-                self._stage(M8PlatformScenarioStage.VIDEO, "真实录像已校验", (PLATFORM_CAMERA_ID,)),
-                self._stage(
-                    M8PlatformScenarioStage.PERCEPTION,
-                    "视觉感知和目标定位已生成",
-                    (source_case.manifest_id,),
+            stages=self._preserve_perception_progress(
+                (
+                    self._stage(
+                        M8PlatformScenarioStage.VIDEO, "真实录像已校验", (PLATFORM_CAMERA_ID,)
+                    ),
+                    self._stage(
+                        M8PlatformScenarioStage.PERCEPTION,
+                        "视觉感知和目标定位已生成",
+                        (source_case.manifest_id,),
+                    ),
+                    self._stage(
+                        M8PlatformScenarioStage.EVIDENCE,
+                        "全景、主体与时序眼部焦点裁剪已校验",
+                        (source_pack.pack_id, *(item.evidence_id for item in evidence)),
+                    ),
+                    self._stage(
+                        M8PlatformScenarioStage.SCREENING,
+                        "结构化初审未建立可行动风险，已保存为弱标签",
+                        (screening.screening_id,),
+                    ),
+                    self._stage(
+                        M8PlatformScenarioStage.CASE,
+                        "规则未建立风险，未自动建案",
+                        (),
+                    ),
+                    self._stage(M8PlatformScenarioStage.NOTIFICATION, "无需发送案件通知", ()),
                 ),
-                self._stage(
-                    M8PlatformScenarioStage.EVIDENCE,
-                    "全景、主体与时序眼部焦点裁剪已校验",
-                    (source_pack.pack_id, *(item.evidence_id for item in evidence)),
-                ),
-                self._stage(
-                    M8PlatformScenarioStage.SCREENING,
-                    "结构化初审未建立可行动风险，已保存为弱标签",  # noqa: RUF001
-                    (screening.screening_id,),
-                ),
-                self._stage(
-                    M8PlatformScenarioStage.CASE,
-                    "规则未建立风险，未自动建案",  # noqa: RUF001
-                    (),
-                ),
-                self._stage(M8PlatformScenarioStage.NOTIFICATION, "无需发送案件通知", ()),
-            ), run),
+                run,
+            ),
             recognition_mode=run.recognition_mode,
             retry_of_run_id=run.retry_of_run_id,
             model_components=self._model_components(run, manifest),
@@ -1276,14 +1448,10 @@ class M8PlatformDemoService:
                 frame_count=stream.frame_count,
                 width=stream.width,
                 height=stream.height,
-                duration_millis=(
-                    stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1
-                )
+                duration_millis=(stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1)
                 // stream.fps_num,
             ),
-            perception_preview_url=(
-                f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"
-            ),
+            perception_preview_url=(f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"),
             model_or_fixture_id=manifest.models["screening"].model,
             raw_response_ref=raw_ref,
             screening_decision="NOT_ESTABLISHED",
@@ -1308,14 +1476,14 @@ class M8PlatformDemoService:
                 (M8PlatformScenarioStage.VIDEO, "真实录像已校验", (PLATFORM_CAMERA_ID,)),
                 (
                     M8PlatformScenarioStage.PERCEPTION,
-                    "真实视觉感知已完成，未产生可行动候选事件",  # noqa: RUF001
+                    "真实视觉感知已完成，未产生可行动候选事件",
                     (a2.perception_manifest_id, a2.perception_completion_id),
                 ),
                 (M8PlatformScenarioStage.EVIDENCE, "没有需要裁剪的候选证据", ()),
                 (M8PlatformScenarioStage.SCREENING, "没有候选证据需要调用结构化初审", ()),
                 (
                     M8PlatformScenarioStage.CASE,
-                    "未建立可行动风险，未自动建案",  # noqa: RUF001
+                    "未建立可行动风险，未自动建案",
                     (),
                 ),
                 (M8PlatformScenarioStage.NOTIFICATION, "无需发送案件通知", ()),
@@ -1337,9 +1505,7 @@ class M8PlatformDemoService:
                 frame_count=stream.frame_count,
                 width=stream.width,
                 height=stream.height,
-                duration_millis=(
-                    stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1
-                )
+                duration_millis=(stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1)
                 // stream.fps_num,
             ),
             model_or_fixture_id=(
@@ -1583,6 +1749,452 @@ class M8PlatformDemoService:
             raise ValueError("platform local notification did not reach simulated delivery")
         return current
 
+    @staticmethod
+    def _workspace_annotations(
+        run_root: Path,
+        profile: M8PlatformVideoProfileV1,
+    ) -> tuple[M8PlatformEvidenceFrameAnnotationV1, ...]:
+        path = run_root / "perception/frame-bundles.jsonl"
+        if not path.is_file():
+            return ()
+        annotations: list[M8PlatformEvidenceFrameAnnotationV1] = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line:
+                continue
+            bundle = FrameBundle.model_validate_json(line)
+            if bundle.frame.frame_index >= profile.frame_count:
+                raise ValueError("perception frame lies outside the verified stream")
+            detections = tuple(
+                M8PlatformEvidenceDetectionV1(
+                    detection_id=item.detection_id,
+                    bbox=item.bbox,
+                    anonymous_track_ref=item.track_ref,
+                    keypoints=tuple(
+                        M8PlatformEvidenceKeypointV1(name=point.name, x=point.x, y=point.y)
+                        for point in item.keypoints
+                    ),
+                    model_manifest_id=item.model_manifest_id,
+                )
+                for item in bundle.detections
+                if item.label.casefold() == "person"
+            )
+            if detections:
+                annotations.append(
+                    M8PlatformEvidenceFrameAnnotationV1(
+                        frame_index=bundle.frame.frame_index,
+                        timestamp_millis=bundle.frame.timestamp_ms,
+                        width=bundle.frame.width,
+                        height=bundle.frame.height,
+                        detections=detections,
+                    )
+                )
+        if tuple(item.frame_index for item in annotations) != tuple(
+            sorted({item.frame_index for item in annotations})
+        ):
+            raise ValueError("perception frame annotations must be unique and ordered")
+        return tuple(annotations)
+
+    @staticmethod
+    def _workspace_evidence_item(
+        run: M8PlatformScenarioRunV1,
+        item,
+        view_scope: M8PlatformEvidenceViewScope,
+    ) -> M8PlatformEvidenceItemV1:
+        sealed = item.role in {"PANORAMA", "SUBJECT"}
+        if view_scope == M8PlatformEvidenceViewScope.SUMMARY_ONLY:
+            access = M8PlatformEvidenceAccess.SUMMARY_ONLY
+            media_url = None
+            submitted = False
+        elif sealed:
+            access = M8PlatformEvidenceAccess.SEALED_LOCAL
+            media_url = None
+            submitted = False
+        else:
+            access = M8PlatformEvidenceAccess.CLOUD_ALLOWED
+            media_url = f"/api/m8/demo/scenario-runs/{run.run_id}/evidence/{item.crop_id}"
+            submitted = True
+        return M8PlatformEvidenceItemV1(
+            evidence_id=item.crop_id,
+            role=item.role,
+            frame_index=item.frame_index,
+            timestamp_millis=item.time_millis,
+            width=item.width,
+            height=item.height,
+            integrity=item.integrity,
+            privacy_policy=("FULL_REDACTION" if sealed else "PPE_PRESERVING_REDACTION"),
+            access=access,
+            submitted_to_screening=submitted,
+            media_url=media_url,
+        )
+
+    @staticmethod
+    def _workspace_screening(
+        run: M8PlatformScenarioRunV1,
+        evidence: tuple[M8PlatformEvidenceItemV1, ...],
+    ) -> M8PlatformEvidenceScreeningV1 | None:
+        component = next(
+            (item for item in run.model_components if item.component == "SCREENING"), None
+        )
+        inputs = tuple(
+            item.evidence_id
+            for item in evidence
+            if item.role in {"FOCUS", "TEMPORAL"} and item.integrity == "VERIFIED"
+        )
+        if (
+            component is None
+            or run.screening_decision is None
+            or run.screening_summary is None
+            or run.raw_response_ref is None
+            or not inputs
+        ):
+            return None
+        return M8PlatformEvidenceScreeningV1(
+            source=component.source,
+            provider=component.provider,
+            model=component.model,
+            revision=component.revision,
+            manifest_id=component.manifest_id,
+            decision=run.screening_decision,
+            summary=run.screening_summary,
+            input_evidence_ids=inputs,
+            raw_response_ref=run.raw_response_ref,
+        )
+
+    @staticmethod
+    def _notification_copy(plan) -> tuple[str, str]:
+        purpose = plan.purpose
+        if purpose == M8NotificationPurpose.APPEAL_OUTCOME:
+            return (
+                "申诉处理结果已送达",
+                "安全负责人已完成申诉复核。处理决定保留在案件会话中，请查看后确认。",
+            )
+        if purpose == M8NotificationPurpose.CASE_UPDATED:
+            return (
+                "案件状态已更新",
+                f"实验室 {plan.location_id} 的案件现为 {plan.case_status.value}。"
+                "你可以提交情况说明或申诉，机器输出不直接作为处分依据。",
+            )
+        if purpose in {
+            M8NotificationPurpose.CASE_CREATED,
+            M8NotificationPurpose.CASE_ACTION_REQUIRED,
+        }:
+            return (
+                "安全事件等待人工核实",
+                f"{plan.location_id} 已建立 {plan.risk_level.value} 级候选案件，"
+                "等待安全负责人处理。",
+            )
+        return ("案件进展通知", f"案件发生 {purpose.value} 进展，详情以案件 authority 为准。")
+
+    def _build_conversation(
+        self,
+        principal: M8ApiPrincipalV1,
+        case_id: str,
+        visible_notifications,
+    ) -> M8NotificationConversationV1:
+        actor = self._actor(principal)
+        operations = self._operations()
+        notifications = self._notifications()
+        current_case = operations.get_current_operational_case(case_id)
+        authority = current_case.audit_event.case_authority
+        case_notifications = tuple(
+            item
+            for item in visible_notifications
+            if item.audit_event.notification_authority.plan.case_id == case_id
+        )
+        event_rows: list[tuple[int, datetime | None, str, dict[str, object]]] = []
+        reply_count = 0
+        replies = []
+        outcome_notifications = []
+        for current in case_notifications:
+            notification = current.audit_event.notification_authority
+            plan = notification.plan
+            title, body = self._notification_copy(plan)
+            is_outcome = plan.purpose == M8NotificationPurpose.APPEAL_OUTCOME
+            if is_outcome:
+                outcome_notifications.append(current)
+            kind = (
+                M8NotificationConversationEventKind.OUTCOME_NOTIFICATION
+                if is_outcome
+                else M8NotificationConversationEventKind.NOTIFICATION
+            )
+            event_rows.append(
+                (
+                    (
+                        30
+                        if is_outcome
+                        else 0
+                        if plan.purpose
+                        in {
+                            M8NotificationPurpose.CASE_CREATED,
+                            M8NotificationPurpose.CASE_ACTION_REQUIRED,
+                        }
+                        else 10
+                    ),
+                    plan.planned_at,
+                    notification.notification_id,
+                    {
+                        "event_id": sha256_hex(
+                            ["m8-conversation-notification", 1, notification.notification_id]
+                        ),
+                        "kind": kind,
+                        "sender": "SAFETY_OFFICER"
+                        if plan.audience.value == "CASE_SUBJECT"
+                        else "SYSTEM",
+                        "title": title,
+                        "body": body,
+                        "occurred_at": plan.planned_at,
+                        "notification_id": notification.notification_id,
+                        "authority_id": notification.notification_authority_id,
+                        "status": notification.status.value,
+                        "technical": M8NotificationConversationTechnicalV1(
+                            authority_ref=notification.notification_authority_id,
+                            document_sha256=current.notification_document_sha256,
+                        ),
+                    },
+                )
+            )
+            for audit in notifications.list_notification_audit(notification.notification_id):
+                command = audit.transition_command
+                if command is None:
+                    continue
+                if command.reply is not None:
+                    reply = command.reply
+                    raw = notifications.read_raw_artifact(reply.raw_reply_ref)
+                    digest = hashlib.sha256(raw).hexdigest()
+                    if digest not in {reply.raw_reply_sha256, reply.reply_document_sha256} or (
+                        reply.raw_reply_sha256 != reply.reply_document_sha256
+                    ):
+                        raise ValueError("notification reply raw hash conflicts with its authority")
+                    text = raw.decode("utf-8", errors="strict")
+                    kind = (
+                        M8NotificationConversationEventKind.STUDENT_APPEAL
+                        if reply.reply_kind == M8NotificationReplyKind.APPEAL_REQUEST
+                        else M8NotificationConversationEventKind.STUDENT_EXPLANATION
+                    )
+                    replies.append(reply)
+                    reply_count += 1
+                    event_rows.append(
+                        (
+                            10,
+                            reply.received_at,
+                            reply.reply_authority_id,
+                            {
+                                "event_id": reply.reply_authority_id,
+                                "kind": kind,
+                                "sender": "STUDENT",
+                                "title": "学生提交申诉"
+                                if kind.value == "STUDENT_APPEAL"
+                                else "学生补充情况说明",
+                                "body": text
+                                if actor.role in {M8ActorRole.STUDENT, M8ActorRole.SAFETY_OFFICER}
+                                else None,
+                                "occurred_at": reply.received_at,
+                                "notification_id": notification.notification_id,
+                                "authority_id": reply.reply_authority_id,
+                                "status": "STORED_AND_HASH_VERIFIED",
+                            },
+                        )
+                    )
+                if command.action == M8NotificationAction.ACKNOWLEDGE:
+                    event_rows.append(
+                        (
+                            40,
+                            command.occurred_at,
+                            command.command_id,
+                            {
+                                "event_id": command.command_id,
+                                "kind": M8NotificationConversationEventKind.STUDENT_ACKNOWLEDGEMENT,
+                                "sender": "STUDENT",
+                                "title": "学生已确认处理结果",
+                                "body": "结果通知已由本人明确确认，完整案件历史仍然保留。",
+                                "occurred_at": command.occurred_at,
+                                "notification_id": notification.notification_id,
+                                "authority_id": command.command_id,
+                                "status": "ACKNOWLEDGED",
+                            },
+                        )
+                    )
+
+        for audit in operations.list_operational_case_audit(case_id):
+            intent = audit.transition_intent
+            if intent is None or intent.command.actor_authority.role != M8ActorRole.SAFETY_OFFICER:
+                continue
+            command = intent.command
+            if command.action.value not in {"CONFIRM", "REJECT", "RESOLVE", "RESOLVE_APPEAL"}:
+                continue
+            decision = (
+                f"申诉结论：{command.appeal_resolution.value}"
+                if command.appeal_resolution is not None
+                else f"案件操作：{command.action.value}"
+            )
+            event_rows.append(
+                (
+                    20 if command.action.value == "RESOLVE_APPEAL" else 5,
+                    None,
+                    command.command_id,
+                    {
+                        "event_id": command.command_id,
+                        "kind": M8NotificationConversationEventKind.SAFETY_DECISION,
+                        "sender": "SAFETY_OFFICER",
+                        "title": decision,
+                        "body": command.reason_summary,
+                        "occurred_at": None,
+                        "authority_id": command.command_id,
+                        "status": command.target_status.value,
+                    },
+                )
+            )
+
+        event_rows.sort(
+            key=lambda item: (item[0], item[1] or datetime.min.replace(tzinfo=UTC), item[2])
+        )
+        events = tuple(
+            M8NotificationConversationEventV1(sequence=index, **row[3])
+            for index, row in enumerate(event_rows, start=1)
+        )
+        actions: list[M8NotificationConversationActionV1] = []
+        case_updated = tuple(
+            item
+            for item in case_notifications
+            if item.audit_event.notification_authority.plan.purpose
+            == M8NotificationPurpose.CASE_UPDATED
+        )
+        if actor.role == M8ActorRole.SAFETY_OFFICER:
+            if current_case.status == M8OperationalCaseStatus.APPEALED:
+                actions.extend(
+                    M8NotificationConversationActionV1(
+                        action=kind,
+                        current_case_version=current_case.case_version,
+                    )
+                    for kind in (
+                        M8NotificationConversationActionKind.RESOLVE_APPEAL_UPHELD,
+                        M8NotificationConversationActionKind.RESOLVE_APPEAL_OVERTURNED,
+                    )
+                )
+            if (
+                current_case.status == M8OperationalCaseStatus.APPEAL_RESOLVED
+                and not outcome_notifications
+            ):
+                actions.append(
+                    M8NotificationConversationActionV1(
+                        action=M8NotificationConversationActionKind.SEND_APPEAL_OUTCOME,
+                        current_case_version=current_case.case_version,
+                    )
+                )
+            if current_case.status == M8OperationalCaseStatus.CONFIRMED:
+                actions.append(
+                    M8NotificationConversationActionV1(
+                        action=M8NotificationConversationActionKind.SEND_CASE_UPDATE,
+                        current_case_version=current_case.case_version,
+                    )
+                )
+        elif actor.role == M8ActorRole.STUDENT:
+            appeal_replies = tuple(
+                item
+                for item in replies
+                if item.reply_kind == M8NotificationReplyKind.APPEAL_REQUEST
+            )
+            if appeal_replies and current_case.status == M8OperationalCaseStatus.CONFIRMED:
+                latest = max(appeal_replies, key=lambda item: item.received_at)
+                actions.append(
+                    M8NotificationConversationActionV1(
+                        action=M8NotificationConversationActionKind.RETRY_APPEAL,
+                        current_case_version=current_case.case_version,
+                        target_notification_id=latest.notification_id,
+                        supporting_authority_id=latest.reply_authority_id,
+                        supporting_document_sha256=latest.reply_document_sha256,
+                    )
+                )
+            else:
+                reply_target = next(
+                    (
+                        item
+                        for item in reversed(
+                            sorted(
+                                case_updated,
+                                key=lambda value: (
+                                    value.audit_event.notification_authority.plan.planned_at
+                                ),
+                            )
+                        )
+                        if item.status == M8NotificationStatus.DELIVERED
+                        and item.audit_event.notification_authority.plan.target
+                        .inbound_response_supported
+                    ),
+                    None,
+                )
+                if reply_target is not None:
+                    for kind in (
+                        M8NotificationConversationActionKind.SUBMIT_EXPLANATION,
+                        M8NotificationConversationActionKind.SUBMIT_APPEAL,
+                    ):
+                        actions.append(
+                            M8NotificationConversationActionV1(
+                                action=kind,
+                                current_case_version=current_case.case_version,
+                                target_notification_id=reply_target.notification_id,
+                            )
+                        )
+            ack_target = next(
+                (
+                    item
+                    for item in outcome_notifications
+                    if item.status == M8NotificationStatus.DELIVERED
+                ),
+                None,
+            )
+            if ack_target is not None:
+                actions.append(
+                    M8NotificationConversationActionV1(
+                        action=M8NotificationConversationActionKind.ACKNOWLEDGE_OUTCOME,
+                        current_case_version=current_case.case_version,
+                        target_notification_id=ack_target.notification_id,
+                    )
+                )
+
+        known_times = tuple(item.occurred_at for item in events if item.occurred_at is not None)
+        last_activity = max(known_times) if known_times else None
+        if current_case.status == M8OperationalCaseStatus.APPEALED:
+            pending = "SAFETY_OFFICER"
+            progress = "学生申诉已保存，现在等待安全负责人复核。"
+        elif (
+            current_case.status == M8OperationalCaseStatus.APPEAL_RESOLVED
+            and not outcome_notifications
+        ):
+            pending = "SAFETY_OFFICER"
+            progress = "申诉已处理，等待安全负责人发送处理结果。"
+        elif any(item.status == M8NotificationStatus.DELIVERED for item in outcome_notifications):
+            pending = "STUDENT"
+            progress = "处理结果已送达，等待学生确认。"
+        elif any(item.status == M8NotificationStatus.DELIVERED for item in case_updated):
+            pending = "STUDENT"
+            progress = "案件消息已送达，学生可提交说明或申诉。"
+        else:
+            pending = "NONE"
+            progress = f"案件当前状态为 {current_case.status.value}，暂无待办动作。"
+        latest_title = events[-1].title if events else "案件会话已建立"
+        summary = M8NotificationConversationSummaryV1(
+            case_id=case_id,
+            case_status=current_case.status,
+            case_version=current_case.case_version,
+            location_id=authority.location_id,
+            notification_count=len(case_notifications),
+            reply_count=reply_count,
+            last_activity_at=last_activity,
+            latest_title=latest_title,
+            latest_progress=progress,
+            pending_actor_role=pending,
+        )
+        return M8NotificationConversationV1(
+            case_id=case_id,
+            case_status=current_case.status,
+            case_version=current_case.case_version,
+            location_id=authority.location_id,
+            summary=summary,
+            events=events,
+            actions=tuple(actions),
+        )
+
     def _actor(self, principal: M8ApiPrincipalV1):
         return self._operations().get_current_actor_authority(principal.actor_id).authority
 
@@ -1691,9 +2303,7 @@ class M8PlatformDemoService:
     ) -> tuple[M8PlatformModelComponentV1, ...]:
         fixture = run.recognition_mode == M8PlatformRecognitionMode.DEMO_FIXTURE
         screening = manifest.models["screening"]
-        perception_pipeline = build_expected_perception_manifest(
-            self.model_pilot_service.config
-        )
+        perception_pipeline = build_expected_perception_manifest(self.model_pilot_service.config)
         pose = perception_pipeline.pose
         tracker = perception_pipeline.tracker
         pipeline_model = " + ".join(
@@ -1722,9 +2332,7 @@ class M8PlatformDemoService:
                     if fixture
                     else M8PlatformExecutionSource.MODEL
                 ),
-                provider=(
-                    "labcourt-fixture" if fixture else "HuggingFace + Roboflow"
-                ),
+                provider=("labcourt-fixture" if fixture else "HuggingFace + Roboflow"),
                 model=("recorded-ppe-perception-v1" if fixture else pipeline_model),
                 revision=("1.0.0" if fixture else pipeline_revision),
                 manifest_id=(
@@ -1803,10 +2411,7 @@ class M8PlatformDemoService:
         packs = tuple(
             pack for pack in source_case.evidence_packs if pack.pack_id == summary.pack_id
         )
-        if (
-            source_case.event.event_id != summary.event_id
-            or len(packs) != 1
-        ):
+        if source_case.event.event_id != summary.event_id or len(packs) != 1:
             raise ValueError("Pilot projection is missing event or evidence authority")
         return (
             source_case,

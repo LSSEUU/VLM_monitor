@@ -1,0 +1,560 @@
+{
+  "$defs": {
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "M8PlatformEvidenceAccess": {
+      "enum": [
+        "CLOUD_ALLOWED",
+        "SEALED_LOCAL",
+        "SUMMARY_ONLY"
+      ],
+      "title": "M8PlatformEvidenceAccess",
+      "type": "string"
+    },
+    "M8PlatformEvidenceDetectionV1": {
+      "additionalProperties": false,
+      "properties": {
+        "anonymous_track_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Anonymous Track Ref"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "detection_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Detection Id",
+          "type": "string"
+        },
+        "keypoints": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M8PlatformEvidenceKeypointV1"
+          },
+          "maxItems": 32,
+          "title": "Keypoints",
+          "type": "array"
+        },
+        "label": {
+          "const": "person",
+          "default": "person",
+          "title": "Label",
+          "type": "string"
+        },
+        "model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "detection_id",
+        "bbox",
+        "model_manifest_id"
+      ],
+      "title": "M8PlatformEvidenceDetectionV1",
+      "type": "object"
+    },
+    "M8PlatformEvidenceFrameAnnotationV1": {
+      "additionalProperties": false,
+      "properties": {
+        "detections": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M8PlatformEvidenceDetectionV1"
+          },
+          "maxItems": 64,
+          "title": "Detections",
+          "type": "array"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "timestamp_millis": {
+          "minimum": 0,
+          "title": "Timestamp Millis",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "frame_index",
+        "timestamp_millis",
+        "width",
+        "height"
+      ],
+      "title": "M8PlatformEvidenceFrameAnnotationV1",
+      "type": "object"
+    },
+    "M8PlatformEvidenceItemV1": {
+      "additionalProperties": false,
+      "properties": {
+        "access": {
+          "$ref": "#/$defs/M8PlatformEvidenceAccess"
+        },
+        "evidence_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "integrity": {
+          "enum": [
+            "VERIFIED",
+            "MISSING",
+            "HASH_MISMATCH",
+            "NOT_AVAILABLE"
+          ],
+          "title": "Integrity",
+          "type": "string"
+        },
+        "media_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Url"
+        },
+        "privacy_policy": {
+          "enum": [
+            "FULL_REDACTION",
+            "PPE_PRESERVING_REDACTION"
+          ],
+          "title": "Privacy Policy",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "PANORAMA",
+            "SUBJECT",
+            "FOCUS",
+            "TEMPORAL"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "submitted_to_screening": {
+          "title": "Submitted To Screening",
+          "type": "boolean"
+        },
+        "timestamp_millis": {
+          "minimum": 0,
+          "title": "Timestamp Millis",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "role",
+        "frame_index",
+        "timestamp_millis",
+        "width",
+        "height",
+        "integrity",
+        "privacy_policy",
+        "access",
+        "submitted_to_screening"
+      ],
+      "title": "M8PlatformEvidenceItemV1",
+      "type": "object"
+    },
+    "M8PlatformEvidenceKeypointV1": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "x",
+        "y"
+      ],
+      "title": "M8PlatformEvidenceKeypointV1",
+      "type": "object"
+    },
+    "M8PlatformEvidenceScreeningV1": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "enum": [
+            "ESTABLISHED",
+            "NOT_ESTABLISHED",
+            "ESCALATE"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "input_evidence_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 24,
+          "minItems": 1,
+          "title": "Input Evidence Ids",
+          "type": "array"
+        },
+        "manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Id",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "provider": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "raw_response_ref": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Raw Response Ref",
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/M8PlatformExecutionSource"
+        },
+        "summary": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "provider",
+        "model",
+        "revision",
+        "manifest_id",
+        "decision",
+        "summary",
+        "input_evidence_ids",
+        "raw_response_ref"
+      ],
+      "title": "M8PlatformEvidenceScreeningV1",
+      "type": "object"
+    },
+    "M8PlatformEvidenceViewScope": {
+      "enum": [
+        "FULL_PIPELINE",
+        "REDACTED_CASE",
+        "SUMMARY_ONLY"
+      ],
+      "title": "M8PlatformEvidenceViewScope",
+      "type": "string"
+    },
+    "M8PlatformEvidenceWorkspaceStage": {
+      "enum": [
+        "SOURCE_REPLAY",
+        "PERSON_LOCALIZATION",
+        "PRIVACY_CROPS",
+        "VLM_SCREENING"
+      ],
+      "title": "M8PlatformEvidenceWorkspaceStage",
+      "type": "string"
+    },
+    "M8PlatformEvidenceWorkspaceStageV1": {
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "$ref": "#/$defs/M8PlatformEvidenceWorkspaceStage"
+        },
+        "state": {
+          "enum": [
+            "AVAILABLE",
+            "RESTRICTED",
+            "NOT_GENERATED"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "summary"
+      ],
+      "title": "M8PlatformEvidenceWorkspaceStageV1",
+      "type": "object"
+    },
+    "M8PlatformExecutionSource": {
+      "enum": [
+        "MODEL",
+        "FIXTURE"
+      ],
+      "title": "M8PlatformExecutionSource",
+      "type": "string"
+    },
+    "M8PlatformVideoProfileV1": {
+      "additionalProperties": false,
+      "description": "Typed playback timing copied from the verified Pilot run manifest.",
+      "properties": {
+        "duration_millis": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Millis",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "frame_count": {
+          "exclusiveMinimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "input_file_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input File Sha256",
+          "type": "string"
+        },
+        "timing_authority": {
+          "const": "PILOT_RUN_MANIFEST",
+          "default": "PILOT_RUN_MANIFEST",
+          "title": "Timing Authority",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_file_sha256",
+        "fps_num",
+        "fps_den",
+        "frame_count",
+        "width",
+        "height",
+        "duration_millis"
+      ],
+      "title": "M8PlatformVideoProfileV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-evidence-workspace-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Case Id"
+    },
+    "evidence": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8PlatformEvidenceItemV1"
+      },
+      "maxItems": 24,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "frame_annotations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8PlatformEvidenceFrameAnnotationV1"
+      },
+      "maxItems": 10000,
+      "title": "Frame Annotations",
+      "type": "array"
+    },
+    "identity_recognition_performed": {
+      "const": false,
+      "default": false,
+      "title": "Identity Recognition Performed",
+      "type": "boolean"
+    },
+    "media_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Media Url"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-platform-evidence-workspace-v1",
+      "default": "m8-platform-evidence-workspace-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "screening": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8PlatformEvidenceScreeningV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/$defs/M8PlatformEvidenceWorkspaceStageV1"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Stages",
+      "type": "array"
+    },
+    "technical_manifest_refs": {
+      "default": [],
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 16,
+      "title": "Technical Manifest Refs",
+      "type": "array"
+    },
+    "video_profile": {
+      "$ref": "#/$defs/M8PlatformVideoProfileV1"
+    },
+    "view_scope": {
+      "$ref": "#/$defs/M8PlatformEvidenceViewScope"
+    }
+  },
+  "required": [
+    "run_id",
+    "view_scope",
+    "stages",
+    "video_profile"
+  ],
+  "title": "M8PlatformEvidenceWorkspaceV1",
+  "type": "object"
+}

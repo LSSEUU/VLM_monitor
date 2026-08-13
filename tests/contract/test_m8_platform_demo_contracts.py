@@ -5,7 +5,15 @@ from pydantic import ValidationError
 
 from labcourt.contracts.m8_access_cases import M8ActorRole, M8AuthorityReferenceKind
 from labcourt.contracts.m8_platform_demo import (
+    M8NotificationConversationSummaryV1,
+    M8NotificationConversationV1,
     M8PlatformAgentQueryRequestV1,
+    M8PlatformEvidenceAccess,
+    M8PlatformEvidenceItemV1,
+    M8PlatformEvidenceViewScope,
+    M8PlatformEvidenceWorkspaceStage,
+    M8PlatformEvidenceWorkspaceStageV1,
+    M8PlatformEvidenceWorkspaceV1,
     M8PlatformExecutionSource,
     M8PlatformModelComponentV1,
     M8PlatformModelReadinessComponentV1,
@@ -200,20 +208,89 @@ def test_video_profile_uses_verified_pilot_timing() -> None:
         M8PlatformVideoProfileV1.model_validate(invalid)
 
 
+def test_evidence_workspace_closes_stages_and_seals_full_redaction() -> None:
+    profile = M8PlatformVideoProfileV1(
+        input_file_sha256=SHA,
+        fps_num=24,
+        fps_den=1,
+        frame_count=241,
+        width=1280,
+        height=720,
+        duration_millis=10_042,
+    )
+    stages = tuple(
+        M8PlatformEvidenceWorkspaceStageV1(
+            stage=stage,
+            state="AVAILABLE",
+            summary="typed workspace stage",
+        )
+        for stage in M8PlatformEvidenceWorkspaceStage
+    )
+    sealed = M8PlatformEvidenceItemV1(
+        evidence_id="sealed-local-evidence",
+        role="PANORAMA",
+        frame_index=119,
+        timestamp_millis=4_958,
+        width=768,
+        height=432,
+        integrity="VERIFIED",
+        privacy_policy="FULL_REDACTION",
+        access=M8PlatformEvidenceAccess.SEALED_LOCAL,
+        submitted_to_screening=False,
+    )
+    workspace = M8PlatformEvidenceWorkspaceV1(
+        run_id="platform-run-001",
+        case_id="case-001",
+        view_scope=M8PlatformEvidenceViewScope.FULL_PIPELINE,
+        stages=stages,
+        video_profile=profile,
+        media_url="/api/m8/demo/public-media/recorded-video",
+        evidence=(sealed,),
+    )
+    assert tuple(item.stage for item in workspace.stages) == tuple(M8PlatformEvidenceWorkspaceStage)
+    assert workspace.evidence[0].media_url is None
+    with pytest.raises(ValidationError):
+        M8PlatformEvidenceItemV1.model_validate(
+            sealed.model_dump(mode="json")
+            | {"media_url": "/api/m8/demo/scenario-runs/run/evidence/item"}
+        )
+    with pytest.raises(ValidationError):
+        M8PlatformEvidenceWorkspaceV1.model_validate(
+            workspace.model_dump(mode="json")
+            | {"view_scope": "REDACTED_CASE", "media_url": workspace.media_url}
+        )
+
+
+def test_notification_conversation_requires_contiguous_events() -> None:
+    summary = M8NotificationConversationSummaryV1(
+        case_id="case-001",
+        case_status="CONFIRMED",
+        case_version=2,
+        location_id="room-301",
+        notification_count=1,
+        reply_count=0,
+        latest_title="案件状态已更新",
+        latest_progress="等待学生回应。",
+        pending_actor_role="STUDENT",
+    )
+    conversation = M8NotificationConversationV1(
+        case_id="case-001",
+        case_status="CONFIRMED",
+        case_version=2,
+        location_id="room-301",
+        summary=summary,
+        events=(),
+        actions=(),
+    )
+    assert conversation.summary.notification_count == 1
+
+
 def test_screening_failure_preserves_completed_authorities_without_case() -> None:
     stages = tuple(
         M8PlatformScenarioStageV1(
             stage=stage,
-            state=(
-                "COMPLETE"
-                if index < 3
-                else "FAILED"
-                if index == 3
-                else "PENDING"
-            ),
-            summary=(
-                "SCREENING_PROVIDER_UNAVAILABLE" if index == 3 else "authority retained"
-            ),
+            state=("COMPLETE" if index < 3 else "FAILED" if index == 3 else "PENDING"),
+            summary=("SCREENING_PROVIDER_UNAVAILABLE" if index == 3 else "authority retained"),
             completed_units=(241 if stage == M8PlatformScenarioStage.PERCEPTION else None),
             total_units=(241 if stage == M8PlatformScenarioStage.PERCEPTION else None),
             unit=("FRAME" if stage == M8PlatformScenarioStage.PERCEPTION else None),
