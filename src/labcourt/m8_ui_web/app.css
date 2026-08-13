@@ -280,6 +280,8 @@ a.candidate-card:hover::before,.candidate-card[data-interactive]:hover::before,.
 .case-flow-node i{font-style:normal;display:grid;place-content:center;width:23px;height:23px;margin:0 auto 6px;border-radius:50%;border:1px solid var(--border);transition:color var(--motion-fast),background-color var(--motion-fast),border-color var(--motion-fast),transform var(--motion-fast),box-shadow var(--motion-fast)}
 .case-flow-node.is-complete i,.case-flow-node.is-current i{background:var(--fg);border-color:var(--fg);color:var(--bg)}
 .case-flow-node.is-current i{animation:flow-current 2.8s ease-in-out infinite}
+.case-flow-node.is-skipped i{border-style:dashed;color:var(--muted)}
+.case-flow-node.is-skipped small{display:block;margin-top:3px;font:9px var(--mono);letter-spacing:.04em}
 .case-flow-join{height:1px;background:var(--border);flex:1;min-width:24px;margin-top:11px;transform:scaleX(0);transform-origin:left;animation:flow-join-enter var(--motion-panel) var(--ease-enter) forwards}
 .case-flow-join.is-complete{background:var(--fg)}
 .case-flow-node:nth-child(1){animation-delay:0ms}.case-flow-node:nth-child(3){animation-delay:60ms}.case-flow-node:nth-child(5){animation-delay:120ms}.case-flow-node:nth-child(7){animation-delay:180ms}.case-flow-node:nth-child(9){animation-delay:240ms}.case-flow-node:nth-child(11){animation-delay:300ms}.case-flow-node:nth-child(13){animation-delay:360ms}.case-flow-node:nth-child(15){animation-delay:420ms}

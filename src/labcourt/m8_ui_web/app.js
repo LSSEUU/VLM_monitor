@@ -361,12 +361,13 @@ function patchCasesFilter(filter,{historyMode="push"}={}) {
 function flow(status,hearing=null,hasHearingSource=false) {
   const names=["检测触发","证据采集","AI 初审","复核会审","程序守门","人工确认","通知送达","结案归档"];
   let current=status==="PENDING_VERIFICATION"||status==="EVIDENCE_REQUESTED"?5:status==="CONFIRMED"||status==="APPEALED"?6:7;
-  if(hasHearingSource){
-    current=3;
-    if(hearing?.hearing_session)current=4;
-    if(hearing?.eligibility==="COMPLETED"&&hearing?.l5_status==="PASSED")current=5;
+  let skippedHearing=false;
+  if(hasHearingSource&&hearing){
+    const adjudicationComplete=hearing.l5_status==="PASSED"&&["COMPLETED","NOT_ELIGIBLE"].includes(hearing.eligibility);
+    skippedHearing=adjudicationComplete&&hearing.eligibility==="NOT_ELIGIBLE"&&!hearing.hearing_session;
+    if(!adjudicationComplete)current=hearing.hearing_session?4:3;
   }
-  return `<div class="case-flow-8" aria-label="案件流程">${names.map((name,index)=>`${index?`<span class="case-flow-join ${index<current?"is-complete":""}"></span>`:""}<span class="case-flow-node ${index<current?"is-complete":index===current?"is-current":""}" style="--flow-index:${index}"><i>${index<current?"✓":index+1}</i>${name}</span>`).join("")}</div>`;
+  return `<div class="case-flow-8" aria-label="案件流程">${names.map((name,index)=>{const skipped=skippedHearing&&index===3;return `${index?`<span class="case-flow-join ${index<current?"is-complete":""}"></span>`:""}<span class="case-flow-node ${skipped?"is-skipped":index<current?"is-complete":index===current?"is-current":""}" style="--flow-index:${index}"${skipped?' title="快速路径：无需复核会审"':""}><i>${skipped?"—":index<current?"✓":index+1}</i>${name}${skipped?"<small>快速路径跳过</small>":""}</span>`;}).join("")}</div>`;
 }
 
 function caseActions(item) {
