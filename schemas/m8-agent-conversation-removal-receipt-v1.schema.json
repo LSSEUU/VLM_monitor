@@ -1,0 +1,53 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-agent-conversation-removal-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_authority_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Actor Authority Commit Receipt Id",
+      "type": "string"
+    },
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "conversation_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "removal_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Removal Receipt Id",
+      "type": "string"
+    },
+    "removed_at": {
+      "format": "date-time",
+      "title": "Removed At",
+      "type": "string"
+    },
+    "retained_for_audit": {
+      "const": true,
+      "default": true,
+      "title": "Retained For Audit",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-agent-conversation-removal-receipt-v1",
+      "default": "m8-agent-conversation-removal-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "removal_receipt_id",
+    "conversation_id",
+    "actor_id",
+    "actor_authority_commit_receipt_id",
+    "removed_at"
+  ],
+  "title": "M8AgentConversationRemovalReceiptV1",
+  "type": "object"
+}

@@ -89,15 +89,38 @@
 }
 .agent-conversations>[data-agent-conversation-list]{
   min-height:0;
-  flex:1;
+  height:0;
+  flex:1 1 0;
   display:grid;
   align-content:start;
   gap:5px;
-  padding:9px 3px 9px 0;
-  overflow:auto;
+  padding:9px 4px 9px 0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  scrollbar-width:thin;
+  scrollbar-color:color-mix(in oklch,var(--fg) 34%,transparent) transparent;
+}
+.agent-conversations>[data-agent-conversation-list]::-webkit-scrollbar{width:7px}
+.agent-conversations>[data-agent-conversation-list]::-webkit-scrollbar-track{background:transparent}
+.agent-conversations>[data-agent-conversation-list]::-webkit-scrollbar-thumb{
+  border:2px solid transparent;
+  border-radius:8px;
+  background:color-mix(in oklch,var(--fg) 34%,transparent);
+  background-clip:padding-box;
 }
 .agent-conversations>[data-agent-conversation-list]>.spinner{
   margin:28px auto;
+}
+.agent-conversation-row{
+  position:relative;
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 30px;
+  align-items:stretch;
+  animation:agent-list-item-in var(--motion-nav) var(--ease-enter) both;
+  animation-delay:min(calc(var(--agent-item-index) * 24ms),240ms);
 }
 .agent-conversations [data-agent-conversation]{
   position:relative;
@@ -115,8 +138,6 @@
   color:var(--fg);
   text-align:left;
   transition:background-color var(--motion-fast),border-color var(--motion-fast),transform var(--motion-nav) var(--ease-enter),box-shadow var(--motion-fast);
-  animation:agent-list-item-in var(--motion-nav) var(--ease-enter) both;
-  animation-delay:calc(var(--agent-item-index) * 28ms);
 }
 .agent-conversations [data-agent-conversation]::after{
   content:"";
@@ -181,6 +202,32 @@
   background:var(--fg);
   color:var(--bg);
 }
+.agent-conversation-delete{
+  position:relative;
+  z-index:1;
+  width:28px;
+  min-width:28px;
+  margin:7px 1px 7px 0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font:9px/1 var(--mono);
+  opacity:0;
+  transform:translateX(5px) scale(.92);
+  transition:opacity var(--motion-fast),transform var(--motion-nav) var(--ease-enter),background-color var(--motion-fast),color var(--motion-fast);
+}
+.agent-conversation-row:hover .agent-conversation-delete,
+.agent-conversation-row:focus-within .agent-conversation-delete,
+.agent-conversation-row.active .agent-conversation-delete{
+  opacity:1;
+  transform:none;
+}
+.agent-conversation-delete:hover{
+  background:var(--alarm);
+  color:var(--alarm-ink);
+}
+.agent-conversation-delete:active{transform:scale(.9)}
 @keyframes agent-list-item-in{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
 .agent-list-empty{
   margin:20px 10px;
@@ -192,6 +239,12 @@
 .agent-conversation-scrim{
   display:none;
 }
+.agent-delete-modal .button.danger{
+  border-color:var(--alarm);
+  background:var(--alarm);
+  color:var(--alarm-ink);
+}
+.agent-delete-modal .button.danger:hover{filter:brightness(.92)}
 
 .agent-chat-console{
   min-width:0;
@@ -564,6 +617,7 @@
     background:oklch(.16 .012 55/.42);
     transition:opacity var(--motion-fast),visibility 0s var(--motion-fast);
   }
+  .agent-conversation-delete{opacity:.72;transform:none}
   .is-drawer-open .agent-conversation-scrim{
     visibility:visible;
     opacity:1;
@@ -589,10 +643,10 @@
 }
 
 @media(prefers-reduced-motion:reduce){
-  .agent-chat-layout,.agent-conversations,.agent-conversation-scrim,.agent-conversations [data-agent-conversation],.agent-conversations [data-agent-conversation]::after,.agent-conversation-index,.agent-conversations>header button,.agent-sidebar-toggle,.agent-message>div:last-child,.agent-source-receipts,.agent-chat-citations details,.agent-quick,.agent-quick i,.agent-model-label i{
+  .agent-chat-layout,.agent-conversations,.agent-conversation-scrim,.agent-conversation-row,.agent-conversation-delete,.agent-conversations [data-agent-conversation],.agent-conversations [data-agent-conversation]::after,.agent-conversation-index,.agent-conversations>header button,.agent-sidebar-toggle,.agent-message>div:last-child,.agent-source-receipts,.agent-chat-citations details,.agent-quick,.agent-quick i,.agent-model-label i{
     transition:none!important;
   }
-  .agent-conversations [data-agent-conversation],.agent-chat-console .agent-messages.is-refreshed,.agent-live-tools,.agent-live-tools i,.agent-console-head[data-agent-model-state="loading"] .agent-model-label i{
+  .agent-conversation-row,.agent-chat-console .agent-messages.is-refreshed,.agent-live-tools,.agent-live-tools i,.agent-console-head[data-agent-model-state="loading"] .agent-model-label i{
     animation:none!important;
   }
 }

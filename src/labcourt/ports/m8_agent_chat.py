@@ -8,6 +8,7 @@ from enum import StrEnum
 from typing import Protocol
 
 from labcourt.contracts.m8_agent_chat import (
+    M8AgentConversationRemovalReceiptV1,
     M8AgentConversationSummaryV1,
     M8AgentConversationTurnV1,
     M8AgentConversationV1,
@@ -86,6 +87,12 @@ class M8AgentConversationRepository(Protocol):
         actor_receipt: M8ActorAuthorityCommitReceiptV1,
         conversation_id: str,
     ) -> M8AgentConversationV1: ...
+
+    def remove_conversation(
+        self,
+        actor_receipt: M8ActorAuthorityCommitReceiptV1,
+        conversation_id: str,
+    ) -> M8AgentConversationRemovalReceiptV1: ...
 
     def begin_turn(
         self,

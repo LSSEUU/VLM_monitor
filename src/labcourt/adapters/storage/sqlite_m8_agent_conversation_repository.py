@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m8_agent_chat import (
+    M8AgentConversationRemovalReceiptV1,
     M8AgentConversationSummaryV1,
     M8AgentConversationTurnV1,
     M8AgentConversationV1,
@@ -50,6 +51,8 @@ _REQUIRED_OBJECTS = frozenset(
         "idx_m8_agent_raw_responses_turn",
         "m8_agent_cache_entries",
         "idx_m8_agent_cache_entries_actor",
+        "m8_agent_conversation_removals",
+        "idx_m8_agent_conversation_removals_actor",
         "m8_agent_conversations_no_update",
         "m8_agent_conversations_no_delete",
         "m8_agent_conversations_no_replace",
@@ -63,6 +66,9 @@ _REQUIRED_OBJECTS = frozenset(
         "m8_agent_cache_entries_no_update",
         "m8_agent_cache_entries_no_delete",
         "m8_agent_cache_entries_no_replace",
+        "m8_agent_conversation_removals_no_update",
+        "m8_agent_conversation_removals_no_delete",
+        "m8_agent_conversation_removals_no_replace",
     }
 )
 
@@ -164,12 +170,12 @@ class SQLiteM8AgentConversationRepository:
     def _require_schema(connection: sqlite3.Connection) -> None:
         try:
             migration = connection.execute(
-                "SELECT name FROM schema_migrations WHERE version = 13"
+                "SELECT name FROM schema_migrations WHERE version = 14"
             ).fetchone()
         except sqlite3.DatabaseError as error:
             raise RepositoryIntegrityError("M8 Agent migration ledger is invalid") from error
-        if migration is None or _row_str(migration, "name") != "m8_agent_chat":
-            raise RepositoryIntegrityError("M8 Agent migration 0013 is not installed")
+        if migration is None or _row_str(migration, "name") != "m8_agent_conversation_removals":
+            raise RepositoryIntegrityError("M8 Agent migration 0014 is not installed")
         observed = {
             _row_str(row, "name")
             for row in connection.execute(
@@ -238,6 +244,10 @@ class SQLiteM8AgentConversationRepository:
                 """
                 SELECT * FROM m8_agent_conversations
                 WHERE actor_id = ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM m8_agent_conversation_removals AS removal
+                      WHERE removal.conversation_id = m8_agent_conversations.conversation_id
+                  )
                 ORDER BY created_at DESC, conversation_id DESC LIMIT 100
                 """,
                 (actor_receipt.authority.actor_id,),
@@ -256,6 +266,53 @@ class SQLiteM8AgentConversationRepository:
             summary = self._summary(connection, row, actor_receipt)
             turns = self._turns(connection, conversation_id)
             return M8AgentConversationV1(summary=summary, turns=turns)
+
+    def remove_conversation(
+        self,
+        actor_receipt: M8ActorAuthorityCommitReceiptV1,
+        conversation_id: str,
+    ) -> M8AgentConversationRemovalReceiptV1:
+        self._require_active_actor(actor_receipt)
+        removed_at = self._clock()
+        removal_receipt_id = sha256_hex(
+            [
+                "m8-agent-conversation-removal",
+                1,
+                conversation_id,
+                actor_receipt.authority.actor_id,
+                actor_receipt.commit_receipt_id,
+                _utc_text(removed_at),
+                uuid4().hex,
+            ]
+        )
+        receipt = M8AgentConversationRemovalReceiptV1(
+            removal_receipt_id=removal_receipt_id,
+            conversation_id=conversation_id,
+            actor_id=actor_receipt.authority.actor_id,
+            actor_authority_commit_receipt_id=actor_receipt.commit_receipt_id,
+            removed_at=removed_at,
+        )
+        with self._immediate() as connection:
+            row = self._conversation_row(connection, conversation_id)
+            self._require_owner(row, actor_receipt, allow_sealed=True)
+            connection.execute(
+                """
+                INSERT INTO m8_agent_conversation_removals(
+                    removal_receipt_id, conversation_id, actor_id,
+                    actor_authority_commit_receipt_id, removed_at,
+                    repository_manifest_id
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    receipt.removal_receipt_id,
+                    receipt.conversation_id,
+                    receipt.actor_id,
+                    receipt.actor_authority_commit_receipt_id,
+                    _utc_text(receipt.removed_at),
+                    self._repository_manifest_id,
+                ),
+            )
+        return receipt
 
     def begin_turn(
         self,
@@ -423,6 +480,10 @@ class SQLiteM8AgentConversationRepository:
                 JOIN m8_agent_conversations AS conversation
                   ON conversation.conversation_id = raw.conversation_id
                 WHERE conversation.actor_id = ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM m8_agent_conversation_removals AS removal
+                      WHERE removal.conversation_id = conversation.conversation_id
+                  )
                 ORDER BY raw.rowid DESC LIMIT 1
                 """,
                 (actor_receipt.authority.actor_id,),
@@ -474,11 +535,21 @@ class SQLiteM8AgentConversationRepository:
             raise M8AgentConversationRepositoryError(M8AgentFailureCode.AUTHORITY_CHANGED)
 
     @staticmethod
-    def _conversation_row(connection: sqlite3.Connection, conversation_id: str) -> sqlite3.Row:
+    def _conversation_row(
+        connection: sqlite3.Connection,
+        conversation_id: str,
+    ) -> sqlite3.Row:
         row = cast(
             sqlite3.Row | None,
             connection.execute(
-                "SELECT * FROM m8_agent_conversations WHERE conversation_id = ?",
+                """
+                SELECT * FROM m8_agent_conversations
+                WHERE conversation_id = ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM m8_agent_conversation_removals AS removal
+                      WHERE removal.conversation_id = m8_agent_conversations.conversation_id
+                  )
+                """,
                 (conversation_id,),
             ).fetchone(),
         )

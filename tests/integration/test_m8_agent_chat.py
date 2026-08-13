@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import threading
 from collections.abc import Iterator
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import pytest
@@ -188,6 +190,70 @@ def test_agent_http_api_reports_live_only_and_fails_without_configuration(
         turn = json.loads(detail_body)["turns"][0]
         assert turn["state"] == "FAILED"
         assert turn["failure_code"] == "NOT_CONFIGURED"
+    finally:
+        assembly.server.shutdown()
+        assembly.server.server_close()
+        thread.join(timeout=5)
+
+
+def test_agent_http_api_removes_conversation_from_active_history_but_retains_audit(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = _assembly(tmp_path)
+    thread = threading.Thread(target=assembly.server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        base_url = f"http://127.0.0.1:{assembly.server.server_port}"
+        token = M8_PLATFORM_ROLE_TOKENS[M8ActorRole.SAFETY_OFFICER]
+        _, create_body = _http_json(
+            base_url,
+            "POST",
+            "/api/m8/agent/conversations",
+            token=token,
+            body={},
+        )
+        conversation_id = json.loads(create_body)["conversation_id"]
+
+        delete_code, delete_body = _http_json(
+            base_url,
+            "DELETE",
+            f"/api/m8/agent/conversations/{conversation_id}",
+            token=token,
+        )
+        receipt = json.loads(delete_body)
+        assert delete_code == 200
+        assert receipt["conversation_id"] == conversation_id
+        assert receipt["retained_for_audit"] is True
+
+        _, list_body = _http_json(
+            base_url,
+            "GET",
+            "/api/m8/agent/conversations",
+            token=token,
+        )
+        assert all(
+            item["conversation_id"] != conversation_id for item in json.loads(list_body)
+        )
+        with pytest.raises(HTTPError) as missing:
+            _http_json(
+                base_url,
+                "GET",
+                f"/api/m8/agent/conversations/{conversation_id}",
+                token=token,
+            )
+        assert missing.value.code == 404
+
+        database = tmp_path / PLATFORM_DATABASE_NAME
+        with sqlite3.connect(database) as connection:
+            assert connection.execute(
+                "SELECT COUNT(*) FROM m8_agent_conversations WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone() == (1,)
+            assert connection.execute(
+                "SELECT COUNT(*) FROM m8_agent_conversation_removals WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone() == (1,)
     finally:
         assembly.server.shutdown()
         assembly.server.server_close()

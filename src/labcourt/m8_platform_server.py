@@ -417,6 +417,46 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             return
         super().do_POST()
 
+    def do_DELETE(self) -> None:
+        segments = self._segments()
+        try:
+            if not self._local_host_allowed():
+                self._error(HTTPStatus.FORBIDDEN, M8ApiErrorReason.LOCAL_HOST_REQUIRED)
+                return
+            if not self._same_origin_allowed():
+                self._error(HTTPStatus.FORBIDDEN, M8ApiErrorReason.FORBIDDEN)
+                return
+            principal = self.server.api_authenticator.authenticate(
+                self.headers.get("Authorization")
+            )
+            if len(segments) == 5 and segments[:4] == (
+                "api",
+                "m8",
+                "agent",
+                "conversations",
+            ):
+                receipt = self.server.agent_chat_service.remove_conversation(
+                    principal, segments[4]
+                )
+                self._json(HTTPStatus.OK, receipt.model_dump(mode="json"))
+                return
+        except M8AuthenticationError as error:
+            self._authentication_error(error)
+            return
+        except M8ApiServiceError as error:
+            self._service_error(error)
+            return
+        except M8AgentConversationRepositoryError as error:
+            self._agent_repository_error(error)
+            return
+        except (TypeError, ValueError, ContractViolation, ValidationError):
+            self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+            return
+        except (OSError, sqlite3.DatabaseError, RepositoryIntegrityError):
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, M8ApiErrorReason.INTERNAL_FAILURE)
+            return
+        self.send_error(HTTPStatus.NOT_FOUND)
+
     def _agent_event_stream(
         self,
         principal: M8ApiPrincipalV1,

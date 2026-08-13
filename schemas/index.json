@@ -1222,6 +1222,12 @@
       "name": "m8-agent-conversation-create-request-v1"
     },
     {
+      "file": "m8-agent-conversation-removal-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationRemovalReceiptV1",
+      "name": "m8-agent-conversation-removal-receipt-v1"
+    },
+    {
       "file": "m8-agent-conversation-summary-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationSummaryV1",

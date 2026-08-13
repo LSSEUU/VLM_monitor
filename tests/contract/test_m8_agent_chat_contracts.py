@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from labcourt.contracts.m8_agent_chat import (
     M8AgentConversationCreateRequestV1,
+    M8AgentConversationRemovalReceiptV1,
     M8AgentExecutionMode,
     M8AgentFailureCode,
     M8AgentModelCallReceiptV1,
@@ -17,6 +18,21 @@ from labcourt.contracts.m8_agent_chat import (
 
 def _sha(value: str) -> str:
     return value * 64
+
+
+def test_conversation_removal_receipt_is_closed_and_audit_retained() -> None:
+    receipt = M8AgentConversationRemovalReceiptV1(
+        removal_receipt_id=_sha("a"),
+        conversation_id=_sha("b"),
+        actor_id="actor-safety",
+        actor_authority_commit_receipt_id=_sha("c"),
+        removed_at=datetime(2026, 8, 13, tzinfo=UTC),
+    )
+    assert receipt.retained_for_audit is True
+    with pytest.raises(ValidationError):
+        M8AgentConversationRemovalReceiptV1.model_validate(
+            {**receipt.model_dump(mode="python"), "retained_for_audit": False}
+        )
 
 
 def test_agent_turn_request_is_closed_and_rejects_blank_text() -> None:

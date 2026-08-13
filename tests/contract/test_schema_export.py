@@ -293,6 +293,7 @@ EXPECTED_SCHEMA_MODES = {
     "m8-case-memory-entry-v1": "serialization",
     "m8-case-memory-projection-v1": "serialization",
     "m8-agent-conversation-create-request-v1": "validation",
+    "m8-agent-conversation-removal-receipt-v1": "serialization",
     "m8-agent-conversation-summary-v1": "serialization",
     "m8-agent-conversation-turn-v1": "serialization",
     "m8-agent-conversation-v1": "serialization",

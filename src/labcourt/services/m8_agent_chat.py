@@ -10,6 +10,7 @@ from typing import TypedDict
 from labcourt.adapters.m8_qwen_agent import M8QwenAgentRuntime
 from labcourt.contracts.canonical import canonical_bytes, sha256_hex
 from labcourt.contracts.m8_agent_chat import (
+    M8AgentConversationRemovalReceiptV1,
     M8AgentConversationSummaryV1,
     M8AgentConversationV1,
     M8AgentExecutionMode,
@@ -189,6 +190,13 @@ class M8AgentChatService:
         self, principal: M8ApiPrincipalV1, conversation_id: str
     ) -> M8AgentConversationV1:
         return self._repository.get_conversation(
+            self._operations.session(principal), conversation_id
+        )
+
+    def remove_conversation(
+        self, principal: M8ApiPrincipalV1, conversation_id: str
+    ) -> M8AgentConversationRemovalReceiptV1:
+        return self._repository.remove_conversation(
             self._operations.session(principal), conversation_id
         )
 

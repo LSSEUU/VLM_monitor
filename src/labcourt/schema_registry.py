@@ -288,6 +288,7 @@ from labcourt.contracts.m8_adapter_commissioning import (
 )
 from labcourt.contracts.m8_agent_chat import (
     M8AgentConversationCreateRequestV1,
+    M8AgentConversationRemovalReceiptV1,
     M8AgentConversationSummaryV1,
     M8AgentConversationTurnV1,
     M8AgentConversationV1,
@@ -862,6 +863,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-case-memory-entry-v1": M8CaseMemoryEntryV1,
     "m8-case-memory-projection-v1": M8CaseMemoryProjectionV1,
     "m8-agent-conversation-create-request-v1": M8AgentConversationCreateRequestV1,
+    "m8-agent-conversation-removal-receipt-v1": M8AgentConversationRemovalReceiptV1,
     "m8-agent-conversation-summary-v1": M8AgentConversationSummaryV1,
     "m8-agent-conversation-turn-v1": M8AgentConversationTurnV1,
     "m8-agent-conversation-v1": M8AgentConversationV1,

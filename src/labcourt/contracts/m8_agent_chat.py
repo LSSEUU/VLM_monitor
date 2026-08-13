@@ -136,6 +136,18 @@ class M8AgentConversationSummaryV1(FrozenContractModel):
     sealed: bool
 
 
+class M8AgentConversationRemovalReceiptV1(FrozenContractModel):
+    schema_version: Literal["m8-agent-conversation-removal-receipt-v1"] = (
+        "m8-agent-conversation-removal-receipt-v1"
+    )
+    removal_receipt_id: Sha256Hex
+    conversation_id: ReferenceToken
+    actor_id: ReferenceToken
+    actor_authority_commit_receipt_id: Sha256Hex
+    removed_at: datetime
+    retained_for_audit: Literal[True] = True
+
+
 class M8AgentTurnRequestV1(FrozenContractModel):
     schema_version: Literal["m8-agent-turn-request-v1"] = "m8-agent-turn-request-v1"
     query: str = Field(min_length=1, max_length=4_096)
@@ -283,6 +295,7 @@ class M8AgentStreamEventV1(FrozenContractModel):
 
 __all__ = [
     "M8AgentConversationCreateRequestV1",
+    "M8AgentConversationRemovalReceiptV1",
     "M8AgentConversationSummaryV1",
     "M8AgentConversationTurnV1",
     "M8AgentConversationV1",

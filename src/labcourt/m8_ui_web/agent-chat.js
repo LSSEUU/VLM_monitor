@@ -7,6 +7,9 @@ window.LabCourtAgentChat=(()=>{
   let activeConversation=null;
   let busy=false;
   let sidebarCollapsed=false;
+  let pendingDeleteConversationId=null;
+  let deletingConversation=false;
+  let deleteReturnFocus=null;
 
   const toolLabels={
     READ_CASES:"案件",
@@ -92,7 +95,11 @@ window.LabCourtAgentChat=(()=>{
 
   function conversationListMarkup(){
     if(!conversations.length)return `<p class="agent-list-empty">还没有对话</p>`;
-    return conversations.map((item,index)=>`<button type="button" data-agent-conversation="${item.conversation_id}" class="${activeConversation?.summary?.conversation_id===item.conversation_id?"active":""}" aria-pressed="${activeConversation?.summary?.conversation_id===item.conversation_id}" style="--agent-item-index:${index}"><i class="agent-conversation-index" aria-hidden="true">${String(index+1).padStart(2,"0")}</i><span class="agent-conversation-copy"><strong data-agent-conversation-title>${context.esc(item.title)}</strong><small data-agent-conversation-meta>${item.turn_count} 轮 · ${new Date(item.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</small></span></button>`).join("");
+    return conversations.map((item,index)=>{
+      const active=activeConversation?.summary?.conversation_id===item.conversation_id;
+      const title=context.esc(item.title);
+      return `<div class="agent-conversation-row ${active?"active":""}" style="--agent-item-index:${index}"><button type="button" data-agent-conversation="${item.conversation_id}" class="${active?"active":""}" aria-pressed="${active}"><i class="agent-conversation-index" aria-hidden="true">${String(index+1).padStart(2,"0")}</i><span class="agent-conversation-copy"><strong data-agent-conversation-title>${title}</strong><small data-agent-conversation-meta>${item.turn_count} 轮 · ${new Date(item.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</small></span></button><button type="button" class="agent-conversation-delete" data-agent-delete-conversation="${item.conversation_id}" aria-label="删除对话：${title}" title="删除对话">删</button></div>`;
+    }).join("");
   }
 
   function quickPromptMarkup(){
@@ -124,7 +131,8 @@ window.LabCourtAgentChat=(()=>{
           </form>
         </section>
       </div>
-      <div id="agent-confirm-modal" class="agent-modal" hidden><div class="agent-modal__backdrop" data-action="close-agent-confirm"></div><section role="dialog" aria-modal="true" aria-labelledby="agent-confirm-title"><p class="eyebrow">确认操作</p><h2 id="agent-confirm-title">确认执行操作卡？</h2><p data-agent-confirm-copy>${context.esc(context.state.action?.impact_summary||"")}</p><code data-agent-confirm-ref>${context.state.action?`${context.esc(context.state.action.target_ref)} · V${context.state.action.current_version}`:""}</code><div class="form-actions"><button type="button" class="button quiet" data-action="close-agent-confirm">取消</button><button type="button" class="button primary" data-action="confirm-agent">确认执行</button></div></section></div>`;
+      <div id="agent-confirm-modal" class="agent-modal" hidden><div class="agent-modal__backdrop" data-action="close-agent-confirm"></div><section role="dialog" aria-modal="true" aria-labelledby="agent-confirm-title"><p class="eyebrow">确认操作</p><h2 id="agent-confirm-title">确认执行操作卡？</h2><p data-agent-confirm-copy>${context.esc(context.state.action?.impact_summary||"")}</p><code data-agent-confirm-ref>${context.state.action?`${context.esc(context.state.action.target_ref)} · V${context.state.action.current_version}`:""}</code><div class="form-actions"><button type="button" class="button quiet" data-action="close-agent-confirm">取消</button><button type="button" class="button primary" data-action="confirm-agent">确认执行</button></div></section></div>
+      <div id="agent-delete-modal" class="agent-modal agent-delete-modal" hidden><div class="agent-modal__backdrop" data-agent-cancel-delete></div><section role="dialog" aria-modal="true" aria-labelledby="agent-delete-title"><p class="eyebrow">删除对话</p><h2 id="agent-delete-title">删除这条对话？</h2><p data-agent-delete-copy></p><div class="form-actions"><button type="button" class="button quiet" data-agent-cancel-delete>取消</button><button type="button" class="button danger" data-agent-confirm-delete>删除</button></div></section></div>`;
   }
 
   function root(){return document.querySelector("[data-agent-chat-root]");}
@@ -151,9 +159,12 @@ window.LabCourtAgentChat=(()=>{
       const conversation=conversations[index];
       const active=activeConversation?.summary?.conversation_id===conversation.conversation_id;
       item.classList.toggle("active",active);
+      item.closest(".agent-conversation-row")?.classList.toggle("active",active);
       item.setAttribute("aria-pressed",String(active));
       item.querySelector("[data-agent-conversation-title]").textContent=conversation.title;
       item.querySelector("[data-agent-conversation-meta]").textContent=`${conversation.turn_count} 轮 · ${new Date(conversation.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}`;
+      const remove=item.closest(".agent-conversation-row")?.querySelector("[data-agent-delete-conversation]");
+      if(remove)remove.setAttribute("aria-label",`删除对话：${conversation.title}`);
     });
   }
 
@@ -236,6 +247,7 @@ window.LabCourtAgentChat=(()=>{
       if(!target)return;
       if(target.hasAttribute("data-agent-toggle-sidebar")||target.hasAttribute("data-agent-collapse")){toggleSidebar();return;}
       if(target.hasAttribute("data-agent-close-drawer")){closeDrawer();return;}
+      if(target.dataset.agentDeleteConversation){openDeleteConversation(target.dataset.agentDeleteConversation,target);return;}
       if(target.dataset.agentConversation){await selectConversation(target.dataset.agentConversation);return;}
       if(target.hasAttribute("data-agent-new")){await newConversation();return;}
       if(target.dataset.agentV3Quick!==undefined){const box=document.getElementById("agent-query");if(box&&!box.disabled){box.value=target.dataset.agentV3Quick;box.focus();}return;}
@@ -252,6 +264,17 @@ window.LabCourtAgentChat=(()=>{
       if(event.key==="Escape"&&host.classList.contains("is-drawer-open")){event.preventDefault();closeDrawer();return;}
       if(event.target.id==="agent-query"&&event.key==="Enter"&&(event.ctrlKey||event.metaKey)){event.preventDefault();host.querySelector("[data-agent-v3-form]")?.requestSubmit();}
     });
+    const deleteModal=document.getElementById("agent-delete-modal");
+    if(deleteModal&&!deleteModal.dataset.agentBound){
+      deleteModal.dataset.agentBound="true";
+      deleteModal.addEventListener("click",async event=>{
+        if(event.target.closest("[data-agent-cancel-delete]")){closeDeleteConversation();return;}
+        if(event.target.closest("[data-agent-confirm-delete]"))await removeConversation();
+      });
+      deleteModal.addEventListener("keydown",event=>{
+        if(event.key==="Escape"){event.preventDefault();closeDeleteConversation();}
+      });
+    }
   }
 
   async function render(ctx){
@@ -261,6 +284,9 @@ window.LabCourtAgentChat=(()=>{
     activeConversation=null;
     busy=false;
     sidebarCollapsed=sessionStorage.getItem(sidebarKey())==="true";
+    pendingDeleteConversationId=null;
+    deletingConversation=false;
+    deleteReturnFocus=null;
     context.setRouteContent(workspaceMarkup(),{announcement:"安全运营 Agent",mount:()=>{bind();patchStatus();}});
     try{
       [modelStatus,conversations]=await Promise.all([context.api("/api/m8/agent/status"),context.api("/api/m8/agent/conversations")]);
@@ -307,6 +333,68 @@ window.LabCourtAgentChat=(()=>{
       announce("已创建新对话");
     }catch(error){context.toast(error.message,"error");}
     finally{host?.classList.remove("is-conversation-loading");}
+  }
+
+  function openDeleteConversation(id,trigger){
+    if(busy||deletingConversation)return;
+    const conversation=conversations.find(item=>item.conversation_id===id);
+    const modal=document.getElementById("agent-delete-modal");
+    if(!conversation||!modal)return;
+    pendingDeleteConversationId=id;
+    deleteReturnFocus=trigger;
+    modal.querySelector("[data-agent-delete-copy]").textContent=`“${conversation.title}”将从对话列表中移除，此操作无法撤销。`;
+    modal.hidden=false;
+    requestAnimationFrame(()=>{
+      modal.classList.add("is-open");
+      modal.querySelector("[data-agent-confirm-delete]")?.focus();
+    });
+  }
+
+  function closeDeleteConversation({restoreFocus=true}={}){
+    if(deletingConversation)return;
+    const modal=document.getElementById("agent-delete-modal");
+    if(!modal)return;
+    modal.classList.remove("is-open");
+    const finish=()=>{
+      modal.hidden=true;
+      pendingDeleteConversationId=null;
+      if(restoreFocus&&deleteReturnFocus?.isConnected)deleteReturnFocus.focus();
+      deleteReturnFocus=null;
+    };
+    if(reducedMotion())finish();else setTimeout(finish,180);
+  }
+
+  async function removeConversation(){
+    const id=pendingDeleteConversationId;
+    if(!id||busy||deletingConversation)return;
+    deletingConversation=true;
+    const confirm=document.querySelector("[data-agent-confirm-delete]");
+    if(confirm){confirm.disabled=true;confirm.setAttribute("aria-busy","true");}
+    const removedIndex=conversations.findIndex(item=>item.conversation_id===id);
+    const removedActive=activeConversation?.summary?.conversation_id===id;
+    try{
+      await context.api(`/api/m8/agent/conversations/${encodeURIComponent(id)}`,{method:"DELETE"});
+      conversations=await context.api("/api/m8/agent/conversations");
+      if(removedActive){
+        if(!conversations.length){
+          const created=await context.api("/api/m8/agent/conversations",{method:"POST",body:{}});
+          conversations=[created];
+        }
+        const next=conversations[Math.min(Math.max(removedIndex,0),conversations.length-1)];
+        activeConversation=await context.api(`/api/m8/agent/conversations/${encodeURIComponent(next.conversation_id)}`);
+        sessionStorage.setItem(storageKey(),next.conversation_id);
+      }
+      deletingConversation=false;
+      closeDeleteConversation({restoreFocus:false});
+      patchWorkspace({animate:removedActive});
+      context.toast("对话已删除","success");
+      announce("对话已删除");
+    }catch(error){
+      deletingConversation=false;
+      context.toast(error.message,"error");
+    }finally{
+      if(confirm){confirm.disabled=false;confirm.removeAttribute("aria-busy");}
+    }
   }
 
   function scrollMessages(){
