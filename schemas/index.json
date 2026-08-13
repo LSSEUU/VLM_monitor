@@ -1840,6 +1840,12 @@
       "name": "m8-platform-evidence-workspace-v1"
     },
     {
+      "file": "m8-platform-knowledge-document-view-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_demo.M8PlatformKnowledgeDocumentViewV1",
+      "name": "m8-platform-knowledge-document-view-v1"
+    },
+    {
       "file": "m8-platform-login-request-v1.schema.json",
       "mode": "validation",
       "model": "labcourt.contracts.m8_platform_demo.M8PlatformLoginRequestV1",

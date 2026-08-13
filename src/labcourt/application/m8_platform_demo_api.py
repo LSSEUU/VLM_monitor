@@ -179,7 +179,12 @@ def assemble_m8_platform_demo_api(
         database, _BUSY_TIMEOUT_MS, repository_manifest_id
     )
     knowledge = SQLiteM8KnowledgeRepository(
-        database, _BUSY_TIMEOUT_MS, repository_manifest_id
+        database,
+        _BUSY_TIMEOUT_MS,
+        # The platform baseline intentionally reuses the frozen personal-Demo
+        # knowledge bootstrap, whose append-only receipts bind this repository
+        # manifest. Other platform repositories retain their platform manifest.
+        platform_manifest("labcourt-personal-demo-sqlite-repository-v1"),
     )
     commissioning = SQLiteM8AdapterCommissioningRepository(
         database, _BUSY_TIMEOUT_MS, repository_manifest_id

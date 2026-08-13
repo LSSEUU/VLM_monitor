@@ -106,6 +106,18 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     self.server.platform_service.reservations(principal),
                 )
                 return
+            if (
+                len(segments) == 7
+                and segments[:4] == ("api", "m8", "knowledge", "catalogs")
+                and segments[5] == "documents"
+            ):
+                document = self.server.platform_service.knowledge_document(
+                    principal,
+                    segments[4],
+                    segments[6],
+                )
+                self._json(HTTPStatus.OK, document.model_dump(mode="json"))
+                return
             if segments == ("api", "m8", "demo", "model-readiness"):
                 readiness = self.server.platform_service.model_readiness(principal)
                 self._json(HTTPStatus.OK, readiness.model_dump(mode="json"))

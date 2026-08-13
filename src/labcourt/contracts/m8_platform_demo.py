@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Literal, Self
@@ -14,6 +15,10 @@ from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.geometry import BBoxXYXY
 from labcourt.contracts.m8_access_cases import M8ActorRole, M8OperationalCaseStatus
 from labcourt.contracts.m8_case_persistence import M8ActorAuthorityCommitReceiptV1
+from labcourt.contracts.m8_knowledge import (
+    MAX_M8_KNOWLEDGE_CONTENT_BYTES,
+    M8KnowledgeDocumentAuthorityV1,
+)
 from labcourt.contracts.m8_notification_lifecycle import M8NotificationReplyKind
 from labcourt.contracts.references import (
     ReferenceToken,
@@ -709,6 +714,35 @@ class M8PlatformAgentQueryResponseV1(FrozenContractModel):
     network_used: Literal[False] = False
 
 
+class M8PlatformKnowledgeDocumentViewV1(FrozenContractModel):
+    """One verified UTF-8 document from the current offline catalog."""
+
+    schema_version: Literal["m8-platform-knowledge-document-view-v1"] = (
+        "m8-platform-knowledge-document-view-v1"
+    )
+    catalog_id: ReferenceToken
+    catalog_revision: int = Field(gt=0, strict=True)
+    catalog_authority_id: Sha256Hex
+    document: M8KnowledgeDocumentAuthorityV1
+    content: str = Field(min_length=1, max_length=MAX_M8_KNOWLEDGE_CONTENT_BYTES)
+    content_integrity: Literal["VERIFIED"] = "VERIFIED"
+    network_used: Literal[False] = False
+
+    @field_validator("catalog_id")
+    @classmethod
+    def validate_catalog_id(cls, value: str) -> str:
+        return require_reference_token(value, "M8 platform knowledge catalog")
+
+    @model_validator(mode="after")
+    def validate_content_authority(self) -> Self:
+        raw = self.content.encode("utf-8")
+        if len(raw) != self.document.content_size_bytes:
+            raise ValueError("M8 platform knowledge content size conflicts with authority")
+        if hashlib.sha256(raw).hexdigest() != self.document.content_sha256:
+            raise ValueError("M8 platform knowledge content hash conflicts with authority")
+        return self
+
+
 class M8PlatformResetRequestV1(FrozenContractModel):
     schema_version: Literal["m8-platform-reset-request-v1"] = "m8-platform-reset-request-v1"
     explicit_human_confirmation: Literal[True]
@@ -779,6 +813,7 @@ __all__ = [
     "M8PlatformEvidenceWorkspaceStageV1",
     "M8PlatformEvidenceWorkspaceV1",
     "M8PlatformExecutionSource",
+    "M8PlatformKnowledgeDocumentViewV1",
     "M8PlatformLoginRequestV1",
     "M8PlatformLoginResponseV1",
     "M8PlatformModelComponentV1",

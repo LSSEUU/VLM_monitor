@@ -9,7 +9,10 @@ from labcourt.adapters.m8_offline_knowledge import DeterministicOfflineKnowledge
 from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m8_access_cases import M8ActorAuthorityV1
 from labcourt.contracts.m8_api import M8ApiKnowledgeQueryRequestV1, M8ApiPrincipalV1
-from labcourt.contracts.m8_knowledge import M8KnowledgeQueryV1
+from labcourt.contracts.m8_knowledge import (
+    M8KnowledgeDocumentAuthorityV1,
+    M8KnowledgeQueryV1,
+)
 from labcourt.contracts.m8_knowledge_persistence import (
     M8KnowledgeAnswerCommitReceiptV1,
     M8KnowledgeCatalogCommitReceiptV1,
@@ -104,6 +107,29 @@ class M8KnowledgeApiService:
         if receipt.answer.query.requester_actor_id != actor.actor_id:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         return receipt
+
+    def current_document_content(
+        self,
+        principal: M8ApiPrincipalV1,
+        catalog_id: str,
+        logical_document_id: str,
+    ) -> tuple[M8KnowledgeCatalogCommitReceiptV1, M8KnowledgeDocumentAuthorityV1, bytes]:
+        """Resolve one logical document only through the current catalog authority."""
+
+        self._actor(principal)
+        catalog_receipt = self._call(lambda: self._knowledge.get_current_catalog(catalog_id))
+        document = next(
+            (
+                item
+                for item in catalog_receipt.catalog.documents
+                if item.logical_document_id == logical_document_id
+            ),
+            None,
+        )
+        if document is None:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        raw = self._content(document.content_ref)
+        return catalog_receipt, document, raw
 
     def _actor(self, principal: M8ApiPrincipalV1) -> M8ActorAuthorityV1:
         if not isinstance(principal, M8ApiPrincipalV1):

@@ -1,3 +1,4 @@
+import hashlib
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -15,6 +16,7 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformEvidenceWorkspaceStageV1,
     M8PlatformEvidenceWorkspaceV1,
     M8PlatformExecutionSource,
+    M8PlatformKnowledgeDocumentViewV1,
     M8PlatformModelComponentV1,
     M8PlatformModelReadinessComponentV1,
     M8PlatformModelReadinessV1,
@@ -33,6 +35,47 @@ from labcourt.contracts.m8_platform_demo import (
 )
 
 SHA = "a" * 64
+
+
+def test_knowledge_document_view_binds_verified_utf8_to_current_authority() -> None:
+    from labcourt.contracts.m8_knowledge import (
+        M8KnowledgeContentType,
+        M8KnowledgeDocumentAuthorityV1,
+        M8KnowledgeDocumentType,
+    )
+
+    content = "实验室安全制度\n进入实验区域前必须佩戴护目镜。\n"
+    raw = content.encode("utf-8")
+    published = datetime(2026, 1, 1, tzinfo=UTC)
+    document = M8KnowledgeDocumentAuthorityV1(
+        logical_document_id="policy-laboratory-entry",
+        document_version=1,
+        document_type=M8KnowledgeDocumentType.POLICY,
+        title="实验室安全制度",
+        locale="zh-CN",
+        issuer_id="campus-safety-office",
+        source_ref="source-policy-laboratory-entry-v1",
+        content_ref="knowledge-policy-laboratory-entry-v1",
+        content_sha256=hashlib.sha256(raw).hexdigest(),
+        content_size_bytes=len(raw),
+        content_type=M8KnowledgeContentType.MARKDOWN,
+        published_at=published,
+        effective_at=published,
+        document_manifest_id=SHA,
+    )
+    view = M8PlatformKnowledgeDocumentViewV1(
+        catalog_id="campus-safety-knowledge",
+        catalog_revision=1,
+        catalog_authority_id=SHA,
+        document=document,
+        content=content,
+    )
+    assert view.content_integrity == "VERIFIED"
+    assert view.network_used is False
+    with pytest.raises(ValidationError):
+        M8PlatformKnowledgeDocumentViewV1.model_validate(
+            {**view.model_dump(mode="json"), "content": "正文被替换"}
+        )
 
 
 def test_platform_demo_roles_scenarios_and_authorities_are_closed() -> None:

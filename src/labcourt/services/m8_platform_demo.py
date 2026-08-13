@@ -101,6 +101,7 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformEvidenceWorkspaceStageV1,
     M8PlatformEvidenceWorkspaceV1,
     M8PlatformExecutionSource,
+    M8PlatformKnowledgeDocumentViewV1,
     M8PlatformModelComponentV1,
     M8PlatformModelReadinessComponentV1,
     M8PlatformModelReadinessV1,
@@ -776,6 +777,31 @@ class M8PlatformDemoService:
             source_refs=tuple(
                 item.document.logical_document_id for item in answer.answer.citations
             ),
+        )
+
+    def knowledge_document(
+        self,
+        principal: M8ApiPrincipalV1,
+        catalog_id: str,
+        logical_document_id: str,
+    ) -> M8PlatformKnowledgeDocumentViewV1:
+        catalog, document, raw = self.knowledge_service.current_document_content(
+            principal,
+            catalog_id,
+            logical_document_id,
+        )
+        if hashlib.sha256(raw).hexdigest() != document.content_sha256:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE)
+        try:
+            content = raw.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as error:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from error
+        return M8PlatformKnowledgeDocumentViewV1(
+            catalog_id=catalog.catalog.catalog_id,
+            catalog_revision=catalog.catalog.catalog_revision,
+            catalog_authority_id=catalog.catalog.catalog_authority_id,
+            document=document,
+            content=content,
         )
 
     def reset(self, principal: M8ApiPrincipalV1) -> M8PlatformResetResponseV1:

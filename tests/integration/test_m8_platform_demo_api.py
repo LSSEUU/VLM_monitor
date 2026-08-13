@@ -7,6 +7,8 @@ import threading
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from labcourt.application.m8_platform_bootstrap import (
     PLATFORM_CAMERA_ID,
     PLATFORM_CAMPUS_ID,
@@ -21,6 +23,7 @@ from labcourt.application.m8_platform_demo_api import (
 )
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.m8_access_cases import (
+    M8ActorRole,
     M8AuthorityReference,
     M8AuthorityReferenceKind,
     M8OperationalCaseCreateCommandV1,
@@ -37,6 +40,7 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformVideoProfileV1,
 )
 from labcourt.contracts.pilot_ui import PilotUiJobStatus
+from labcourt.services.m8_operations_api import M8ApiServiceError
 from labcourt.services.pilot_progress import PilotProgressUpdate
 
 
@@ -108,6 +112,51 @@ def test_platform_pilot_config_keeps_real_screening_budget() -> None:
     assert fixture.screening.timeout_seconds == 15.0
 
 
+def test_platform_knowledge_document_rejects_hash_and_utf8_integrity_failures(
+    tmp_path: Path,
+    socket_enabled: None,
+    monkeypatch,
+) -> None:
+    assembly = _assembly(tmp_path)
+    platform = assembly.server.platform_service
+    token = assembly.server.platform_role_tokens[M8ActorRole.OPERATIONS]
+    principal = assembly.server.api_authenticator.authenticate(f"Bearer {token}")
+    catalog = platform.knowledge_service.current_catalog(principal, "campus-safety-knowledge")
+    document = catalog.catalog.documents[0]
+
+    monkeypatch.setattr(
+        platform.knowledge_service,
+        "current_document_content",
+        lambda *_args: (catalog, document, b"hash mismatch"),
+    )
+    with pytest.raises(M8ApiServiceError):
+        platform.knowledge_document(
+            principal,
+            catalog.catalog.catalog_id,
+            document.logical_document_id,
+        )
+
+    invalid_utf8 = b"\xff\xfe"
+    forged = document.model_copy(
+        update={
+            "content_sha256": hashlib.sha256(invalid_utf8).hexdigest(),
+            "content_size_bytes": len(invalid_utf8),
+        }
+    )
+    monkeypatch.setattr(
+        platform.knowledge_service,
+        "current_document_content",
+        lambda *_args: (catalog, forged, invalid_utf8),
+    )
+    with pytest.raises(M8ApiServiceError):
+        platform.knowledge_document(
+            principal,
+            catalog.catalog.catalog_id,
+            document.logical_document_id,
+        )
+    assembly.server.server_close()
+
+
 def _transition_payload(
     case: dict[str, object],
     *,
@@ -177,6 +226,30 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
         leader = _login(server.server_port, "LEADER")
         operations = _login(server.server_port, "OPERATIONS")
         student = _login(server.server_port, "STUDENT")
+        safety = _login(server.server_port, "SAFETY_OFFICER")
+        for token in (leader, operations, student, safety):
+            document_status, document = _request(
+                server.server_port,
+                "GET",
+                "/api/m8/knowledge/catalogs/campus-safety-knowledge/documents/sop-goggles",
+                token=token,
+            )
+            assert document_status == 200
+            assert isinstance(document, dict)
+            assert document["document"]["logical_document_id"] == "sop-goggles"
+            assert document["content_integrity"] == "VERIFIED"
+            assert document["network_used"] is False
+            assert hashlib.sha256(document["content"].encode("utf-8")).hexdigest() == (
+                document["document"]["content_sha256"]
+            )
+        missing_status, missing = _request(
+            server.server_port,
+            "GET",
+            "/api/m8/knowledge/catalogs/campus-safety-knowledge/documents/missing-document",
+            token=student,
+        )
+        assert missing_status == 404
+        assert isinstance(missing, dict) and missing["reason_code"] == "RESOURCE_NOT_FOUND"
         media_status, media_bytes, content_range = _range_request(
             server.server_port, "/api/m8/demo/public-media/recorded-video"
         )
@@ -253,7 +326,6 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
         assert student_case_status == 200
         assert student_cases == []
 
-        safety = _login(server.server_port, "SAFETY_OFFICER")
         agent_status, action_card = _request(
             server.server_port,
             "POST",
