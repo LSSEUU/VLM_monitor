@@ -19,7 +19,7 @@ from labcourt.contracts.m8_access_cases import M8ActorRole
 from labcourt.contracts.m8_feishu_live import M8FeishuDutyRouteV1
 from labcourt.contracts.m8_feishu_notification import M8FeishuRecipientBindingAuthorityV1
 from labcourt.contracts.m8_notification_lifecycle import M8NotificationDispatchDisposition
-from labcourt.contracts.m8_notifications import M8NotificationStatus
+from labcourt.contracts.m8_notifications import M8NotificationPurpose, M8NotificationStatus
 from labcourt.contracts.m8_platform_demo import M8PlatformScenarioKind
 from labcourt.ports.m8_feishu_http import M8FeishuHttpResponse
 from labcourt.ports.m8_feishu_secrets import M8FeishuResolvedSecrets
@@ -276,6 +276,7 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     completed = action_cards.execute(final_token, binding.receive_id_sha256)
     assert completed["toast"]["type"] == "success"  # type: ignore[index]
     assert operations.get_current_operational_case(run.case_id).status.value == "CONFIRMED"
+    assert bridge.bridge_current_emergencies() == ()
 
     duplicate = action_cards.execute(final_token, binding.receive_id_sha256)
     assert duplicate["toast"]["type"] == "info"  # type: ignore[index]
@@ -285,3 +286,8 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     reminder = bridge.assess_reminder(sent.notification_id)
     assert reminder is not None
     assert reminder.outcome.value == "CANCELLED_ACKNOWLEDGED"
+
+    escalation = bridge._create_notification(
+        run.case_id, M8NotificationPurpose.ESCALATION
+    )
+    assert escalation.status == M8NotificationStatus.QUEUED

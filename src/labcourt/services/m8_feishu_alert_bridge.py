@@ -6,7 +6,11 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from labcourt.contracts.frames import Sha256Hex
-from labcourt.contracts.m8_access_cases import M8ActorRole, M8OperationalRiskLevel
+from labcourt.contracts.m8_access_cases import (
+    M8ActorRole,
+    M8OperationalCaseStatus,
+    M8OperationalRiskLevel,
+)
 from labcourt.contracts.m8_feishu_live import (
     M8FeishuAlertBridgeOutcome,
     M8FeishuAlertBridgeReceiptV1,
@@ -65,7 +69,10 @@ class M8FeishuAlertBridgeService:
         current_notifications = self._notifications.list_current_notifications(20_000)
         for case in self._operations.list_current_operational_cases(10_000):
             authority = case.audit_event.case_authority
-            if authority.risk_level != M8OperationalRiskLevel.EMERGENCY:
+            if (
+                authority.risk_level != M8OperationalRiskLevel.EMERGENCY
+                or case.status != M8OperationalCaseStatus.PENDING_VERIFICATION
+            ):
                 continue
             source = next(
                 (
@@ -238,9 +245,11 @@ class M8FeishuAlertBridgeService:
                 response_timeout_seconds=120,
                 max_delivery_attempts=1,
                 escalation_roles=(M8ActorRole.SAFETY_OFFICER,),
-                requires_human_send_confirmation=(
-                    purpose != M8NotificationPurpose.CASE_ACTION_REQUIRED
-                ),
+                # Both bridge purposes are bounded emergency automation:
+                # the initial action card and its one-shot two-minute reminder.
+                # Ordinary notification forwarding uses the separate explicit
+                # dispatch API and retains human confirmation there.
+                requires_human_send_confirmation=False,
                 policy_manifest_id=self._manifest("platform-feishu-notification-policy-v1"),
             ),
             planned_at=now,
