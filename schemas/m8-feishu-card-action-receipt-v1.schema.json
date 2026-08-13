@@ -1,0 +1,203 @@
+{
+  "$defs": {
+    "M8FeishuCardActionIntentV1": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/M8OperationalCaseAction"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Authority Sha256",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_version": {
+          "exclusiveMinimum": 0,
+          "title": "Case Version",
+          "type": "integer"
+        },
+        "confirmation_token_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Confirmation Token Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "intent_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Intent Id",
+          "type": "string"
+        },
+        "intent_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Intent Manifest Id",
+          "type": "string"
+        },
+        "notification_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Notification Id",
+          "type": "string"
+        },
+        "notification_version": {
+          "exclusiveMinimum": 0,
+          "title": "Notification Version",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-feishu-card-action-intent-v1",
+          "default": "m8-feishu-card-action-intent-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "stage": {
+          "const": "AWAITING_CONFIRMATION",
+          "default": "AWAITING_CONFIRMATION",
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "notification_id",
+        "notification_version",
+        "case_id",
+        "case_version",
+        "case_authority_sha256",
+        "actor_id",
+        "action",
+        "confirmation_token_sha256",
+        "created_at",
+        "expires_at",
+        "intent_manifest_id",
+        "intent_id"
+      ],
+      "title": "M8FeishuCardActionIntentV1",
+      "type": "object"
+    },
+    "M8FeishuLiveFailureCode": {
+      "enum": [
+        "ACTOR_NOT_BOUND",
+        "AUTHORITY_CHANGED",
+        "CARD_EXPIRED",
+        "DUPLICATE_ACTION",
+        "INVALID_EVENT",
+        "QWEN_UNAVAILABLE",
+        "SEND_UNCERTAIN",
+        "VERSION_CONFLICT",
+        "WORKER_UNAVAILABLE"
+      ],
+      "title": "M8FeishuLiveFailureCode",
+      "type": "string"
+    },
+    "M8OperationalCaseAction": {
+      "enum": [
+        "CONFIRM",
+        "REJECT",
+        "REQUEST_EVIDENCE",
+        "RETURN_TO_VERIFICATION",
+        "RESOLVE",
+        "SUBMIT_APPEAL",
+        "RESOLVE_APPEAL"
+      ],
+      "title": "M8OperationalCaseAction",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-card-action-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Action Receipt Id",
+      "type": "string"
+    },
+    "case_commit_receipt_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Case Commit Receipt Id"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuLiveFailureCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "intent": {
+      "$ref": "#/$defs/M8FeishuCardActionIntentV1"
+    },
+    "resulting_case_version": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resulting Case Version"
+    },
+    "schema_version": {
+      "const": "m8-feishu-card-action-receipt-v1",
+      "default": "m8-feishu-card-action-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "COMPLETED",
+        "STALE",
+        "FAILED"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "required": [
+    "intent",
+    "stage",
+    "completed_at",
+    "action_receipt_id"
+  ],
+  "title": "M8FeishuCardActionReceiptV1",
+  "type": "object"
+}

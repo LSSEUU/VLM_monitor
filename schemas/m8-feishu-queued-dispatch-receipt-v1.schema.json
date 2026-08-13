@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "M8FeishuDispatchKind": {
+      "enum": [
+        "TEST_CARD",
+        "EXISTING_NOTIFICATION",
+        "EMERGENCY_ALERT",
+        "ESCALATION_REMINDER",
+        "AGENT_REPLY"
+      ],
+      "title": "M8FeishuDispatchKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-queued-dispatch-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "dispatch_kind": {
+      "$ref": "#/$defs/M8FeishuDispatchKind"
+    },
+    "duty_route_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Duty Route Id",
+      "type": "string"
+    },
+    "network_call_attempted": {
+      "const": false,
+      "default": false,
+      "title": "Network Call Attempted",
+      "type": "boolean"
+    },
+    "notification_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notification Id"
+    },
+    "outbox_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Outbox Ref",
+      "type": "string"
+    },
+    "queued_at": {
+      "format": "date-time",
+      "title": "Queued At",
+      "type": "string"
+    },
+    "real_delivery_confirmed": {
+      "const": false,
+      "default": false,
+      "title": "Real Delivery Confirmed",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-feishu-queued-dispatch-receipt-v1",
+      "default": "m8-feishu-queued-dispatch-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_notification_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Notification Id"
+    }
+  },
+  "required": [
+    "dispatch_kind",
+    "outbox_ref",
+    "duty_route_id",
+    "queued_at"
+  ],
+  "title": "M8FeishuQueuedDispatchReceiptV1",
+  "type": "object"
+}

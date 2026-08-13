@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "M8FeishuAlertBridgeOutcome": {
+      "enum": [
+        "QUEUED",
+        "FEISHU_NOT_AVAILABLE",
+        "ALREADY_PROJECTED"
+      ],
+      "title": "M8FeishuAlertBridgeOutcome",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-alert-bridge-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assessed_at": {
+      "format": "date-time",
+      "title": "Assessed At",
+      "type": "string"
+    },
+    "bridge_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Bridge Receipt Id",
+      "type": "string"
+    },
+    "duty_route_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duty Route Id"
+    },
+    "outcome": {
+      "$ref": "#/$defs/M8FeishuAlertBridgeOutcome"
+    },
+    "queued_notification_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Queued Notification Id"
+    },
+    "schema_version": {
+      "const": "m8-feishu-alert-bridge-receipt-v1",
+      "default": "m8-feishu-alert-bridge-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_case_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Case Id",
+      "type": "string"
+    },
+    "source_case_version": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Version",
+      "type": "integer"
+    },
+    "source_notification_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Notification Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_case_id",
+    "source_case_version",
+    "source_notification_id",
+    "outcome",
+    "assessed_at",
+    "bridge_receipt_id"
+  ],
+  "title": "M8FeishuAlertBridgeReceiptV1",
+  "type": "object"
+}

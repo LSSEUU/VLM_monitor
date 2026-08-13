@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "M8FeishuLiveConnectionState": {
+      "enum": [
+        "NOT_CONFIGURED",
+        "DISCONNECTED",
+        "CONNECTING",
+        "READY",
+        "RECONNECTING",
+        "FAILED"
+      ],
+      "title": "M8FeishuLiveConnectionState",
+      "type": "string"
+    },
+    "M8FeishuLiveFailureCode": {
+      "enum": [
+        "ACTOR_NOT_BOUND",
+        "AUTHORITY_CHANGED",
+        "CARD_EXPIRED",
+        "DUPLICATE_ACTION",
+        "INVALID_EVENT",
+        "QWEN_UNAVAILABLE",
+        "SEND_UNCERTAIN",
+        "VERSION_CONFLICT",
+        "WORKER_UNAVAILABLE"
+      ],
+      "title": "M8FeishuLiveFailureCode",
+      "type": "string"
+    },
+    "M8FeishuWorkerState": {
+      "enum": [
+        "NOT_RUNNING",
+        "READY",
+        "BUSY",
+        "FAILED"
+      ],
+      "title": "M8FeishuWorkerState",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-runtime-heartbeat-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "component": {
+      "enum": [
+        "LONG_CONNECTION",
+        "AUTHORITY_WORKER",
+        "DELIVERY_WORKER"
+      ],
+      "title": "Component",
+      "type": "string"
+    },
+    "connection_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuLiveConnectionState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "detail_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Detail Ref"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuLiveFailureCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "heartbeat_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Heartbeat Id",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "runtime_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Runtime Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-feishu-runtime-heartbeat-v1",
+      "default": "m8-feishu-runtime-heartbeat-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "worker_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuWorkerState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "component",
+    "observed_at",
+    "runtime_manifest_id",
+    "heartbeat_id"
+  ],
+  "title": "M8FeishuRuntimeHeartbeatV1",
+  "type": "object"
+}

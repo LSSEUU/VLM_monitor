@@ -1,0 +1,183 @@
+{
+  "$defs": {
+    "M8FeishuAgentReplyEnvelopeV1": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "content_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Content Ref",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "content_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 30720,
+          "title": "Content Size Bytes",
+          "type": "integer"
+        },
+        "conversation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "envelope_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Envelope Manifest Id",
+          "type": "string"
+        },
+        "outbox_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Outbox Id",
+          "type": "string"
+        },
+        "queued_at": {
+          "format": "date-time",
+          "title": "Queued At",
+          "type": "string"
+        },
+        "recipient_binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Recipient Binding Authority Id",
+          "type": "string"
+        },
+        "reply_to_provider_message_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Reply To Provider Message Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-feishu-agent-reply-envelope-v1",
+          "default": "m8-feishu-agent-reply-envelope-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "turn_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Turn Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_id",
+        "conversation_id",
+        "turn_id",
+        "recipient_binding_authority_id",
+        "reply_to_provider_message_id",
+        "content_ref",
+        "content_sha256",
+        "content_size_bytes",
+        "queued_at",
+        "envelope_manifest_id",
+        "outbox_id"
+      ],
+      "title": "M8FeishuAgentReplyEnvelopeV1",
+      "type": "object"
+    },
+    "M8FeishuLiveFailureCode": {
+      "enum": [
+        "ACTOR_NOT_BOUND",
+        "AUTHORITY_CHANGED",
+        "CARD_EXPIRED",
+        "DUPLICATE_ACTION",
+        "INVALID_EVENT",
+        "QWEN_UNAVAILABLE",
+        "SEND_UNCERTAIN",
+        "VERSION_CONFLICT",
+        "WORKER_UNAVAILABLE"
+      ],
+      "title": "M8FeishuLiveFailureCode",
+      "type": "string"
+    },
+    "M8NotificationDispatchDisposition": {
+      "enum": [
+        "ACCEPTED",
+        "DEFINITELY_NOT_SENT",
+        "UNKNOWN_DELIVERY"
+      ],
+      "title": "M8NotificationDispatchDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-agent-reply-completion-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "completion_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Completion Id",
+      "type": "string"
+    },
+    "disposition": {
+      "$ref": "#/$defs/M8NotificationDispatchDisposition"
+    },
+    "envelope": {
+      "$ref": "#/$defs/M8FeishuAgentReplyEnvelopeV1"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuLiveFailureCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "provider_message_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Provider Message Id"
+    },
+    "raw_response_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "raw_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Response Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-feishu-agent-reply-completion-v1",
+      "default": "m8-feishu-agent-reply-completion-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "envelope",
+    "disposition",
+    "completed_at",
+    "raw_response_ref",
+    "raw_response_sha256",
+    "completion_id"
+  ],
+  "title": "M8FeishuAgentReplyCompletionV1",
+  "type": "object"
+}
