@@ -7,14 +7,14 @@ const STATUS_LABELS = {PENDING_VERIFICATION:"等待人工核实",CONFIRMED:"已�
 const STAGE_LABELS = {VIDEO:"录像",PERCEPTION:"视觉感知",EVIDENCE:"证据裁剪",SCREENING:"结构化初审",CASE:"规则建案",NOTIFICATION:"消息通知"};
 const NAV = [["/app/monitor","监控"],["/app/cases","案件"],["/app/map","地图"],["/app/notifications","通知"],["/app/knowledge","知识库"],["/app/agent","Agent"],["/app/profile","我的"],["/app/settings","设置"]];
 const state = {
-  token:sessionStorage.getItem(TOKEN_KEY),session:null,cases:[],notifications:[],projection:null,
+  token:sessionStorage.getItem(TOKEN_KEY),session:null,cases:[],notifications:[],conversations:[],projection:null,
   cameras:[],reservations:[],run:null,readiness:null,users:null,rules:null,knowledgeCatalog:null,
   knowledgeAnswer:null,agentMessages:[],action:null,agentTyping:false,loginRole:"SAFETY_OFFICER",
   videoUrl:null,videoPromise:null,videoPositions:new Map(),evidenceUrls:[],pollTimer:null,
   pollFailures:0,pollInFlight:false,toastTimer:null,routeController:null,routeSequence:0,
   shellMounted:false,currentRoute:"",casesFilter:"ALL",knowledgeFilter:"ALL",knowledgeSelected:null,
   settingsSection:"models",mapFloor:null,mapLocation:null,confirmationOpen:false,navOpen:false,scrollSaveFrame:0,
-  lastRunAnnouncement:"",caseDetail:null,settingsPanels:null,
+  lastRunAnnouncement:"",caseDetail:null,settingsPanels:null,evidenceWorkspace:null,conversation:null,
 };
 
 const esc = value => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
@@ -140,7 +140,7 @@ function initLoginMotion(){
   addEventListener("pointermove",event=>{if(stage)stage.style.transform=`translate3d(${((event.clientX/innerWidth)-.5)*-12}px,${((event.clientY/innerHeight)-.5)*-12}px,0)`;},{passive:true});
 }
 
-function currentNav(path) { return NAV.find(([href]) => path === href || (href === "/app/cases" && path.startsWith("/app/cases/")))?.[0]; }
+function currentNav(path) { return NAV.find(([href]) => path === href || (["/app/cases","/app/notifications"].includes(href) && path.startsWith(`${href}/`)))?.[0]; }
 function runStripMarkup() {
   const run=state.run;
   if(!run)return `<div id="global-run-strip" class="global-run-strip" hidden></div>`;
@@ -203,10 +203,10 @@ function errorPage(error){setRouteContent(`<div class="page-head"><div><p class=
 
 async function loadCore(signal) {
   const options=signal?{signal}:{};state.session=await api("/api/m8/session",options);
-  const [cases,notifications,projection,cameras,reservations,run,readiness]=await Promise.all([
-    optional("/api/m8/cases",[],options),optional("/api/m8/notifications",[],options),optional("/api/m8/campuses/campus-demo/operations-projection",null,options),optional("/api/m8/cameras",[],options),optional("/api/m8/reservations",[],options),optional("/api/m8/demo/scenario-runs/current",null,options),optional("/api/m8/demo/model-readiness",null,options)
+  const [cases,notifications,conversations,projection,cameras,reservations,run,readiness]=await Promise.all([
+    optional("/api/m8/cases",[],options),optional("/api/m8/notifications",[],options),optional("/api/m8/notification-conversations",[],options),optional("/api/m8/campuses/campus-demo/operations-projection",null,options),optional("/api/m8/cameras",[],options),optional("/api/m8/reservations",[],options),optional("/api/m8/demo/scenario-runs/current",null,options),optional("/api/m8/demo/model-readiness",null,options)
   ]);
-  Object.assign(state,{cases,notifications,projection,cameras,reservations,run,readiness});
+  Object.assign(state,{cases,notifications,conversations,projection,cameras,reservations,run,readiness});
 }
 
 function metric(value,name,note) { return `<div class="metric"><span>${esc(name)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`; }
@@ -272,16 +272,46 @@ async function attachVideo() {
   video.addEventListener("timeupdate",()=>{state.videoPositions.set("recorded-video",video.currentTime);const counter=document.getElementById("frame-counter"),profile=state.run?.video_profile;if(counter&&profile)counter.textContent=`FRAME ${Math.min(profile.frame_count-1,Math.floor(video.currentTime*profile.fps_num/profile.fps_den))} / ${profile.frame_count}`;});
 }
 
-async function attachPerception() {
-  const video=document.getElementById("perception-video"); if(!video)return;
-  try { const blob=await api(state.run.perception_preview_url,{binary:true,headers:{Range:"bytes=0-"}}); const url=URL.createObjectURL(blob); state.evidenceUrls.push(url); video.src=url; }
-  catch(error){video.replaceWith(Object.assign(document.createElement("p"),{className:"help risk",textContent:`感知预览尚未生成 · ${error.message}`}));}
+async function attachWorkspaceImages() {
+  for (const image of document.querySelectorAll("img[data-workspace-evidence]")) {
+    const item=state.evidenceWorkspace?.evidence?.find(value=>value.evidence_id===image.dataset.workspaceEvidence);
+    if(!item?.media_url)continue;
+    try { const blob=await api(item.media_url,{binary:true}); const url=URL.createObjectURL(blob);state.evidenceUrls.push(url);image.src=url;image.hidden=false;image.previousElementSibling?.remove(); }
+    catch(error){image.replaceWith(Object.assign(document.createElement("p"),{className:"help risk",textContent:`证据读取失败 · ${error.message}`}));}
+  }
 }
 
-async function attachEvidence() {
-  for (const image of document.querySelectorAll("img[data-evidence]")) {
-    try { const item=state.run.evidence.find(value=>value.evidence_id===image.dataset.evidence); const blob=await api(item.media_url,{binary:true}); const url=URL.createObjectURL(blob); state.evidenceUrls.push(url); image.src=url; image.hidden=false; image.previousElementSibling?.remove(); } catch(error){ image.parentElement.textContent=`尚未生成 · ${error.message}`; }
-  }
+function paintWorkspaceFrame(video) {
+  const workspace=state.evidenceWorkspace,svg=document.getElementById("evidence-overlay"),counter=document.getElementById("evidence-frame-counter");
+  if(!workspace||!video||!svg)return;
+  const profile=workspace.video_profile,fps=profile.fps_num/profile.fps_den,frame=Math.min(profile.frame_count-1,Math.max(0,Math.floor(video.currentTime*fps)));
+  if(counter)counter.textContent=`FRAME ${frame} / ${profile.frame_count}`;
+  const record=workspace.frame_annotations.find(item=>item.frame_index===frame);svg.setAttribute("viewBox",`0 0 ${profile.width} ${profile.height}`);
+  svg.innerHTML=record?(record.detections||[]).map(detection=>{const b=detection.bbox;return `<g><rect class="evidence-bbox" x="${b.x1}" y="${b.y1}" width="${b.x2-b.x1}" height="${b.y2-b.y1}"/><text class="evidence-track" x="${b.x1+8}" y="${Math.max(18,b.y1-8)}">ANONYMOUS TRACK</text>${(detection.keypoints||[]).map(point=>`<circle class="evidence-keypoint" cx="${point.x}" cy="${point.y}" r="5"/>`).join("")}</g>`;}).join(""):"";
+}
+
+function attachEvidenceWorkspace() {
+  const video=document.getElementById("evidence-source-video");attachWorkspaceImages();if(!video)return;
+  const saved=state.videoPositions.get("evidence-source-video")||0;video.src=state.evidenceWorkspace.media_url;
+  video.addEventListener("loadedmetadata",()=>{video.currentTime=Math.min(saved,Number.isFinite(video.duration)?video.duration:saved);paintWorkspaceFrame(video);},{once:true});
+  const update=()=>{if(!video.isConnected)return;state.videoPositions.set("evidence-source-video",video.currentTime);paintWorkspaceFrame(video);if("requestVideoFrameCallback" in video)video.requestVideoFrameCallback(update);};
+  if("requestVideoFrameCallback" in video)video.requestVideoFrameCallback(update);else video.addEventListener("timeupdate",()=>paintWorkspaceFrame(video));
+  const selected=new URL(location.href).searchParams.get("evidence");if(selected)seekWorkspaceEvidence(selected,false);
+}
+
+function seekWorkspaceEvidence(evidenceId,play=false) {
+  const item=state.evidenceWorkspace?.evidence?.find(value=>value.evidence_id===evidenceId),video=document.getElementById("evidence-source-video");if(!item)return false;
+  if(video){video.currentTime=item.timestamp_millis/1000;paintWorkspaceFrame(video);if(play)video.play().catch(()=>{});}
+  const cropPanel=document.querySelector('[data-evidence-view="crops"]');if(cropPanel){cropPanel.innerHTML=item.access==="SEALED_LOCAL"?`<div class="sealed-main"><span>LOCAL SEALED</span><h3>全量脱敏证据</h3><p>该产物按 FULL_REDACTION 生成，只用于证明隐私处理已执行，不作为黑色图片展示，也从未送往云端。</p></div>`:`<div class="crop-main"><span class="spinner"></span><img data-workspace-evidence="${item.evidence_id}" alt="选中的送审证据" hidden><div><b>FRAME ${item.frame_index}</b><p>${item.width}×${item.height} · ${esc(item.privacy_policy)}</p><button class="button quiet" type="button" data-evidence-locate="${item.evidence_id}">回到录像定位</button></div></div>`;attachWorkspaceImages();}
+  document.querySelectorAll("[data-workspace-card]").forEach(node=>node.classList.toggle("is-selected",node.dataset.workspaceCard===evidenceId));return true;
+}
+
+function patchEvidenceStage(stage,evidenceId=null,{historyMode="push",focus=false}={}) {
+  const allowed=["replay","localization","crops","vlm"];if(!allowed.includes(stage)||!state.evidenceWorkspace)return false;
+  const url=new URL(location.href);url.searchParams.set("tab","evidence");url.searchParams.set("stage",stage);if(evidenceId)url.searchParams.set("evidence",evidenceId);else url.searchParams.delete("evidence");
+  if(historyMode)history[historyMode==="replace"?"replaceState":"pushState"]({labcourt:{key:crypto.randomUUID(),ui:captureEntry()}},"",`${url.pathname}${url.search}`);state.currentRoute=`${url.pathname}${url.search}`;
+  document.querySelectorAll("[data-evidence-stage]").forEach(node=>{const selected=node.dataset.evidenceStage===stage;node.setAttribute("aria-selected",String(selected));node.tabIndex=selected?0:-1;});
+  const videoRegion=document.querySelector("[data-evidence-video]");if(videoRegion)videoRegion.hidden=["crops","vlm"].includes(stage);document.querySelectorAll("[data-evidence-caption]").forEach(node=>node.hidden=node.dataset.evidenceCaption!==stage);document.querySelectorAll("[data-evidence-view]").forEach(node=>node.hidden=node.dataset.evidenceView!==stage);document.querySelector(".evidence-workbench")?.setAttribute("data-stage",stage);if(evidenceId)seekWorkspaceEvidence(evidenceId);if(focus)document.querySelector(`[data-evidence-stage="${stage}"]`)?.focus();return true;
 }
 
 function schedulePoll() {
@@ -292,7 +322,7 @@ function schedulePoll() {
 
 function patchRunUi(){patchShell();const run=state.run;const hud=document.querySelector(".monitor-hud");if(hud){const active=run?.stages?.find(item=>item.state==="RUNNING"||item.state==="FAILED");hud.classList.toggle("is-running",run?.state==="RUNNING");hud.querySelector(".monitor-hud__status").textContent=run?.state==="RUNNING"?"识别运行中":run?.state==="FAILED"?"识别失败":"识别已完成";hud.querySelector(".monitor-hud__stage").textContent=STAGE_LABELS[active?.stage]||active?.stage||run?.state||"READY";}document.querySelector(".video-stage")?.classList.toggle("is-recognizing",run?.state==="RUNNING");const failure=document.getElementById("monitor-failure");if(failure)failure.innerHTML=monitorFailureMarkup();}
 
-async function refreshAfterRun(run){const [cases,notifications,projection]=await Promise.all([optional("/api/m8/cases",[]),optional("/api/m8/notifications",[]),optional("/api/m8/campuses/campus-demo/operations-projection",null)]);Object.assign(state,{cases,notifications,projection});if(location.pathname==="/app/monitor"){const candidates=document.getElementById("monitor-candidates"),devices=document.getElementById("monitor-devices"),count=document.querySelector("[data-candidate-count]"),failure=document.getElementById("monitor-failure");if(candidates)candidates.innerHTML=monitorCandidatesMarkup();if(devices)devices.innerHTML=monitorDevicesMarkup();if(count)count.textContent=`${state.cases.filter(item=>!terminalCase(item.status)).length} CASES`;if(failure)failure.innerHTML=monitorFailureMarkup();}patchShell();toast(run.state==="SUCCEEDED"?(run.case_id?"识别已完成，候选案件入口已出现":"识别已完成，未建立可行动风险"):runFailureExplanation(run),run.state==="SUCCEEDED"?"success":"error");}
+async function refreshAfterRun(run){const [cases,notifications,conversations,projection]=await Promise.all([optional("/api/m8/cases",[]),optional("/api/m8/notifications",[]),optional("/api/m8/notification-conversations",[]),optional("/api/m8/campuses/campus-demo/operations-projection",null)]);Object.assign(state,{cases,notifications,conversations,projection});if(location.pathname==="/app/monitor"){const candidates=document.getElementById("monitor-candidates"),devices=document.getElementById("monitor-devices"),count=document.querySelector("[data-candidate-count]"),failure=document.getElementById("monitor-failure");if(candidates)candidates.innerHTML=monitorCandidatesMarkup();if(devices)devices.innerHTML=monitorDevicesMarkup();if(count)count.textContent=`${state.cases.filter(item=>!terminalCase(item.status)).length} CASES`;if(failure)failure.innerHTML=monitorFailureMarkup();}patchShell();toast(run.state==="SUCCEEDED"?(run.case_id?"识别已完成，候选案件入口已出现":"识别已完成，未建立可行动风险"):runFailureExplanation(run),run.state==="SUCCEEDED"?"success":"error");}
 
 function caseTitle(item) { const command=caseCommand(item); return command?.risk_level==="EMERGENCY"?"烟雾与高温联动紧急事件":"护目镜缺失候选事件"; }
 function caseList(items=state.cases) {
@@ -341,9 +371,22 @@ function caseRecognitionDossier(caseId,section="hearing") {
   const run=state.run;
   if(!run||run.case_id!==caseId)return empty("运行产物尚不可见","当前案件没有可读取的场景运行投影。");
   const components=(run.model_components||[]).map(item=>`<article class="dossier-source"><span>${esc(item.component)} · ${esc(item.source)}</span><strong>${esc(item.model)}</strong><small>${esc(item.provider)} · ${esc(item.revision)} · MANIFEST ${short(item.manifest_id)}</small></article>`).join("");
-  const evidence=(run.evidence||[]).map(item=>`<figure class="evidence"><div class="evidence-media"><span class="spinner"></span><img data-evidence="${esc(item.evidence_id)}" alt="${esc(item.role)} 证据裁剪" hidden></div><figcaption>${esc(item.role==="TEMPORAL"?"TEMPORAL · EYE-REGION FOCUS":item.role)} · FRAME ${item.frame_index} · ${esc(item.integrity)}</figcaption></figure>`).join("");
-  if(section==="evidence")return evidence?`<div class="panel-head"><h2>已校验证据</h2><span>${run.evidence.length} ARTIFACTS</span></div><div class="evidence-grid">${evidence}</div>${run.perception_preview_url?`<div class="panel" style="margin-top:20px"><div class="video-stage"><video id="perception-video" controls muted playsinline></video><span class="source-badge">PILOT PERCEPTION ARTIFACT</span></div></div>`:""}`:empty("尚未生成证据","证据阶段完成后会显示全景、主体与眼部焦点裁剪。");
+  if(section==="evidence")return evidenceWorkspaceMarkup();
   return `<div class="hearing-grid"><article class="hearing-card"><p class="eyebrow">机器初审 · WEAK LABEL</p><strong class="dossier-decision">${esc(run.screening_decision||"尚未生成")}</strong><p>${esc(run.screening_summary||"结构化初审尚未生成。")}</p><small>机器输出不是事实或处分依据</small></article><article class="hearing-card"><p class="eyebrow">反证检查</p><strong>当前投影无独立反证 authority</strong><p>不把缺少独立反证引用误写为“已经证明不存在反证”。</p></article><article class="hearing-card"><p class="eyebrow">STRICT_CAUSAL 规则守门</p><strong>${esc(run.rule_judgment||"尚未生成")}</strong><p>后续合规不会抹除较早风险；规则只投影风险，不替人定责。</p></article><article class="hearing-card"><p class="eyebrow">人工复核</p><strong>${run.case_status&&run.case_status!=="PENDING_VERIFICATION"?"已有人工作出状态变更":"等待安全负责人确认"}</strong><p>处置动作集中在“处理”页签并再次校验版本。</p></article></div><div class="panel" style="margin-top:20px"><p class="eyebrow">MODEL / FIXTURE PROVENANCE</p>${components||empty("暂无模型来源","本场景没有模型调用。")}${run.raw_response_ref?`<p class="help mono">RAW · ${esc(run.raw_response_ref)}</p>`:""}</div>`;
+}
+
+function evidenceWorkspaceMarkup() {
+  const workspace=state.evidenceWorkspace;if(!workspace)return empty("证据工作台尚未生成","完成真实感知和证据阶段后，这里会按来源、定位、裁剪和初审展示完整链路。");
+  const query=new URL(location.href).searchParams,requested=query.get("stage")||"replay",stage=["replay","localization","crops","vlm"].includes(requested)?requested:"replay";
+  const cloud=workspace.evidence.filter(item=>item.access==="CLOUD_ALLOWED"),sealed=workspace.evidence.filter(item=>item.access==="SEALED_LOCAL"),selected=query.get("evidence")||cloud[0]?.evidence_id;
+  const stageMeta={replay:["01","录像回放","H.264 RANGE"],localization:["02","人员定位",`${workspace.frame_annotations.length} FRAMES`],crops:["03","隐私裁剪",`${cloud.length} SENT · ${sealed.length} SEALED`],vlm:["04","VLM 初审",workspace.screening?.source||"NOT GENERATED"]};
+  const nav=Object.entries(stageMeta).map(([key,[number,title,meta]])=>`<button class="evidence-stage-tab" type="button" role="tab" data-evidence-stage="${key}" aria-selected="${stage===key}" tabindex="${stage===key?0:-1}"><i>${number}</i><span><b>${title}</b><small>${esc(meta)}</small></span></button>`).join("");
+  const video=workspace.media_url?`<div class="evidence-video"><video id="evidence-source-video" controls muted playsinline preload="metadata"></video><svg id="evidence-overlay" aria-hidden="true"></svg><span class="source-badge">SIMULATED · RECORDED VIDEO</span><span id="evidence-frame-counter" class="frame-counter">FRAME — / ${workspace.video_profile.frame_count}</span></div>`:`<div class="evidence-restricted"><b>案件依据已脱敏</b><p>当前角色不能查看原始录像、人物框或匿名轨迹；可查看本人案件的裁剪依据与处理结论。</p></div>`;
+  const folders=workspace.evidence.map(item=>item.access==="SEALED_LOCAL"?`<button class="evidence-file sealed" type="button" data-workspace-card="${item.evidence_id}" data-evidence-card="${item.evidence_id}"><span class="evidence-lock">封</span><i>${esc(item.role)}</i><b>本地封存件</b><small>FULL REDACTION · LOCAL ONLY<br>未送云端 · FRAME ${item.frame_index}</small></button>`:`<button class="evidence-file ${item.evidence_id===selected?"is-selected":""}" type="button" data-workspace-card="${item.evidence_id}" data-evidence-card="${item.evidence_id}"><span class="evidence-thumb"><span class="spinner"></span><img data-workspace-evidence="${item.evidence_id}" alt="帧 ${item.frame_index} 眼部区域送审裁剪" hidden></span><i>${esc(item.role)}</i><b>送审证据 ${String(cloud.indexOf(item)+1).padStart(2,"0")}</b><small>FRAME ${item.frame_index} · ${esc(item.integrity)}</small></button>`).join("");
+  const selectedItem=workspace.evidence.find(item=>item.evidence_id===selected);const cropMain=selectedItem?selectedItem.access==="SEALED_LOCAL"?`<div class="sealed-main"><span>LOCAL SEALED</span><h3>全量脱敏证据</h3><p>该产物按 FULL_REDACTION 生成，只用于证明隐私处理已执行，不作为黑色图片展示，也从未送往云端。</p></div>`:`<div class="crop-main"><span class="spinner"></span><img data-workspace-evidence="${selectedItem.evidence_id}" alt="选中的送审证据" hidden><div><b>FRAME ${selectedItem.frame_index}</b><p>${selectedItem.width}×${selectedItem.height} · ${esc(selectedItem.privacy_policy)}</p><button class="button quiet" type="button" data-evidence-locate="${selectedItem.evidence_id}">回到录像定位</button></div></div>`:empty("选择证据夹","选择一份送审裁剪或本地封存件查看来源链。");
+  const screening=workspace.screening?`<article class="vlm-receipt"><p class="eyebrow">${esc(workspace.screening.source)} · WEAK LABEL</p><h3>${esc(workspace.screening.decision)}</h3><p>${esc(workspace.screening.summary)}</p><dl><div><dt>提供方 / 模型</dt><dd>${esc(workspace.screening.provider)} · ${esc(workspace.screening.model)}</dd></div><div><dt>送审输入</dt><dd>${workspace.screening.input_evidence_ids.map(short).join(" · ")}</dd></div><div><dt>模型清单</dt><dd>${short(workspace.screening.manifest_id)}</dd></div><div><dt>原始响应</dt><dd>${esc(workspace.screening.raw_response_ref)}</dd></div></dl><a class="button primary" href="?tab=hearing">进入会审 →</a></article>`:empty("初审尚未生成","没有结构化 authority 时不展示猜测的模型结论。");
+  const sources=`<aside class="evidence-provenance"><p class="eyebrow">SOURCE CHAIN</p><ol><li><b>H.264 原始录像</b><span>${workspace.video_profile.width}×${workspace.video_profile.height} · ${workspace.video_profile.frame_count} 帧</span></li><li><b>Grounding DINO + ViTPose</b><span>真实人物框、匿名轨迹与关键点</span></li><li><b>隐私变换</b><span>${cloud.length} 份送审裁剪 · ${sealed.length} 份本地封存</span></li><li><b>Qwen 结构化初审</b><span>${workspace.screening?`${workspace.screening.source} · ${workspace.screening.decision}`:"尚未生成"}</span></li></ol><p class="help">预约关联，非视觉身份识别。机器输出是弱标签，不直接作为处分依据。</p></aside>`;
+  return `<section class="evidence-workbench" data-stage="${stage}"><nav class="evidence-stage-nav" role="tablist" aria-label="识别证据流程">${nav}</nav><div class="evidence-workbench__grid"><div class="evidence-workbench__main"><section data-evidence-video ${["crops","vlm"].includes(stage)?"hidden":""}>${video}<div class="evidence-caption" data-evidence-caption="replay" ${stage!=="replay"?"hidden":""}><b>原始画面回放</b><span>浏览器兼容 H.264 · 支持播放、拖动和 Range</span></div><div class="evidence-caption" data-evidence-caption="localization" ${stage!=="localization"?"hidden":""}><b>真实人物定位</b><span>按播放时钟映射 frame bundle；不插值，不显示虚假准确率</span></div></section><section data-evidence-view="crops" ${stage!=="crops"?"hidden":""}>${cropMain}</section><section data-evidence-view="vlm" ${stage!=="vlm"?"hidden":""}>${screening}</section></div>${sources}</div><div class="evidence-folder-head"><div><p class="eyebrow">EVIDENCE FOLDER</p><h2>送审证据夹与本地封存件</h2></div><span>${cloud.length} CLOUD ALLOWED · ${sealed.length} SEALED LOCAL</span></div><div class="evidence-folder">${folders}</div></section>`;
 }
 
 async function renderCaseDetail(caseId) {
@@ -351,37 +394,57 @@ async function renderCaseDetail(caseId) {
   const authority=caseAuthority(item),command=caseCommand(item),triggers=command.trigger_authorities||[];
   const related=state.notifications.filter(n=>notificationPlan(n)?.case_id===caseId);
   const tab=new URL(location.href).searchParams.get("tab")||"overview";const allowed=["overview","evidence","hearing","handling"];const activeTab=allowed.includes(tab)?tab:"overview";
-  const notifyAction=role()==="SAFETY_OFFICER"&&item.status==="CONFIRMED"&&authority.subject_actor_id?`<button class="button" type="button" data-dispatch="CASE_UPDATED" data-case="${item.case_id}">发送学生消息</button>`:"";
-  const outcomeAction=role()==="SAFETY_OFFICER"&&item.status==="APPEAL_RESOLVED"?`<button class="button" type="button" data-dispatch="APPEAL_OUTCOME" data-case="${item.case_id}">发送申诉结果</button>`:"";
+  const run=state.run?.case_id===caseId?state.run:null;state.evidenceWorkspace=run?await optional(`/api/m8/demo/scenario-runs/${run.run_id}/evidence-workspace`,null):null;
+  const conversationSummary=state.conversations.find(value=>value.case_id===caseId),hasMessage=related.some(value=>["CASE_UPDATED","APPEAL_OUTCOME"].includes(notificationPlan(value)?.purpose));
+  const notifyAction=role()==="SAFETY_OFFICER"&&item.status==="CONFIRMED"&&authority.subject_actor_id?(hasMessage?`<a class="button" href="/app/notifications/${item.case_id}">查看会话</a><button class="button quiet" type="button" data-confirm-dispatch="CASE_UPDATED" data-case="${item.case_id}">再次发送</button>`:`<button class="button" type="button" data-dispatch="CASE_UPDATED" data-case="${item.case_id}">发送学生消息</button>`):"";
+  const hasOutcome=related.some(value=>notificationPlan(value)?.purpose==="APPEAL_OUTCOME");const outcomeAction=role()==="SAFETY_OFFICER"&&item.status==="APPEAL_RESOLVED"?(hasOutcome?`<a class="button" href="/app/notifications/${item.case_id}">查看处理结果会话</a>`:`<button class="button" type="button" data-dispatch="APPEAL_OUTCOME" data-case="${item.case_id}">发送申诉结果</button>`):"";
   const overview=`<section class="facts"><div class="fact"><span>状态</span><strong>${label(item.status)}</strong></div><div class="fact"><span>风险等级</span><strong class="${authority.risk_level==="EMERGENCY"?"risk":""}">${authority.risk_level}</strong></div><div class="fact"><span>案件版本</span><strong>V${item.case_version}</strong></div><div class="fact"><span>关联主体</span><strong>${esc(authority.subject_actor_id||"无")}</strong></div></section><div class="panel"><div class="panel-head"><h2>触发 authority</h2><span>${triggers.length} REFERENCES</span></div><div class="authority-list">${triggers.map(ref=>`<div class="authority"><b>${esc(ref.kind)}</b><code>${esc(ref.authority_id)}<br>${esc(ref.document_sha256)}</code></div>`).join("")}</div></div>`;
-  const handling=`<div class="processing-layout"><section class="panel"><div class="panel-head"><h2>处置工作台</h2><span>HUMAN CONFIRMATION</span></div>${caseActions(item)}</section><aside><div class="panel-head"><h2>审计时间线</h2><span>STATE MACHINE</span></div><div class="case-timeline"><article class="timeline-event is-complete"><b>案件建立</b><p>${label("PENDING_VERIFICATION")} · V1</p></article><article class="timeline-event is-current"><b>当前状态</b><p>${esc(label(item.status))} · V${item.case_version}</p></article></div></aside></div><section style="margin-top:28px"><div class="panel-head"><h2>关联通知</h2><span>${related.length} MESSAGES</span></div>${notificationCards(related)}</section>`;
+  const handling=`<div class="processing-layout"><section class="panel"><div class="panel-head"><h2>处置工作台</h2><span>HUMAN CONFIRMATION</span></div>${caseActions(item)}</section><aside><div class="panel-head"><h2>审计时间线</h2><span>STATE MACHINE</span></div><div class="case-timeline"><article class="timeline-event is-complete"><b>案件建立</b><p>${label("PENDING_VERIFICATION")} · V1</p></article><article class="timeline-event is-current"><b>当前状态</b><p>${esc(label(item.status))} · V${item.case_version}</p></article></div></aside></div><section class="case-conversation-summary"><div class="panel-head"><h2>案件会话</h2><span>${conversationSummary?`${conversationSummary.notification_count} 通知 · ${conversationSummary.reply_count} 回复`:"尚未建立"}</span></div>${conversationSummary?`<a class="conversation-inline" href="/app/notifications/${caseId}"><div><b>${esc(conversationSummary.latest_title)}</b><p>${esc(conversationSummary.latest_progress)}</p></div><span>查看完整会话 →</span></a>`:empty("尚无案件会话","发送学生消息后，双方会在同一条时间线查看说明、申诉和处理结果。")}</section>`;
   const panels={overview,evidence:caseRecognitionDossier(caseId,"evidence"),hearing:caseRecognitionDossier(caseId,"hearing"),handling};
   const tabs=[["overview","概览"],["evidence","证据"],["hearing","会审"],["handling","处理"]];
   const content=`${pageHead(authority.risk_level,caseTitle(item),`${authority.location_id} · 案件 ${short(item.case_id)} · ${authority.subject_actor_id?"预约关联，非视觉身份识别":"未关联个人身份"}`,`${notifyAction}${outcomeAction}<a class="button quiet" href="/app/cases">返回列表</a>`)}${flow(item.status)}<nav class="case-tabs" role="tablist" aria-label="案件卷宗内容">${tabs.map(([key,text])=>`<a class="case-tab" role="tab" data-case-tab="${key}" aria-selected="${activeTab===key}" tabindex="${activeTab===key?0:-1}" href="?tab=${key}">${text}${key==="evidence"?`<span class="case-tab-count">${state.run?.case_id===caseId?state.run.evidence?.length||0:0}</span>`:""}</a>`).join("")}</nav><section class="case-panel is-active" role="tabpanel" data-case-panel="${activeTab}">${panels[activeTab]}</section>`;
   state.caseDetail={caseId,panels,tabs};
-  setRouteContent(content,{mount:()=>{if(activeTab==="evidence"){attachEvidence();attachPerception();}},announcement:`${caseTitle(item)} · ${tabs.find(x=>x[0]===activeTab)[1]}`});
+  setRouteContent(content,{mount:()=>{if(activeTab==="evidence")attachEvidenceWorkspace();},announcement:`${caseTitle(item)} · ${tabs.find(x=>x[0]===activeTab)[1]}`});
 }
 
 function patchCaseTab(tab,{historyMode="push",focus=false}={}) {
   const detail=state.caseDetail;if(!detail||!["overview","evidence","hearing","handling"].includes(tab))return false;
   if(historyMode){const url=new URL(location.href);url.searchParams.set("tab",tab);history[historyMode==="replace"?"replaceState":"pushState"]({labcourt:{key:crypto.randomUUID(),ui:captureEntry()}},"",`${url.pathname}${url.search}`);state.currentRoute=`${url.pathname}${url.search}`;}
   document.querySelectorAll("[data-case-tab]").forEach(node=>{const selected=node.dataset.caseTab===tab;node.setAttribute("aria-selected",String(selected));node.tabIndex=selected?0:-1;});
-  const panel=document.querySelector("[data-case-panel]");if(!panel)return false;panel.classList.remove("is-updating");panel.dataset.casePanel=tab;panel.innerHTML=detail.panels[tab];requestAnimationFrame(()=>panel.classList.add("is-updating"));if(tab==="evidence"){attachEvidence();attachPerception();}if(focus)document.querySelector(`[data-case-tab="${tab}"]`)?.focus();return true;
+  const panel=document.querySelector("[data-case-panel]");if(!panel)return false;panel.classList.remove("is-updating");panel.dataset.casePanel=tab;panel.innerHTML=detail.panels[tab];requestAnimationFrame(()=>panel.classList.add("is-updating"));if(tab==="evidence")attachEvidenceWorkspace();if(focus)document.querySelector(`[data-case-tab="${tab}"]`)?.focus();return true;
 }
 
-function notificationCards(items=state.notifications) {
-  if(!items.length)return empty("暂无消息","当前角色没有可见通知。")
-  return items.map(item=>{const plan=notificationPlan(item);return `<article class="notice-card"><div class="notice-card__head"><div><p class="eyebrow">${esc(plan.purpose)} · ${esc(plan.audience)}</p><h3>${plan.purpose==="APPEAL_OUTCOME"?"申诉处理结果":plan.purpose==="CASE_UPDATED"?"案件状态更新":"安全事件待处理"}</h3><p>${esc(label(plan.case_status))} · ${esc(plan.location_id)} · 案件 ${short(plan.case_id)}</p></div><span class="badge">${esc(label(item.status))}</span></div><span class="badge fake">FAKE DELIVERY · real_delivery_confirmed=false</span>${role()==="STUDENT"?studentNotificationActions(item):""}</article>`}).join("");
+function conversationCards(items=state.conversations) {
+  if(!items.length)return empty("暂无案件会话","发送案件消息后，同一案件的通知、回复和决定会聚合到这里。")
+  return `<div class="conversation-list">${items.map(item=>`<a class="conversation-card" href="/app/notifications/${item.case_id}"><div class="conversation-card__index"><span>${String(item.notification_count).padStart(2,"0")}</span><small>MESSAGES</small></div><div><p class="eyebrow">${esc(item.case_status)} · ${esc(item.location_id)}</p><h2>${esc(item.latest_title)}</h2><p>${esc(item.latest_progress)}</p><div class="conversation-card__meta"><span>${item.notification_count} 条通知</span><span>${item.reply_count} 条回复</span><span>${item.last_activity_at?new Date(item.last_activity_at).toLocaleString("zh-CN"):"时间未单独持久化"}</span><span class="badge fake">FAKE DELIVERY</span></div></div><div class="conversation-card__next"><small>当前待办</small><b>${item.pending_actor_role==="STUDENT"?"学生":item.pending_actor_role==="SAFETY_OFFICER"?"安全负责人":"无"}</b><span>打开会话 →</span></div></a>`).join("")}</div>`;
 }
 
-function studentNotificationActions(item) {
-  const plan=notificationPlan(item); if(plan.target.actor_id!=="student-demo")return "";
-  if(item.status==="DELIVERED"&&plan.target.inbound_response_supported) return `<div style="margin-top:16px"><div class="field"><label for="reply-${item.notification_id}">说明正文</label><textarea id="reply-${item.notification_id}" placeholder="请说明现场情况或申诉理由"></textarea></div><div class="form-actions"><button class="button quiet" data-reply="EXPLANATION" data-notification="${item.notification_id}" data-case="${plan.case_id}">提交说明</button><button class="button primary" data-reply="APPEAL_REQUEST" data-notification="${item.notification_id}" data-case="${plan.case_id}">提交申诉</button></div></div>`;
-  if(item.status==="DELIVERED"&&!plan.target.inbound_response_supported) return `<div class="form-actions" style="margin-top:14px"><button class="button primary" data-ack="${item.notification_id}">确认收到结果</button></div>`;
-  return `<p class="help">该消息已${label(item.status)}；原通知保持不变。</p>`;
+function renderNotifications() {
+  const replies=state.conversations.reduce((sum,item)=>sum+item.reply_count,0),pending=state.conversations.filter(item=>item.pending_actor_role!=="NONE").length;
+  setRouteContent(`${pageHead("CASE CONVERSATIONS","通知与会话","每个案件只有一条完整会话。通知、学生回复、申诉决定、结果送达和确认历史均保留，不改写原消息。")}<section class="metrics">${metric(state.conversations.length,"案件会话","按 case_id 聚合")}${metric(state.notifications.length,"底层通知","审计历史未合并")}${metric(replies,"学生回复","正文可在会话查看")}${metric(pending,"当前待办","按真实状态推导")}</section>${conversationCards()}`,{announcement:"通知与会话"});
 }
 
-function renderNotifications() { setRouteContent(`${pageHead("MESSAGE CENTER","通知中心","通知通过本地离线模拟通道送达；每张卡片保留真实投递属性，不声称外部送达。")}<section class="metrics">${metric(state.notifications.length,"消息总数","当前角色可见")}${metric(state.notifications.filter(x=>x.status==="DELIVERED").length,"待回应","已模拟送达")}${metric(state.notifications.filter(x=>x.status==="RESPONDED").length,"已回复","说明或申诉")}${metric(state.notifications.filter(x=>x.status==="ACKNOWLEDGED").length,"已确认","结果通知")}</section>${notificationCards()}`,{announcement:"通知中心"}); }
+const CONVERSATION_STEP_LABELS={NOTIFICATION:"通知送达",STUDENT_EXPLANATION:"学生回应",STUDENT_APPEAL:"申诉提交",SAFETY_DECISION:"安全处理",OUTCOME_NOTIFICATION:"结果通知",STUDENT_ACKNOWLEDGEMENT:"学生确认"};
+
+function conversationActionsMarkup(conversation) {
+  if(!conversation.actions.length)return `<div class="conversation-complete"><span>✓</span><div><b>当前没有待执行动作</b><p>完整历史仍可查看，底层通知和回复 authority 未被合并或删除。</p></div></div>`;
+  const replyActions=conversation.actions.filter(item=>["SUBMIT_EXPLANATION","SUBMIT_APPEAL"].includes(item.action));const other=conversation.actions.filter(item=>!replyActions.includes(item));
+  const reply=replyActions.length?`<div class="field"><label for="conversation-reply">写下现场说明或申诉理由</label><textarea id="conversation-reply" placeholder="正文将单独持久化并校验哈希；提交申诉后还会调用案件状态机。"></textarea></div><div class="form-actions">${replyActions.map(item=>`<button class="button ${item.action==="SUBMIT_APPEAL"?"primary":"quiet"}" type="button" data-conversation-reply="${item.action}" data-notification="${item.target_notification_id}" data-case="${conversation.case_id}">${item.action==="SUBMIT_APPEAL"?"提交申诉":"提交说明"}</button>`).join("")}</div>`:"";
+  const buttons=other.map(item=>{if(item.action==="RETRY_APPEAL")return `<button class="button primary" type="button" data-retry-appeal="${conversation.case_id}" data-authority="${item.supporting_authority_id}" data-document="${item.supporting_document_sha256}">重试提交案件申诉</button>`;if(item.action.startsWith("RESOLVE_APPEAL"))return `<button class="button ${item.action.endsWith("UPHELD")?"primary":"quiet"}" type="button" data-transition="RESOLVE_APPEAL:${item.action.endsWith("OVERTURNED")?"OVERTURNED":"UPHELD"}" data-case="${conversation.case_id}">${item.action.endsWith("OVERTURNED")?"撤销原处理":"维持原处理"}</button>`;if(item.action==="SEND_CASE_UPDATE")return `<button class="button quiet" type="button" data-confirm-dispatch="CASE_UPDATED" data-case="${conversation.case_id}">再次发送案件消息</button>`;if(item.action==="SEND_APPEAL_OUTCOME")return `<button class="button primary" type="button" data-dispatch="APPEAL_OUTCOME" data-case="${conversation.case_id}">发送处理结果</button>`;if(item.action==="ACKNOWLEDGE_OUTCOME")return `<button class="button primary" type="button" data-ack="${item.target_notification_id}">确认收到处理结果</button>`;return "";}).join("");
+  return `${reply}${other.some(item=>item.action.startsWith("RESOLVE_APPEAL"))?`<div class="field"><label for="case-reason">安全负责人处理理由</label><textarea id="case-reason">已复核学生申诉、录像证据和预约关联，现记录人工处理决定。</textarea></div>`:""}<div class="form-actions">${buttons}</div>`;
+}
+
+async function renderNotificationConversation(caseId) {
+  const conversation=await api(`/api/m8/notification-conversations/${caseId}`);state.conversation=conversation;
+  const stages=["NOTIFICATION","STUDENT_EXPLANATION","STUDENT_APPEAL","SAFETY_DECISION","OUTCOME_NOTIFICATION","STUDENT_ACKNOWLEDGEMENT"],present=new Set(conversation.events.map(item=>item.kind));let reached=true;
+  // An appeal is itself a student response. Keep the six-step rail continuous
+  // when the student chose appeal without first submitting a separate explanation.
+  if(present.has("STUDENT_APPEAL"))present.add("STUDENT_EXPLANATION");
+  const flowMarkup=`<div class="conversation-flow">${stages.map((kind,index)=>{const done=present.has(kind),current=!done&&reached;if(!done)reached=false;return `${index?`<i class="${done?"done":""}"></i>`:""}<div class="${done?"done":current?"current":""}"><span>${done?"✓":index+1}</span><b>${CONVERSATION_STEP_LABELS[kind]}</b></div>`;}).join("")}</div>`;
+  const timeline=conversation.events.map(event=>`<article class="conversation-event ${event.sender.toLowerCase()}"><div class="conversation-event__mark"><span>${String(event.sequence).padStart(2,"0")}</span><i></i></div><div class="conversation-event__paper"><header><div><p class="eyebrow">${esc(event.kind)} · ${esc(event.sender)}</p><h3>${esc(event.title)}</h3></div><time>${event.occurred_at?new Date(event.occurred_at).toLocaleString("zh-CN"):"案件审计未单独记录时间"}</time></header>${event.body?`<p class="conversation-body">${esc(event.body)}</p>`:`<p class="conversation-redacted">正文按当前角色隐藏</p>`}<footer><span>${esc(event.status)}</span>${event.technical?`<details><summary>投递与审计信息</summary><code>FAKE DELIVERY · real_delivery_confirmed=false<br>${esc(event.technical.authority_ref)}<br>${esc(event.technical.document_sha256)}</code></details>`:""}</footer></div></article>`).join("");
+  const content=`${pageHead("CASE CONVERSATION","案件会话",`${conversation.location_id} · 案件 ${short(caseId)} · V${conversation.case_version}`,`<a class="button quiet" href="/app/notifications">返回会话列表</a><a class="button" href="/app/cases/${caseId}?tab=handling">查看案件处理</a>`)}${flowMarkup}<div class="conversation-layout"><section class="conversation-timeline">${timeline}</section><aside class="conversation-action-panel"><p class="eyebrow">NEXT ACTION</p><h2>${esc(conversation.summary.latest_progress)}</h2><p>所有操作继续调用既有业务接口，并由服务端再次校验角色与案件版本。</p>${conversationActionsMarkup(conversation)}</aside></div>`;
+  setRouteContent(content,{announcement:"案件完整会话"});
+}
 
 function renderMap() {
   const alert=isEmergency();
@@ -423,7 +486,7 @@ function patchSettingsSection(section,{historyMode="push"}={}) {
   const panel=document.querySelector(".settings-panel");if(!panel)return false;panel.classList.remove("is-updating");panel.innerHTML=state.settingsPanels[section];requestAnimationFrame(()=>panel.classList.add("is-updating"));return true;
 }
 
-function captureEntry(){const video=document.getElementById("recorded-video");if(video)state.videoPositions.set("recorded-video",video.currentTime);return {scrollX,scrollY,videoTime:video?.currentTime||state.videoPositions.get("recorded-video")||0};}
+function captureEntry(){const video=document.getElementById("recorded-video"),evidenceVideo=document.getElementById("evidence-source-video");if(video)state.videoPositions.set("recorded-video",video.currentTime);if(evidenceVideo)state.videoPositions.set("evidence-source-video",evidenceVideo.currentTime);return {scrollX,scrollY,videoTime:video?.currentTime||state.videoPositions.get("recorded-video")||0,evidenceVideoTime:evidenceVideo?.currentTime||state.videoPositions.get("evidence-source-video")||0};}
 function persistEntry(){history.replaceState({...history.state,labcourt:{...(history.state?.labcourt||{}),ui:captureEntry()}},"",location.href);}
 async function navigateTo(target,{replace=false,restore=null}={}){persistEntry();const url=new URL(target,location.href);history[replace?"replaceState":"pushState"]({labcourt:{key:crypto.randomUUID(),ui:restore}},"",`${url.pathname}${url.search}${url.hash}`);await renderRoute({restore});}
 
@@ -436,8 +499,8 @@ async function renderRoute({restore=null}={}) {
     if(routeId!==state.routeSequence||controller.signal.aborted)return;ensureShell();
     if(path==="/app/settings"){[state.users,state.rules]=await Promise.all([optional("/api/m8/users",null,{signal:controller.signal}),optional("/api/m8/rules",null,{signal:controller.signal})]);}
     if(routeId!==state.routeSequence||controller.signal.aborted)return;
-    if(path==="/app/monitor")renderMonitor();else if(path==="/app/cases")renderCases();else if(path.startsWith("/app/cases/"))await renderCaseDetail(decodeURIComponent(path.split("/").pop()));else if(path==="/app/map")renderMap();else if(path==="/app/notifications")renderNotifications();else if(path==="/app/knowledge")renderKnowledge();else if(path==="/app/agent")renderAgent();else if(path==="/app/profile")renderProfile();else if(path==="/app/settings")renderSettings();else{await navigateTo("/app/monitor",{replace:true});return;}
-    state.currentRoute=`${path}${location.search}`;if(restore){state.videoPositions.set("recorded-video",restore.videoTime||0);requestAnimationFrame(()=>scrollTo(restore.scrollX||0,restore.scrollY||0));}if(state.run?.state==="RUNNING")schedulePoll();
+    if(path==="/app/monitor")renderMonitor();else if(path==="/app/cases")renderCases();else if(path.startsWith("/app/cases/"))await renderCaseDetail(decodeURIComponent(path.split("/").pop()));else if(path==="/app/map")renderMap();else if(path==="/app/notifications")renderNotifications();else if(path.startsWith("/app/notifications/"))await renderNotificationConversation(decodeURIComponent(path.split("/").pop()));else if(path==="/app/knowledge")renderKnowledge();else if(path==="/app/agent")renderAgent();else if(path==="/app/profile")renderProfile();else if(path==="/app/settings")renderSettings();else{await navigateTo("/app/monitor",{replace:true});return;}
+    state.currentRoute=`${path}${location.search}`;if(restore){state.videoPositions.set("recorded-video",restore.videoTime||0);state.videoPositions.set("evidence-source-video",restore.evidenceVideoTime||0);requestAnimationFrame(()=>scrollTo(restore.scrollX||0,restore.scrollY||0));}if(state.run?.state==="RUNNING")schedulePoll();
   } catch(error){if(error.name!=="AbortError"&&routeId===state.routeSequence)errorPage(error)}
 }
 
@@ -460,11 +523,17 @@ async function handleClick(event) {
     if(target.dataset.action==="nav-toggle"){state.navOpen=!state.navOpen;target.setAttribute("aria-expanded",String(state.navOpen));document.getElementById("primary-nav")?.classList.toggle("is-open",state.navOpen);return;}
     if(target.dataset.caseFilter){patchCasesFilter(target.dataset.caseFilter);return;}
     if(target.dataset.settingsSection){patchSettingsSection(target.dataset.settingsSection);return;}
+    if(target.dataset.evidenceStage){patchEvidenceStage(target.dataset.evidenceStage);return;}
+    if(target.dataset.evidenceCard){patchEvidenceStage("crops",target.dataset.evidenceCard);return;}
+    if(target.dataset.evidenceLocate){patchEvidenceStage("localization",target.dataset.evidenceLocate);return;}
     if(target.dataset.agentQuick){document.getElementById("agent-query").value=target.dataset.agentQuick;return;}
     if(target.dataset.location){state.mapLocation=target.dataset.location;toast(`已选择 ${target.textContent.trim()}；详情来自 topology 与来源投影`);return;}
     if(target.dataset.scenario){target.disabled=true;target.setAttribute("aria-busy","true");const payload={scenario_kind:target.dataset.scenario,explicit_human_confirmation:true};if(target.dataset.scenario==="PPE_GOGGLES_MISSING")payload.recognition_mode=target.dataset.mode||"FULL_MODEL";if(target.dataset.retry)payload.retry_of_run_id=target.dataset.retry;state.run=await api("/api/m8/demo/scenario-runs",{method:"POST",body:payload});patchRunUi();schedulePoll();toast(payload.recognition_mode==="FULL_MODEL"?"真实识别已启动，进度将在本页连续更新":"演示模式已明确启动，并创建了独立运行记录");return;}
     if(target.dataset.transition){target.disabled=true;await transitionCase(target.dataset.case,target.dataset.transition);await refresh("案件状态已由服务端状态机更新");return;}
     if(target.dataset.dispatch){target.disabled=true;await api(`/api/m8/cases/${target.dataset.case}/notification-dispatches`,{method:"POST",body:{kind:target.dataset.dispatch,explicit_human_confirmation:true}});await refresh("新通知卡已通过本地模拟通道送达");return;}
+    if(target.dataset.confirmDispatch){if(!confirm("这会在当前案件会话中新增一条通知，原消息不会被覆盖。确认再次发送吗？"))return;target.disabled=true;await api(`/api/m8/cases/${target.dataset.case}/notification-dispatches`,{method:"POST",body:{kind:target.dataset.confirmDispatch,explicit_human_confirmation:true}});await refresh("新的后续通知已加入同一案件会话");return;}
+    if(target.dataset.conversationReply){const box=document.getElementById("conversation-reply"),body=box?.value?.trim();if(!body){toast("请先填写正文","error");return}target.disabled=true;const kind=target.dataset.conversationReply==="SUBMIT_APPEAL"?"APPEAL_REQUEST":"EXPLANATION";const receipt=await api(`/api/m8/notifications/${target.dataset.notification}/replies`,{method:"POST",body:{reply_kind:kind,body,explicit_human_confirmation:true}});if(kind==="APPEAL_REQUEST"){const reply=receipt.audit_event?.transition_command?.reply;if(!reply)throw new Error("申诉正文已保存，但回复 authority 暂不可读取");try{await transitionCase(target.dataset.case,"SUBMIT_APPEAL",[{kind:"NOTIFICATION_REPLY",authority_id:reply.reply_authority_id,document_sha256:reply.reply_document_sha256}]);}catch(error){await refresh(`申诉正文已保存，案件状态尚未提交；会话中提供重试动作：${error.message}`);return;}}await refresh(kind==="APPEAL_REQUEST"?"申诉正文与案件状态已记录":"情况说明已保存到案件会话");return;}
+    if(target.dataset.retryAppeal){target.disabled=true;await transitionCase(target.dataset.retryAppeal,"SUBMIT_APPEAL",[{kind:"NOTIFICATION_REPLY",authority_id:target.dataset.authority,document_sha256:target.dataset.document}]);await refresh("已使用原申诉正文 authority 完成案件状态提交");return;}
     if(target.dataset.reply){const box=document.getElementById(`reply-${target.dataset.notification}`);const body=box?.value?.trim();if(!body){toast("请先填写正文","error");return}target.disabled=true;const receipt=await api(`/api/m8/notifications/${target.dataset.notification}/replies`,{method:"POST",body:{reply_kind:target.dataset.reply,body,explicit_human_confirmation:true}});if(target.dataset.reply==="APPEAL_REQUEST"){const reply=receipt.audit_event?.transition_command?.reply;if(!reply)throw new Error("回复已记录，但回复 authority 尚不可读取，请重试案件申诉步骤");try{await transitionCase(target.dataset.case,"SUBMIT_APPEAL",[{kind:"NOTIFICATION_REPLY",authority_id:reply.reply_authority_id,document_sha256:reply.reply_document_sha256}]);}catch(error){await refresh(`申诉回复已记录；案件提交未完成，可从案件页重试：${error.message}`);return;}}await refresh(target.dataset.reply==="APPEAL_REQUEST"?"申诉回复与案件申诉状态均已记录":"说明已记录，原通知未被改写");return;}
     if(target.dataset.ack){target.disabled=true;await api(`/api/m8/notifications/${target.dataset.ack}/acknowledgements`,{method:"POST",body:{explicit_human_confirmation:true}});await refresh("结果通知已确认");return;}
     if(target.dataset.query){document.getElementById("knowledge-query").value=target.dataset.query;return;}
@@ -489,7 +558,8 @@ document.addEventListener("click",event=>{
 },{capture:true});
 document.addEventListener("click",handleClick);
 document.addEventListener("keydown",event=>{const tab=event.target.closest('[role="tab"][data-case-tab]');if(!tab||!["ArrowLeft","ArrowRight"].includes(event.key))return;const tabs=[...tab.parentElement.querySelectorAll('[role="tab"][data-case-tab]')],next=tabs[(tabs.indexOf(tab)+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length];event.preventDefault();patchCaseTab(next.dataset.caseTab,{historyMode:"replace",focus:true});});
-addEventListener("popstate",event=>{const priorPath=state.currentRoute.split("?")[0],path=location.pathname;if(path===priorPath){const query=new URL(location.href).searchParams;if(path==="/app/cases"&&patchCasesFilter((query.get("filter")||"ALL").toUpperCase(),{historyMode:null}))return;if(path==="/app/settings"&&patchSettingsSection(query.get("section")||"models",{historyMode:null}))return;if(path.startsWith("/app/cases/")&&patchCaseTab(query.get("tab")||"overview",{historyMode:null}))return;}renderRoute({restore:event.state?.labcourt?.ui||null});});
+document.addEventListener("keydown",event=>{const tab=event.target.closest('[role="tab"][data-evidence-stage]');if(!tab||!["ArrowLeft","ArrowRight"].includes(event.key))return;const tabs=[...tab.parentElement.querySelectorAll('[role="tab"][data-evidence-stage]')],next=tabs[(tabs.indexOf(tab)+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length];event.preventDefault();patchEvidenceStage(next.dataset.evidenceStage,null,{historyMode:"replace",focus:true});});
+addEventListener("popstate",event=>{const priorPath=state.currentRoute.split("?")[0],path=location.pathname;if(path===priorPath){const query=new URL(location.href).searchParams;if(path==="/app/cases"&&patchCasesFilter((query.get("filter")||"ALL").toUpperCase(),{historyMode:null}))return;if(path==="/app/settings"&&patchSettingsSection(query.get("section")||"models",{historyMode:null}))return;if(path.startsWith("/app/cases/")&&query.get("tab")==="evidence"&&patchEvidenceStage(query.get("stage")||"replay",query.get("evidence"),{historyMode:null}))return;if(path.startsWith("/app/cases/")&&patchCaseTab(query.get("tab")||"overview",{historyMode:null}))return;}renderRoute({restore:event.state?.labcourt?.ui||null});});
 document.addEventListener("visibilitychange",()=>{document.body.classList.toggle("is-page-hidden",document.hidden);if(document.hidden){clearTimeout(state.pollTimer);persistEntry();}else if(state.run?.state==="RUNNING")schedulePoll();});
 addEventListener("scroll",()=>{if(!state.scrollSaveFrame)state.scrollSaveFrame=requestAnimationFrame(()=>{state.scrollSaveFrame=0;if(location.pathname.startsWith("/app/"))persistEntry();});},{passive:true});
 if(!history.state?.labcourt)history.replaceState({labcourt:{key:crypto.randomUUID(),ui:null}},"",location.href);
