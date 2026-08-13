@@ -14,7 +14,7 @@ const state = {
   pollFailures:0,pollInFlight:false,toastTimer:null,routeController:null,routeSequence:0,
   shellMounted:false,currentRoute:"",casesFilter:"ALL",knowledgeFilter:"ALL",knowledgeSelected:null,
   settingsSection:"models",mapFloor:null,mapLocation:null,confirmationOpen:false,navOpen:false,scrollSaveFrame:0,
-  lastRunAnnouncement:"",caseDetail:null,settingsPanels:null,evidenceWorkspace:null,conversation:null,confirmationTrigger:null,
+  lastRunAnnouncement:"",caseDetail:null,settingsPanels:null,evidenceWorkspace:null,hearingView:null,conversation:null,confirmationTrigger:null,
 };
 
 const esc = value => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
@@ -358,9 +358,14 @@ function patchCasesFilter(filter,{historyMode="push"}={}) {
   const region=document.querySelector("[data-case-list-region]");if(!region)return false;region.classList.remove("is-updating");document.querySelector("[data-case-list-title]").textContent=`${filters.find(x=>x[0]===filter)?.[1]||"全部"}卷宗`;document.querySelector("[data-case-list-count]").textContent=`${items.length} CASES`;document.querySelector("[data-case-list]").innerHTML=caseList(items);requestAnimationFrame(()=>region.classList.add("is-updating"));return true;
 }
 
-function flow(status) {
+function flow(status,hearing=null,hasHearingSource=false) {
   const names=["检测触发","证据采集","AI 初审","复核会审","程序守门","人工确认","通知送达","结案归档"];
-  const current=status==="PENDING_VERIFICATION"||status==="EVIDENCE_REQUESTED"?5:status==="CONFIRMED"||status==="APPEALED"?6:7;
+  let current=status==="PENDING_VERIFICATION"||status==="EVIDENCE_REQUESTED"?5:status==="CONFIRMED"||status==="APPEALED"?6:7;
+  if(hasHearingSource){
+    current=3;
+    if(hearing?.hearing_session)current=4;
+    if(hearing?.eligibility==="COMPLETED"&&hearing?.l5_status==="PASSED")current=5;
+  }
   return `<div class="case-flow-8" aria-label="案件流程">${names.map((name,index)=>`${index?`<span class="case-flow-join ${index<current?"is-complete":""}"></span>`:""}<span class="case-flow-node ${index<current?"is-complete":index===current?"is-current":""}" style="--flow-index:${index}"><i>${index<current?"✓":index+1}</i>${name}</span>`).join("")}</div>`;
 }
 
@@ -375,12 +380,40 @@ function caseActions(item) {
   return `<div class="field"><label for="case-reason">人工处置说明</label><textarea id="case-reason">已复核现有证据与现场来源，按演示流程记录本次人工决定。</textarea></div><div class="form-actions">${buttons.map(([action,text,kind])=>`<button class="button ${kind}" type="button" data-transition="${action}" data-case="${item.case_id}">${text}</button>`).join("")}</div><p class="help">提交前后端将再次校验角色、案件版本和显式人工确认。</p>`;
 }
 
+function hearingRef(ref){return `<span class="hearing-ref"><b>${esc(ref.kind)}</b><code>${esc(short(ref.artifact_id))}</code></span>`;}
+function hearingArgument(item){return `<li><p>${esc(item.claim)}</p><div class="hearing-refs">${(item.evidence_refs||[]).map(hearingRef).join("")||"<span>无引用</span>"}</div><small>UNCERTAINTY ${esc(item.uncertainty)}</small></li>`;}
+function hearingRoleCard(output){
+  const payload=output.payload||{},roleName={PROSECUTOR:"控方",DEFENDER:"辩方",JUDGE:"裁决方"}[output.role]||output.role;
+  const argumentsMarkup=(payload.arguments||[]).length?`<ol class="hearing-arguments">${payload.arguments.map(hearingArgument).join("")}</ol>`:"";
+  const responses=(payload.judge_responses||[]).map(item=>`<li><b>${esc(item.disposition)}</b><p>${esc(item.response_summary)}</p><small>DEFENSE ARGUMENT ${short(item.defense_argument_id)}</small></li>`).join("");
+  const outcome=payload.outcome?.outcome_type==="FINAL"?`<div class="hearing-outcome"><span>FINAL VERDICT PROPOSAL</span><strong>${esc(payload.outcome.decision)}</strong><p>${esc(payload.outcome.rationale_summary)}</p></div>`:payload.outcome?.request?`<div class="hearing-outcome"><span>ACQUISITION REQUEST</span><strong>${esc(payload.outcome.request.action)}</strong><p>${esc(payload.outcome.request.reason_summary)}</p></div>`:"";
+  return `<article class="hearing-role"><header><div><p class="eyebrow">${esc(output.role)} · ROUND ${esc(output.round_index)}</p><h3>${roleName}</h3></div><span class="badge">STRUCTURED</span></header>${payload.case_summary?`<p>${esc(payload.case_summary)}</p>`:""}${argumentsMarkup}${responses?`<ul class="hearing-responses">${responses}</ul>`:""}${outcome}</article>`;
+}
+function hearingDossier(caseId){
+  const run=state.run;
+  if(!run||run.case_id!==caseId)return empty("运行产物尚不可见","当前案件没有可读取的场景运行投影。");
+  if(!run.hearing_case_id)return empty("未绑定会审来源","该运营案件没有持久化的 M4 Case 绑定，页面不会猜测或创建第二套会审状态。");
+  const view=state.hearingView;
+  if(!view)return `<div class="hearing-state"><p class="eyebrow">SERVICE-CROPPED VIEW</p><h2>当前角色暂不可读取会审 authority</h2><p>学生与运维不读取会审内容；领导仅可读取已经完成或转人工复核的结果。安全负责人可查看资格并显式启动。</p></div>`;
+  const eligible=["ELIGIBLE_ESCALATED","ELIGIBLE_REWORK_REQUIRED"].includes(view.eligibility);
+  const modelLabel=view.model_mode==="OPENAI_COMPATIBLE_QWEN"?"显式真实 Qwen 会审":"离线合成会审";
+  const safetyAction=role()==="SAFETY_OFFICER"&&eligible?`<button class="button ${view.model_mode==="OPENAI_COMPATIBLE_QWEN"?"alarm":"primary"}" type="button" data-hearing-start="${esc(view.model_mode)}" data-hearing-case="${esc(caseId)}">启动${modelLabel}</button>`:"";
+  const providers=(view.provider_selections||[]).map(item=>`<span>${esc(item.role)} · ${esc(item.provider)} / ${esc(item.model)}</span>`).join("");
+  const roleOutputs=(view.role_outputs||[]).map(hearingRoleCard).join("");
+  const references=[...(view.cited_evidence_refs||[]),...(view.cited_precedent_refs||[])];
+  const acquisitions=(view.rounds||[]).filter(item=>item.acquisition_request||item.tool_execution_receipt).map(item=>`<article><b>ROUND ${esc(item.round_index)}</b><p>${item.acquisition_request?`${esc(item.acquisition_request.action)} · ${esc(item.acquisition_request.reason_summary)}`:"无补证请求"}</p><small>${item.tool_execution_receipt?`EXECUTION ${esc(item.tool_execution_receipt.status||item.tool_execution_receipt.outcome||"RECORDED")}`:"未执行补证"}</small></article>`).join("");
+  const failures=(view.typed_failures||[]).map(item=>`<article class="hearing-failure"><b>${esc(item.reason_code||item.failure_code||"TYPED_FAILURE")}</b><p>${esc(item.role)} · ROUND ${esc(item.request?.round_index||"—")}</p><small>AUTHORITY ${short(item.authority_id)}</small></article>`).join("");
+  const reviews=(view.procedural_reviews||[]).map(item=>`<article><b>${item.passed?"PASSED":"FAILED"}</b><p>${(item.defects||[]).length?`${item.defects.length} 个类型化缺陷`:"未发现程序缺陷"}</p><small>${short(item.review_id)}</small></article>`).join("");
+  const verdict=view.final_verdict?`<section class="hearing-verdict"><div><p class="eyebrow">FINAL VERDICT · M4 AUTHORITY</p><h2>${esc(view.final_verdict.decision)}</h2><p>${esc(view.final_verdict.rationale_summary)}</p></div><dl><div><dt>建议提醒级别</dt><dd>${esc(view.final_verdict.recommended_alert_level)}</dd></div><div><dt>L5 程序审查</dt><dd>${esc(view.l5_status)}</dd></div><div><dt>裁决 ID</dt><dd>${short(view.final_verdict.verdict_id)}</dd></div></dl></section>`:"";
+  return `<section class="hearing-dossier"><header class="hearing-status"><div><p class="eyebrow">M4 HEARING · ${esc(view.model_mode)}</p><h2>${esc(view.eligibility)}</h2><p>冻结案件状态 ${esc(view.case_status)} · M4 Case ${short(view.case_id)} · Revision ${view.case_revision}</p></div>${safetyAction}</header>${view.model_mode==="OFFLINE_FIXTURE"?`<div class="synthetic-banner"><b>DEMO / SYNTHETIC HEARING INPUT</b><span>离线三角色输出仅用于展示程序闭环，不是事实或处分依据。</span></div>`:""}<div class="hearing-providers">${providers}</div>${!view.hearing_session?`<div class="hearing-state"><h3>${eligible?"尚未建立会审 session":"不符合会审条件"}</h3><p>${eligible?"只有安全负责人显式操作才会开始；打开页签不会改变 M4 或 M8 状态。":`当前初审为 ${esc(view.screening_decision)}、冻结状态为 ${esc(view.case_status)}；明确终态不会为展示被强迫进入会审。`}</p></div>`:""}${roleOutputs?`<div class="hearing-role-grid">${roleOutputs}</div>`:""}${verdict}<div class="hearing-detail-grid"><section><div class="panel-head"><h3>证据与先例引用</h3><span>${references.length} REFS</span></div><div class="hearing-refs">${references.map(hearingRef).join("")||"尚无会审引用"}</div></section><section><div class="panel-head"><h3>补证请求 / 执行</h3><span>${(view.acquisition_requests||[]).length} REQUESTS</span></div>${acquisitions||"<p class='help'>尚无补证记录。</p>"}</section><section><div class="panel-head"><h3>类型化失败</h3><span>${(view.typed_failures||[]).length} FAILURES</span></div>${failures||"<p class='help'>没有持久化的模型调用失败。</p>"}</section><section><div class="panel-head"><h3>L5 程序审查</h3><span>${esc(view.l5_status)}</span></div>${reviews||"<p class='help'>程序审查尚未运行。</p>"}</section></div></section>`;
+}
+
 function caseRecognitionDossier(caseId,section="hearing") {
   const run=state.run;
   if(!run||run.case_id!==caseId)return empty("运行产物尚不可见","当前案件没有可读取的场景运行投影。");
   const components=(run.model_components||[]).map(item=>`<article class="dossier-source"><span>${esc(item.component)} · ${esc(item.source)}</span><strong>${esc(item.model)}</strong><small>${esc(item.provider)} · ${esc(item.revision)} · MANIFEST ${short(item.manifest_id)}</small></article>`).join("");
   if(section==="evidence")return evidenceWorkspaceMarkup();
-  return `<div class="hearing-grid"><article class="hearing-card"><p class="eyebrow">机器初审 · WEAK LABEL</p><strong class="dossier-decision">${esc(run.screening_decision||"尚未生成")}</strong><p>${esc(run.screening_summary||"结构化初审尚未生成。")}</p><small>机器输出不是事实或处分依据</small></article><article class="hearing-card"><p class="eyebrow">反证检查</p><strong>当前投影无独立反证 authority</strong><p>不把缺少独立反证引用误写为“已经证明不存在反证”。</p></article><article class="hearing-card"><p class="eyebrow">STRICT_CAUSAL 规则守门</p><strong>${esc(run.rule_judgment||"尚未生成")}</strong><p>后续合规不会抹除较早风险；规则只投影风险，不替人定责。</p></article><article class="hearing-card"><p class="eyebrow">人工复核</p><strong>${run.case_status&&run.case_status!=="PENDING_VERIFICATION"?"已有人工作出状态变更":"等待安全负责人确认"}</strong><p>处置动作集中在“处理”页签并再次校验版本。</p></article></div><div class="panel" style="margin-top:20px"><p class="eyebrow">MODEL / FIXTURE PROVENANCE</p>${components||empty("暂无模型来源","本场景没有模型调用。")}${run.raw_response_ref?`<p class="help mono">RAW · ${esc(run.raw_response_ref)}</p>`:""}</div>`;
+  return hearingDossier(caseId)+`<div class="panel hearing-screening-source"><p class="eyebrow">SCREENING / RUN PROVENANCE</p>${components||empty("暂无模型来源","本场景没有模型调用。")}${run.raw_response_ref?`<p class="help mono">RAW · ${esc(run.raw_response_ref)}</p>`:""}</div>`;
 }
 
 function evidenceWorkspaceMarkup() {
@@ -402,7 +435,7 @@ async function renderCaseDetail(caseId) {
   const authority=caseAuthority(item),command=caseCommand(item),triggers=command.trigger_authorities||[];
   const related=state.notifications.filter(n=>notificationPlan(n)?.case_id===caseId);
   const tab=new URL(location.href).searchParams.get("tab")||"overview";const allowed=["overview","evidence","hearing","handling"];const activeTab=allowed.includes(tab)?tab:"overview";
-  const run=state.run?.case_id===caseId?state.run:null;state.evidenceWorkspace=run?await optional(`/api/m8/demo/scenario-runs/${run.run_id}/evidence-workspace`,null):null;
+  const run=state.run?.case_id===caseId?state.run:null;state.evidenceWorkspace=run?await optional(`/api/m8/demo/scenario-runs/${run.run_id}/evidence-workspace`,null):null;state.hearingView=run?.hearing_case_id?await optional(`/api/m8/runs/${run.run_id}/cases/${run.hearing_case_id}/hearing`,null):null;
   const conversationSummary=state.conversations.find(value=>value.case_id===caseId),hasMessage=related.some(value=>["CASE_UPDATED","APPEAL_OUTCOME"].includes(notificationPlan(value)?.purpose));
   const notifyAction=role()==="SAFETY_OFFICER"&&item.status==="CONFIRMED"&&authority.subject_actor_id?(hasMessage?`<a class="button" href="/app/notifications/${item.case_id}">查看会话</a><button class="button quiet" type="button" data-confirm-dispatch="CASE_UPDATED" data-case="${item.case_id}">再次发送</button>`:`<button class="button" type="button" data-dispatch="CASE_UPDATED" data-case="${item.case_id}">发送学生消息</button>`):"";
   const hasOutcome=related.some(value=>notificationPlan(value)?.purpose==="APPEAL_OUTCOME");const outcomeAction=role()==="SAFETY_OFFICER"&&item.status==="APPEAL_RESOLVED"?(hasOutcome?`<a class="button" href="/app/notifications/${item.case_id}">查看处理结果会话</a>`:`<button class="button" type="button" data-dispatch="APPEAL_OUTCOME" data-case="${item.case_id}">发送申诉结果</button>`):"";
@@ -410,7 +443,7 @@ async function renderCaseDetail(caseId) {
   const handling=`<div class="processing-layout"><section class="panel"><div class="panel-head"><h2>处置工作台</h2><span>HUMAN CONFIRMATION</span></div>${caseActions(item)}</section><aside><div class="panel-head"><h2>审计时间线</h2><span>STATE MACHINE</span></div><div class="case-timeline"><article class="timeline-event is-complete"><b>案件建立</b><p>${label("PENDING_VERIFICATION")} · V1</p></article><article class="timeline-event is-current"><b>当前状态</b><p>${esc(label(item.status))} · V${item.case_version}</p></article></div></aside></div><section class="case-conversation-summary"><div class="panel-head"><h2>案件会话</h2><span>${conversationSummary?`${conversationSummary.notification_count} 通知 · ${conversationSummary.reply_count} 回复`:"尚未建立"}</span></div>${conversationSummary?`<a class="conversation-inline" href="/app/notifications/${caseId}"><div><b>${esc(conversationSummary.latest_title)}</b><p>${esc(conversationSummary.latest_progress)}</p></div><span>查看完整会话 →</span></a>`:empty("尚无案件会话","发送学生消息后，双方会在同一条时间线查看说明、申诉和处理结果。")}</section>`;
   const panels={overview,evidence:caseRecognitionDossier(caseId,"evidence"),hearing:caseRecognitionDossier(caseId,"hearing"),handling};
   const tabs=[["overview","概览"],["evidence","证据"],["hearing","会审"],["handling","处理"]];
-  const content=`${pageHead(authority.risk_level,caseTitle(item),`${authority.location_id} · 案件 ${short(item.case_id)} · ${authority.subject_actor_id?"预约关联，非视觉身份识别":"未关联个人身份"}`,`${notifyAction}${outcomeAction}<a class="button quiet" href="/app/cases">返回列表</a>`)}${flow(item.status)}<nav class="case-tabs" role="tablist" aria-label="案件卷宗内容">${tabs.map(([key,text])=>`<a class="case-tab" role="tab" data-case-tab="${key}" aria-selected="${activeTab===key}" tabindex="${activeTab===key?0:-1}" href="?tab=${key}">${text}${key==="evidence"?`<span class="case-tab-count">${state.run?.case_id===caseId?state.run.evidence?.length||0:0}</span>`:""}</a>`).join("")}</nav><section class="case-panel is-active" role="tabpanel" data-case-panel="${activeTab}">${panels[activeTab]}</section>`;
+  const content=`${pageHead(authority.risk_level,caseTitle(item),`${authority.location_id} · 案件 ${short(item.case_id)} · ${authority.subject_actor_id?"预约关联，非视觉身份识别":"未关联个人身份"}`,`${notifyAction}${outcomeAction}<a class="button quiet" href="/app/cases">返回列表</a>`)}${flow(item.status,state.hearingView,Boolean(run?.hearing_case_id))}<nav class="case-tabs" role="tablist" aria-label="案件卷宗内容">${tabs.map(([key,text])=>`<a class="case-tab" role="tab" data-case-tab="${key}" aria-selected="${activeTab===key}" tabindex="${activeTab===key?0:-1}" href="?tab=${key}">${text}${key==="evidence"?`<span class="case-tab-count">${state.run?.case_id===caseId?state.run.evidence?.length||0:0}</span>`:""}</a>`).join("")}</nav><section class="case-panel is-active" role="tabpanel" data-case-panel="${activeTab}">${panels[activeTab]}</section>`;
   state.caseDetail={caseId,panels,tabs};
   setRouteContent(content,{mount:()=>{if(activeTab==="evidence")attachEvidenceWorkspace();},announcement:`${caseTitle(item)} · ${tabs.find(x=>x[0]===activeTab)[1]}`});
 }
@@ -632,6 +665,15 @@ async function handleClick(event) {
     if(target.dataset.location){patchMapSelection({location:target.dataset.location});return;}
     if(target.dataset.knowledgeType){patchKnowledgeFilter(target.dataset.knowledgeType);return;}
     if(target.dataset.knowledgeDoc){await selectKnowledgeDocument(target.dataset.knowledgeDoc);return;}
+    if(target.dataset.hearingStart){
+      const view=state.hearingView;if(!view)throw new Error("HEARING_VIEW_NOT_AVAILABLE");
+      const real=view.model_mode==="OPENAI_COMPATIBLE_QWEN";
+      if(real&&!confirm("即将调用真实 Qwen 三角色会审，可能产生外部网络请求与费用。不会静默回退到 Fixture。是否继续？"))return;
+      if(real&&!confirm("二次确认：仅对当前已绑定的 M4 灰区案件发起真实 Qwen 会审。确认显式启动？"))return;
+      target.disabled=true;target.setAttribute("aria-busy","true");
+      state.hearingView=await api(`/api/m8/runs/${view.run_id}/cases/${view.case_id}/hearing`,{method:"POST",body:{run_id:view.run_id,case_id:view.case_id,source_status:view.case_status,source_screening_id:view.screening_id,source_evidence_pack_id:view.current_evidence_pack_id,source_evidence_pack_version:view.current_evidence_pack_version,model_mode:view.model_mode,explicit_start:true,request_manifest_id:view.request_manifest_id}});
+      await renderCaseDetail(target.dataset.hearingCase);toast(real?"真实 Qwen 会审已按当前 M4 authority 完成或记录类型化状态":"离线合成会审已按当前 M4 authority 完成");return;
+    }
     if(target.dataset.scenario){target.disabled=true;target.setAttribute("aria-busy","true");const payload={scenario_kind:target.dataset.scenario,explicit_human_confirmation:true};if(target.dataset.scenario==="PPE_GOGGLES_MISSING")payload.recognition_mode=target.dataset.mode||"FULL_MODEL";if(target.dataset.retry)payload.retry_of_run_id=target.dataset.retry;state.run=await api("/api/m8/demo/scenario-runs",{method:"POST",body:payload});patchRunUi();schedulePoll();toast(payload.recognition_mode==="FULL_MODEL"?"真实识别已启动，进度将在本页连续更新":"演示模式已明确启动，并创建了独立运行记录");return;}
     if(target.dataset.transition){target.disabled=true;await transitionCase(target.dataset.case,target.dataset.transition);await refresh("案件状态已由服务端状态机更新");return;}
     if(target.dataset.dispatch){target.disabled=true;await api(`/api/m8/cases/${target.dataset.case}/notification-dispatches`,{method:"POST",body:{kind:target.dataset.dispatch,explicit_human_confirmation:true}});await refresh("新通知卡已通过本地模拟通道送达");return;}
