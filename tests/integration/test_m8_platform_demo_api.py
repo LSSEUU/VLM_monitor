@@ -530,6 +530,43 @@ def test_platform_fixture_fallback_is_explicit_and_preserves_failed_model_run(
         thread.join(timeout=3)
 
 
+def test_hearing_case_mapping_recovers_from_persisted_run_after_reassembly(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = _assembly(tmp_path)
+    platform = assembly.server.platform_service
+    stages = tuple(
+        M8PlatformScenarioStageV1(
+            stage=stage,
+            state=M8PlatformStageState.PENDING,
+            summary="尚未生成",
+        )
+        for stage in M8PlatformScenarioStage
+    )
+    run = M8PlatformScenarioRunV1(
+        run_id="evaluation-hearing-case-map",
+        scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
+        state="RUNNING",
+        stages=stages,
+        case_id="platform-case-persisted",
+        hearing_case_id="m4-case-persisted",
+        case_status="PENDING_VERIFICATION",
+        recognition_mode=M8PlatformRecognitionMode.FULL_MODEL,
+    )
+    platform._write_run(run)
+    assembly.server.server_close()
+
+    reopened = _assembly(tmp_path)
+    try:
+        resolver = reopened.server.platform_service.resolve_hearing_case_id
+        assert resolver(run.run_id, run.case_id) == run.hearing_case_id
+        with pytest.raises(M8ApiServiceError, match="RESOURCE_NOT_FOUND"):
+            resolver(run.run_id, run.hearing_case_id)
+    finally:
+        reopened.server.server_close()
+
+
 def test_platform_projects_truthful_hot_progress_and_failure_stage(
     tmp_path: Path,
     socket_enabled: None,

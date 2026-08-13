@@ -595,8 +595,17 @@ def test_ineligible_case_refuses_start_and_crops_non_safety_roles(api_server) ->
     manifest = _manifest()
     runtime = _IneligibleRuntime(config, manifest)
     server, _operational_case, operations = api_server
-    server.hearing_service = M8HearingApiService(operations, {RUN_ID: runtime})
-    path = f"/api/m8/runs/{RUN_ID}/cases/{runtime._view.case_id}/hearing"
+    platform_case_id = "platform-clear-terminal-case"
+    server.hearing_service = M8HearingApiService(
+        operations,
+        {RUN_ID: runtime},
+        case_id_resolver=(
+            lambda run_id, case_id: runtime._view.case_id
+            if (run_id, case_id) == (RUN_ID, platform_case_id)
+            else "unmapped-case"
+        ),
+    )
+    path = f"/api/m8/runs/{RUN_ID}/cases/{platform_case_id}/hearing"
 
     safety_status, safety_view = _http_request(
         server,
@@ -609,7 +618,7 @@ def test_ineligible_case_refuses_start_and_crops_non_safety_roles(api_server) ->
 
     request = M8HearingStartRequestV1(
         run_id=RUN_ID,
-        case_id=runtime._view.case_id,
+        case_id=platform_case_id,
         source_status=CaseStatus.ESCALATED,
         source_screening_id=runtime._view.screening_id,
         source_evidence_pack_id=runtime._view.current_evidence_pack_id,
@@ -694,15 +703,23 @@ def test_persisted_runtime_resolver_closes_offline_demo_and_recovers_after_reope
         )
 
     server, _operational_case, operations = api_server
+    platform_case_id = "platform-persisted-hearing-case"
+
+    def resolve_case_id(run_id: str, case_id: str) -> str:
+        assert run_id == RUN_ID
+        assert case_id == platform_case_id
+        return pack.case_id
+
     hearing_service = M8HearingApiService(
         operations,
         {},
         runtime_resolver=resolve_runtime,
+        case_id_resolver=resolve_case_id,
     )
     server.hearing_service = hearing_service
     request = M8HearingStartRequestV1(
         run_id=RUN_ID,
-        case_id=pack.case_id,
+        case_id=platform_case_id,
         source_status=CaseStatus.ESCALATED,
         source_screening_id=escalated.case.screening_results[-1].screening_id,
         source_evidence_pack_id=pack.pack_id,
@@ -715,7 +732,7 @@ def test_persisted_runtime_resolver_closes_offline_demo_and_recovers_after_reope
     posted = hearing_service.start(
         safety,
         RUN_ID,
-        pack.case_id,
+        platform_case_id,
         request,
     )
     assert posted.eligibility == M8HearingEligibility.COMPLETED
@@ -726,10 +743,10 @@ def test_persisted_runtime_resolver_closes_offline_demo_and_recovers_after_reope
         VlmRole.JUDGE,
     ]
 
-    recovered = hearing_service.status(safety, RUN_ID, pack.case_id)
+    recovered = hearing_service.status(safety, RUN_ID, platform_case_id)
     assert recovered.hearing_session_id == posted.hearing_session_id
     assert recovered.final_verdict == posted.final_verdict
 
     student = server.api_authenticator.authenticate(f"Bearer {TOKENS['student']}")
     with pytest.raises(M8ApiServiceError, match="FORBIDDEN"):
-        hearing_service.status(student, RUN_ID, pack.case_id)
+        hearing_service.status(student, RUN_ID, platform_case_id)

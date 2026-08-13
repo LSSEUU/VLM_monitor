@@ -404,6 +404,17 @@ class M8PlatformDemoService:
         ) as runtime:
             yield runtime
 
+    def resolve_hearing_case_id(self, run_id: str, platform_case_id: str) -> str:
+        """Resolve the persisted operational Case boundary to its frozen M4 source."""
+
+        try:
+            run = self._read_run_snapshot(run_id)
+        except (OSError, ValueError):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
+        if run.case_id != platform_case_id or run.hearing_case_id is None:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        return run.hearing_case_id
+
     def model_readiness(self, principal: M8ApiPrincipalV1) -> M8PlatformModelReadinessV1:
         self._actor(principal)
         config = self.model_pilot_service.config

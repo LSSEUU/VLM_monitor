@@ -330,6 +330,7 @@ class M8HearingApiService:
         *,
         start_enabled: bool = True,
         runtime_resolver: Callable[[str], AbstractContextManager[M8HearingRuntime]] | None = None,
+        case_id_resolver: Callable[[str, str], str] | None = None,
     ) -> None:
         if not isinstance(start_enabled, bool):
             raise TypeError("start_enabled must be a bool")
@@ -337,6 +338,7 @@ class M8HearingApiService:
         self._runtimes = dict(runtimes)
         self._start_enabled = start_enabled
         self._runtime_resolver = runtime_resolver
+        self._case_id_resolver = case_id_resolver
         if any(run_id != runtime.run_id for run_id, runtime in self._runtimes.items()):
             raise ValueError("M8 hearing runtime map conflicts with runtime run IDs")
 
@@ -361,14 +363,20 @@ class M8HearingApiService:
         request: M8HearingStartRequestV1,
     ) -> M8HearingViewV1:
         with self._runtime(run_id) as runtime:
-            view = runtime.view(case_id)
+            source_case_id = self._source_case_id(run_id, case_id)
+            view = runtime.view(source_case_id)
             self._authorize(principal, view, start=True)
             if view.hearing_session is None and view.eligibility not in {
                 M8HearingEligibility.ELIGIBLE_ESCALATED,
                 M8HearingEligibility.ELIGIBLE_REWORK_REQUIRED,
             }:
                 raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
-            return runtime.start(request)
+            source_request = (
+                request
+                if source_case_id == case_id
+                else request.model_copy(update={"case_id": source_case_id})
+            )
+            return runtime.start(source_request)
 
     def status(
         self,
@@ -385,9 +393,14 @@ class M8HearingApiService:
         case_id: str,
     ) -> M8HearingViewV1:
         with self._runtime(run_id) as runtime:
-            view = runtime.view(case_id)
+            view = runtime.view(self._source_case_id(run_id, case_id))
             self._authorize(principal, view, start=False)
             return view
+
+    def _source_case_id(self, run_id: str, platform_case_id: str) -> str:
+        if self._case_id_resolver is None:
+            return platform_case_id
+        return self._case_id_resolver(run_id, platform_case_id)
 
     def _runtime(self, run_id: str) -> AbstractContextManager[M8HearingRuntime]:
         runtime = self._runtimes.get(run_id)

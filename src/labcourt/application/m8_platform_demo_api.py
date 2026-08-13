@@ -292,6 +292,7 @@ def assemble_m8_platform_demo_api(
             operations,
             {},
             runtime_resolver=platform_service.open_hearing_runtime,
+            case_id_resolver=platform_service.resolve_hearing_case_id,
         ),
         platform_service=platform_service,
         evaluation_service=evaluation_service,
