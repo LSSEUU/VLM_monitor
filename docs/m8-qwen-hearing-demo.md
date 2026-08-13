@@ -19,13 +19,26 @@ uv run --locked labcourt hearing qwen-demo prepare `
 ```
 
 真实运行固定使用北京 Workspace 专属端点和 `qwen3.7-plus-2026-05-26`。三个独立 profile
-都显式发送 `response_format={"type":"json_object"}` 与 `enable_thinking=false`。API key
-只通过本机 SecureString 提示进入当前进程环境：
+都显式发送 `response_format={"type":"json_object"}` 与 `enable_thinking=false`。
+
+首次配置时建议在同一业务空间创建一把独立 M8 key，然后用 SecureString 隐藏输入一次。脚本把端点和
+key 写入 Windows 当前用户环境变量，不写仓库、参数、日志、manifest 或报告：
 
 ```powershell
-.\scripts\windows\run-m8-qwen-hearing-demo.ps1 -WorkspaceId '<workspace-id>'
+.\scripts\windows\setup-m8-qwen-hearing-env.ps1
 ```
 
+默认复用已配置 L3 的北京 Workspace 端点，但要求输入一把新的 M8 key。若要改用另一业务空间，才传
+`-WorkspaceId '<workspace-id>'`。
+
+看到 `{"kind":"READY"}` 后，以后的真实运行和自动测试都无需再次输入 key：
+
+```powershell
+.\scripts\windows\run-m8-qwen-hearing-demo.ps1
+```
+
+启动器会优先使用当前进程变量，否则直接读取 Windows 当前用户的
+`LABCOURT_QWEN_ENDPOINT` 和 `LABCOURT_QWEN_API_KEY`；因此不要求重启终端或 Codex。
 不要把 API key 粘贴到聊天、参数、配置、日志、manifest 或报告。运行器只允许一次正式
 `POST /api/m8/runs/{run_id}/cases/{case_id}/hearing`；同一目录已有 attempt receipt 时只返回
 既有结果。配置缺失或确定未发送的错误形成 typed failure；交付状态未知时保留
