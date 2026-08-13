@@ -8,12 +8,12 @@ const STAGE_LABELS = {VIDEO:"录像",PERCEPTION:"视觉感知",EVIDENCE:"证据�
 const NAV = [["/app/monitor","监控"],["/app/cases","案件"],["/app/map","地图"],["/app/notifications","通知"],["/app/knowledge","知识库"],["/app/agent","Agent"],["/app/profile","我的"],["/app/settings","设置"]];
 const state = {
   token:sessionStorage.getItem(TOKEN_KEY),session:null,cases:[],notifications:[],conversations:[],projection:null,
-  cameras:[],reservations:[],run:null,readiness:null,users:null,rules:null,knowledgeCatalog:null,
+  cameras:[],reservations:[],run:null,readiness:null,feishu:null,users:null,rules:null,knowledgeCatalog:null,
   knowledgeAnswer:null,knowledgeDocument:null,knowledgeSearch:"",agentMessages:[],action:null,agentTyping:false,loginRole:"SAFETY_OFFICER",
   videoUrl:null,videoPromise:null,videoPositions:new Map(),evidenceUrls:[],pollTimer:null,
   pollFailures:0,pollInFlight:false,toastTimer:null,routeController:null,routeSequence:0,
   shellMounted:false,currentRoute:"",casesFilter:"ALL",knowledgeFilter:"ALL",knowledgeSelected:null,
-  settingsSection:"models",mapFloor:null,mapLocation:null,confirmationOpen:false,navOpen:false,scrollSaveFrame:0,
+  settingsSection:"messages",mapFloor:null,mapLocation:null,confirmationOpen:false,navOpen:false,scrollSaveFrame:0,
   lastRunAnnouncement:"",caseDetail:null,settingsPanels:null,evidenceWorkspace:null,conversation:null,confirmationTrigger:null,
 };
 
@@ -211,10 +211,10 @@ function errorPage(error){setRouteContent(`<div class="page-head"><div><p class=
 
 async function loadCore(signal) {
   const options=signal?{signal}:{};state.session=await api("/api/m8/session",options);
-  const [cases,notifications,conversations,projection,cameras,reservations,run,readiness]=await Promise.all([
-    optional("/api/m8/cases",[],options),optional("/api/m8/notifications",[],options),optional("/api/m8/notification-conversations",[],options),optional("/api/m8/campuses/campus-demo/operations-projection",null,options),optional("/api/m8/cameras",[],options),optional("/api/m8/reservations",[],options),optional("/api/m8/demo/scenario-runs/current",null,options),optional("/api/m8/demo/model-readiness",null,options)
+  const [cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu]=await Promise.all([
+    optional("/api/m8/cases",[],options),optional("/api/m8/notifications",[],options),optional("/api/m8/notification-conversations",[],options),optional("/api/m8/campuses/campus-demo/operations-projection",null,options),optional("/api/m8/cameras",[],options),optional("/api/m8/reservations",[],options),optional("/api/m8/demo/scenario-runs/current",null,options),optional("/api/m8/demo/model-readiness",null,options),optional("/api/m8/integrations/feishu/status",null,options)
   ]);
-  Object.assign(state,{cases,notifications,conversations,projection,cameras,reservations,run,readiness});
+  Object.assign(state,{cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu});
 }
 
 function metric(value,name,note) { return `<div class="metric"><span>${esc(name)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`; }
@@ -422,9 +422,18 @@ function patchCaseTab(tab,{historyMode="push",focus=false}={}) {
   const panel=document.querySelector("[data-case-panel]");if(!panel)return false;panel.classList.remove("is-updating");panel.dataset.casePanel=tab;panel.innerHTML=detail.panels[tab];requestAnimationFrame(()=>panel.classList.add("is-updating"));if(tab==="evidence")attachEvidenceWorkspace();if(focus)document.querySelector(`[data-case-tab="${tab}"]`)?.focus();return true;
 }
 
+function notificationDeliveryMeta(notification) {
+  const authority=notificationAuthority(notification),plan=authority?.plan,command=notification?.audit_event?.transition_command;
+  const dispatch=command?.dispatch_result,delivery=command?.delivery_receipt;
+  return {channel:plan?.target?.channel||dispatch?.request?.plan?.target?.channel||"UNKNOWN",realDeliveryConfirmed:Boolean(delivery?.real_delivery_confirmed),notificationId:notification?.notification_id};
+}
+function conversationDeliveryMeta(caseId) {
+  const rows=state.notifications.filter(item=>notificationPlan(item)?.case_id===caseId).map(notificationDeliveryMeta),channels=[...new Set(rows.map(item=>item.channel))];
+  return {channels:channels.length?channels:["UNKNOWN"],realDeliveryConfirmed:rows.some(item=>item.realDeliveryConfirmed)};
+}
 function conversationCards(items=state.conversations) {
   if(!items.length)return empty("暂无案件会话","发送案件消息后，同一案件的通知、回复和决定会聚合到这里。")
-  return `<div class="conversation-list">${items.map(item=>`<a class="conversation-card" href="/app/notifications/${item.case_id}"><div class="conversation-card__index"><span>${String(item.notification_count).padStart(2,"0")}</span><small>MESSAGES</small></div><div><p class="eyebrow">${esc(item.case_status)} · ${esc(item.location_id)}</p><h2>${esc(item.latest_title)}</h2><p>${esc(item.latest_progress)}</p><div class="conversation-card__meta"><span>${item.notification_count} 条通知</span><span>${item.reply_count} 条回复</span><span>${item.last_activity_at?new Date(item.last_activity_at).toLocaleString("zh-CN"):"时间未单独持久化"}</span><span class="badge fake">FAKE DELIVERY</span></div></div><div class="conversation-card__next"><small>当前待办</small><b>${item.pending_actor_role==="STUDENT"?"学生":item.pending_actor_role==="SAFETY_OFFICER"?"安全负责人":"无"}</b><span>打开会话 →</span></div></a>`).join("")}</div>`;
+  return `<div class="conversation-list">${items.map(item=>{const delivery=conversationDeliveryMeta(item.case_id);return `<a class="conversation-card" href="/app/notifications/${item.case_id}"><div class="conversation-card__index"><span>${String(item.notification_count).padStart(2,"0")}</span><small>MESSAGES</small></div><div><p class="eyebrow">${esc(item.case_status)} · ${esc(item.location_id)}</p><h2>${esc(item.latest_title)}</h2><p>${esc(item.latest_progress)}</p><div class="conversation-card__meta"><span>${item.notification_count} 条通知</span><span>${item.reply_count} 条回复</span><span>${item.last_activity_at?new Date(item.last_activity_at).toLocaleString("zh-CN"):"时间未单独持久化"}</span>${delivery.channels.map(channel=>`<span class="badge ${channel==="FEISHU"?"live":"fake"}">${esc(channel)}</span>`).join("")}<span>real_delivery_confirmed=${String(delivery.realDeliveryConfirmed)}</span></div></div><div class="conversation-card__next"><small>当前待办</small><b>${item.pending_actor_role==="STUDENT"?"学生":item.pending_actor_role==="SAFETY_OFFICER"?"安全负责人":"无"}</b><span>打开会话 →</span></div></a>`;}).join("")}</div>`;
 }
 
 function renderNotifications() {
@@ -449,7 +458,7 @@ async function renderNotificationConversation(caseId) {
   // when the student chose appeal without first submitting a separate explanation.
   if(present.has("STUDENT_APPEAL"))present.add("STUDENT_EXPLANATION");
   const flowMarkup=`<div class="conversation-flow">${stages.map((kind,index)=>{const done=present.has(kind),current=!done&&reached;if(!done)reached=false;return `${index?`<i class="${done?"done":""}"></i>`:""}<div class="${done?"done":current?"current":""}"><span>${done?"✓":index+1}</span><b>${CONVERSATION_STEP_LABELS[kind]}</b></div>`;}).join("")}</div>`;
-  const timeline=conversation.events.map(event=>`<article class="conversation-event ${event.sender.toLowerCase()}"><div class="conversation-event__mark"><span>${String(event.sequence).padStart(2,"0")}</span><i></i></div><div class="conversation-event__paper"><header><div><p class="eyebrow">${esc(event.kind)} · ${esc(event.sender)}</p><h3>${esc(event.title)}</h3></div><time>${event.occurred_at?new Date(event.occurred_at).toLocaleString("zh-CN"):"案件审计未单独记录时间"}</time></header>${event.body?`<p class="conversation-body">${esc(event.body)}</p>`:`<p class="conversation-redacted">正文按当前角色隐藏</p>`}<footer><span>${esc(event.status)}</span>${event.technical?`<details><summary>投递与审计信息</summary><code>FAKE DELIVERY · real_delivery_confirmed=false<br>${esc(event.technical.authority_ref)}<br>${esc(event.technical.document_sha256)}</code></details>`:""}</footer></div></article>`).join("");
+  const timeline=conversation.events.map(event=>{const notification=state.notifications.find(item=>item.notification_id===event.notification_id),delivery=notification?notificationDeliveryMeta(notification):null;return `<article class="conversation-event ${event.sender.toLowerCase()}"><div class="conversation-event__mark"><span>${String(event.sequence).padStart(2,"0")}</span><i></i></div><div class="conversation-event__paper"><header><div><p class="eyebrow">${esc(event.kind)} · ${esc(event.sender)}</p><h3>${esc(event.title)}</h3></div><time>${event.occurred_at?new Date(event.occurred_at).toLocaleString("zh-CN"):"案件审计未单独记录时间"}</time></header>${event.body?`<p class="conversation-body">${esc(event.body)}</p>`:`<p class="conversation-redacted">正文按当前角色隐藏</p>`}<footer><span>${esc(event.status)}</span>${event.technical?`<details><summary>投递与审计信息</summary><code>${esc(delivery?.channel||event.technical.channel||"UNKNOWN")} · real_delivery_confirmed=${String(delivery?.realDeliveryConfirmed||false)}<br>${esc(event.technical.authority_ref)}<br>${esc(event.technical.document_sha256)}</code></details>`:""}</footer></div></article>`;}).join("");
   const content=`${pageHead("CASE CONVERSATION","案件会话",`${conversation.location_id} · 案件 ${short(caseId)} · V${conversation.case_version}`,`<a class="button quiet" href="/app/notifications">返回会话列表</a><a class="button" href="/app/cases/${caseId}?tab=handling">查看案件处理</a>`)}${flowMarkup}<div class="conversation-layout"><section class="conversation-timeline">${timeline}</section><aside class="conversation-action-panel"><p class="eyebrow">NEXT ACTION</p><h2>${esc(conversation.summary.latest_progress)}</h2><p>所有操作继续调用既有业务接口，并由服务端再次校验角色与案件版本。</p>${conversationActionsMarkup(conversation)}</aside></div>`;
   setRouteContent(content,{announcement:"案件完整会话"});
 }
@@ -510,16 +519,16 @@ async function selectKnowledgeDocument(logicalId,{historyMode="push"}={}) {
   try{state.knowledgeDocument=await api(`/api/m8/knowledge/catalogs/campus-safety-knowledge/documents/${encodeURIComponent(logicalId)}`);if(reader){reader.classList.remove("is-updating");reader.innerHTML=knowledgeReaderMarkup();requestAnimationFrame(()=>reader.classList.add("is-updating"));}}catch(error){if(reader)reader.innerHTML=`<div class="error-state"><strong>${esc(error.message)}</strong><p>正文未通过校验，因此没有展示。</p><button class="button" type="button" data-knowledge-doc="${esc(logicalId)}">重新读取</button></div>`;}return true;
 }
 
-function knowledgeQueryPayload(query) {return {query_text:query,locale:"zh-CN",as_of:new Date().toISOString(),allowed_document_types:["DEVICE_MANUAL","EMERGENCY_PLAN","FAQ","HISTORICAL_PRECEDENT","POLICY","SOP"],max_citations:3};}
+function knowledgeQueryPayload(query) {const types=["DEVICE_MANUAL","EMERGENCY_PLAN","FAQ","HISTORICAL_PRECEDENT","POLICY","SOP"];return {query_text:query,locale:"zh-CN",as_of:new Date().toISOString(),allowed_document_types:state.knowledgeFilter==="ALL"?types:[state.knowledgeFilter],max_citations:3};}
 
 function agentQuickPrompts() {
-  const common=[["查看当前案件","当前案件"],["查看设备和传感器状态","设备状态"],["护目镜有什么要求？","PPE 规范"]];if(role()==="OPERATIONS")return [...common,["触发烟雾与温度场景","传感器演示"],["复位演示现场","复位现场"]];if(role()==="SAFETY_OFFICER")return [["确认当前待核实案件","生成处置卡"],...common];return common;
+  const common=[["查看当前案件","当前案件"],["查看通知状态","通知状态"],["查看飞书连接状态","飞书状态"],["护目镜有什么要求？","PPE 规范"]];if(role()==="OPERATIONS")return [...common,["检查飞书测试卡条件","测试卡检查"],["触发烟雾与温度场景","传感器演示"],["复位演示现场","复位现场"]];if(role()==="SAFETY_OFFICER")return [["确认当前待核实案件","生成处置卡"],["发送当前案件通知","通知操作卡"],...common];return common;
 }
 function agentMessageMarkup(message) {
   const refs=(message.source_refs||[]).map(item=>`<span>${esc(item)}</span>`).join("");return `<article class="agent-message ${esc(message.kind)}"><div class="agent-avatar">${message.kind==="agent"?"A":"你"}</div><div><p>${esc(message.text)}</p>${refs?`<div class="agent-sources">${refs}</div>`:""}<small>${esc(message.meta||"")}</small></div></article>`;
 }
 function agentActionMarkup() {
-  if(!state.action)return "";return `<article class="agent-action-card"><p class="eyebrow">PROPOSED ACTION · HUMAN CONFIRMATION</p><h3>${esc(state.action.action_kind)}</h3><p>${esc(state.action.impact_summary)}</p><dl><div><dt>目标</dt><dd>${esc(state.action.target_ref)}</dd></div><div><dt>当前版本</dt><dd>V${state.action.current_version}</dd></div></dl><button class="button primary" type="button" data-action="open-agent-confirm">检查并确认 →</button></article>`;
+  if(!state.action)return "";return `<article class="agent-action-card"><p class="eyebrow">PROPOSED ACTION · HUMAN CONFIRMATION</p><h3>${esc(state.action.action_kind)}</h3><p>${esc(state.action.impact_summary)}</p><dl><div><dt>目标</dt><dd>${esc(state.action.target_ref)}</dd></div><div><dt>当前版本</dt><dd>V${state.action.current_version}</dd></div><div><dt>当前 fence</dt><dd>${short(state.action.current_fence)}</dd></div><div><dt>确认接口</dt><dd>${esc(state.action.endpoint_path)}</dd></div></dl><button class="button primary" type="button" data-action="open-agent-confirm">检查并确认 →</button></article>`;
 }
 function agentContextMarkup() {return `<p><span>当前角色</span><strong>${esc(ROLE_LABELS[role()]||role())}</strong></p><p><span>路由</span><strong>DETERMINISTIC · OFFLINE</strong></p><p><span>可见案件</span><strong>${state.cases.length}</strong></p><p><span>登记来源</span><strong>${sources().length}</strong></p><p><span>待确认操作</span><strong>${state.action?1:0}</strong></p>`;}
 function renderAgent() {
@@ -534,20 +543,28 @@ function renderProfile() {
   setRouteContent(`${pageHead("SESSION AUTHORITY","我的资料","角色、范围和能力全部来自服务端 session 投影；切换角色会清除当前标签页令牌。",`<a class="button" href="/login" data-action="switch-role">切换演示角色</a>`)}<div class="profile-grid"><section class="panel"><div class="facts"><div class="fact"><span>角色</span><strong>${esc(ROLE_LABELS[authority.role])}</strong></div><div class="fact"><span>主体</span><strong>${esc(authority.actor_id)}</strong></div><div class="fact"><span>范围</span><strong>${esc(authority.scope_kind)}</strong></div><div class="fact"><span>版本</span><strong>V${authority.authority_revision}</strong></div></div><h2 class="section-title">能力</h2><div class="quick-list">${authority.capabilities.map(value=>`<span class="badge">${esc(value)}</span>`).join("")}</div><h2 class="section-title">预约与关联</h2>${reservations}</section><aside class="panel"><h2 class="section-title">Demo 边界</h2><p>personal_demo_only=true</p><p>production_ready=false</p><p>令牌位置：sessionStorage</p><p>网络模型调用：真实模式可调用已配置的 Qwen3-VL；来源随场景记录展示</p></aside></div>`,{announcement:"我的资料"});
 }
 
+function feishuSettingsMarkup() {
+  const value=state.feishu;if(!value)return empty("消息平台状态不可见","后端没有返回飞书平台投影，页面不会显示已连接。");
+  const missing=[...(value.missing_evidence_kinds||[]),...(value.failed_evidence_kinds||[]),...(value.expired_evidence_kinds||[])];
+  const last=value.last_audited_attempt;
+  const action=role()==="OPERATIONS"&&value.test_card_check_available?`<button class="button primary" type="button" data-action="feishu-test-check">确认并生成 CHECK_ONLY 测试卡收据</button>`:"";
+  return `<section class="message-platform"><header><div><p class="eyebrow">MESSAGE PLATFORM · API PROJECTION</p><h2>飞书 / Feishu</h2></div><span class="integration-state ${value.display_status==="ACTIVE"?"active":""}">${esc(value.display_status)}</span></header><div class="integration-default"><div><span>默认通知通道</span><strong>${esc(value.default_channel)}</strong></div><p>默认演示继续使用本地模拟通道，real_delivery_confirmed=${String(value.real_delivery_confirmed)}。</p></div><div class="integration-facts"><p><span>Commissioning</span><strong>${esc(value.readiness||"NOT_CONFIGURED")}</strong></p><p><span>Activation revision</span><strong>${value.activation_revision?`V${value.activation_revision}`:"—"}</strong></p><p><span>Recipient bindings</span><strong>${value.recipient_binding_count}</strong></p><p><span>Inbound</span><strong>${esc(value.inbound_status)}</strong></p><p><span>Activation ref</span><strong>${short(value.activation_status_id)}</strong></p><p><span>Readiness ref</span><strong>${short(value.readiness_assessment_id)}</strong></p></div>${missing.length?`<div class="integration-blocked"><strong>尚缺 commissioning authority</strong><p>${missing.map(esc).join(" · ")}</p></div>`:""}${last?`<div class="integration-attempt"><span>最近 audited attempt</span><strong>${esc(last.disposition)}</strong><code>${short(last.notification_id)} · ${short(last.dispatch_result_id)}</code><small>real_delivery_confirmed=${String(last.real_delivery_confirmed)} · automatic_retry_permitted=${String(last.automatic_retry_permitted)}</small></div>`:`<p class="help">当前没有可见的飞书 audited dispatch attempt；不推断送达。</p>`}<div class="form-actions">${action}</div><footer>不返回 secret、token 或 clear external ID。测试卡按钮只执行现有 CHECK_ONLY 能力，不联网、不发送消息。</footer></section>`;
+}
+
 function renderSettings() {
-  const requested=new URL(location.href).searchParams.get("section");if(["models","devices","rules","users"].includes(requested))state.settingsSection=requested;
+  const requested=new URL(location.href).searchParams.get("section");if(["messages","models","devices","rules","users"].includes(requested))state.settingsSection=requested;
   const ops=role()==="OPERATIONS";
   const userRows=(state.users||[]).map(item=>{const a=item.authority||item;return `<tr><td>${esc(a.actor_id)}</td><td>${esc(a.role)}</td><td>${esc(a.scope_kind)}</td><td>V${a.authority_revision}</td></tr>`}).join("");
   const reset=ops?`<section class="panel"><div class="panel-head"><h2>演示现场复位</h2><span>OPERATIONS ONLY</span></div><p>复位会将当前数据库和演示回执归档到 session 目录，再原子替换为无案件、无告警的标准现场。历史不会删除。</p><button class="button alarm" type="button" data-action="reset">确认归档并一键复位</button></section>`:"";
   const lastCall=state.run?state.run.state==="FAILED"?runFailureExplanation(state.run):state.run.state==="RUNNING"?"最近实际调用：运行中。":"最近实际调用：已完成；结果以该运行的阶段和产物为准。":"最近实际调用：尚无运行记录。";
   const modelStatus=state.readiness?`<section class="model-readiness"><p class="eyebrow">MODEL CONFIGURATION</p>${state.readiness.components.map(item=>`<div><span class="readiness-dot ${item.ready?"ready":""}"></span><b>${esc(item.component)}</b><span>${esc(item.model)}</span><small>${item.ready?"配置就绪":esc(item.failure_code)}</small></div>`).join("")}<p class="help">“配置就绪”只表示本地依赖或云端参数已经提供，不代表远端服务当前在线。失败不会自动替换为演示结果。</p><p class="help">${esc(lastCall)}</p></section>`:"";
-  const sections={models:`${modelStatus||empty("模型状态不可见","当前角色无模型 readiness 读取权限。")} ${reset}`,devices:`<div class="panel-head"><h2>来源与接口</h2><span>${sources().length} REGISTERED</span></div><div class="table-wrap"><table class="table"><thead><tr><th>设备</th><th>类型</th><th>适配器</th><th>状态</th></tr></thead><tbody>${sources().map(x=>`<tr><td>${esc(x.source.device_id)}</td><td>${esc(x.source.sensor_type||x.source.source_kind)}</td><td>${esc(x.source.adapter_id)}</td><td>${esc(x.observation_state)}</td></tr>`).join("")}</tbody></table></div>`,rules:`<section class="panel"><div class="panel-head"><h2>规则状态</h2><span>SERVER AUTHORITY</span></div><p>${state.rules?`当前规则修订 V${esc(state.rules.revision||state.rules.authority_revision||"—")}`:"当前角色无规则读取权限"}</p><p class="help">烟雾与温度联动由后端规则生成 EMERGENCY，不通过页面属性伪造。</p></section>`,users:`<div class="panel-head"><h2>用户权限</h2><span>${state.users?state.users.length:"ROLE-SCOPED"}</span></div>${state.users?`<div class="table-wrap"><table class="table"><thead><tr><th>用户</th><th>角色</th><th>范围</th><th>版本</th></tr></thead><tbody>${userRows}</tbody></table></div>`:empty("权限清单不可见","当前角色不具备用户权限管理能力。")}`};
+  const sections={messages:feishuSettingsMarkup(),models:`${modelStatus||empty("模型状态不可见","当前角色无模型 readiness 读取权限。")} ${reset}`,devices:`<div class="panel-head"><h2>来源与接口</h2><span>${sources().length} REGISTERED</span></div><div class="table-wrap"><table class="table"><thead><tr><th>设备</th><th>类型</th><th>适配器</th><th>状态</th></tr></thead><tbody>${sources().map(x=>`<tr><td>${esc(x.source.device_id)}</td><td>${esc(x.source.sensor_type||x.source.source_kind)}</td><td>${esc(x.source.adapter_id)}</td><td>${esc(x.observation_state)}</td></tr>`).join("")}</tbody></table></div>`,rules:`<section class="panel"><div class="panel-head"><h2>规则状态</h2><span>SERVER AUTHORITY</span></div><p>${state.rules?`当前规则修订 V${esc(state.rules.revision||state.rules.authority_revision||"—")}`:"当前角色无规则读取权限"}</p><p class="help">烟雾与温度联动由后端规则生成 EMERGENCY，不通过页面属性伪造。</p></section>`,users:`<div class="panel-head"><h2>用户权限</h2><span>${state.users?state.users.length:"ROLE-SCOPED"}</span></div>${state.users?`<div class="table-wrap"><table class="table"><thead><tr><th>用户</th><th>角色</th><th>范围</th><th>版本</th></tr></thead><tbody>${userRows}</tbody></table></div>`:empty("权限清单不可见","当前角色不具备用户权限管理能力。")}`};
   state.settingsPanels=sections;
-  setRouteContent(`${pageHead("PLATFORM SETTINGS","设备、规则与权限","只显示具备真实读取或执行接口的设置；不存在虚假保存按钮。")}<div class="settings-layout"><nav class="settings-nav" aria-label="设置分区">${[["models","模型与复位"],["devices","设备来源"],["rules","规则"],["users","用户权限"]].map(([key,text])=>`<button type="button" data-settings-section="${key}" class="${state.settingsSection===key?"active":""}" aria-current="${state.settingsSection===key}">${text}</button>`).join("")}</nav><section class="settings-panel">${sections[state.settingsSection]||sections.models}</section></div>`,{announcement:"平台设置"});
+  setRouteContent(`${pageHead("PLATFORM SETTINGS","消息平台、设备、规则与权限","只显示具备真实读取或执行接口的设置；飞书状态来自当前 authority 投影。")}<div class="settings-layout"><nav class="settings-nav" aria-label="设置分区">${[["messages","消息平台"],["models","模型与复位"],["devices","设备来源"],["rules","规则"],["users","用户权限"]].map(([key,text])=>`<button type="button" data-settings-section="${key}" class="${state.settingsSection===key?"active":""}" aria-current="${state.settingsSection===key}">${text}</button>`).join("")}</nav><section class="settings-panel">${sections[state.settingsSection]||sections.messages}</section></div>`,{announcement:"平台设置"});
 }
 
 function patchSettingsSection(section,{historyMode="push"}={}) {
-  if(!state.settingsPanels||!["models","devices","rules","users"].includes(section))return false;state.settingsSection=section;
+  if(!state.settingsPanels||!["messages","models","devices","rules","users"].includes(section))return false;state.settingsSection=section;
   if(historyMode){const url=new URL(location.href);url.searchParams.set("section",section);history[historyMode==="replace"?"replaceState":"pushState"]({labcourt:{key:crypto.randomUUID(),ui:captureEntry()}},"",`${url.pathname}${url.search}`);state.currentRoute=`${url.pathname}${url.search}`;}
   document.querySelectorAll("[data-settings-section]").forEach(node=>{const selected=node.dataset.settingsSection===section;node.classList.toggle("active",selected);node.setAttribute("aria-current",String(selected));});
   const panel=document.querySelector(".settings-panel");if(!panel)return false;panel.classList.remove("is-updating");panel.innerHTML=state.settingsPanels[section];requestAnimationFrame(()=>panel.classList.add("is-updating"));return true;
@@ -574,8 +591,9 @@ async function renderRoute({restore=null}={}) {
 
 async function refresh(message) { await loadCore(); await renderRoute(); if(message)toast(message); }
 async function hashManifest(text) { const bytes=new TextEncoder().encode(text); const digest=await crypto.subtle.digest("SHA-256",bytes); return [...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,"0")).join(""); }
-async function transitionCase(caseId,descriptor,extraAuthorities=[]) {
+async function transitionCase(caseId,descriptor,extraAuthorities=[],expected=null) {
   const [action,resolution]=descriptor.split(":"); const item=await api(`/api/m8/cases/${caseId}`); const authority=caseAuthority(item); const reason=document.getElementById("case-reason")?.value?.trim()||"本人确认按演示流程提交此状态变更。";
+  if(expected&&(item.case_version!==expected.version||item.case_document_sha256!==expected.fence))throw new Error("CONCURRENT_MODIFICATION");
   const reasonCodes={CONFIRM:"VERIFIED_VIOLATION",REJECT:"FALSE_POSITIVE",REQUEST_EVIDENCE:"MORE_EVIDENCE_REQUIRED",RETURN_TO_VERIFICATION:"EVIDENCE_RECEIVED",RESOLVE:"HAZARD_CLEARED",SUBMIT_APPEAL:"SUBJECT_DISPUTE",RESOLVE_APPEAL:resolution==="OVERTURNED"?"APPEAL_OVERTURNED":"APPEAL_UPHELD"};
   const refs=[...(authority.create_command.trigger_authorities||[]),...extraAuthorities].sort((a,b)=>`${a.kind}|${a.authority_id}|${a.document_sha256}`.localeCompare(`${b.kind}|${b.authority_id}|${b.document_sha256}`));
   const payload={source_case_version:item.case_version,source_case_authority_sha256:item.case_document_sha256,source_status:item.status,case_location_id:authority.location_id,subject_actor_id:authority.subject_actor_id,action,reason_code:reasonCodes[action],reason_summary:reason,supporting_authorities:refs,appeal_resolution:action==="RESOLVE_APPEAL"?resolution:null,explicit_human_confirmation:true,command_manifest_id:await hashManifest("labcourt-platform-ui-human-command-v1")};
@@ -595,9 +613,12 @@ function patchKnowledgeFilter(nextType,{historyMode="push"}={}) {
 async function submitKnowledgeQuery(button) {
   const input=document.getElementById("knowledge-query"),query=input?.value.trim();if(!query)return;button.disabled=true;button.setAttribute("aria-busy","true");button.textContent="查询中…";
   const answerHost=document.getElementById("knowledge-answer");if(answerHost)answerHost.innerHTML=`<div class="kb-answer-loading"><span class="spinner"></span><p>正在当前离线目录中检索…</p></div>`;
-  try {const receipt=await api("/api/m8/knowledge/catalogs/campus-safety-knowledge/queries",{method:"POST",body:knowledgeQueryPayload(query)}),answer=receipt.answer;state.knowledgeAnswer=answer;
-    const citations=(answer.citations||[]).map((item,index)=>`<details ${index===0?"open":""}><summary>${index+1}. ${esc(item.document.title)} · V${item.document.document_version}</summary><blockquote>${esc(item.snippet)}</blockquote><code>${esc(item.document.logical_document_id)} · ${short(item.citation_id)}</code></details>`).join("");
-    if(answerHost)answerHost.innerHTML=`<header><p class="eyebrow">${esc(answer.outcome)} · MODEL_USED=${String(answer.model_used).toUpperCase()}</p><h3>${answer.outcome==="NO_MATCH"?"当前目录无匹配":"离线严格回答"}</h3></header><p class="kb-answer-text">${esc(answer.answer_text)}</p>${citations?`<div class="kb-citations">${citations}</div>`:"<p class=\"help\">没有生成引用，也没有执行任何案件操作。</p>"}`;
+  try {const projection=await api("/api/m8/knowledge/catalogs/campus-safety-knowledge/query-projections",{method:"POST",body:knowledgeQueryPayload(query)}),answer=projection.answer_receipt.answer;state.knowledgeAnswer=projection;
+    const hits=(projection.document_hits||[]).map((item,index)=>`<details ${index===0?"open":""}><summary>${index+1}. ${esc(item.document_type)} · ${esc(item.logical_document_id)} · V${item.document_version}</summary><blockquote>${esc(item.exact_snippet)}</blockquote><code>${esc(item.source_ref)} · ${new Date(item.effective_at).toLocaleDateString("zh-CN")} · ${short(item.citation_id)} · [${item.start_char}, ${item.end_char})</code></details>`).join("");
+    const memory=projection.case_memory,entries=(memory.entries||[]).map(item=>`<article><strong>${esc(item.summary)}</strong><code>${short(item.case_authority_id)} · V${item.case_version} · ${short(item.audit_event_id)}</code></article>`).join("");
+    const explain=`<div class="kb-explain"><div><span>归一化意图</span><strong>${esc(projection.normalized_intent)}</strong></div><div><span>实际文档过滤</span><strong>${projection.applied_document_types.map(esc).join(" · ")}</strong></div><div><span>结果</span><strong>${esc(projection.outcome)}</strong></div></div>`;
+    const memoryMarkup=`<section class="kb-memory"><header><p class="eyebrow">SEPARATE CASE MEMORY</p><h4>案例记忆 / 会审先例边界</h4></header>${entries||`<p>${memory.availability==="NO_PLATFORM_AUTHORITY"?"当前没有可引用的平台化 Case authority。":"本次没有命中持久化终态案件。"}</p>`}<small>机器弱标签不是 ground truth · 历史案件不能自动改写当前规则</small></section>`;
+    if(answerHost)answerHost.innerHTML=`<header><p class="eyebrow">${esc(answer.outcome)} · MODEL_USED=${String(answer.model_used).toUpperCase()}</p><h3>${answer.outcome==="NO_MATCH"?"当前目录无匹配":"离线严格回答"}</h3></header>${explain}<p class="kb-answer-text">${esc(answer.answer_text)}</p>${hits?`<div class="kb-citations">${hits}</div>`:"<p class=\"help\">没有生成引用，也没有执行任何案件操作。</p>"}${memoryMarkup}`;
   } finally {button.disabled=false;button.removeAttribute("aria-busy");button.textContent="查询";}
 }
 
@@ -609,10 +630,10 @@ async function submitAgentQuery(button) {
   const input=document.getElementById("agent-query"),query=input?.value.trim();if(!query)return;button.disabled=true;button.setAttribute("aria-busy","true");
   const userMessage={kind:"user",text:query,meta:ROLE_LABELS[role()]};state.agentMessages.push(userMessage);appendAgentMessage(userMessage);input.value="";
   const actionHost=document.getElementById("agent-action-host");actionHost?.insertAdjacentHTML("beforebegin",`<div id="agent-typing" class="agent-typing" role="status" aria-label="Agent 正在查询"><i></i><i></i><i></i><span>正在读取 authority</span></div>`);
-  try {const answer=await api("/api/m8/agent/queries",{method:"POST",body:{query}}),message={kind:"agent",text:answer.answer,meta:`${answer.outcome} · MODEL_USED=${answer.model_used} · NETWORK_USED=${answer.network_used}`,source_refs:answer.source_refs};document.getElementById("agent-typing")?.remove();state.agentMessages.push(message);appendAgentMessage(message);state.action=answer.proposed_action;patchAgentChrome();}
+  try {const answer=await api("/api/m8/agent/queries",{method:"POST",body:{query}}),message={kind:"agent",text:answer.answer,meta:`${answer.outcome} · ${answer.normalized_intent} · MODEL_USED=${answer.model_used} · NETWORK_USED=${answer.network_used}`,source_refs:answer.source_refs};document.getElementById("agent-typing")?.remove();state.agentMessages.push(message);appendAgentMessage(message);state.action=answer.proposed_action;patchAgentChrome();}
   finally {document.getElementById("agent-typing")?.remove();button.disabled=false;button.removeAttribute("aria-busy");input?.focus();}
 }
-function openAgentConfirmation(trigger) {if(!state.action)return;const modal=document.getElementById("agent-confirm-modal");if(!modal)return;state.confirmationTrigger=trigger;state.confirmationOpen=true;modal.hidden=false;requestAnimationFrame(()=>modal.classList.add("is-open"));modal.querySelector("[data-agent-confirm-copy]").textContent=state.action.impact_summary;modal.querySelector("[data-agent-confirm-ref]").textContent=`${state.action.target_ref} · V${state.action.current_version}`;modal.querySelector("[data-action=confirm-agent]")?.focus();}
+function openAgentConfirmation(trigger) {if(!state.action)return;const modal=document.getElementById("agent-confirm-modal");if(!modal)return;state.confirmationTrigger=trigger;state.confirmationOpen=true;modal.hidden=false;requestAnimationFrame(()=>modal.classList.add("is-open"));modal.querySelector("[data-agent-confirm-copy]").textContent=state.action.impact_summary;modal.querySelector("[data-agent-confirm-ref]").textContent=`${state.action.target_ref} · V${state.action.current_version} · ${short(state.action.current_fence)}`;modal.querySelector("[data-action=confirm-agent]")?.focus();}
 function closeAgentConfirmation() {const modal=document.getElementById("agent-confirm-modal");if(!modal)return;modal.classList.remove("is-open");state.confirmationOpen=false;setTimeout(()=>{modal.hidden=true;state.confirmationTrigger?.focus();state.confirmationTrigger=null;},matchMedia("(prefers-reduced-motion: reduce)").matches?0:180);}
 
 async function handleClick(event) {
@@ -642,6 +663,7 @@ async function handleClick(event) {
     if(target.dataset.ack){target.disabled=true;await api(`/api/m8/notifications/${target.dataset.ack}/acknowledgements`,{method:"POST",body:{explicit_human_confirmation:true}});await refresh("结果通知已确认");return;}
     if(target.dataset.action==="knowledge-query"){event.preventDefault();await submitKnowledgeQuery(target);return;}
     if(target.dataset.action==="agent-query"){event.preventDefault();await submitAgentQuery(target);return;}
+    if(target.dataset.action==="feishu-test-check"){if(!state.feishu?.test_card_check_available)throw new Error("当前飞书 authority 不允许形成测试卡检查");if(!confirm("此操作只生成 CHECK_ONLY 收据，不联网、不发送真实飞书消息。是否继续？"))return;target.disabled=true;await api("/api/m8/integrations/feishu/test-card-checks",{method:"POST",body:{activation_revision:state.feishu.activation_revision,activation_status_id:state.feishu.activation_status_id,explicit_human_confirmation:true}});state.feishu=await api("/api/m8/integrations/feishu/status");renderSettings();toast("已生成 CHECK_ONLY 收据；没有真实消息发送");return;}
     if(target.dataset.action==="open-agent-confirm"){openAgentConfirmation(target);return;}
     if(target.dataset.action==="close-agent-confirm"){closeAgentConfirmation();return;}
     if(target.dataset.action==="confirm-agent"){target.disabled=true;await executeAgentAction(state.action);closeAgentConfirmation();state.action=null;await loadCore();const message={kind:"agent",text:"操作卡已由既有业务接口重新校验并执行，当前上下文已同步。",meta:"CONFIRMED · SERVER REVALIDATED"};state.agentMessages.push(message);appendAgentMessage(message);patchAgentChrome();patchRunUi();toast("操作已完成");return;}
@@ -651,9 +673,12 @@ async function handleClick(event) {
 
 async function executeAgentAction(action) {
   if(!action)throw new Error("没有待确认操作");
-  if(action.action_kind==="RUN_SCENARIO")return api("/api/m8/demo/scenario-runs",{method:"POST",body:action.request_payload});
-  if(action.action_kind==="RESET_DEMO")return api("/api/m8/demo/reset",{method:"POST",body:action.request_payload});
-  if(action.action_kind==="CASE_TRANSITION")return transitionCase(action.target_ref,action.request_payload.action);
+  const {action_kind:_payloadKind,...payload}=action.request_payload;
+  if(action.action_kind==="RUN_SCENARIO")return api(action.endpoint_path,{method:"POST",body:payload});
+  if(action.action_kind==="RESET_DEMO")return api(action.endpoint_path,{method:"POST",body:payload});
+  if(action.action_kind==="CASE_TRANSITION")return transitionCase(action.target_ref,payload.action,[],{version:action.current_version,fence:action.current_fence});
+  if(action.action_kind==="NOTIFICATION_SEND")return api(action.endpoint_path,{method:"POST",body:payload});
+  if(action.action_kind==="FEISHU_TEST_CARD_CHECK")return api(action.endpoint_path,{method:"POST",body:payload});
   throw new Error("操作卡类型不在闭合集合中");
 }
 
