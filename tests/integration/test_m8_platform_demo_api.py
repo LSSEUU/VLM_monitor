@@ -22,6 +22,7 @@ from labcourt.application.m8_platform_demo_api import (
     assemble_m8_platform_demo_api,
 )
 from labcourt.contracts.canonical import canonical_json
+from labcourt.contracts.enums import CropSource, MediaAccess, MediaAvailability
 from labcourt.contracts.m8_access_cases import (
     M8ActorRole,
     M8AuthorityReference,
@@ -41,6 +42,7 @@ from labcourt.contracts.m8_platform_demo import (
 )
 from labcourt.contracts.pilot_ui import PilotUiJobStatus
 from labcourt.services.m8_operations_api import M8ApiServiceError
+from labcourt.services.m8_platform_demo import M8PlatformDemoService
 from labcourt.services.pilot_progress import PilotProgressUpdate
 
 
@@ -135,6 +137,28 @@ def test_platform_pilot_config_keeps_real_screening_budget() -> None:
             fixture.hearing.defender_profile,
             fixture.hearing.judge_profile,
         )
+    )
+
+
+def test_external_screening_routes_body_fallback_local_media_to_human_review() -> None:
+    root = Path(__file__).parents[2]
+    service = SimpleNamespace(config=_pilot_config(root, fixture=False))
+    source_pack = SimpleNamespace(
+        crops=(
+            SimpleNamespace(
+                availability=MediaAvailability.AVAILABLE,
+                source=CropSource.ANCHOR_FOCUS,
+                privacy_receipt=SimpleNamespace(media_access=MediaAccess.LOCAL_ONLY),
+            ),
+        )
+    )
+    assert (
+        M8PlatformDemoService._screening_failure_code(
+            "RESPONSE_INTEGRITY_FAILURE",
+            source_pack=source_pack,
+            service=service,
+        )
+        == "SCREENING_MEDIA_LOCAL_ONLY"
     )
 
 

@@ -463,6 +463,7 @@ class M8EvaluationRunV1(FrozenContractModel):
     accuracy_metrics_eligible: bool = Field(strict=True)
     delivery_state: M8EvaluationDeliveryState
     failure_code: ReferenceToken | None = None
+    route_reason_code: ReferenceToken | None = None
     queued_at: datetime
     started_at: datetime | None = None
     completed_at: datetime | None = None
@@ -485,11 +486,11 @@ class M8EvaluationRunV1(FrozenContractModel):
             else None
         )
 
-    @field_validator("failure_code")
+    @field_validator("failure_code", "route_reason_code")
     @classmethod
-    def validate_failure_code(cls, value: str | None) -> str | None:
+    def validate_reason_code(cls, value: str | None) -> str | None:
         return (
-            require_reference_token(value, "M8 evaluation failure")
+            require_reference_token(value, "M8 evaluation reason")
             if value is not None
             else None
         )
@@ -526,6 +527,10 @@ class M8EvaluationRunV1(FrozenContractModel):
             and self.actual_route != M8EvaluationActualRoute.HEARING_REQUIRED
         ):
             raise ValueError("hearing-waiting M8 evaluation run requires the hearing route")
+        if self.route_reason_code is not None and (
+            self.actual_route != M8EvaluationActualRoute.HUMAN_REVIEW
+        ):
+            raise ValueError("M8 evaluation route reason currently belongs to human review")
         if self.hearing_case_id is not None and self.case_id is None:
             raise ValueError("M8 evaluation hearing projection requires an operational Case")
         if self.accuracy_metrics_eligible != (self.ground_truth_id is not None):

@@ -344,6 +344,19 @@
       "title": "Revision",
       "type": "integer"
     },
+    "route_reason_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Route Reason Code"
+    },
     "run_id": {
       "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
       "title": "Run Id",

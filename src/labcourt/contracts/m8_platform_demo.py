@@ -566,7 +566,11 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
     recognition_mode: M8PlatformRecognitionMode | None = None
     retry_of_run_id: ReferenceToken | None = None
     model_components: tuple[M8PlatformModelComponentV1, ...] = Field(default=(), max_length=2)
-    outcome: Literal["ACTIONABLE_RISK", "NO_ACTIONABLE_RISK_ESTABLISHED"] | None = None
+    outcome: Literal[
+        "ACTIONABLE_RISK",
+        "NO_ACTIONABLE_RISK_ESTABLISHED",
+        "HUMAN_REVIEW_REQUIRED",
+    ] | None = None
     evidence: tuple[M8PlatformEvidenceViewV1, ...] = Field(default=(), max_length=24)
     video_profile: M8PlatformVideoProfileV1 | None = None
     perception_preview_url: str | None = None
@@ -627,6 +631,18 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
             value is not None for value in (self.case_id, self.notification_id)
         ):
             raise ValueError("no-action PPE run cannot create a Case or notification")
+        if self.outcome == "HUMAN_REVIEW_REQUIRED" and any(
+            value is not None
+            for value in (
+                self.case_id,
+                self.notification_id,
+                self.raw_response_ref,
+                self.screening_decision,
+            )
+        ):
+            raise ValueError(
+                "human-review PPE routing cannot claim a Case, provider response, or decision"
+            )
         if (
             self.state == "SUCCEEDED"
             and is_ppe

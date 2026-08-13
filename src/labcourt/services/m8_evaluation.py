@@ -500,6 +500,19 @@ class M8EvaluationService:
     ) -> M8EvaluationRunV1:
         completed_at = self._utc_now()
         receipts = (scenario.raw_response_ref,) if scenario.raw_response_ref else ()
+        if scenario.outcome == "HUMAN_REVIEW_REQUIRED":
+            return running.model_copy(
+                update={
+                    "revision": running.revision + 1,
+                    "state": M8EvaluationRunState.SUCCEEDED,
+                    "active_stage": None,
+                    "actual_route": M8EvaluationActualRoute.HUMAN_REVIEW,
+                    "route_reason_code": "SCREENING_MEDIA_LOCAL_ONLY",
+                    "completed_at": completed_at,
+                    "delivery_state": M8EvaluationDeliveryState.NOT_APPLICABLE,
+                    "provider_receipt_refs": receipts,
+                }
+            )
         if scenario.state == "FAILED":
             failure = scenario.failure_code or "PILOT_RUN_FAILED"
             route = (

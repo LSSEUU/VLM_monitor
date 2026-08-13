@@ -364,6 +364,45 @@ def test_screening_failure_preserves_completed_authorities_without_case() -> Non
     assert failed.case_id is failed.notification_id is None
 
 
+def test_local_only_screening_is_a_human_review_route_without_provider_claims() -> None:
+    stages = tuple(
+        M8PlatformScenarioStageV1(
+            stage=stage,
+            state=M8PlatformStageState.COMPLETE,
+            summary="local evidence retained for human review",
+        )
+        for stage in M8PlatformScenarioStage
+    )
+    components = tuple(
+        M8PlatformModelComponentV1(
+            component=component,
+            source=M8PlatformExecutionSource.MODEL,
+            provider="real-provider",
+            model="real-model",
+            revision="pinned-revision",
+            manifest_id=SHA,
+        )
+        for component in ("PERCEPTION", "SCREENING")
+    )
+    routed = M8PlatformScenarioRunV1(
+        run_id="platform-ppe-local-review",
+        scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
+        state="SUCCEEDED",
+        stages=stages,
+        recognition_mode=M8PlatformRecognitionMode.FULL_MODEL,
+        model_components=components,
+        outcome="HUMAN_REVIEW_REQUIRED",
+    )
+    assert routed.failure_code is None
+    assert routed.raw_response_ref is None
+    assert routed.case_id is None
+    with pytest.raises(ValidationError, match="provider response"):
+        M8PlatformScenarioRunV1.model_validate(
+            routed.model_dump(mode="json")
+            | {"raw_response_ref": "runs/forged-provider-response.json"}
+        )
+
+
 @pytest.mark.parametrize(
     ("contract", "payload"),
     [

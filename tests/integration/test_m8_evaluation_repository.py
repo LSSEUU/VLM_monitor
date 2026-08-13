@@ -27,6 +27,16 @@ from labcourt.contracts.m8_evaluation import (
     M8EvaluationRunV1,
     M8RunSourceRefV1,
 )
+from labcourt.contracts.m8_platform_demo import (
+    M8PlatformExecutionSource,
+    M8PlatformModelComponentV1,
+    M8PlatformRecognitionMode,
+    M8PlatformScenarioKind,
+    M8PlatformScenarioRunV1,
+    M8PlatformScenarioStage,
+    M8PlatformScenarioStageV1,
+    M8PlatformStageState,
+)
 from labcourt.services.m8_evaluation import M8EvaluationService
 
 SHA = "a" * 64
@@ -246,6 +256,70 @@ def test_terminal_run_requires_real_route_and_retains_source(tmp_path) -> None:
     assert completed.source.asset_id == asset.asset_id
 
 
+def test_local_only_media_projects_as_completed_human_review_without_provider_call() -> None:
+    source = M8RunSourceRefV1(
+        run_id="evaluation-local-review-01",
+        source_kind=M8EvaluationRunSourceKind.RECORDED_ASSET,
+        asset_id=SHA,
+        media_sha256=SHA,
+        relative_path=f"inputs/evaluation-{SHA}.mp4",
+        frame_count=250,
+        source_manifest_id=MANIFEST,
+    )
+    running = M8EvaluationRunV1(
+        run_id=source.run_id,
+        revision=2,
+        campaign_id="evaluation-campaign-local-review",
+        source=source,
+        ordinal=0,
+        repetition=1,
+        state=M8EvaluationRunState.RUNNING,
+        active_stage="SCREENING",
+        accuracy_metrics_eligible=False,
+        delivery_state=M8EvaluationDeliveryState.PENDING_POLICY,
+        queued_at=NOW,
+        started_at=NOW,
+        config_sha256=CONFIG,
+        model_profile_sha256=MODEL,
+        run_manifest_id=MANIFEST,
+    )
+    scenario = M8PlatformScenarioRunV1(
+        run_id=source.run_id,
+        scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
+        state="SUCCEEDED",
+        stages=tuple(
+            M8PlatformScenarioStageV1(
+                stage=stage,
+                state=M8PlatformStageState.COMPLETE,
+                summary="complete",
+            )
+            for stage in M8PlatformScenarioStage
+        ),
+        recognition_mode=M8PlatformRecognitionMode.FULL_MODEL,
+        model_components=tuple(
+            M8PlatformModelComponentV1(
+                component=component,
+                source=M8PlatformExecutionSource.MODEL,
+                provider="real-provider",
+                model="real-model",
+                revision="pinned-revision",
+                manifest_id=MANIFEST,
+            )
+            for component in ("PERCEPTION", "SCREENING")
+        ),
+        outcome="HUMAN_REVIEW_REQUIRED",
+    )
+    service = object.__new__(M8EvaluationService)
+    service._clock = lambda: NOW
+    projected = service._project_scenario(running, scenario)
+    validated = M8EvaluationRunV1.model_validate(projected.model_dump(mode="json"))
+    assert validated.state == M8EvaluationRunState.SUCCEEDED
+    assert validated.actual_route == M8EvaluationActualRoute.HUMAN_REVIEW
+    assert validated.route_reason_code == "SCREENING_MEDIA_LOCAL_ONLY"
+    assert validated.failure_code is None
+    assert validated.provider_receipt_refs == ()
+
+
 def test_legacy_run_without_additive_m4_projection_remains_canonical(tmp_path) -> None:
     database = tmp_path / "labcourt.sqlite3"
     repository = _repository(tmp_path)
@@ -275,7 +349,12 @@ def test_legacy_run_without_additive_m4_projection_remains_canonical(tmp_path) -
         run_manifest_id=MANIFEST,
     )
     payload = run.model_dump(mode="json", exclude_computed_fields=True)
-    for field in ("m4_case_status", "hearing_eligibility", "l5_status"):
+    for field in (
+        "m4_case_status",
+        "hearing_eligibility",
+        "l5_status",
+        "route_reason_code",
+    ):
         payload.pop(field)
     raw = canonical_json(payload)
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
@@ -301,3 +380,4 @@ def test_legacy_run_without_additive_m4_projection_remains_canonical(tmp_path) -
     assert loaded.m4_case_status is None
     assert loaded.hearing_eligibility is None
     assert loaded.l5_status is None
+    assert loaded.route_reason_code is None

@@ -83,6 +83,7 @@ def _load_document(
             "m4_case_status",
             "hearing_eligibility",
             "l5_status",
+            "route_reason_code",
         ):
             if additive_field not in stored and serialized.get(additive_field) is None:
                 serialized.pop(additive_field, None)

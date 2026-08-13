@@ -403,7 +403,8 @@
         {
           "enum": [
             "ACTIONABLE_RISK",
-            "NO_ACTIONABLE_RISK_ESTABLISHED"
+            "NO_ACTIONABLE_RISK_ESTABLISHED",
+            "HUMAN_REVIEW_REQUIRED"
           ],
           "type": "string"
         },

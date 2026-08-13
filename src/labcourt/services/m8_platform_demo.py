@@ -51,6 +51,12 @@ from labcourt.application.m8_platform_bootstrap import (
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.cases import Case
 from labcourt.contracts.detections import FrameBundle
+from labcourt.contracts.enums import (
+    CropSource,
+    ExecutionLocation,
+    MediaAccess,
+    MediaAvailability,
+)
 from labcourt.contracts.evidence import EvidencePack
 from labcourt.contracts.m8_access_cases import (
     M8ActorRole,
@@ -1469,7 +1475,11 @@ class M8PlatformDemoService:
             return self._finalize_ppe(run) if persist else run
 
         reason_code = self._screening_attention_reason(source_case)
-        failure_code = self._screening_failure_code(reason_code)
+        failure_code = self._screening_failure_code(
+            reason_code,
+            source_pack=source_pack,
+            service=service,
+        )
         pilot_case = dashboard.cases[0] if dashboard.cases else None
         evidence = tuple(
             M8PlatformEvidenceViewV1(
@@ -1520,23 +1530,49 @@ class M8PlatformDemoService:
             ),
             run,
         )
-        failed = M8PlatformScenarioRunV1(
+        human_review_required = failure_code == "SCREENING_MEDIA_LOCAL_ONLY"
+        projected = M8PlatformScenarioRunV1(
             run_id=run.run_id,
             scenario_kind=run.scenario_kind,
-            state="FAILED",
-            failure_code=failure_code,
-            stages=stages,
+            state="SUCCEEDED" if human_review_required else "FAILED",
+            failure_code=None if human_review_required else failure_code,
+            stages=(
+                tuple(
+                    item.model_copy(
+                        update={
+                            "state": M8PlatformStageState.COMPLETE,
+                            "summary": (
+                                "证据仅限本地处理，已停止云端初审并转人工复核"
+                                if item.stage == M8PlatformScenarioStage.SCREENING
+                                else (
+                                    "未自动建案，等待安全负责人本地人工复核"
+                                    if item.stage == M8PlatformScenarioStage.CASE
+                                    else (
+                                        "人工复核前不发送告警"
+                                        if item.stage == M8PlatformScenarioStage.NOTIFICATION
+                                        else item.summary
+                                    )
+                                )
+                            ),
+                        }
+                    )
+                    for item in stages
+                )
+                if human_review_required
+                else stages
+            ),
             recognition_mode=run.recognition_mode,
             retry_of_run_id=run.retry_of_run_id,
             model_components=self._model_components(run, manifest),
+            outcome="HUMAN_REVIEW_REQUIRED" if human_review_required else None,
             evidence=evidence,
             video_profile=self._video_profile(stream),
             perception_preview_url=(f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"),
             model_or_fixture_id=manifest.models["screening"].model,
         )
         if persist:
-            self._write_run(failed)
-        return failed
+            self._write_run(projected)
+        return projected
 
     @staticmethod
     def _screening_attention_reason(source_case: Case) -> str | None:
@@ -1549,9 +1585,38 @@ class M8PlatformDemoService:
         return None
 
     @staticmethod
-    def _screening_failure_code(reason_code: str | None) -> str:
+    def _screening_failure_code(
+        reason_code: str | None,
+        *,
+        source_pack: EvidencePack | None = None,
+        service: PilotUiService | None = None,
+    ) -> str:
         """Expose the controlled screening outcome without provider secrets."""
 
+        if (
+            reason_code == "RESPONSE_INTEGRITY_FAILURE"
+            and source_pack is not None
+            and service is not None
+        ):
+            profile = service.config.providers[service.config.screening.provider_profile]
+            available_non_panorama = tuple(
+                crop
+                for crop in source_pack.crops
+                if crop.availability == MediaAvailability.AVAILABLE
+                and crop.source != CropSource.PANORAMA
+            )
+            if (
+                profile.execution_location == ExecutionLocation.EXTERNAL
+                and available_non_panorama
+                and all(
+                    crop.privacy_receipt.media_access != MediaAccess.CLOUD_ALLOWED
+                    for crop in available_non_panorama
+                )
+            ):
+                return "SCREENING_MEDIA_LOCAL_ONLY"
+
+        if reason_code is None:
+            return "SCREENING_ATTENTION_REQUIRED"
         return {
             "PROVIDER_UNAVAILABLE": "SCREENING_PROVIDER_UNAVAILABLE",
             "MODEL_OUTPUT_INVALID": "SCREENING_RESPONSE_INVALID",
