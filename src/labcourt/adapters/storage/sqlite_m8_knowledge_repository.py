@@ -340,9 +340,14 @@ class SQLiteM8KnowledgeRepository:
         ).fetchone()
         if row is None:
             raise EvidenceMissing("M8 knowledge requester actor was not found")
-        return self._load_actor_row(row)
+        return self._load_actor_row(row, verify_repository_manifest=False)
 
-    def _load_actor_row(self, row: sqlite3.Row) -> M8ActorAuthorityCommitReceiptV1:
+    def _load_actor_row(
+        self,
+        row: sqlite3.Row,
+        *,
+        verify_repository_manifest: bool = True,
+    ) -> M8ActorAuthorityCommitReceiptV1:
         raw = _row_str(row, "receipt_json")
         try:
             receipt = M8ActorAuthorityCommitReceiptV1.model_validate_json(raw)
@@ -354,7 +359,10 @@ class SQLiteM8KnowledgeRepository:
             or receipt.authority.authority_revision != _row_int(row, "authority_revision")
             or receipt.authority.actor_authority_id != _row_str(row, "actor_authority_id")
             or receipt.authority_document_sha256 != _row_str(row, "authority_document_sha256")
-            or receipt.repository_manifest_id != self._repository_manifest_id
+            or (
+                verify_repository_manifest
+                and receipt.repository_manifest_id != self._repository_manifest_id
+            )
         ):
             raise RepositoryIntegrityError("M8 knowledge actor index conflicts with receipt")
         return receipt
@@ -503,7 +511,7 @@ class SQLiteM8KnowledgeRepository:
         ).fetchone()
         if actor_row is None:
             raise RepositoryIntegrityError("M8 knowledge answer requester authority is missing")
-        actor = self._load_actor_row(actor_row)
+        actor = self._load_actor_row(actor_row, verify_repository_manifest=False)
         if (
             actor.authority.actor_id != query.requester_actor_id
             or actor.authority.actor_authority_id != query.requester_actor_authority_id

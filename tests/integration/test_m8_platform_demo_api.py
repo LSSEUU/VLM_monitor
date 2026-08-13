@@ -242,6 +242,32 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
             assert hashlib.sha256(document["content"].encode("utf-8")).hexdigest() == (
                 document["document"]["content_sha256"]
             )
+        query_status, query = _request(
+            server.server_port,
+            "POST",
+            "/api/m8/knowledge/catalogs/campus-safety-knowledge/queries",
+            token=safety,
+            payload={
+                "query_text": "护目镜",
+                "locale": "zh-CN",
+                "as_of": "2026-03-01T00:00:00Z",
+                "allowed_document_types": [
+                    "DEVICE_MANUAL",
+                    "EMERGENCY_PLAN",
+                    "FAQ",
+                    "HISTORICAL_PRECEDENT",
+                    "POLICY",
+                    "SOP",
+                ],
+                "max_citations": 3,
+            },
+        )
+        assert query_status == 200
+        assert isinstance(query, dict)
+        assert query["answer"]["outcome"] == "ANSWERED"
+        assert query["answer"]["model_used"] is False
+        assert query["answer"]["network_used"] is False
+        assert len(query["answer"]["citations"]) == 3
         missing_status, missing = _request(
             server.server_port,
             "GET",
