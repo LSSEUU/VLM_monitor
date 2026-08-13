@@ -95,9 +95,18 @@ def _pilot_config(project_root: Path, *, fixture: bool) -> AppConfig:
     pilot = load_config(project_root / "configs/pilot.yaml")
     payload = demo.model_dump(mode="python", exclude_computed_fields=True)
     pilot_payload = pilot.model_dump(mode="python", exclude_computed_fields=True)
-    payload["zones"] = pilot_payload["zones"]
-    payload["pilot"] = pilot_payload["pilot"]
-    payload["perception"] = pilot_payload["perception"]
+    # These sections form one decision authority.  Mixing the Pilot
+    # observability threshold with the Demo procedural gate makes a valid
+    # absence fast verdict fail L5 and incorrectly become hearing-eligible.
+    for section in (
+        "zones",
+        "pilot",
+        "perception",
+        "absence",
+        "presence",
+        "procedural_gate",
+    ):
+        payload[section] = pilot_payload[section]
     if fixture:
         screening = dict(payload["screening"])
         providers = dict(payload["providers"])

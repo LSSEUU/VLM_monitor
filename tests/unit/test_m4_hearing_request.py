@@ -28,15 +28,37 @@ from labcourt.application.hearing_request import (
 from labcourt.config_loader import load_config
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.config import AppConfig
+from labcourt.contracts.detections import Keypoint
 from labcourt.contracts.enums import (
     AcquisitionAction,
+    AnchorType,
     ArgumentStance,
     ArtifactKind,
+    AssociationMethod,
+    CropSource,
     ExecutionLocation,
+    MediaAccess,
+    MediaAvailability,
+    MediaType,
+    ObservationSource,
+    PpeType,
+    PrivacyPolicy,
+    PrivacyReasonCode,
     ProviderTransport,
     VlmRole,
 )
-from labcourt.contracts.evidence import EvidencePack, EvidencePackDraft
+from labcourt.contracts.events import CandidateEvent, derive_case_id
+from labcourt.contracts.evidence import (
+    Crop,
+    EvidencePack,
+    EvidencePackDraft,
+    ObservabilityComponents,
+    ObservabilityScore,
+    ObservationSufficiencyInput,
+    PrivacyReceipt,
+    TrackSummary,
+)
+from labcourt.contracts.geometry import BBoxXYXY
 from labcourt.contracts.hearing import (
     DefenderModelPayload,
     HearingCycleScope,
@@ -119,6 +141,98 @@ def _closed_pack(manifest: RunManifest) -> EvidencePack:
     return evidence_helpers._close(draft)
 
 
+def _closed_absence_pack(manifest: RunManifest) -> EvidencePack:
+    payload = json.loads(
+        (ROOT / "tests/fixtures/m2/candidate-event-absence-strict.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    payload.pop("event_id", None)
+    payload["manifest_id"] = manifest.manifest_id
+    event = CandidateEvent.model_validate(payload)
+    temporal: list[Crop] = []
+    for frame_index in (0, 75, 149):
+        frame_id = f"{event.camera_id}:{event.stream_id}:{frame_index}"
+        frame_ref = ArtifactRef(kind=ArtifactKind.FRAME, artifact_id=frame_id)
+        media_sha = _sha(f"absence-media-{frame_index}")
+        preserved = BBoxXYXY(x1=10, y1=10, x2=90, y2=55)
+        temporal.append(
+            Crop(
+                frame_id=frame_id,
+                source=CropSource.ANCHOR_FOCUS,
+                bbox=BBoxXYXY(x1=0, y1=0, x2=100, y2=100),
+                source_refs=(frame_ref,),
+                local_path=f"{evidence_helpers.RUN_ID}/frames/{media_sha}.png",
+                availability=MediaAvailability.AVAILABLE,
+                source_media_sha256=_sha(f"absence-source-{frame_index}"),
+                pixel_sha256=_sha(f"absence-pixel-{frame_index}"),
+                media_sha256=media_sha,
+                output_width=100,
+                output_height=100,
+                size_bytes=1_024,
+                media_type=MediaType.IMAGE_PNG,
+                encoding_version="png-v1",
+                privacy_receipt=PrivacyReceipt(
+                    policy=PrivacyPolicy.PPE_PRESERVING_REDACTION,
+                    transform_version="privacy-v1",
+                    media_access=MediaAccess.LOCAL_ONLY,
+                    reason_code=PrivacyReasonCode.PPE_REGION_PRESERVED,
+                    input_refs=(frame_ref,),
+                    ppe_type=PpeType.GOGGLES,
+                    anchor_type=AnchorType.HEAD,
+                    preserved_regions=(preserved,),
+                    keypoints=(Keypoint(name="nose", x=50.0, y=40.0, score=0.9),),
+                    anchor_bbox=preserved,
+                    association_method=AssociationMethod.KEYPOINT,
+                    fill_rgb=(0, 0, 0),
+                ),
+                observability=ObservabilityScore(
+                    total=0.9,
+                    components=ObservabilityComponents(
+                        person_confidence=0.9,
+                        keypoint_visibility=0.9,
+                        frontality=0.9,
+                        sharpness=0.9,
+                        exposure=0.9,
+                        non_occlusion=0.9,
+                    ),
+                    source=ObservationSource.PRECOMPUTED_FIXTURE,
+                ),
+                primary_track_ref=event.primary_track_ref,
+                tags={"zone_id": event.zone_id},
+            )
+        )
+    crops = tuple(temporal)
+    return evidence_helpers._close(
+        EvidencePackDraft(
+            run_id=evidence_helpers.RUN_ID,
+            case_id=derive_case_id(event.event_id),
+            version=1,
+            event=event,
+            key_frame_ids=tuple(
+                f"{event.camera_id}:{event.stream_id}:{index}"
+                for index in (0, 75, 149, 150, 151)
+            ),
+            temporal_crops=crops,
+            objective_facts=event.objective_facts,
+            track_summary=TrackSummary(
+                primary_track_ref=event.primary_track_ref,
+                start_frame=0,
+                end_frame_exclusive=152,
+                observed_frame_count=151,
+            ),
+            confirmation_record=event.confirmation,
+            observation_sufficiency_input=ObservationSufficiencyInput(
+                clear_crop_ids=tuple(sorted(crop.crop_id for crop in crops)),
+                clear_threshold=0.65,
+                required_clear_count=2,
+                selected_by_observability=True,
+            ),
+            manifest_id=manifest.manifest_id,
+        )
+    )
+
+
 def _retrieval(
     session: HearingSession,
     pack: EvidencePack,
@@ -188,6 +302,7 @@ class Scenario:
 
 def _scenario(
     *,
+    absence: bool = False,
     external_prosecutor: bool = False,
     max_input_pixels: int | None = None,
     max_prompt_bytes: int | None = None,
@@ -235,7 +350,7 @@ def _scenario(
             "models": models,
         }
     )
-    pack = _closed_pack(manifest)
+    pack = _closed_absence_pack(manifest) if absence else _closed_pack(manifest)
     session = HearingSession(
         run_id=pack.run_id,
         case_id=pack.case_id,
@@ -443,6 +558,49 @@ def test_one_crop_per_role_fits_all_five_cycles_inside_twenty_image_budget() -> 
             scenario,
             VlmRole.PROSECUTOR,
             budget_usage=HearingBudgetUsage(reserved_images=scenario.session.max_total_images),
+        ),
+    )
+
+
+def test_absence_roles_receive_every_authoritative_clear_crop_and_full_budget() -> None:
+    scenario = _scenario(absence=True)
+    prosecutor = _prepare(scenario, VlmRole.PROSECUTOR)
+    prosecutor_output = _role_output(scenario, prosecutor)
+    defender = _prepare(
+        scenario,
+        VlmRole.DEFENDER,
+        grant=prosecutor.hearing_grant,
+        budget_usage=HearingBudgetUsage(reserved_images=3),
+        prosecutor_output=prosecutor_output,
+    )
+    defender_output = _role_output(
+        scenario,
+        defender,
+        prosecutor_output_id=prosecutor_output.output_id,
+    )
+    judge = _prepare(
+        scenario,
+        VlmRole.JUDGE,
+        grant=defender.hearing_grant,
+        budget_usage=HearingBudgetUsage(reserved_images=6),
+        prosecutor_output=prosecutor_output,
+        defender_output=defender_output,
+    )
+
+    assert scenario.pack.observation_sufficiency_input is not None
+    expected = set(scenario.pack.observation_sufficiency_input.clear_crop_ids)
+    for prepared in (prosecutor, defender, judge):
+        assert len(prepared.request.media) == 3
+        assert prepared.request.budget.max_images == 3
+        assert prepared.request.budget.max_input_pixels == 30_000
+        assert {item.crop_id for item in prepared.request.media} == expected
+
+    _assert_code(
+        HearingRequestPreparationErrorCode.IMAGE_BUDGET_EXHAUSTED,
+        lambda: _prepare(
+            scenario,
+            VlmRole.PROSECUTOR,
+            budget_usage=HearingBudgetUsage(reserved_images=18),
         ),
     )
 

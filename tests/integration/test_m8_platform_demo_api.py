@@ -108,6 +108,15 @@ def test_platform_pilot_config_keeps_real_screening_budget() -> None:
     assert real.screening.provider_profile == "pilot-screening"
     assert real.screening.timeout_seconds == 60.0
     assert real.providers["pilot-screening"].timeout_seconds == 60.0
+    for config in (real, fixture):
+        assert (
+            config.perception.observability.clear_frame_threshold
+            == config.procedural_gate.absence_clear_frame_threshold
+        )
+        assert (
+            config.absence.minimum_consistent_clear_frames
+            == config.procedural_gate.minimum_absence_clear_frames
+        )
     assert all(
         real.providers[profile].provider == "openai-compatible"
         and "qwen" in real.providers[profile].model.lower()

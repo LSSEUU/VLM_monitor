@@ -27,6 +27,7 @@ from labcourt.contracts.config import AppConfig, VlmProviderProfile
 from labcourt.contracts.enums import (
     ArtifactKind,
     CropSource,
+    EvidenceClass,
     ExecutionLocation,
     MediaAccess,
     MediaAvailability,
@@ -514,11 +515,11 @@ def _eligible_crop(
     return True
 
 
-def _select_crop(
+def _select_crops(
     authority: EvidenceAuthority,
     role_authority: _RoleAuthority,
     run_manifest: RunManifest,
-) -> Crop:
+) -> tuple[Crop, ...]:
     pack = authority.pack
     available_canonical = tuple(
         crop
@@ -554,6 +555,24 @@ def _select_crop(
     if not eligible:
         _fail(HearingRequestPreparationErrorCode.PRIVACY_POLICY_VIOLATION)
 
+    if pack.event.evidence_class == EvidenceClass.ABSENCE:
+        sufficiency = pack.observation_sufficiency_input
+        if sufficiency is None:
+            _fail(HearingRequestPreparationErrorCode.EVIDENCE_AUTHORITY_MISMATCH)
+        decisive_ids = set(sufficiency.clear_crop_ids)
+        if not decisive_ids:
+            decisive_ids = set(sufficiency.unclear_crop_ids)
+        canonical_ids = {crop.crop_id for crop in available_canonical}
+        if not decisive_ids.issubset(canonical_ids):
+            _fail(HearingRequestPreparationErrorCode.MEDIA_UNAVAILABLE)
+        compatible_ids = {crop.crop_id for crop in manifest_compatible}
+        if not decisive_ids.issubset(compatible_ids):
+            _fail(HearingRequestPreparationErrorCode.RUN_MANIFEST_MISMATCH)
+        eligible_by_id = {crop.crop_id: crop for crop in eligible}
+        if not decisive_ids.issubset(eligible_by_id):
+            _fail(HearingRequestPreparationErrorCode.PRIVACY_POLICY_VIOLATION)
+        return tuple(eligible_by_id[crop_id] for crop_id in sorted(decisive_ids))
+
     new_crop_ids: set[str] = set()
     if authority.receipts:
         latest = authority.receipts[-1]
@@ -567,7 +586,7 @@ def _select_crop(
                 if ref.kind == ArtifactKind.CROP
             }
     newly_acquired = tuple(crop for crop in eligible if crop.crop_id in new_crop_ids)
-    return newly_acquired[0] if newly_acquired else eligible[0]
+    return ((newly_acquired[0] if newly_acquired else eligible[0]),)
 
 
 def _validate_grant(grant: HearingEvidenceGrant | None) -> None:
@@ -814,6 +833,7 @@ def _hearing_context(
 def _call_budget(
     *,
     primary: bool,
+    selected_images: int,
     selected_pixels: int,
     budget_usage: HearingBudgetUsage,
     session: HearingSession,
@@ -824,6 +844,7 @@ def _call_budget(
     try:
         limits = derive_hearing_call_budget_limits(
             primary=primary,
+            selected_images=selected_images,
             selected_pixels=selected_pixels,
             reserved_images=budget_usage.reserved_images,
             accounted_output_tokens=budget_usage.accounted_output_tokens,
@@ -934,11 +955,11 @@ def prepare_primary_hearing_request(
     )
     _validate_evidence_authority(evidence_pack, evidence_authority)
     _validate_grant(hearing_grant)
-    selected_crop = _select_crop(evidence_authority, role_authority, run_manifest)
+    selected_crops = _select_crops(evidence_authority, role_authority, run_manifest)
     try:
         disclosure = derive_role_disclosure(
             evidence_authority,
-            (selected_crop.crop_id,),
+            tuple(sorted(crop.crop_id for crop in selected_crops)),
         )
         next_grant = extend_hearing_evidence_grant(hearing_grant, disclosure)
     except EvidenceDisclosureError:
@@ -972,7 +993,10 @@ def prepare_primary_hearing_request(
     )
     budget = _call_budget(
         primary=True,
-        selected_pixels=selected_crop.output_width * selected_crop.output_height,
+        selected_images=len(selected_crops),
+        selected_pixels=sum(
+            crop.output_width * crop.output_height for crop in selected_crops
+        ),
         budget_usage=budget_usage,
         session=session,
         config=config,
@@ -1350,6 +1374,7 @@ def prepare_hearing_repair_request(
     )
     budget = _call_budget(
         primary=False,
+        selected_images=0,
         selected_pixels=0,
         budget_usage=budget_usage,
         session=session,

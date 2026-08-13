@@ -13,6 +13,7 @@ from labcourt.application.hearing_budget import (
 def _limits(**updates: object) -> HearingCallBudgetLimits:
     values: dict[str, object] = {
         "primary": True,
+        "selected_images": 1,
         "selected_pixels": 200,
         "reserved_images": 1,
         "accounted_output_tokens": 20,
@@ -41,6 +42,7 @@ def _limits(**updates: object) -> HearingCallBudgetLimits:
         (
             {
                 "primary": False,
+                "selected_images": 0,
                 "selected_pixels": 0,
                 "reserved_images": 3,
             },
@@ -60,6 +62,10 @@ def test_additive_budget_selects_the_tightest_limit(
     (
         (
             {"reserved_images": 3},
+            HearingBudgetPolicyFailureCode.IMAGE_BUDGET_EXHAUSTED,
+        ),
+        (
+            {"selected_images": 3},
             HearingBudgetPolicyFailureCode.IMAGE_BUDGET_EXHAUSTED,
         ),
         (
@@ -87,6 +93,7 @@ def test_each_budget_boundary_has_one_typed_failure(
     ("field", "value"),
     (
         ("selected_pixels", -1),
+        ("selected_images", -1),
         ("reserved_images", -1),
         ("accounted_output_tokens", -1),
         ("max_total_images", -1),
@@ -94,6 +101,7 @@ def test_each_budget_boundary_has_one_typed_failure(
         ("max_input_pixels", -1),
         ("max_output_tokens", -1),
         ("selected_pixels", True),
+        ("selected_images", True),
         ("selected_pixels", 1.5),
     ),
 )
@@ -105,6 +113,19 @@ def test_nonnegative_integer_inputs_are_strict(field: str, value: object) -> Non
 def test_primary_flag_is_strict() -> None:
     with pytest.raises(TypeError):
         _limits(primary=1)
+
+
+@pytest.mark.parametrize(
+    "updates",
+    (
+        {"selected_images": 0},
+        {"primary": False, "selected_images": 1, "selected_pixels": 200},
+        {"primary": False, "selected_images": 0, "selected_pixels": 1},
+    ),
+)
+def test_primary_and_repair_media_shapes_are_explicit(updates: dict[str, object]) -> None:
+    with pytest.raises(ValueError):
+        _limits(**updates)
 
 
 @pytest.mark.parametrize(
@@ -130,6 +151,8 @@ def test_optional_manifest_token_cap_is_strict(value: object) -> None:
     ("args", "error"),
     (
         ((2, 0, 1), ValueError),
+        ((65, 1, 1), ValueError),
+        ((True, 1, 1), TypeError),
         ((0, -1, 1), TypeError),
         ((0, True, 1), TypeError),
         ((0, 0, 0), TypeError),

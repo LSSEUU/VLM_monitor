@@ -38,8 +38,10 @@ class HearingCallBudgetLimits:
     max_output_tokens: int
 
     def __post_init__(self) -> None:
-        if self.max_images not in {0, 1}:
-            raise ValueError("hearing call may reserve zero or one image")
+        if not isinstance(self.max_images, int) or isinstance(self.max_images, bool):
+            raise TypeError("max_images must be an integer")
+        if not 0 <= self.max_images <= 64:
+            raise ValueError("hearing call may reserve at most 64 images")
         if (
             not isinstance(self.max_input_pixels, int)
             or isinstance(self.max_input_pixels, bool)
@@ -59,6 +61,7 @@ class HearingCallBudgetLimits:
 def derive_hearing_call_budget_limits(
     *,
     primary: bool,
+    selected_images: int,
     selected_pixels: int,
     reserved_images: int,
     accounted_output_tokens: int,
@@ -71,6 +74,7 @@ def derive_hearing_call_budget_limits(
     """Apply additive totals and the optional manifest cap to one call."""
 
     integer_values = (
+        selected_images,
         selected_pixels,
         reserved_images,
         accounted_output_tokens,
@@ -95,8 +99,12 @@ def derive_hearing_call_budget_limits(
     ):
         raise TypeError("manifest_max_output_tokens must be a positive integer or None")
 
+    if primary and selected_images < 1:
+        raise ValueError("primary hearing calls must select at least one image")
+    if not primary and (selected_images != 0 or selected_pixels != 0):
+        raise ValueError("repair hearing calls cannot select images or pixels")
     remaining_images = max_total_images - reserved_images
-    if primary and remaining_images < 1:
+    if primary and remaining_images < selected_images:
         raise HearingBudgetPolicyError(HearingBudgetPolicyFailureCode.IMAGE_BUDGET_EXHAUSTED)
     if selected_pixels > max_input_pixels:
         raise HearingBudgetPolicyError(HearingBudgetPolicyFailureCode.INPUT_PIXEL_BUDGET_EXCEEDED)
@@ -107,7 +115,7 @@ def derive_hearing_call_budget_limits(
     if manifest_max_output_tokens is not None:
         candidates = (*candidates, manifest_max_output_tokens)
     return HearingCallBudgetLimits(
-        max_images=int(primary),
+        max_images=selected_images if primary else 0,
         max_input_pixels=selected_pixels if primary else 0,
         max_output_tokens=min(candidates),
     )
