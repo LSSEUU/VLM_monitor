@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import threading
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from labcourt.adapters.storage.sqlite_m8_operations_repository import (
@@ -146,6 +146,7 @@ def test_runtime_status_requires_active_platform_route_and_all_fresh_workers(
         ),
     ):
         assembly.feishu_live.repository.record_heartbeat(heartbeat)
+    current_time = [now]
     api = M8FeishuLiveApiService(
         assembly.feishu_live.repository,
         server.api_service,
@@ -155,10 +156,29 @@ def test_runtime_status_requires_active_platform_route_and_all_fresh_workers(
         lambda _binding: (_ for _ in ()).throw(ValueError("not required")),
         assembly.feishu_live.alert_bridge,
         None,
-        lambda: now,
+        lambda: current_time[0],
         platform_manifest("platform-feishu-live-repository-v1"),
     )
 
     status = api.runtime_status(principal)
     assert status.live_dispatch_available is True
     assert status.duty_route == route
+
+    busy_at = now + timedelta(seconds=1)
+    for heartbeat in (
+        M8FeishuRuntimeHeartbeatV1(
+            component="AUTHORITY_WORKER",
+            worker_state=M8FeishuWorkerState.BUSY,
+            observed_at=busy_at,
+            runtime_manifest_id="c" * 64,
+        ),
+        M8FeishuRuntimeHeartbeatV1(
+            component="DELIVERY_WORKER",
+            worker_state=M8FeishuWorkerState.BUSY,
+            observed_at=busy_at,
+            runtime_manifest_id="d" * 64,
+        ),
+    ):
+        assembly.feishu_live.repository.record_heartbeat(heartbeat)
+    current_time[0] = busy_at
+    assert api.runtime_status(principal).live_dispatch_available is True

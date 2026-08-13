@@ -98,7 +98,7 @@ class M8FeishuActionCardService:
         case = self._case(notification)
         token = self._token("ACK", notification.notification_id, notification.notification_version)
         intent = self._intent(notification, case, token, None, M8FeishuCardStage.AWAITING_ACK)
-        self._live.commit_card_intent(intent)
+        intent = self._commit_or_reuse_intent(intent)
         card = self._card(
             "安全告警 · 待接手",
             notification,
@@ -162,11 +162,11 @@ class M8FeishuActionCardService:
                 action,
                 M8FeishuCardStage.ACTIONS_AVAILABLE,
             )
-            self._live.commit_card_intent(action_intent)
+            self._commit_or_reuse_intent(action_intent)
             buttons.append(self._button(_LABEL_BY_ACTION[action], "default", token, None))
         card = self._card("安全告警 · 已接手", acknowledged, tuple(buttons))
         result = self._toast("success", "已确认接手，案件操作仍需再次确认")
-        result["card"] = card
+        result["card"] = self._card_update(card)
         return result
 
     def _confirm_action(self, intent: M8FeishuCardActionIntentV1) -> dict[str, object]:
@@ -188,7 +188,7 @@ class M8FeishuActionCardService:
             intent.action,
             M8FeishuCardStage.AWAITING_CONFIRMATION,
         )
-        self._live.commit_card_intent(final_intent)
+        self._commit_or_reuse_intent(final_intent)
         card = self._card(
             "请确认最终操作",
             notification,
@@ -202,7 +202,7 @@ class M8FeishuActionCardService:
             ),
         )
         result = self._toast("info", "请再次确认，状态变化后操作会自动失效")
-        result["card"] = card
+        result["card"] = self._card_update(card)
         return result
 
     def _execute_case_action(
@@ -248,7 +248,9 @@ class M8FeishuActionCardService:
         )
         self._live.commit_card_receipt(receipt)
         result = self._toast("success", f"已执行：{_LABEL_BY_ACTION[intent.action]}")
-        result["card"] = self._completed_card(notification, committed.status.value)
+        result["card"] = self._card_update(
+            self._completed_card(notification, committed.status.value)
+        )
         return result
 
     def _validate_sender(
@@ -331,6 +333,33 @@ class M8FeishuActionCardService:
             intent_manifest_id=self._intent_manifest,
         )
 
+    def _commit_or_reuse_intent(
+        self, candidate: M8FeishuCardActionIntentV1
+    ) -> M8FeishuCardActionIntentV1:
+        existing = self._live.card_intent_for_token(
+            candidate.confirmation_token_sha256
+        )
+        if existing is None:
+            return self._live.commit_card_intent(candidate)
+        same_authority = (
+            existing.notification_id == candidate.notification_id
+            and existing.notification_version == candidate.notification_version
+            and existing.notification_authority_sha256
+            == candidate.notification_authority_sha256
+            and existing.case_id == candidate.case_id
+            and existing.case_version == candidate.case_version
+            and existing.case_authority_sha256 == candidate.case_authority_sha256
+            and existing.actor_id == candidate.actor_id
+            and existing.action == candidate.action
+            and existing.stage == candidate.stage
+            and existing.intent_manifest_id == candidate.intent_manifest_id
+        )
+        if not same_authority or self._clock() > existing.expires_at:
+            raise ConcurrentModification(
+                "Feishu card token is bound to stale or different authority"
+            )
+        return existing
+
     def _stale(
         self, intent: M8FeishuCardActionIntentV1, failure: M8FeishuLiveFailureCode
     ) -> None:
@@ -361,15 +390,25 @@ class M8FeishuActionCardService:
     def _button(
         text: str, button_type: str, token: str | None, case_id: str | None
     ) -> dict[str, object]:
+        element_id = "btn_" + hashlib.sha256(
+            canonical_bytes((text, token, case_id))
+        ).hexdigest()[:12]
         if case_id is not None:
             return {
                 "tag": "button",
+                "element_id": element_id,
                 "text": {"tag": "plain_text", "content": text},
                 "type": button_type,
-                "url": f"http://127.0.0.1:8877/app/cases/{case_id}",
+                "behaviors": [
+                    {
+                        "type": "open_url",
+                        "default_url": f"http://127.0.0.1:8877/app/cases/{case_id}",
+                    }
+                ],
             }
         return {
             "tag": "button",
+            "element_id": element_id,
             "text": {"tag": "plain_text", "content": text},
             "type": button_type,
             "behaviors": [{"type": "callback", "value": {"confirmation_token": token}}],
@@ -400,7 +439,7 @@ class M8FeishuActionCardService:
                             f"**通知状态**：{notification.status.value}"
                         ),
                     },
-                    {"tag": "action", "actions": list(buttons)},
+                    *buttons,
                 ]
             },
         }
@@ -431,6 +470,13 @@ class M8FeishuActionCardService:
     @staticmethod
     def _toast(kind: str, content: str) -> dict[str, object]:
         return {"toast": {"type": kind, "content": content}}
+
+    @staticmethod
+    def _card_update(card: dict[str, object]) -> dict[str, object]:
+        # New card callbacks require an update descriptor around raw card JSON.
+        # A bare card object is accepted as a callback payload but does not
+        # replace the original message in the Feishu client.
+        return {"type": "raw", "data": card}
 
 
 __all__ = ["M8FeishuActionCardService"]

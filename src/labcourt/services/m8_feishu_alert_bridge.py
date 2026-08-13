@@ -27,10 +27,8 @@ from labcourt.contracts.m8_notifications import (
     M8NotificationPlanAuthorityV1,
     M8NotificationPurpose,
     M8NotificationStatus,
-    M8NotificationTargetAuthorityV1,
     M8NotificationTemplateAuthorityV1,
 )
-from labcourt.exceptions import EvidenceMissing
 from labcourt.ports.m8_feishu_live import M8FeishuLiveRepository
 from labcourt.ports.m8_notification_repository import M8NotificationRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
@@ -194,26 +192,22 @@ class M8FeishuAlertBridgeService:
             raise ValueError("M8 Feishu notification requires the current duty route")
         case = self._operations.get_current_operational_case(case_id)
         authority = case.audit_event.case_authority
-        try:
-            prior = self._notifications.get_current_target_authority(
-                route.actor_id, M8NotificationChannelKind.FEISHU
-            )
-            revision = prior.target.authority_revision + 1
-            prior_revision: int | None = prior.target.authority_revision
-        except EvidenceMissing:
-            revision = 1
-            prior_revision = None
-        target = M8NotificationTargetAuthorityV1(
-            actor_id=route.actor_id,
-            identity_provider_id="feishu-open-platform",
-            external_subject_binding_sha256=self._binding_sha(route.recipient_binding_authority_id),
-            channel=M8NotificationChannelKind.FEISHU,
-            authority_revision=revision,
-            active=True,
-            inbound_response_supported=True,
-            manifest_id=self._manifest("platform-feishu-notification-target-v1"),
-        )
-        self._service.publish_target(target, prior_revision)
+        binding = self._binding_resolver(route.recipient_binding_authority_id)
+        current_target = self._notifications.get_current_target_authority(
+            route.actor_id, M8NotificationChannelKind.FEISHU
+        ).target
+        if (
+            not binding.active
+            or not current_target.active
+            or binding.target != current_target
+            or current_target.external_subject_binding_sha256
+            != self._binding_sha(route.recipient_binding_authority_id)
+        ):
+            raise ValueError("M8 Feishu notification target changed after activation")
+        # A notification consumes the recipient authority approved by the
+        # current activation.  Publishing a fresh target revision for every
+        # message would invalidate that activation before delivery starts.
+        target = current_target
         now = self._clock()
         plan = M8NotificationPlanAuthorityV1(
             case_id=case.case_id,

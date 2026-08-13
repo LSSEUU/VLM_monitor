@@ -92,11 +92,8 @@ def _token(card: dict[str, object], index: int = 0) -> str:
     assert isinstance(body, dict)
     elements = body["elements"]
     assert isinstance(elements, list)
-    action = elements[-1]
-    assert isinstance(action, dict)
-    actions = action["actions"]
-    assert isinstance(actions, list)
-    button = actions[index]
+    buttons = [item for item in elements if isinstance(item, dict) and item.get("tag") == "button"]
+    button = buttons[index]
     assert isinstance(button, dict)
     behaviors = button["behaviors"]
     assert isinstance(behaviors, list)
@@ -170,6 +167,7 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     )
     safety = operations.get_current_actor_authority("safety-officer-demo")
     activation, binding = _safety_binding(safety.authority.actor_id)
+    notification_service.publish_target(binding.target, None)
     platform_status = _feishu_service(active=True).status()
     now = [datetime.now(UTC)]
 
@@ -250,19 +248,29 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     sent = notifications.get_current_notification(queued_notification.notification_id)
     assert sent.status == M8NotificationStatus.SENT
 
+    now[0] += timedelta(microseconds=1)
     initial_card_bytes, _ = action_cards.render_initial_alert(sent.notification_id)
     initial_card = json.loads(initial_card_bytes)
+    elements = initial_card["body"]["elements"]
+    assert all(item.get("tag") != "action" for item in elements)
+    assert len({item["element_id"] for item in elements if item.get("tag") == "button"}) == 2
     ack_result = action_cards.execute(
         _token(initial_card, 1), binding.receive_id_sha256
     )
     assert ack_result["toast"]["type"] == "success"  # type: ignore[index]
-    action_card = ack_result["card"]
+    action_update = ack_result["card"]
+    assert isinstance(action_update, dict)
+    assert action_update["type"] == "raw"
+    action_card = action_update["data"]
     assert isinstance(action_card, dict)
 
     confirm_result = action_cards.execute(
         _token(action_card), binding.receive_id_sha256
     )
-    final_card = confirm_result["card"]
+    final_update = confirm_result["card"]
+    assert isinstance(final_update, dict)
+    assert final_update["type"] == "raw"
+    final_card = final_update["data"]
     assert isinstance(final_card, dict)
     final_token = _token(final_card)
     completed = action_cards.execute(final_token, binding.receive_id_sha256)

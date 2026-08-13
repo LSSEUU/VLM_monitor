@@ -110,7 +110,14 @@ class M8FeishuPlatformService:
         external_permitted = False
         if activation is not None:
             activation_revision = activation.activation_receipt.activation_revision
-            activation_status_id = activation.status_id
+            # The repository status receipt includes ``assessed_at`` and is
+            # therefore different on every read.  Exposing that transient hash
+            # as an HTTP action fence makes a GET followed by a POST
+            # impossible: the POST necessarily recomputes another status ID.
+            # Fence user actions with the immutable activation commit instead;
+            # every action still recomputes current actors, commissioning and
+            # recipient authority before accepting the commit ID.
+            activation_status_id = activation.activation_receipt.activation_commit_id
             recipients = len(activation.activation_receipt.runtime_config.recipient_allowlist)
             display = {
                 "REVOKED": M8FeishuPlatformDisplayStatus.REVOKED,
@@ -133,7 +140,7 @@ class M8FeishuPlatformService:
                 "INVALIDATED": M8FeishuInboundDisplayStatus.INVALIDATED,
                 "SANDBOX_INBOUND_ACTIVE": M8FeishuInboundDisplayStatus.ACTIVE,
             }[inbound.activation_state]
-            inbound_status_id = inbound.status_id
+            inbound_status_id = inbound.activation_receipt.activation_commit_id
         return M8FeishuPlatformStatusV1(
             display_status=display,
             candidate_authority_id=candidate.candidate_authority_id,

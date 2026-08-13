@@ -229,9 +229,11 @@ class M8FeishuRuntimeStatusV2(FrozenContractModel):
             and self.connection is not None
             and self.connection.connection_state == M8FeishuLiveConnectionState.READY
             and self.authority_worker is not None
-            and self.authority_worker.worker_state == M8FeishuWorkerState.READY
+            and self.authority_worker.worker_state
+            in {M8FeishuWorkerState.READY, M8FeishuWorkerState.BUSY}
             and self.delivery_worker is not None
-            and self.delivery_worker.worker_state == M8FeishuWorkerState.READY
+            and self.delivery_worker.worker_state
+            in {M8FeishuWorkerState.READY, M8FeishuWorkerState.BUSY}
             and self.duty_route is not None
             and self.duty_route.active
         )

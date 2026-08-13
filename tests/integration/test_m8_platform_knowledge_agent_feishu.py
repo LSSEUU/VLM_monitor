@@ -3,6 +3,7 @@ from __future__ import annotations
 import http.client
 import json
 import threading
+from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -324,7 +325,17 @@ class _Activation:
     def get_current_status(self, candidate_id: str, assessed_at):
         if self.status is None:
             raise EvidenceMissing("not active")
-        return self.status.model_copy(update={"assessed_at": assessed_at})
+        readiness = self.status.current_readiness_assessment
+        return self.status.model_copy(
+            update={
+                "assessed_at": assessed_at,
+                "current_readiness_assessment": (
+                    None
+                    if readiness is None
+                    else readiness.model_copy(update={"assessed_at": assessed_at})
+                ),
+            }
+        )
 
 
 class _NoInbound:
@@ -373,3 +384,29 @@ def test_feishu_platform_projects_ready_and_active_without_network() -> None:
     assert receipt.probe_receipt.token_call_attempted is False
     assert receipt.probe_receipt.message_call_attempted is False
     assert receipt.real_delivery_confirmed is False
+
+
+def test_feishu_platform_exposes_stable_activation_fence_across_assessments() -> None:
+    activation = _activation_status()
+    assessment = activation.current_readiness_assessment
+    assert assessment is not None
+    times = iter((activation.assessed_at, activation.assessed_at + timedelta(seconds=1)))
+    service = M8FeishuPlatformService(
+        _Candidates(assessment.candidate),
+        _Readiness(assessment),
+        _Activation(activation),
+        _NoInbound(),
+        _NoNotifications(),
+        "operations-demo",
+        lambda: next(times),
+        "a" * 64,
+    )
+
+    first = service.status()
+    second = service.status()
+
+    assert first.activation_status_id == second.activation_status_id
+    assert (
+        first.activation_status_id
+        == activation.activation_receipt.activation_commit_id
+    )
