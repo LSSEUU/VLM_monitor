@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "RUN",
+        "FRAME",
+        "SAFETY_SIGNAL",
+        "EVENT",
+        "CASE",
+        "DETECTION",
+        "OBJECTIVE_FACT",
+        "CROP",
+        "MEDIA",
+        "EVIDENCE_PACK",
+        "TOOL_RESULT",
+        "MANIFEST",
+        "MODEL_RESPONSE",
+        "MODEL_REQUEST",
+        "PROMPT_MANIFEST",
+        "MODEL_PARSE_RECEIPT",
+        "PARSED_MODEL_OUTPUT",
+        "PROCEDURAL_REVIEW",
+        "MODEL_CACHE_ENTRY",
+        "SCREENING_RESULT",
+        "VERDICT",
+        "ALERT",
+        "PRECEDENT",
+        "APPEAL",
+        "TRAINING_LABEL",
+        "BACKLOG_ITEM",
+        "DATASET"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "description": "A kind-discriminated reference with syntax fixed by the artifact kind.",
+      "properties": {
+        "artifact_id": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "M8QwenHearingDemoEvidenceRole": {
+      "enum": [
+        "PRIMARY",
+        "SUPPLEMENTARY"
+      ],
+      "title": "M8QwenHearingDemoEvidenceRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-qwen-hearing-demo-evidence-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Secret-free provenance for one generated demo image.",
+  "properties": {
+    "artifact_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "authorized_for_external_model": {
+      "const": true,
+      "default": true,
+      "title": "Authorized For External Model",
+      "type": "boolean"
+    },
+    "canonical_media_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Canonical Media Sha256",
+      "type": "string"
+    },
+    "ground_truth": {
+      "const": false,
+      "default": false,
+      "title": "Ground Truth",
+      "type": "boolean"
+    },
+    "height": {
+      "exclusiveMinimum": 0,
+      "title": "Height",
+      "type": "integer"
+    },
+    "machine_weak_label": {
+      "const": true,
+      "default": true,
+      "title": "Machine Weak Label",
+      "type": "boolean"
+    },
+    "model_generated": {
+      "const": true,
+      "default": true,
+      "title": "Model Generated",
+      "type": "boolean"
+    },
+    "preauthorized_acquisition_catalog": {
+      "title": "Preauthorized Acquisition Catalog",
+      "type": "boolean"
+    },
+    "prompt_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "real_person_depicted": {
+      "const": false,
+      "default": false,
+      "title": "Real Person Depicted",
+      "type": "boolean"
+    },
+    "role": {
+      "$ref": "#/$defs/M8QwenHearingDemoEvidenceRole"
+    },
+    "schema_version": {
+      "const": "m8-qwen-hearing-demo-evidence-v1",
+      "default": "m8-qwen-hearing-demo-evidence-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    },
+    "source_file_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source File Sha256",
+      "type": "string"
+    },
+    "synthetic": {
+      "const": true,
+      "default": true,
+      "title": "Synthetic",
+      "type": "boolean"
+    },
+    "width": {
+      "exclusiveMinimum": 0,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "role",
+    "artifact_ref",
+    "source_file_sha256",
+    "canonical_media_sha256",
+    "prompt_sha256",
+    "width",
+    "height",
+    "size_bytes",
+    "preauthorized_acquisition_catalog"
+  ],
+  "title": "M8QwenHearingDemoEvidenceV1",
+  "type": "object"
+}

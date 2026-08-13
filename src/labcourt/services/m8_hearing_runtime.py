@@ -15,6 +15,9 @@ from labcourt.adapters.fake_precedent_embeddings import (
 from labcourt.adapters.storage.hearing_model_response_store import (
     SecureHearingModelResponseStore,
 )
+from labcourt.adapters.storage.m8_hearing_evidence_repository import (
+    SQLiteM8HearingEvidenceRepository,
+)
 from labcourt.adapters.storage.m8_hearing_session_locator import (
     SQLiteM8HearingSessionLocator,
 )
@@ -24,7 +27,6 @@ from labcourt.adapters.storage.sqlite_m5_precedent_usage import (
     SQLiteM5PrecedentExposureCommitter,
 )
 from labcourt.adapters.storage.sqlite_m5_repository import SQLiteM5Repository
-from labcourt.adapters.storage.sqlite_repository import SQLiteEvidenceRepository
 from labcourt.adapters.stored_png_verifier import StoredPngVerifier
 from labcourt.adapters.vlm.hearing_fake import DeterministicFakeHearingVLMClient
 from labcourt.adapters.vlm.hearing_openai_compatible import (
@@ -62,8 +64,10 @@ from labcourt.contracts.m8_hearing_api import (
     M8HearingModelMode,
     M8HearingProviderSelectionV1,
 )
+from labcourt.contracts.manifests import RunManifest
 from labcourt.contracts.references import require_reference_token
 from labcourt.exceptions import LabCourtError
+from labcourt.ports.hearing_acquisition import HearingAcquisitionExecutor
 from labcourt.ports.hearing_repository import HearingRepository
 from labcourt.ports.hearing_vlm import HearingVLMClient
 from labcourt.services.m4_operations import (
@@ -103,6 +107,9 @@ def open_m8_hearing_runtime(
     fixture_bundle: M4FakeVLMFixtureBundle | None = None,
     environment: Mapping[str, str] | None = None,
     transports: Mapping[str, OpenAICompatibleTransport] | None = None,
+    acquisition_executor_factory: (
+        Callable[[SecureWorkspace, RunManifest], HearingAcquisitionExecutor] | None
+    ) = None,
     clock: Callable[[], datetime] | None = None,
 ) -> Iterator[M4HearingApiRuntime]:
     """Open one run with exactly one selected model mode and no fallback path."""
@@ -167,7 +174,7 @@ def open_m8_hearing_runtime(
             max_media_bytes=config.storage.max_media_bytes,
             max_image_pixels=config.storage.max_image_pixels,
         )
-        evidence = SQLiteEvidenceRepository(
+        evidence = SQLiteM8HearingEvidenceRepository(
             database,
             config.storage.busy_timeout_ms,
             verifier=verifier,
@@ -240,6 +247,7 @@ def open_m8_hearing_runtime(
                         revision=profile.revision,
                         model_manifest_id=manifest.models[component].model_manifest_id,
                         execution_location=profile.execution_location,
+                        enable_thinking=profile.enable_thinking,
                     ),
                     transport=active_transport,
                     prompt_resolver=cast(HearingPromptResolver, prompt_registry),
@@ -274,7 +282,11 @@ def open_m8_hearing_runtime(
             role_calls=role_calls,
             acquisition=HearingAcquisitionService(
                 repository=hearing_authority,
-                executor=_fake_acquisition_executor(manifest, acquisition_bundle),
+                executor=(
+                    acquisition_executor_factory(workspace, manifest)
+                    if acquisition_executor_factory is not None
+                    else _fake_acquisition_executor(manifest, acquisition_bundle)
+                ),
             ),
             prompt_catalog=catalog,
             review_verifier=DeterministicHearingProceduralReviewVerifier(config, evidence),

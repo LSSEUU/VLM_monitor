@@ -300,11 +300,6 @@ from labcourt.contracts.m8_case_persistence import (
     M8OperationalCaseAuthorityV1,
     M8OperationalCaseCommitReceiptV1,
 )
-from labcourt.contracts.m8_hearing_api import (
-    M8HearingProviderSelectionV1,
-    M8HearingStartRequestV1,
-    M8HearingViewV1,
-)
 from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxActivationCommitReceiptV1,
     M8FeishuSandboxActivationRevocationCommitReceiptV1,
@@ -353,6 +348,11 @@ from labcourt.contracts.m8_feishu_personal_demo import (
 from labcourt.contracts.m8_feishu_transport import (
     M8FeishuSandboxSendReceiptV1,
     M8FeishuTokenAcquisitionReceiptV1,
+)
+from labcourt.contracts.m8_hearing_api import (
+    M8HearingProviderSelectionV1,
+    M8HearingStartRequestV1,
+    M8HearingViewV1,
 )
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
@@ -433,6 +433,12 @@ from labcourt.contracts.m8_projections import (
     M8ProjectionMapNodeV1,
     M8ProjectionOverviewV1,
     M8ProjectionSourceV1,
+)
+from labcourt.contracts.m8_qwen_hearing_demo import (
+    M8QwenHearingDemoAttemptReceiptV1,
+    M8QwenHearingDemoEvidenceV1,
+    M8QwenHearingDemoPreparationV1,
+    M8QwenHearingProviderReceiptV1,
 )
 from labcourt.contracts.m8_sensor_persistence import (
     M8SensorPollCacheCommitReceiptV1,
@@ -757,6 +763,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-hearing-provider-selection-v1": M8HearingProviderSelectionV1,
     "m8-hearing-start-request-v1": M8HearingStartRequestV1,
     "m8-hearing-view-v1": M8HearingViewV1,
+    "m8-qwen-hearing-demo-attempt-receipt-v1": M8QwenHearingDemoAttemptReceiptV1,
+    "m8-qwen-hearing-demo-evidence-v1": M8QwenHearingDemoEvidenceV1,
+    "m8-qwen-hearing-demo-preparation-v1": M8QwenHearingDemoPreparationV1,
+    "m8-qwen-hearing-provider-receipt-v1": M8QwenHearingProviderReceiptV1,
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
     "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,
@@ -852,15 +862,11 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-personal-demo-bootstrap-receipt-v1": M8PersonalDemoBootstrapReceiptV1,
     "m8-personal-demo-camera-receipt-v1": M8PersonalDemoCameraReceiptV1,
     "m8-personal-demo-camera-view-v1": M8PersonalDemoCameraViewV1,
-    "m8-personal-demo-recorded-media-receipt-v1": (
-        M8PersonalDemoRecordedMediaReceiptV1
-    ),
+    "m8-personal-demo-recorded-media-receipt-v1": (M8PersonalDemoRecordedMediaReceiptV1),
     "m8-personal-demo-knowledge-receipt-v1": M8PersonalDemoKnowledgeReceiptV1,
     "m8-personal-demo-notification-receipt-v1": M8PersonalDemoNotificationReceiptV1,
     "m8-personal-demo-ppe-case-receipt-v1": M8PersonalDemoPpeCaseReceiptV1,
-    "m8-personal-demo-ppe-notification-receipt-v1": (
-        M8PersonalDemoPpeNotificationReceiptV1
-    ),
+    "m8-personal-demo-ppe-notification-receipt-v1": (M8PersonalDemoPpeNotificationReceiptV1),
     "m8-personal-demo-ppe-outcome-notification-receipt-v1": (
         M8PersonalDemoPpeOutcomeNotificationReceiptV1
     ),

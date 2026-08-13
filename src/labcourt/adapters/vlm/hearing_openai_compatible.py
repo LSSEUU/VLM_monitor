@@ -56,6 +56,7 @@ class HearingOpenAICompatibleIdentity:
     revision: str
     model_manifest_id: str
     execution_location: ExecutionLocation
+    enable_thinking: bool | None = None
 
 
 class _DuplicateEnvelopeField(ValueError):
@@ -140,7 +141,12 @@ class OpenAICompatibleHearingVLMClient:
             raise _not_sent(VLMProviderFailureCode.PROMPT_INTEGRITY_FAILURE) from None
         media_bytes = self._read_and_verify_media(request)
         transport_request = OpenAICompatibleTransportRequest(
-            body=self._wire_payload(request, prompt_text, media_bytes),
+            body=self._wire_payload(
+                request,
+                prompt_text,
+                media_bytes,
+                enable_thinking=self._identity.enable_thinking,
+            ),
             timeout_seconds=float(request.budget.timeout_seconds),
             max_response_bytes=request.budget.max_response_bytes,
         )
@@ -214,6 +220,8 @@ class OpenAICompatibleHearingVLMClient:
         request: HearingModelRequest,
         prompt_text: str,
         media_bytes: tuple[bytes, ...],
+        *,
+        enable_thinking: bool | None,
     ) -> bytes:
         content: list[dict[str, object]] = [{"type": "text", "text": prompt_text}]
         content.extend(
@@ -235,6 +243,8 @@ class OpenAICompatibleHearingVLMClient:
         }
         if request.seed is not None:
             body["seed"] = request.seed
+        if enable_thinking is not None:
+            body["enable_thinking"] = enable_thinking
         return canonical_bytes(body)
 
     @staticmethod

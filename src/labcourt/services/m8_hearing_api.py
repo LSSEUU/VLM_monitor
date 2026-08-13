@@ -324,9 +324,14 @@ class M8HearingApiService:
         self,
         operations_repository: M8OperationsRepository,
         runtimes: Mapping[str, M8HearingRuntime],
+        *,
+        start_enabled: bool = True,
     ) -> None:
+        if not isinstance(start_enabled, bool):
+            raise TypeError("start_enabled must be a bool")
         self._operations = operations_repository
         self._runtimes = dict(runtimes)
+        self._start_enabled = start_enabled
         if any(run_id != runtime.run_id for run_id, runtime in self._runtimes.items()):
             raise ValueError("M8 hearing runtime map conflicts with runtime run IDs")
 
@@ -337,6 +342,8 @@ class M8HearingApiService:
         case_id: str,
         request: M8HearingStartRequestV1,
     ) -> M8HearingViewV1:
+        if not self._start_enabled:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         if request.run_id != run_id or request.case_id != case_id:
             raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
         runtime = self._runtime(run_id)

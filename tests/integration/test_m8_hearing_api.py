@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 from labcourt.adapters.fake_hearing_precedents import FakeHearingPrecedentRetriever
@@ -126,8 +127,8 @@ def _qwen_config_and_manifest():
         profile.update(
             {
                 "provider": "openai-compatible",
-                "model": "qwen2.5-vl-72b-instruct",
-                "revision": "2026-08-01",
+                "model": "qwen3.7-plus-2026-05-26",
+                "revision": "2026-05-26",
                 "execution_location": "EXTERNAL",
                 "transport": "HTTP",
                 "endpoint_env": f"LABCOURT_QWEN_{role.upper()}_ENDPOINT",
@@ -459,6 +460,7 @@ def test_explicit_qwen_mode_persists_auditable_definitely_not_sent_failure(
                     revision=profile.revision,
                     model_manifest_id=manifest.models[component].model_manifest_id,
                     execution_location=profile.execution_location,
+                    enable_thinking=profile.enable_thinking,
                 ),
                 transport=transport,
                 prompt_resolver=prompt_registry,
@@ -530,6 +532,10 @@ def test_explicit_qwen_mode_persists_auditable_definitely_not_sent_failure(
         assert body["role_outputs"] == []
         assert body["raw_model_response_content_exposed"] is False
         assert len(transport.calls) == 1
+        wire = json.loads(transport.calls[0].body)
+        assert wire["enable_thinking"] is False
+        assert wire["response_format"] == {"type": "json_object"}
+        assert wire["model"] == "qwen3.7-plus-2026-05-26"
         assert all(
             item["provider"] == "openai-compatible" and "qwen" in item["model"].lower()
             for item in body["provider_selections"]
