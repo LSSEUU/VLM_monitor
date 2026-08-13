@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -51,6 +52,7 @@ from labcourt.application.hearing_precedent_retrieval import (
 from labcourt.application.hearing_procedural_review import (
     DeterministicHearingProceduralReviewVerifier,
 )
+from labcourt.application.hearing_request import FROZEN_M4_PROMPT_BUNDLE_SHA256
 from labcourt.application.hearing_role_call import HearingRoleCallService
 from labcourt.application.m5_hearing_precedent_bridge import (
     M5_HEARING_PRECEDENT_BRIDGE_MANIFEST_ID,
@@ -96,6 +98,29 @@ class M8HearingRuntimeError(LabCourtError):
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+def _hearing_prompt_bundle_for_run(database: Path, run_id: str) -> str:
+    """Reuse a persisted run's single M4 bundle, or select the current bundle."""
+
+    connection = sqlite3.connect(database)
+    try:
+        rows = connection.execute(
+            """
+            SELECT DISTINCT hearing_prompt_bundle_sha256
+            FROM m4_hearings
+            WHERE run_id = ?
+            ORDER BY hearing_prompt_bundle_sha256
+            """,
+            (run_id,),
+        ).fetchall()
+    finally:
+        connection.close()
+    if not rows:
+        return FROZEN_M4_PROMPT_BUNDLE_SHA256
+    if len(rows) != 1 or not isinstance(rows[0][0], str):
+        raise M8HearingRuntimeError(M8HearingRuntimeFailureCode.DEPLOYMENT_UNSUPPORTED)
+    return rows[0][0]
 
 
 @contextmanager
@@ -275,7 +300,9 @@ def open_m8_hearing_runtime(
                 )
             vlm_client = RoutedHearingVLMClient(role_clients)
 
-        catalog = build_hearing_prompt_catalog()
+        catalog = build_hearing_prompt_catalog(
+            _hearing_prompt_bundle_for_run(database, controlled_run_id)
+        )
         role_calls = HearingRoleCallService(
             repository=hearing_authority,
             response_store=response_store,

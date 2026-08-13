@@ -692,8 +692,8 @@ def test_canonical_primary_request_identity_is_golden() -> None:
         == prepared.canonical_inputs.hearing_context_json
     )
     assert prepared.request.hearing_context_sha256 == (
-        "1c8efb859a51b391dea1f8b60ed7522d4adcf4b4bd67f8c64152de1de070078d"
+        "bfbe701292c527dbdf181537931ccc86aa251def8e607943d94fd733b860a75f"
     )
     assert prepared.request.request_id == (
-        "515ca26120a46795c57e26991c008a5ab4622c6c3865dd365ccbfe13164bff5b"
+        "0543fcdbdf1231405e37770387cc2ac2bf81037c43d0c06c6f8d54cda50a30bb"
     )

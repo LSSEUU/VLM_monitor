@@ -153,6 +153,8 @@ class _MemoryHearingCalls:
         receipt: HearingModelParseReceipt,
         output: HearingRoleOutput | None = None,
     ) -> HearingModelParseReceipt:
+        if receipt.repair_request_id is not None:
+            assert receipt.repair_request_id in self.requests
         existing = self.parses.get(receipt.parse_receipt_id)
         if existing is not None:
             assert existing == receipt

@@ -69,7 +69,13 @@ from labcourt.ports.prompts import (
 )
 
 FROZEN_M4_PROMPT_BUNDLE_SHA256: Final = (
+    "97457a7e57710ed3e0a99bcd87b33629487115417f6dcdd24bb4fa65d1495c68"
+)
+LEGACY_M4_PROMPT_BUNDLE_SHA256: Final = (
     "0b7d777f01abe5bc74fc511f7a10a03dbdd3365c9b6b8f784cc32995fd5fb8a8"
+)
+SUPPORTED_M4_PROMPT_BUNDLE_SHA256S: Final = frozenset(
+    {FROZEN_M4_PROMPT_BUNDLE_SHA256, LEGACY_M4_PROMPT_BUNDLE_SHA256}
 )
 
 HEARING_PROSECUTOR_PROMPT_ID: Final = "hearing_prosecutor_v1"
@@ -411,8 +417,8 @@ def _validate_run_session_authority(
         _fail(HearingRequestPreparationErrorCode.SESSION_AUTHORITY_MISMATCH)
 
     if (
-        catalog.bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
-        or session.hearing_prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+        catalog.bundle_sha256 not in SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
+        or session.hearing_prompt_bundle_sha256 != catalog.bundle_sha256
     ):
         _fail(HearingRequestPreparationErrorCode.PROMPT_BUNDLE_MISMATCH)
 
@@ -860,7 +866,8 @@ def _render(
         variables=inputs.variables_for(rendered_role),
     )
     if (
-        rendered.manifest.prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+        rendered.manifest.prompt_bundle_sha256 != catalog.bundle_sha256
+        or catalog.bundle_sha256 not in SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
         or rendered.manifest.role != rendered_role
     ):
         _fail(HearingRequestPreparationErrorCode.PROMPT_BUNDLE_MISMATCH)
@@ -1005,7 +1012,7 @@ def prepare_primary_hearing_request(
         model_manifest_id=role_authority.model_manifest.model_manifest_id,
         execution_location=role_authority.profile.execution_location,
         prompt_manifest=rendered.manifest,
-        hearing_prompt_bundle_sha256=FROZEN_M4_PROMPT_BUNDLE_SHA256,
+        hearing_prompt_bundle_sha256=session.hearing_prompt_bundle_sha256,
         rendered_prompt_sha256=rendered.rendered_prompt_sha256,
         hearing_context_sha256=_document_sha256(inputs.hearing_context_json),
         media=disclosure.media,
@@ -1265,9 +1272,9 @@ def _validate_repair_authorities(
     ):
         _fail(HearingRequestPreparationErrorCode.MODEL_MANIFEST_MISMATCH)
     if (
-        session.hearing_prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
-        or catalog.bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
-        or request.hearing_prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+        session.hearing_prompt_bundle_sha256 != catalog.bundle_sha256
+        or catalog.bundle_sha256 not in SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
+        or request.hearing_prompt_bundle_sha256 != catalog.bundle_sha256
     ):
         _fail(HearingRequestPreparationErrorCode.PROMPT_BUNDLE_MISMATCH)
     prompt_id = _ROLE_PROMPT_IDS[request.role]
@@ -1426,6 +1433,8 @@ __all__ = [
     "HEARING_DEFENDER_PROMPT_ID",
     "HEARING_JUDGE_PROMPT_ID",
     "HEARING_PROSECUTOR_PROMPT_ID",
+    "LEGACY_M4_PROMPT_BUNDLE_SHA256",
+    "SUPPORTED_M4_PROMPT_BUNDLE_SHA256S",
     "HearingBudgetUsage",
     "HearingCanonicalInputs",
     "HearingRequestGeneration",

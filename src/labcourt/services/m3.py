@@ -7,6 +7,7 @@ from typing import Final
 
 from labcourt.adapters.jinja_prompt_renderer import (
     CITATION_REQUIRED_PROMPT_DEFINITIONS,
+    LEGACY_PROMPT_DEFINITIONS,
     PROMPT_DEFINITIONS,
     JinjaPromptCatalog,
 )
@@ -29,13 +30,12 @@ def build_screening_prompt_catalog(run_manifest: RunManifest) -> PromptCatalog:
 
     if not isinstance(run_manifest, RunManifest):
         raise TypeError("run_manifest must be a RunManifest")
-    if run_manifest.prompt_bundle_sha256 == CITATION_REQUIRED_M3_PROMPT_BUNDLE_SHA256:
-        definitions = CITATION_REQUIRED_PROMPT_DEFINITIONS
-    elif run_manifest.prompt_bundle_sha256 in {
-        FROZEN_M3_PROMPT_BUNDLE_SHA256,
-        LEGACY_M3_PROMPT_BUNDLE_SHA256,
-    }:
+    if run_manifest.prompt_bundle_sha256 == FROZEN_M3_PROMPT_BUNDLE_SHA256:
         definitions = PROMPT_DEFINITIONS
+    elif run_manifest.prompt_bundle_sha256 == CITATION_REQUIRED_M3_PROMPT_BUNDLE_SHA256:
+        definitions = CITATION_REQUIRED_PROMPT_DEFINITIONS
+    elif run_manifest.prompt_bundle_sha256 == LEGACY_M3_PROMPT_BUNDLE_SHA256:
+        definitions = LEGACY_PROMPT_DEFINITIONS
     else:
         definitions = None
     if definitions is None:

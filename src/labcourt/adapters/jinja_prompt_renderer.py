@@ -87,7 +87,7 @@ LEGACY_PROMPT_DEFINITIONS: Final = (
     ),
     PromptDefinition(
         prompt_id="screening_structure_repair_v1",
-        filename="screening_structure_repair_v1.jinja",
+        filename="legacy/screening_structure_repair_v1.jinja",
         role=VlmRole.STRUCTURE_REPAIR,
         variable_names=(
             "original_response_json",
@@ -112,7 +112,7 @@ CITATION_REQUIRED_PROMPT_DEFINITIONS: Final = (
     ),
     PromptDefinition(
         prompt_id="screening_structure_repair_v1",
-        filename="screening_structure_repair_v1.jinja",
+        filename="legacy/screening_structure_repair_v1.jinja",
         role=VlmRole.STRUCTURE_REPAIR,
         variable_names=(
             "original_response_json",

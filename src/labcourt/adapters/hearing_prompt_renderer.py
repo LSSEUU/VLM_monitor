@@ -74,9 +74,15 @@ HEARING_PROMPT_DEFINITIONS: Final = (
     ),
 )
 
-_HEARING_DEFINITIONS_BY_ID: Final = {
-    definition.prompt_id: definition for definition in HEARING_PROMPT_DEFINITIONS
-}
+LEGACY_HEARING_PROMPT_DEFINITIONS: Final = tuple(
+    PromptDefinition(
+        prompt_id=definition.prompt_id,
+        filename=f"legacy/{definition.filename}",
+        role=definition.role,
+        variable_names=definition.variable_names,
+    )
+    for definition in HEARING_PROMPT_DEFINITIONS
+)
 
 
 class HearingJinjaPromptCatalog(PromptCatalog):
@@ -88,16 +94,26 @@ class HearingJinjaPromptCatalog(PromptCatalog):
         output_schema_json_by_prompt: Mapping[str, str],
         expected_bundle_sha256: Sha256Hex | None = None,
         template_root: Path | None = None,
+        definitions: tuple[PromptDefinition, ...] = HEARING_PROMPT_DEFINITIONS,
     ) -> None:
         if jinja2.__version__ != "3.1.6":
             raise PromptRenderError(PromptRenderFailureCode.RENDERER_VERSION_MISMATCH)
         if template_root is not None and not template_root.is_absolute():
             raise PromptRenderError(PromptRenderFailureCode.TEMPLATE_ROOT_INVALID)
+        if (
+            not isinstance(definitions, tuple)
+            or not definitions
+            or any(not isinstance(item, PromptDefinition) for item in definitions)
+        ):
+            raise PromptRenderError(PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID)
+        definitions_by_id = {definition.prompt_id: definition for definition in definitions}
+        if len(definitions_by_id) != len(definitions):
+            raise PromptRenderError(PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID)
         try:
             schema_documents = dict(output_schema_json_by_prompt)
         except (RuntimeError, TypeError, ValueError):
             raise PromptRenderError(PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID) from None
-        if set(schema_documents) != set(_HEARING_DEFINITIONS_BY_ID):
+        if set(schema_documents) != set(definitions_by_id):
             raise PromptRenderError(PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID)
         _require_canonical_json_values(
             schema_documents,
@@ -110,7 +126,7 @@ class HearingJinjaPromptCatalog(PromptCatalog):
 
         loaded: dict[str, _LoadedTemplate] = {}
         templates: dict[str, Template] = {}
-        for definition in HEARING_PROMPT_DEFINITIONS:
+        for definition in definitions:
             loaded_template, compiled_template = _load_template(
                 definition,
                 template_root=template_root,
@@ -127,7 +143,7 @@ class HearingJinjaPromptCatalog(PromptCatalog):
                 "variable_names": list(definition.variable_names),
                 "renderer_version": RENDERER_VERSION,
             }
-            for definition in HEARING_PROMPT_DEFINITIONS
+            for definition in definitions
         ]
         bundle_sha256 = sha256_hex(["hearing-prompt-bundle", 1, bundle_projection])
         if expected_bundle_sha256 is not None and expected_bundle_sha256 != bundle_sha256:
@@ -194,4 +210,8 @@ class HearingJinjaPromptCatalog(PromptCatalog):
         )
 
 
-__all__ = ["HEARING_PROMPT_DEFINITIONS", "HearingJinjaPromptCatalog"]
+__all__ = [
+    "HEARING_PROMPT_DEFINITIONS",
+    "LEGACY_HEARING_PROMPT_DEFINITIONS",
+    "HearingJinjaPromptCatalog",
+]

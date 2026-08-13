@@ -368,25 +368,25 @@ def test_prompt_renderer_golden_identities_are_frozen() -> None:
     )
 
     assert catalog.bundle_sha256 == (
-        "5a0c1df90ad96c57ded58c079a239b7ed01a1978ec255cc3ea7f8336dbfe0c31"
+        "e08aeb3bccd51c30c7d24f0d66e722beda589653fb2bf25fe3193e0ebdd55dd3"
     )
     assert presence.manifest.template_sha256 == (
-        "d8a3f0d953dc6583dca3c5d26f3a94d895cf64285950622f05675fe13d7393a9"
+        "6cf2adb1ffe545d8796d5263b8e606d18dcf68030ab69f1d5bb1aadcb92efda3"
     )
     assert absence.manifest.template_sha256 == (
-        "86d5272dc57d6c705e24c55a0191d4bffc4c147d10dbc3c3662e55d53ffe0531"
+        "61a9a70a4dd2f06184c606220c1b3e85f3b8f2daaeaabead3e66ff5acfbcdbe3"
     )
     assert repair.manifest.template_sha256 == (
-        "28012b491cb88426983b3e33b2452ceac1c2ba56f4d5d8b9104f3c73b0ab6477"
+        "b4ba47b58b9a98bbae959e17f4a6467978c91b2693aac8e2d73bacef1ad97459"
     )
     assert presence.rendered_prompt_sha256 == (
-        "7a287f0517f0446b25e06e7d416a3ecef03e8c2262363fcba50b5d331df4a9cb"
+        "c391124de724e78cba2ac4a6cf2e8eb027f10c5db1e940408dccc0d44dd6427a"
     )
     assert absence.rendered_prompt_sha256 == (
-        "5df13c2a680f6d809a603b1cc5b8fbaab91409626f0967ec03db3e52cf3b1e55"
+        "fbe6691f7eb57dbc497f20892c8f9850ce26dca64e927b49831617c8c5fac9c0"
     )
     assert repair.rendered_prompt_sha256 == (
-        "e8bf2502af701372c43277571e40ca5e218665516d5ef006a89eca7e0ffc2068"
+        "97f4815c3102a3dec3f49b18b7c707f01d8f6051fd1d6c962c17364eb46447bc"
     )
 
 
@@ -426,6 +426,20 @@ def test_absence_prompt_freezes_missing_evidence_and_correction_semantics() -> N
     assert "non-detection is never evidence that PPE was not worn" in source
     assert "same authoritative subject track and alleged interval" in source
     assert "later correction does not prove PPE was worn" in source
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "screening_presence_v1.jinja",
+        "screening_absence_v1.jinja",
+        "screening_structure_repair_v1.jinja",
+    ],
+)
+def test_current_prompts_constrain_objective_claim_references(filename: str) -> None:
+    source = (PROMPTS / filename).read_text(encoding="utf-8")
+    assert 'evidence_ref.kind must be "OBJECTIVE_FACT"' in source
+    assert "objective_claims" in source
 
 
 @pytest.mark.parametrize(

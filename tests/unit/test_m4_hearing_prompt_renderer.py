@@ -9,6 +9,7 @@ import pytest
 
 from labcourt.adapters.hearing_prompt_renderer import (
     HEARING_PROMPT_DEFINITIONS,
+    LEGACY_HEARING_PROMPT_DEFINITIONS,
     HearingJinjaPromptCatalog,
 )
 from labcourt.adapters.jinja_prompt_renderer import JinjaPromptCatalog
@@ -148,7 +149,7 @@ def test_hearing_schema_tamper_changes_only_the_independent_bundle() -> None:
         original.manifest("hearing_judge_v1").output_schema_sha256
         != changed.manifest("hearing_judge_v1").output_schema_sha256
     )
-    assert m3.bundle_sha256 == ("5a0c1df90ad96c57ded58c079a239b7ed01a1978ec255cc3ea7f8336dbfe0c31")
+    assert m3.bundle_sha256 == ("e08aeb3bccd51c30c7d24f0d66e722beda589653fb2bf25fe3193e0ebdd55dd3")
 
 
 def test_hearing_expected_bundle_and_schema_set_fail_closed() -> None:
@@ -166,22 +167,51 @@ def test_hearing_expected_bundle_and_schema_set_fail_closed() -> None:
     assert schema_set.value.reason_code == PromptRenderFailureCode.PROMPT_SCHEMA_SET_INVALID
 
 
-def test_m3_bundle_and_manifest_bytes_remain_frozen() -> None:
+def test_current_m3_bundle_and_manifest_bytes_remain_independent() -> None:
     catalog = JinjaPromptCatalog(output_schema_json_by_prompt=_m3_schema_documents())
     manifest_bytes = canonical_json(
         catalog.manifest("screening_presence_v1").model_dump(mode="json")
     ).encode("utf-8")
 
     assert catalog.bundle_sha256 == (
-        "5a0c1df90ad96c57ded58c079a239b7ed01a1978ec255cc3ea7f8336dbfe0c31"
+        "e08aeb3bccd51c30c7d24f0d66e722beda589653fb2bf25fe3193e0ebdd55dd3"
     )
     assert hashlib.sha256(manifest_bytes).hexdigest() == (
-        "28c10ad6439ab65a54ed58e7578470c0b63b1d5775593aa5218e2acf034ad757"
+        "25db50a6e66e3bc47dbe7053d005ef17e415e0abe3801428152ce6d95b5f9f94"
     )
 
 
 def test_hearing_prompt_golden_identities_are_frozen() -> None:
     catalog = HearingJinjaPromptCatalog(output_schema_json_by_prompt=_hearing_schema_documents())
+    rendered = {
+        prompt_id: catalog.render(prompt_id=prompt_id, variables=_variables(prompt_id))
+        for prompt_id in HEARING_PROMPT_IDS
+    }
+
+    assert catalog.bundle_sha256 == (
+        "97457a7e57710ed3e0a99bcd87b33629487115417f6dcdd24bb4fa65d1495c68"
+    )
+    assert {prompt_id: value.manifest.template_sha256 for prompt_id, value in rendered.items()} == {
+        "hearing_prosecutor_v1": (
+            "b58cc57ab87213b85810b9fc12eb2cae8b0fe378ce4439bed5fc64bb7d1d0e4e"
+        ),
+        "hearing_defender_v1": ("02f1e86550e2b9585e4e1f3dc75d9b17c2273baba9cc46f07f4b9364c9107956"),
+        "hearing_judge_v1": ("66bc36e8955dbdd07af0f93e2f67a1488793974791e739650b8d25ea20aae810"),
+    }
+    assert {prompt_id: value.rendered_prompt_sha256 for prompt_id, value in rendered.items()} == {
+        "hearing_prosecutor_v1": (
+            "25d00ba08f0b8b6a06f22350ae2cffaec4e528a281449c3efbdf4ac3a52c419b"
+        ),
+        "hearing_defender_v1": ("5810059795b2dbd156d6407729ffd803382f15b1a14667a550ef6b8729654b28"),
+        "hearing_judge_v1": ("9f4f2cd61c4e41dd4e8bfb419c1e36f8237084b7c5b44f22d0eff371d9796302"),
+    }
+
+
+def test_legacy_hearing_prompt_golden_identities_remain_recoverable() -> None:
+    catalog = HearingJinjaPromptCatalog(
+        output_schema_json_by_prompt=_hearing_schema_documents(),
+        definitions=LEGACY_HEARING_PROMPT_DEFINITIONS,
+    )
     rendered = {
         prompt_id: catalog.render(prompt_id=prompt_id, variables=_variables(prompt_id))
         for prompt_id in HEARING_PROMPT_IDS

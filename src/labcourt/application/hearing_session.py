@@ -13,10 +13,10 @@ from enum import StrEnum
 from typing import NoReturn
 
 from labcourt.application.hearing_request import (
-    FROZEN_M4_PROMPT_BUNDLE_SHA256,
     HEARING_DEFENDER_PROMPT_ID,
     HEARING_JUDGE_PROMPT_ID,
     HEARING_PROSECUTOR_PROMPT_ID,
+    SUPPORTED_M4_PROMPT_BUNDLE_SHA256S,
 )
 from labcourt.contracts.cases import Case
 from labcourt.contracts.config import AppConfig
@@ -132,7 +132,7 @@ def _role_model_ids(
     catalog: PromptCatalog,
 ) -> dict[VlmRole, str]:
     if (
-        catalog.bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+        catalog.bundle_sha256 not in SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
         or run_manifest.config_sha256 != config.config_sha256
     ):
         _fail(HearingSessionPreparationFailureCode.PROMPT_AUTHORITY_MISMATCH)
@@ -166,7 +166,7 @@ def _role_model_ids(
             _fail(HearingSessionPreparationFailureCode.PROMPT_AUTHORITY_MISMATCH)
         if (
             prompt_manifest.role != role
-            or prompt_manifest.prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+            or prompt_manifest.prompt_bundle_sha256 != catalog.bundle_sha256
         ):
             _fail(HearingSessionPreparationFailureCode.PROMPT_AUTHORITY_MISMATCH)
         identities[role] = manifest.model_manifest_id
@@ -287,7 +287,7 @@ def prepare_hearing_session(
         rework_round_limit=config.hearing.max_rework_rounds,
         max_total_images=config.hearing.max_total_images,
         max_total_output_tokens=config.hearing.max_total_output_tokens,
-        hearing_prompt_bundle_sha256=FROZEN_M4_PROMPT_BUNDLE_SHA256,
+        hearing_prompt_bundle_sha256=catalog.bundle_sha256,
         prosecutor_model_manifest_id=role_models[VlmRole.PROSECUTOR],
         defender_model_manifest_id=role_models[VlmRole.DEFENDER],
         judge_model_manifest_id=role_models[VlmRole.JUDGE],
