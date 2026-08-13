@@ -56,6 +56,7 @@ class M8FeishuLiveFailureCode(StrEnum):
     DUPLICATE_ACTION = "DUPLICATE_ACTION"
     INVALID_EVENT = "INVALID_EVENT"
     QWEN_UNAVAILABLE = "QWEN_UNAVAILABLE"
+    SEND_REJECTED = "SEND_REJECTED"
     SEND_UNCERTAIN = "SEND_UNCERTAIN"
     VERSION_CONFLICT = "VERSION_CONFLICT"
     WORKER_UNAVAILABLE = "WORKER_UNAVAILABLE"
@@ -618,6 +619,7 @@ class M8FeishuAgentReplyCompletionV1(FrozenContractModel):
     completed_at: datetime
     raw_response_ref: ReferenceToken
     raw_response_sha256: Sha256Hex
+    completion_manifest_id: Sha256Hex
 
     @field_validator("completed_at")
     @classmethod
@@ -647,6 +649,7 @@ class M8FeishuAgentReplyCompletionV1(FrozenContractModel):
                 self.completed_at.isoformat(),
                 self.raw_response_ref,
                 self.raw_response_sha256,
+                self.completion_manifest_id,
             ]
         )
 

@@ -256,6 +256,49 @@ class StdlibM8FeishuHttpTransport:
             M8FeishuHttpCallStage.MESSAGE,
         )
 
+    def send_text_reply(
+        self,
+        profile: M8FeishuAdapterProfileV1,
+        tenant_access_token: bytes,
+        reply_to_provider_message_id: str,
+        provider_uuid: str,
+        text: str,
+        timeout_ms: int,
+    ) -> M8FeishuHttpResponse:
+        """Reply once to an inbound P2P message; callers own authority and token checks."""
+
+        self._validate_profile(profile)
+        if not reply_to_provider_message_id or any(
+            character.isspace() for character in reply_to_provider_message_id
+        ):
+            raise ValueError("M8 Feishu reply message reference is invalid")
+        if not 1 <= len(provider_uuid) <= 50:
+            raise ValueError("M8 Feishu reply UUID is invalid")
+        if not 1 <= len(text) <= 4_000:
+            raise ValueError("M8 Feishu reply text is outside the bounded length")
+        token = _decode_secret(tenant_access_token, M8FeishuHttpCallStage.MESSAGE)
+        body = (
+            canonical_json(
+                {
+                    "content": canonical_json({"text": text}),
+                    "msg_type": "text",
+                    "uuid": provider_uuid,
+                }
+            )
+            + "\n"
+        ).encode("utf-8")
+        return self._post(
+            f"/open-apis/im/v1/messages/{reply_to_provider_message_id}/reply",
+            body,
+            {
+                "Accept": "application/json",
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+            timeout_ms,
+            M8FeishuHttpCallStage.MESSAGE,
+        )
+
     @staticmethod
     def _validate_profile(profile: M8FeishuAdapterProfileV1) -> None:
         if not isinstance(profile, M8FeishuAdapterProfileV1):

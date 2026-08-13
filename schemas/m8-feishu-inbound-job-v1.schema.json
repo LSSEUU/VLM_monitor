@@ -145,6 +145,7 @@
         "DUPLICATE_ACTION",
         "INVALID_EVENT",
         "QWEN_UNAVAILABLE",
+        "SEND_REJECTED",
         "SEND_UNCERTAIN",
         "VERSION_CONFLICT",
         "WORKER_UNAVAILABLE"

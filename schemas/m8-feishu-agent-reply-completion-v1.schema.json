@@ -91,6 +91,7 @@
         "DUPLICATE_ACTION",
         "INVALID_EVENT",
         "QWEN_UNAVAILABLE",
+        "SEND_REJECTED",
         "SEND_UNCERTAIN",
         "VERSION_CONFLICT",
         "WORKER_UNAVAILABLE"
@@ -121,6 +122,11 @@
       "pattern": "^[0-9a-f]{64}$",
       "readOnly": true,
       "title": "Completion Id",
+      "type": "string"
+    },
+    "completion_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Completion Manifest Id",
       "type": "string"
     },
     "disposition": {
@@ -176,6 +182,7 @@
     "completed_at",
     "raw_response_ref",
     "raw_response_sha256",
+    "completion_manifest_id",
     "completion_id"
   ],
   "title": "M8FeishuAgentReplyCompletionV1",

@@ -22,6 +22,9 @@ dependencies = [
 feishu-inbound = [
   "cryptography==49.0.0",
 ]
+feishu-live = [
+  "lark-oapi==1.7.1",
+]
 video = [
   "opencv-python-headless==5.0.0.93",
 ]

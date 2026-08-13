@@ -154,6 +154,7 @@ def test_confirmation_intent_and_agent_reply_are_single_use(tmp_path: Path) -> N
         completed_at=NOW,
         raw_response_ref="feishu-agent-reply-response-01",
         raw_response_sha256=hashlib.sha256(raw_response).hexdigest(),
+        completion_manifest_id=SHA_A,
     )
     assert repository.complete_agent_reply(claim, completion, raw_response) == completion
     assert repository.claim_agent_reply(SHA_E) is None

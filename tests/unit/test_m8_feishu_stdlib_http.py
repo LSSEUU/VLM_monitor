@@ -167,6 +167,31 @@ def test_message_call_uses_open_id_card_and_notification_idempotency_key() -> No
     assert connection.close_count == 1
 
 
+def test_agent_reply_uses_exact_inbound_message_and_single_text_post() -> None:
+    connection = _Connection(_Response(b'{"code":0,"data":{"message_id":"om-reply"}}'))
+    transport = StdlibM8FeishuHttpTransport(_ConnectionFactory(connection))
+
+    result = transport.send_text_reply(
+        _profile(),
+        FAKE_TOKEN,
+        "om-inbound-01",
+        "reply-authority-01",
+        "已根据平台可信工具完成查询。",
+        10_000,
+    )
+
+    assert result.status_code == 200
+    assert len(connection.requests) == 1
+    method, target, body, headers = connection.requests[0]
+    assert method == "POST"
+    assert target == "/open-apis/im/v1/messages/om-inbound-01/reply"
+    assert headers["Authorization"] == f"Bearer {FAKE_TOKEN.decode()}"
+    payload = json.loads(body)
+    assert payload["msg_type"] == "text"
+    assert json.loads(payload["content"])["text"] == "已根据平台可信工具完成查询。"
+    assert payload["uuid"] == "reply-authority-01"
+
+
 @pytest.mark.parametrize(
     ("stage", "failure", "certainty"),
     [
