@@ -21,6 +21,9 @@ from labcourt.adapters.m8_platform_pilot_fixture import (
     DeterministicRecordedPpePerceptionTransport,
     DeterministicRecordedPpeScreeningTransport,
 )
+from labcourt.adapters.recorded_run_acquisition import (
+    RecordedRunFrameAcquisitionExecutor,
+)
 from labcourt.adapters.simulated_sensors import DeterministicSimulatedSensorAdapter
 from labcourt.adapters.storage.sqlite_m8_inventory_repository import SQLiteM8InventoryRepository
 from labcourt.adapters.storage.sqlite_m8_notification_repository import (
@@ -368,6 +371,12 @@ class M8PlatformDemoService:
         )
         workspace_root = self.project_root / config.run.workspace
         database = workspace_root / run_id / config.storage.database_filename
+        try:
+            input_relative_path = self.input_media_path.relative_to(
+                self.project_root
+            ).as_posix()
+        except ValueError:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from None
         with open_m8_hearing_runtime(
             config=config,
             run_id=run_id,
@@ -377,6 +386,19 @@ class M8PlatformDemoService:
             model_mode=model_mode,
             synthetic_demo_fixture=(model_mode == M8HearingModelMode.OFFLINE_FIXTURE),
             environment=os.environ if qwen_mode else None,
+            acquisition_executor_factory=(
+                (
+                    lambda _workspace, manifest: RecordedRunFrameAcquisitionExecutor(
+                        project_root=self.project_root,
+                        input_relative_path=input_relative_path,
+                        manifest=manifest,
+                        max_input_bytes=config.storage.max_media_bytes,
+                        max_frame_pixels=config.storage.max_image_pixels,
+                    )
+                )
+                if qwen_mode
+                else None
+            ),
         ) as runtime:
             yield runtime
 
