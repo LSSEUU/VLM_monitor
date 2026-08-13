@@ -132,6 +132,7 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
         10,
         11,
         12,
+        13,
     )
     with sqlite3.connect(database) as connection:
         versions = connection.execute(
@@ -154,6 +155,7 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
         (10, "m8_feishu_inbound_replies"),
         (11, "m8_feishu_inbound_activation"),
         (12, "m8_feishu_url_challenge_audit"),
+        (13, "m8_agent_chat"),
     ]
     assert tables == {
         "schema_migrations",
@@ -186,6 +188,10 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
         "m8_feishu_inbound_sandbox_activations",
         "m8_feishu_inbound_sandbox_activation_revocations",
         "m8_feishu_url_challenge_commits",
+        "m8_agent_conversations",
+        "m8_agent_turn_events",
+        "m8_agent_raw_responses",
+        "m8_agent_cache_entries",
     }
 
 

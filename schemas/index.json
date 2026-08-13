@@ -1216,6 +1216,72 @@
       "name": "m8-adapter-readiness-assessment-v1"
     },
     {
+      "file": "m8-agent-conversation-create-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationCreateRequestV1",
+      "name": "m8-agent-conversation-create-request-v1"
+    },
+    {
+      "file": "m8-agent-conversation-summary-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationSummaryV1",
+      "name": "m8-agent-conversation-summary-v1"
+    },
+    {
+      "file": "m8-agent-conversation-turn-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationTurnV1",
+      "name": "m8-agent-conversation-turn-v1"
+    },
+    {
+      "file": "m8-agent-conversation-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationV1",
+      "name": "m8-agent-conversation-v1"
+    },
+    {
+      "file": "m8-agent-model-call-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentModelCallReceiptV1",
+      "name": "m8-agent-model-call-receipt-v1"
+    },
+    {
+      "file": "m8-agent-model-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentModelProfileV1",
+      "name": "m8-agent-model-profile-v1"
+    },
+    {
+      "file": "m8-agent-model-status-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentModelStatusV1",
+      "name": "m8-agent-model-status-v1"
+    },
+    {
+      "file": "m8-agent-stream-event-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentStreamEventV1",
+      "name": "m8-agent-stream-event-v1"
+    },
+    {
+      "file": "m8-agent-tool-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentToolReceiptV1",
+      "name": "m8-agent-tool-receipt-v1"
+    },
+    {
+      "file": "m8-agent-turn-completion-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentTurnCompletionV1",
+      "name": "m8-agent-turn-completion-v1"
+    },
+    {
+      "file": "m8-agent-turn-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentTurnRequestV1",
+      "name": "m8-agent-turn-request-v1"
+    },
+    {
       "file": "m8-api-case-transition-request-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_api.M8ApiCaseTransitionRequestV1",

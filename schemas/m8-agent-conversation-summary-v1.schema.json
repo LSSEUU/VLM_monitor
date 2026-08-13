@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "M8ActorRole": {
+      "enum": [
+        "LEADER",
+        "SAFETY_OFFICER",
+        "STUDENT",
+        "OPERATIONS"
+      ],
+      "title": "M8ActorRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-agent-conversation-summary-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_authority_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Actor Authority Commit Receipt Id",
+      "type": "string"
+    },
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "actor_role": {
+      "$ref": "#/$defs/M8ActorRole"
+    },
+    "conversation_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "latest_activity_at": {
+      "format": "date-time",
+      "title": "Latest Activity At",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-agent-conversation-summary-v1",
+      "default": "m8-agent-conversation-summary-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sealed": {
+      "title": "Sealed",
+      "type": "boolean"
+    },
+    "title": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "turn_count": {
+      "minimum": 0,
+      "title": "Turn Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "conversation_id",
+    "actor_id",
+    "actor_role",
+    "actor_authority_commit_receipt_id",
+    "created_at",
+    "title",
+    "turn_count",
+    "latest_activity_at",
+    "sealed"
+  ],
+  "title": "M8AgentConversationSummaryV1",
+  "type": "object"
+}

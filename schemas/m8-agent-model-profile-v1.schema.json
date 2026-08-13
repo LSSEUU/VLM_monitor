@@ -1,0 +1,137 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-agent-model-profile-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "api_key_env": {
+      "const": "LABCOURT_QWEN_API_KEY",
+      "default": "LABCOURT_QWEN_API_KEY",
+      "title": "Api Key Env",
+      "type": "string"
+    },
+    "cache_enabled": {
+      "const": true,
+      "default": true,
+      "title": "Cache Enabled",
+      "type": "boolean"
+    },
+    "enable_thinking": {
+      "const": false,
+      "default": false,
+      "title": "Enable Thinking",
+      "type": "boolean"
+    },
+    "endpoint_env": {
+      "const": "LABCOURT_QWEN_ENDPOINT",
+      "default": "LABCOURT_QWEN_ENDPOINT",
+      "title": "Endpoint Env",
+      "type": "string"
+    },
+    "history_byte_limit": {
+      "default": 65536,
+      "maximum": 262144,
+      "minimum": 1024,
+      "title": "History Byte Limit",
+      "type": "integer"
+    },
+    "history_message_limit": {
+      "default": 20,
+      "maximum": 40,
+      "minimum": 2,
+      "title": "History Message Limit",
+      "type": "integer"
+    },
+    "max_output_tokens": {
+      "default": 2048,
+      "maximum": 8192,
+      "minimum": 1,
+      "title": "Max Output Tokens",
+      "type": "integer"
+    },
+    "max_response_bytes": {
+      "default": 2097152,
+      "maximum": 8388608,
+      "minimum": 1024,
+      "title": "Max Response Bytes",
+      "type": "integer"
+    },
+    "max_tool_rounds": {
+      "default": 4,
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Max Tool Rounds",
+      "type": "integer"
+    },
+    "model": {
+      "const": "qwen3.7-plus-2026-05-26",
+      "default": "qwen3.7-plus-2026-05-26",
+      "title": "Model",
+      "type": "string"
+    },
+    "model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Manifest Id",
+      "type": "string"
+    },
+    "parallel_tool_calls": {
+      "const": false,
+      "default": false,
+      "title": "Parallel Tool Calls",
+      "type": "boolean"
+    },
+    "profile_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "prompt_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Manifest Id",
+      "type": "string"
+    },
+    "protocol": {
+      "const": "OPENAI_COMPATIBLE_CHAT_COMPLETIONS",
+      "default": "OPENAI_COMPATIBLE_CHAT_COMPLETIONS",
+      "title": "Protocol",
+      "type": "string"
+    },
+    "provider": {
+      "const": "alibaba-cloud-model-studio",
+      "default": "alibaba-cloud-model-studio",
+      "title": "Provider",
+      "type": "string"
+    },
+    "revision": {
+      "const": "2026-05-26",
+      "default": "2026-05-26",
+      "title": "Revision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-agent-model-profile-v1",
+      "default": "m8-agent-model-profile-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "timeout_seconds": {
+      "default": 45.0,
+      "maximum": 120.0,
+      "minimum": 1.0,
+      "title": "Timeout Seconds",
+      "type": "number"
+    },
+    "tool_schema_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tool Schema Manifest Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "profile_id",
+    "prompt_manifest_id",
+    "tool_schema_manifest_id",
+    "model_manifest_id"
+  ],
+  "title": "M8AgentModelProfileV1",
+  "type": "object"
+}
