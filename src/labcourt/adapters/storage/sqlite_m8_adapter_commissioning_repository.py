@@ -243,6 +243,22 @@ class SQLiteM8AdapterCommissioningRepository:
                 raise EvidenceMissing("M8 adapter candidate was not found")
             return self._load_candidate_row(row)
 
+    def list_candidates(
+        self,
+        limit: int,
+    ) -> tuple[M8ProductionAdapterCandidateCommitReceiptV1, ...]:
+        bounded = _validate_limit(limit)
+        with self._read() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM m8_production_adapter_candidates
+                ORDER BY adapter_id ASC, adapter_revision DESC, candidate_authority_id ASC
+                LIMIT ?
+                """,
+                (bounded,),
+            ).fetchall()
+            return tuple(self._load_candidate_row(row) for row in rows)
+
     def commit_evidence(
         self,
         evidence: M8CommissioningEvidenceAuthorityV1,

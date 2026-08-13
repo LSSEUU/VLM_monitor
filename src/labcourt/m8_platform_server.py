@@ -5,13 +5,16 @@ from __future__ import annotations
 import sqlite3
 from http import HTTPStatus
 from importlib.resources import files
+from typing import Any
 
 from pydantic import ValidationError
 
 from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
 from labcourt.contracts.m8_access_cases import M8ActorRole
-from labcourt.contracts.m8_api import M8ApiErrorReason
+from labcourt.contracts.m8_api import M8ApiErrorReason, M8ApiKnowledgeQueryRequestV1
+from labcourt.contracts.m8_feishu_platform import M8FeishuTestCardCheckRequestV1
+from labcourt.contracts.m8_platform_agent import M8PlatformNotificationDispatchRequestV2
 from labcourt.contracts.m8_platform_demo import (
     M8PlatformAcknowledgementRequestV1,
     M8PlatformAgentQueryRequestV1,
@@ -105,6 +108,10 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     HTTPStatus.OK,
                     self.server.platform_service.reservations(principal),
                 )
+                return
+            if segments == ("api", "m8", "integrations", "feishu", "status"):
+                status = self.server.platform_service.feishu_status(principal)
+                self._json(HTTPStatus.OK, status.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 7
@@ -205,26 +212,59 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self._error(HTTPStatus.FORBIDDEN, M8ApiErrorReason.FORBIDDEN)
                 return
             if segments == ("api", "m8", "demo", "login"):
-                request = M8PlatformLoginRequestV1.model_validate_json(self._json_body())
-                token = self.server.platform_role_tokens[request.role]
+                login_request = M8PlatformLoginRequestV1.model_validate_json(self._json_body())
+                token = self.server.platform_role_tokens[login_request.role]
                 principal = self.server.api_authenticator.authenticate(f"Bearer {token}")
                 session = self.server.api_service.session(principal)
-                response = M8PlatformLoginResponseV1(
+                login_response = M8PlatformLoginResponseV1(
                     bearer_token=token,
                     session=session,
                 )
-                self._json(HTTPStatus.OK, response.model_dump(mode="json"))
+                self._json(HTTPStatus.OK, login_response.model_dump(mode="json"))
                 return
             principal = self.server.api_authenticator.authenticate(
                 self.headers.get("Authorization")
             )
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "knowledge", "catalogs")
+                and segments[5] == "query-projections"
+            ):
+                knowledge_request = M8ApiKnowledgeQueryRequestV1.model_validate_json(
+                    self._json_body()
+                )
+                projection = self.server.platform_service.knowledge_query_projection(
+                    principal,
+                    segments[4],
+                    knowledge_request,
+                )
+                self._json(HTTPStatus.OK, projection.model_dump(mode="json"))
+                return
+            if segments == (
+                "api",
+                "m8",
+                "integrations",
+                "feishu",
+                "test-card-checks",
+            ):
+                feishu_request = M8FeishuTestCardCheckRequestV1.model_validate_json(
+                    self._json_body()
+                )
+                receipt = self.server.platform_service.check_feishu_test_card(
+                    principal,
+                    feishu_request,
+                )
+                self._json(HTTPStatus.OK, receipt.model_dump(mode="json"))
+                return
             if segments == ("api", "m8", "demo", "scenario-runs"):
-                request = M8PlatformScenarioStartRequestV1.model_validate_json(self._json_body())
+                scenario_request = M8PlatformScenarioStartRequestV1.model_validate_json(
+                    self._json_body()
+                )
                 run = self.server.platform_service.start_scenario(
                     principal,
-                    request.scenario_kind,
-                    request.recognition_mode,
-                    request.retry_of_run_id,
+                    scenario_request.scenario_kind,
+                    scenario_request.recognition_mode,
+                    scenario_request.retry_of_run_id,
                 )
                 self._json(HTTPStatus.ACCEPTED, run.model_dump(mode="json"))
                 return
@@ -234,35 +274,61 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self._json(HTTPStatus.OK, result.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "agent", "queries"):
-                request = M8PlatformAgentQueryRequestV1.model_validate_json(self._json_body())
-                response = self.server.platform_service.agent_query(principal, request.query)
-                self._json(HTTPStatus.OK, response.model_dump(mode="json"))
+                agent_request = M8PlatformAgentQueryRequestV1.model_validate_json(
+                    self._json_body()
+                )
+                agent_response = self.server.platform_service.agent_query(
+                    principal, agent_request.query
+                )
+                self._json(HTTPStatus.OK, agent_response.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 5
                 and segments[:3] == ("api", "m8", "cases")
                 and segments[4] == "notification-dispatches"
             ):
-                request = M8PlatformNotificationDispatchRequestV1.model_validate_json(
-                    self._json_body()
+                raw_request = self._json_body()
+                request_v2 = None
+                request_v1 = None
+                try:
+                    request_v2 = M8PlatformNotificationDispatchRequestV2.model_validate_json(
+                        raw_request
+                    )
+                except ValidationError:
+                    request_v1 = M8PlatformNotificationDispatchRequestV1.model_validate_json(
+                        raw_request
+                    )
+                dispatch_kind: str
+                if request_v2 is not None:
+                    dispatch_kind = request_v2.kind
+                else:
+                    assert request_v1 is not None
+                    dispatch_kind = request_v1.kind
+                dispatch_result = self.server.platform_service.dispatch_case_notification(
+                    principal,
+                    segments[3],
+                    dispatch_kind,
+                    request_v2.source_case_version if request_v2 is not None else None,
+                    (
+                        request_v2.source_case_authority_sha256
+                        if request_v2 is not None
+                        else None
+                    ),
                 )
-                result = self.server.platform_service.dispatch_case_notification(
-                    principal, segments[3], request.kind
-                )
-                self._json(HTTPStatus.OK, result.model_dump(mode="json"))
+                self._json(HTTPStatus.OK, dispatch_result.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 5
                 and segments[:3] == ("api", "m8", "notifications")
                 and segments[4] == "replies"
             ):
-                request = M8PlatformNotificationReplyRequestV1.model_validate_json(
+                reply_request = M8PlatformNotificationReplyRequestV1.model_validate_json(
                     self._json_body()
                 )
-                result = self.server.platform_service.reply_notification(
-                    principal, segments[3], request.reply_kind, request.body
+                reply_result = self.server.platform_service.reply_notification(
+                    principal, segments[3], reply_request.reply_kind, reply_request.body
                 )
-                self._json(HTTPStatus.OK, result.model_dump(mode="json"))
+                self._json(HTTPStatus.OK, reply_result.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 5
@@ -270,10 +336,10 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 and segments[4] == "acknowledgements"
             ):
                 M8PlatformAcknowledgementRequestV1.model_validate_json(self._json_body())
-                result = self.server.platform_service.acknowledge_notification(
+                acknowledgement_result = self.server.platform_service.acknowledge_notification(
                     principal, segments[3]
                 )
-                self._json(HTTPStatus.OK, result.model_dump(mode="json"))
+                self._json(HTTPStatus.OK, acknowledgement_result.model_dump(mode="json"))
                 return
         except M8AuthenticationError as error:
             self._authentication_error(error)
@@ -420,7 +486,7 @@ def build_m8_platform_server(
     *,
     platform_service: M8PlatformDemoService,
     role_tokens: dict[M8ActorRole, str],
-    **kwargs,
+    **kwargs: Any,
 ) -> M8PlatformHttpServer:
     port = kwargs.pop("port")
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65_535:

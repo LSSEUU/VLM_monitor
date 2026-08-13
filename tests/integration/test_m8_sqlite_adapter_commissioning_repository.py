@@ -172,6 +172,7 @@ def test_candidate_and_raw_evidence_are_restart_safe_append_only_and_idempotent(
 
     reopened = SQLiteM8AdapterCommissioningRepository(database, BUSY_TIMEOUT_MS, SHA_A)
     assert reopened.get_candidate(candidate.candidate_authority_id) == candidate_receipt
+    assert reopened.list_candidates(5) == (candidate_receipt,)
     assert reopened.get_evidence(evidence.evidence_authority_id) == evidence_receipt
     assert reopened.list_candidate_evidence(candidate.candidate_authority_id, 5) == (
         evidence_receipt,

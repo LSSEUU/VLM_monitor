@@ -11,6 +11,12 @@ from labcourt.adapters.m8_hashed_bearer_authenticator import M8HashedBearerAuthe
 from labcourt.adapters.storage.sqlite_m8_adapter_commissioning_repository import (
     SQLiteM8AdapterCommissioningRepository,
 )
+from labcourt.adapters.storage.sqlite_m8_feishu_activation_repository import (
+    SQLiteM8FeishuActivationRepository,
+)
+from labcourt.adapters.storage.sqlite_m8_feishu_inbound_activation_repository import (
+    SQLiteM8FeishuInboundActivationRepository,
+)
 from labcourt.adapters.storage.sqlite_m8_inventory_repository import SQLiteM8InventoryRepository
 from labcourt.adapters.storage.sqlite_m8_knowledge_repository import SQLiteM8KnowledgeRepository
 from labcourt.adapters.storage.sqlite_m8_notification_repository import (
@@ -41,11 +47,15 @@ from labcourt.contracts.m8_api import (
 )
 from labcourt.m8_platform_server import M8PlatformHttpServer, build_m8_platform_server
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
+from labcourt.services.m8_case_memory import M8ScopedOperationalCaseMemoryAdapter
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
+from labcourt.services.m8_feishu_platform import M8FeishuPlatformService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
+from labcourt.services.m8_knowledge_projection import M8KnowledgeProjectionService
 from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_operations_api import M8OperationsApiService
 from labcourt.services.m8_operations_projection import M8OperationsProjectionService
+from labcourt.services.m8_platform_agent import M8PlatformAgentService
 from labcourt.services.m8_platform_demo import M8PlatformDemoService
 from labcourt.services.m8_projection_api import M8ProjectionApiService
 from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
@@ -189,6 +199,18 @@ def assemble_m8_platform_demo_api(
     commissioning = SQLiteM8AdapterCommissioningRepository(
         database, _BUSY_TIMEOUT_MS, repository_manifest_id
     )
+    feishu_activations = SQLiteM8FeishuActivationRepository(
+        database,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+        platform_manifest("platform-readiness-assessment-v1"),
+    )
+    feishu_inbound_activations = SQLiteM8FeishuInboundActivationRepository(
+        database,
+        _BUSY_TIMEOUT_MS,
+        repository_manifest_id,
+        platform_manifest("platform-readiness-assessment-v1"),
+    )
     projection_reader = M8OperationsProjectionService(
         inventory,
         operations,
@@ -209,6 +231,35 @@ def assemble_m8_platform_demo_api(
         platform_manifest("platform-knowledge-query-v1"),
         platform_manifest("platform-knowledge-adapter-v1"),
     )
+    notification_api = M8NotificationApiService(notifications, operations)
+    knowledge_projection = M8KnowledgeProjectionService(
+        knowledge_api,
+        M8ScopedOperationalCaseMemoryAdapter(operations_api),
+    )
+    readiness_service = M8AdapterReadinessService(
+        commissioning,
+        operations,
+        platform_manifest("platform-readiness-assessment-v1"),
+    )
+    def clock() -> datetime:
+        return datetime.now(UTC)
+    feishu_platform = M8FeishuPlatformService(
+        commissioning,
+        readiness_service,
+        feishu_activations,
+        feishu_inbound_activations,
+        notifications,
+        _ROLE_ACTORS[M8ActorRole.OPERATIONS],
+        clock,
+        platform_manifest("platform-feishu-test-card-probe-v1"),
+    )
+    platform_agent = M8PlatformAgentService(
+        operations_api,
+        notification_api,
+        knowledge_projection,
+        clock,
+        PLATFORM_CAMPUS_ID,
+    )
     fixture_pilot_service = PilotUiService(
         project_root=root,
         config_path=root / "configs/demo.yaml",
@@ -224,7 +275,11 @@ def assemble_m8_platform_demo_api(
         database_path=database,
         input_media_path=input_media_path,
         api_service=operations_api,
+        notification_service=notification_api,
         knowledge_service=knowledge_api,
+        knowledge_projection_service=knowledge_projection,
+        feishu_platform_service=feishu_platform,
+        agent_service=platform_agent,
         fixture_pilot_service=fixture_pilot_service,
         model_pilot_service=model_pilot_service,
     )
@@ -240,16 +295,12 @@ def assemble_m8_platform_demo_api(
         port=port,
         service=operations_api,
         knowledge_service=knowledge_api,
-        notification_service=M8NotificationApiService(notifications, operations),
+        notification_service=notification_api,
         projection_service=M8ProjectionApiService(operations, projection_reader),
         commissioning_service=M8CommissioningApiService(
-            M8AdapterReadinessService(
-                commissioning,
-                operations,
-                platform_manifest("platform-readiness-assessment-v1"),
-            ),
+            readiness_service,
             operations,
-            clock=lambda: datetime.now(UTC),
+            clock=clock,
         ),
         authenticator=M8HashedBearerAuthenticator(_credential_catalog()),
         recorded_media_service=M8RecordedMediaApiService(
