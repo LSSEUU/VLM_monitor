@@ -223,7 +223,11 @@ function sourceValue(item) {
 
 function runFailureExplanation(run=state.run) {
   if(!run||run.state!=="FAILED")return "";
-  if(run.failure_code==="SCREENING_PROVIDER_UNAVAILABLE"||(run.failure_code==="ValueError"&&run.recognition_mode==="FULL_MODEL"&&!run.screening_decision))return "本地视觉识别和证据生成已完成，云端 Qwen 初审未返回，因此没有建案。";
+  if(run.failure_code==="SCREENING_PROVIDER_UNAVAILABLE"||(run.failure_code==="ValueError"&&run.recognition_mode==="FULL_MODEL"&&!run.screening_decision))return "本地视觉识别和证据生成已完成，云端 Qwen 初审未能完成，因此没有建案。请重新运行真实模式；平台不会自动切换演示结果。";
+  if(run.failure_code==="SCREENING_RESPONSE_INVALID")return "本地识别和证据已完成，但 Qwen 返回内容未通过严格结构校验，因此没有建案。";
+  if(run.failure_code==="SCREENING_RESPONSE_BUDGET_EXCEEDED")return "本地识别和证据已完成，但 Qwen 响应超出受控预算，因此没有建案。";
+  if(run.failure_code==="SCREENING_EVIDENCE_CHANGED")return "初审期间证据 authority 已变化，平台已停止本次建案。";
+  if(run.failure_code==="SCREENING_PROJECTION_INVALID")return "本地识别和证据已完成，但初审结果投影不完整，因此没有进入规则建案。";
   return `识别在 ${STAGE_LABELS[run.stages?.find(item=>item.state==="FAILED")?.stage]||"当前阶段"}结束；失败代码 ${run.failure_code}。状态未伪装为成功。`;
 }
 

@@ -14,7 +14,10 @@ from labcourt.application.m8_platform_bootstrap import (
     load_m8_platform_bootstrap,
     platform_manifest,
 )
-from labcourt.application.m8_platform_demo_api import assemble_m8_platform_demo_api
+from labcourt.application.m8_platform_demo_api import (
+    _pilot_config,
+    assemble_m8_platform_demo_api,
+)
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.m8_access_cases import (
     M8AuthorityReference,
@@ -88,6 +91,18 @@ def _assembly(tmp_path: Path):
         input_media_path=root / "inputs/goggles-missing.mp4",
         port=0,
     )
+
+
+def test_platform_pilot_config_keeps_real_screening_budget() -> None:
+    root = Path(__file__).parents[2]
+    real = _pilot_config(root, fixture=False)
+    fixture = _pilot_config(root, fixture=True)
+
+    assert real.screening.provider_profile == "pilot-screening"
+    assert real.screening.timeout_seconds == 60.0
+    assert real.providers["pilot-screening"].timeout_seconds == 60.0
+    assert fixture.screening.provider_profile == "platform-fixture-screening"
+    assert fixture.screening.timeout_seconds == 15.0
 
 
 def _transition_payload(
@@ -521,6 +536,17 @@ def test_platform_projects_truthful_hot_progress_and_failure_stage(
     assert refreshed_attention.stages[4].state == "PENDING"
     assert refreshed_attention.case_id is None
     assert refreshed_attention.notification_id is None
+
+    monkeypatch.setattr(
+        platform,
+        "_finalize_attention_required_ppe",
+        lambda _run: (_ for _ in ()).throw(ValueError("missing screening authority")),
+    )
+    invalid_projection = platform._refresh_ppe(running)
+    assert invalid_projection.failure_code == "SCREENING_PROJECTION_INVALID"
+    assert invalid_projection.stages[3].state == "FAILED"
+    assert invalid_projection.stages[4].state == "PENDING"
+    assert invalid_projection.case_id is None
 
     completed_stages = tuple(
         M8PlatformScenarioStageV1(

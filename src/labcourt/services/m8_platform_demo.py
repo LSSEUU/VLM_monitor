@@ -724,10 +724,19 @@ class M8PlatformDemoService:
                 return self._finalize_attention_required_ppe(projected)
             return self._finalize_ppe(projected)
         except (EvidenceMissing, PilotUiBoundaryError, TypeError, ValueError, OSError) as error:
+            attention_required = job.state == "ATTENTION_REQUIRED"
             failed = self._failed_ppe_run(
                 projected,
-                failure_code=type(error).__name__,
-                failed_stage=M8PlatformScenarioStage.CASE,
+                failure_code=(
+                    "SCREENING_PROJECTION_INVALID"
+                    if attention_required
+                    else type(error).__name__
+                ),
+                failed_stage=(
+                    M8PlatformScenarioStage.SCREENING
+                    if attention_required
+                    else M8PlatformScenarioStage.CASE
+                ),
             )
             self._write_run(failed)
             return failed
@@ -1106,11 +1115,7 @@ class M8PlatformDemoService:
             return self._finalize_ppe(run) if persist else run
 
         reason_code = self._screening_attention_reason(source_case)
-        failure_code = (
-            "SCREENING_PROVIDER_UNAVAILABLE"
-            if reason_code == "PROVIDER_UNAVAILABLE"
-            else "SCREENING_ATTENTION_REQUIRED"
-        )
+        failure_code = self._screening_failure_code(reason_code)
         pilot_case = dashboard.cases[0] if dashboard.cases else None
         evidence = tuple(
             M8PlatformEvidenceViewV1(
@@ -1192,6 +1197,18 @@ class M8PlatformDemoService:
             if isinstance(reason, str):
                 return reason
         return None
+
+    @staticmethod
+    def _screening_failure_code(reason_code: str | None) -> str:
+        """Expose the controlled screening outcome without provider secrets."""
+
+        return {
+            "PROVIDER_UNAVAILABLE": "SCREENING_PROVIDER_UNAVAILABLE",
+            "MODEL_OUTPUT_INVALID": "SCREENING_RESPONSE_INVALID",
+            "RESPONSE_INTEGRITY_FAILURE": "SCREENING_RESPONSE_INVALID",
+            "BUDGET_EXCEEDED": "SCREENING_RESPONSE_BUDGET_EXCEEDED",
+            "CURRENT_PACK_CHANGED": "SCREENING_EVIDENCE_CHANGED",
+        }.get(reason_code, "SCREENING_ATTENTION_REQUIRED")
 
     @staticmethod
     def _video_profile(stream: StreamManifest) -> M8PlatformVideoProfileV1:

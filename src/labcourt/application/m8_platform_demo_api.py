@@ -96,8 +96,8 @@ def _pilot_config(project_root: Path, *, fixture: bool) -> AppConfig:
     payload["zones"] = pilot_payload["zones"]
     payload["pilot"] = pilot_payload["pilot"]
     payload["perception"] = pilot_payload["perception"]
-    screening = dict(payload["screening"])
     if fixture:
+        screening = dict(payload["screening"])
         providers = dict(payload["providers"])
         profile = dict(pilot_payload["providers"]["pilot-screening"])
         profile.update(
@@ -116,6 +116,10 @@ def _pilot_config(project_root: Path, *, fixture: bool) -> AppConfig:
         screening["provider_profile"] = "platform-fixture-screening"
         screening["timeout_seconds"] = 15.0
     else:
+        # FULL_MODEL is a Pilot execution, not a Demo-fixture execution. Copy
+        # the complete Pilot budget; replacing only the provider profile kept
+        # the Demo's 15 second timeout and truncated normal multi-image calls.
+        screening = dict(pilot_payload["screening"])
         providers = dict(payload["providers"])
         providers["pilot-screening"] = pilot_payload["providers"]["pilot-screening"]
         payload["providers"] = providers
