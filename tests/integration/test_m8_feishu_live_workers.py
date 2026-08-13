@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from labcourt.adapters.storage.sqlite_m8_feishu_live_repository import (
@@ -152,6 +152,46 @@ def test_ingress_accepts_only_p2p_text_and_deduplicates_provider_event(tmp_path:
     assert replay.duplicate is True
     assert repository.read_inbound_content(first.job.inbound_event) == request.text.encode()
     assert first.job.inbound_event.clear_sender_identifier_persisted is False
+
+
+def test_authority_worker_keeps_unexpected_cycle_failure_typed_and_terminal(
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    accepted = M8FeishuLiveIngressService(repository, SHA_A).accept_text(
+        M8FeishuP2PTextIngress(
+            provider_event_id="event-p2p-worker-failure-01",
+            provider_message_id="om-p2p-worker-failure-01",
+            sender_open_id="ou-worker-failure",
+            chat_id="oc-worker-failure",
+            chat_type="p2p",
+            sender_type="user",
+            message_type="text",
+            text="你好",
+            received_at=NOW,
+        )
+    )
+    moments = iter(NOW + timedelta(microseconds=index) for index in range(10))
+    worker = M8FeishuAgentAuthorityWorker(
+        repository,
+        object(),  # type: ignore[arg-type] - actor resolution fails before Agent access
+        lambda _sender: (_ for _ in ()).throw(RuntimeError("unexpected cycle failure")),
+        lambda: next(moments),
+        SHA_A,
+        SHA_B,
+        SHA_C,
+    )
+
+    assert worker.run_one() is True
+    terminal = repository.inbound_job(accepted.job.inbound_event.inbound_event_id)
+    assert terminal is not None
+    assert terminal.state == M8FeishuInboundJobState.FAILED
+    assert terminal.failure_code == M8FeishuLiveFailureCode.WORKER_UNAVAILABLE
+    heartbeat = repository.latest_heartbeat("AUTHORITY_WORKER")
+    assert heartbeat is not None
+    assert heartbeat.worker_state is not None
+    assert heartbeat.worker_state.value == "FAILED"
+    assert heartbeat.failure_code == M8FeishuLiveFailureCode.WORKER_UNAVAILABLE
 
 
 def test_agent_reply_is_accepted_once_or_unknown_without_retry(tmp_path: Path) -> None:

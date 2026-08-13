@@ -142,6 +142,20 @@ class M8FeishuAgentAuthorityWorker:
             self._fail_job(job, M8FeishuLiveFailureCode.ACTOR_NOT_BOUND)
             self._heartbeat(M8FeishuWorkerState.READY)
             return True
+        except Exception:
+            # A claimed event must always reach a typed terminal state. The CLI
+            # keeps the worker process alive for later events; no exception text
+            # or provider identifier is persisted in the heartbeat.
+            self._fail_job(job, M8FeishuLiveFailureCode.WORKER_UNAVAILABLE)
+            self.record_runtime_failure()
+            return True
+
+    def record_runtime_failure(self) -> None:
+        self._heartbeat(
+            M8FeishuWorkerState.FAILED,
+            failure_code=M8FeishuLiveFailureCode.WORKER_UNAVAILABLE,
+            detail_ref="authority-worker-cycle-failed",
+        )
 
     def _queue_reply(
         self,
@@ -186,12 +200,20 @@ class M8FeishuAgentAuthorityWorker:
             )
         )
 
-    def _heartbeat(self, state: M8FeishuWorkerState) -> None:
+    def _heartbeat(
+        self,
+        state: M8FeishuWorkerState,
+        *,
+        failure_code: M8FeishuLiveFailureCode | None = None,
+        detail_ref: str | None = None,
+    ) -> None:
         self._live.record_heartbeat(
             M8FeishuRuntimeHeartbeatV1(
                 component="AUTHORITY_WORKER",
                 worker_state=state,
                 observed_at=self._clock(),
+                failure_code=failure_code,
+                detail_ref=detail_ref,
                 runtime_manifest_id=self._runtime_manifest,
             )
         )

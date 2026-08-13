@@ -108,7 +108,25 @@ def register_m8_feishu_live_commands(feishu: typer.Typer) -> None:
                 raise typer.BadParameter("authority worker requires configured LIVE_ONLY Qwen")
             worker = assembly.feishu_live.agent_worker
             while True:
-                worker.run_one()
+                try:
+                    worker.run_one()
+                except Exception:
+                    if once:
+                        raise
+                    try:
+                        worker.record_runtime_failure()
+                    except Exception:
+                        typer.echo(
+                            "Feishu authority worker cycle failed; runtime receipt "
+                            "was temporarily unavailable; retrying.",
+                            err=True,
+                        )
+                    else:
+                        typer.echo(
+                            "Feishu authority worker cycle failed; typed failure "
+                            "recorded; retrying.",
+                            err=True,
+                        )
                 if once:
                     return
                 time.sleep(interval_ms / 1_000)
