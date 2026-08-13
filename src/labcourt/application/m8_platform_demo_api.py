@@ -8,8 +8,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from labcourt.adapters.m8_hashed_bearer_authenticator import M8HashedBearerAuthenticator
+from labcourt.adapters.m8_qwen_agent import build_m8_qwen_agent_runtime
 from labcourt.adapters.storage.sqlite_m8_adapter_commissioning_repository import (
     SQLiteM8AdapterCommissioningRepository,
+)
+from labcourt.adapters.storage.sqlite_m8_agent_conversation_repository import (
+    SQLiteM8AgentConversationRepository,
 )
 from labcourt.adapters.storage.sqlite_m8_feishu_activation_repository import (
     SQLiteM8FeishuActivationRepository,
@@ -41,12 +45,15 @@ from labcourt.config_loader import load_config
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.config import AppConfig
 from labcourt.contracts.m8_access_cases import M8ActorRole
+from labcourt.contracts.m8_agent_chat import M8AgentModelProfileV1
 from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
 )
 from labcourt.m8_platform_server import M8PlatformHttpServer, build_m8_platform_server
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
+from labcourt.services.m8_agent_chat import M8AgentChatService
+from labcourt.services.m8_agent_tools import M8PlatformAgentToolService
 from labcourt.services.m8_case_memory import M8ScopedOperationalCaseMemoryAdapter
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
 from labcourt.services.m8_feishu_platform import M8FeishuPlatformService
@@ -176,12 +183,8 @@ def assemble_m8_platform_demo_api(
     else:
         load_m8_platform_bootstrap(database.parent)
     repository_manifest_id = platform_manifest("labcourt-platform-sqlite-repository-v1")
-    inventory = SQLiteM8InventoryRepository(
-        database, _BUSY_TIMEOUT_MS, repository_manifest_id
-    )
-    operations = SQLiteM8OperationsRepository(
-        database, _BUSY_TIMEOUT_MS, repository_manifest_id
-    )
+    inventory = SQLiteM8InventoryRepository(database, _BUSY_TIMEOUT_MS, repository_manifest_id)
+    operations = SQLiteM8OperationsRepository(database, _BUSY_TIMEOUT_MS, repository_manifest_id)
     sensors = SQLiteM8SensorPersistenceRepository(
         database, _BUSY_TIMEOUT_MS, repository_manifest_id
     )
@@ -236,13 +239,16 @@ def assemble_m8_platform_demo_api(
         knowledge_api,
         M8ScopedOperationalCaseMemoryAdapter(operations_api),
     )
+    projection_api = M8ProjectionApiService(operations, projection_reader)
     readiness_service = M8AdapterReadinessService(
         commissioning,
         operations,
         platform_manifest("platform-readiness-assessment-v1"),
     )
+
     def clock() -> datetime:
         return datetime.now(UTC)
+
     feishu_platform = M8FeishuPlatformService(
         commissioning,
         readiness_service,
@@ -283,6 +289,33 @@ def assemble_m8_platform_demo_api(
         fixture_pilot_service=fixture_pilot_service,
         model_pilot_service=model_pilot_service,
     )
+    agent_repository = SQLiteM8AgentConversationRepository.initialize(
+        database,
+        _BUSY_TIMEOUT_MS,
+        platform_manifest("platform-agent-conversation-repository-v1"),
+        clock,
+    )
+    agent_profile = M8AgentModelProfileV1(
+        profile_id=platform_manifest("platform-qwen-agent-profile-v1"),
+        model_manifest_id=platform_manifest("platform-qwen-agent-model-v1"),
+        prompt_manifest_id=platform_manifest("platform-qwen-agent-system-prompt-v1"),
+        tool_schema_manifest_id=platform_manifest("platform-qwen-agent-tools-v1"),
+    )
+    agent_chat = M8AgentChatService(
+        operations_api,
+        agent_repository,
+        M8PlatformAgentToolService(
+            operations_api,
+            notification_api,
+            projection_api,
+            knowledge_projection,
+            PLATFORM_CAMPUS_ID,
+            clock,
+        ),
+        build_m8_qwen_agent_runtime(agent_profile),
+        platform_service.agent_query,
+        clock,
+    )
     catalog = inventory.get_current_source_catalog(PLATFORM_CAMPUS_ID)
     smoke_policy = build_offline_smoke_demo_bundle(
         source_catalog_id=catalog.catalog.catalog_id,
@@ -296,7 +329,7 @@ def assemble_m8_platform_demo_api(
         service=operations_api,
         knowledge_service=knowledge_api,
         notification_service=notification_api,
-        projection_service=M8ProjectionApiService(operations, projection_reader),
+        projection_service=projection_api,
         commissioning_service=M8CommissioningApiService(
             readiness_service,
             operations,
@@ -314,6 +347,7 @@ def assemble_m8_platform_demo_api(
         ),
         rule_config_service=M8RuleConfigApiService(operations, smoke_policy),
         platform_service=platform_service,
+        agent_chat_service=agent_chat,
         role_tokens=M8_PLATFORM_ROLE_TOKENS,
     )
     assembly = M8PlatformDemoApiAssembly(

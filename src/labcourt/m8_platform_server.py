@@ -11,8 +11,18 @@ from pydantic import ValidationError
 
 from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
+from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.m8_access_cases import M8ActorRole
-from labcourt.contracts.m8_api import M8ApiErrorReason, M8ApiKnowledgeQueryRequestV1
+from labcourt.contracts.m8_agent_chat import (
+    M8AgentConversationCreateRequestV1,
+    M8AgentFailureCode,
+    M8AgentTurnRequestV1,
+)
+from labcourt.contracts.m8_api import (
+    M8ApiErrorReason,
+    M8ApiKnowledgeQueryRequestV1,
+    M8ApiPrincipalV1,
+)
 from labcourt.contracts.m8_feishu_platform import M8FeishuTestCardCheckRequestV1
 from labcourt.contracts.m8_platform_agent import M8PlatformNotificationDispatchRequestV2
 from labcourt.contracts.m8_platform_demo import (
@@ -27,7 +37,12 @@ from labcourt.contracts.m8_platform_demo import (
 )
 from labcourt.exceptions import ContractViolation
 from labcourt.m8_api_server import M8ApiHttpServer, M8ApiRequestHandler
+from labcourt.ports.m8_agent_chat import (
+    M8AgentConversationRepositoryError,
+    M8AgentProviderError,
+)
 from labcourt.ports.m8_api_authentication import M8AuthenticationError
+from labcourt.services.m8_agent_chat import M8AgentChatService
 from labcourt.services.m8_operations_api import M8ApiServiceError
 from labcourt.services.m8_platform_demo import M8PlatformDemoService
 from labcourt.services.pilot_ui import PilotUiVideoSource
@@ -49,6 +64,8 @@ _PAGE_PATHS = frozenset(
 _ASSETS = {
     "/assets/app.css": ("app.css", "text/css; charset=utf-8"),
     "/assets/app.js": ("app.js", "text/javascript; charset=utf-8"),
+    "/assets/agent-chat.css": ("agent-chat.css", "text/css; charset=utf-8"),
+    "/assets/agent-chat.js": ("agent-chat.js", "text/javascript; charset=utf-8"),
     "/assets/source-serif-4.woff2": ("fonts/source-serif-4.woff2", "font/woff2"),
     "/assets/noto-serif-sc.woff2": ("fonts/noto-serif-sc.woff2", "font/woff2"),
     "/assets/ibm-plex-mono.woff2": ("fonts/ibm-plex-mono.woff2", "font/woff2"),
@@ -70,6 +87,7 @@ _STREAM_CHUNK_BYTES = 1024 * 1024
 
 class M8PlatformHttpServer(M8ApiHttpServer):
     platform_service: M8PlatformDemoService
+    agent_chat_service: M8AgentChatService
     platform_role_tokens: dict[M8ActorRole, str]
 
 
@@ -103,6 +121,23 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self.headers.get("Authorization")
             )
             segments = self._segments()
+            if segments == ("api", "m8", "agent", "status"):
+                agent_status = self.server.agent_chat_service.status(principal)
+                self._json(HTTPStatus.OK, agent_status.model_dump(mode="json"))
+                return
+            if segments == ("api", "m8", "agent", "conversations"):
+                agent_conversations = self.server.agent_chat_service.conversations(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    tuple(item.model_dump(mode="json") for item in agent_conversations),
+                )
+                return
+            if len(segments) == 5 and segments[:4] == ("api", "m8", "agent", "conversations"):
+                agent_conversation = self.server.agent_chat_service.conversation(
+                    principal, segments[4]
+                )
+                self._json(HTTPStatus.OK, agent_conversation.model_dump(mode="json"))
+                return
             if segments == ("api", "m8", "reservations"):
                 self._json(
                     HTTPStatus.OK,
@@ -110,8 +145,8 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 )
                 return
             if segments == ("api", "m8", "integrations", "feishu", "status"):
-                status = self.server.platform_service.feishu_status(principal)
-                self._json(HTTPStatus.OK, status.model_dump(mode="json"))
+                feishu_status = self.server.platform_service.feishu_status(principal)
+                self._json(HTTPStatus.OK, feishu_status.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 7
@@ -137,10 +172,12 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 )
                 return
             if segments == ("api", "m8", "notification-conversations"):
-                conversations = self.server.platform_service.notification_conversations(principal)
+                notification_conversations = (
+                    self.server.platform_service.notification_conversations(principal)
+                )
                 self._json(
                     HTTPStatus.OK,
-                    tuple(item.model_dump(mode="json") for item in conversations),
+                    tuple(item.model_dump(mode="json") for item in notification_conversations),
                 )
                 return
             if len(segments) == 4 and segments[:3] == (
@@ -148,10 +185,10 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 "m8",
                 "notification-conversations",
             ):
-                conversation = self.server.platform_service.notification_conversation(
+                notification_conversation = self.server.platform_service.notification_conversation(
                     principal, segments[3]
                 )
-                self._json(HTTPStatus.OK, conversation.model_dump(mode="json"))
+                self._json(HTTPStatus.OK, notification_conversation.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 6
@@ -194,6 +231,9 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
         except M8ApiServiceError as error:
             self._service_error(error)
             return
+        except M8AgentConversationRepositoryError as error:
+            self._agent_repository_error(error)
+            return
         except (TypeError, ValueError, ContractViolation, ValidationError):
             self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
             return
@@ -225,6 +265,25 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             principal = self.server.api_authenticator.authenticate(
                 self.headers.get("Authorization")
             )
+            if segments == ("api", "m8", "agent", "conversations"):
+                M8AgentConversationCreateRequestV1.model_validate_json(self._json_body())
+                conversation = self.server.agent_chat_service.create_conversation(principal)
+                self._json(HTTPStatus.CREATED, conversation.model_dump(mode="json"))
+                return
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "agent", "conversations")
+                and segments[5] == "turns"
+            ):
+                turn_request = M8AgentTurnRequestV1.model_validate_json(self._json_body())
+                if "text/event-stream" in self.headers.get("Accept", ""):
+                    self._agent_event_stream(principal, segments[4], turn_request)
+                else:
+                    completion = self.server.agent_chat_service.complete_turn(
+                        principal, segments[4], turn_request
+                    )
+                    self._json(HTTPStatus.OK, completion.model_dump(mode="json"))
+                return
             if (
                 len(segments) == 6
                 and segments[:4] == ("api", "m8", "knowledge", "catalogs")
@@ -274,9 +333,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self._json(HTTPStatus.OK, result.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "agent", "queries"):
-                agent_request = M8PlatformAgentQueryRequestV1.model_validate_json(
-                    self._json_body()
-                )
+                agent_request = M8PlatformAgentQueryRequestV1.model_validate_json(self._json_body())
                 agent_response = self.server.platform_service.agent_query(
                     principal, agent_request.query
                 )
@@ -309,11 +366,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     segments[3],
                     dispatch_kind,
                     request_v2.source_case_version if request_v2 is not None else None,
-                    (
-                        request_v2.source_case_authority_sha256
-                        if request_v2 is not None
-                        else None
-                    ),
+                    (request_v2.source_case_authority_sha256 if request_v2 is not None else None),
                 )
                 self._json(HTTPStatus.OK, dispatch_result.model_dump(mode="json"))
                 return
@@ -347,6 +400,15 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
         except M8ApiServiceError as error:
             self._service_error(error)
             return
+        except M8AgentConversationRepositoryError as error:
+            self._agent_repository_error(error)
+            return
+        except M8AgentProviderError as error:
+            self._json(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                {"failure_code": error.failure_code.value},
+            )
+            return
         except (TypeError, ValueError, ContractViolation, ValidationError):
             self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
             return
@@ -354,6 +416,44 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             self._error(HTTPStatus.INTERNAL_SERVER_ERROR, M8ApiErrorReason.INTERNAL_FAILURE)
             return
         super().do_POST()
+
+    def _agent_event_stream(
+        self,
+        principal: M8ApiPrincipalV1,
+        conversation_id: str,
+        request: M8AgentTurnRequestV1,
+    ) -> None:
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Connection", "close")
+        self.send_header("X-Accel-Buffering", "no")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        disconnected = False
+        for event in self.server.agent_chat_service.stream_turn(
+            principal,
+            conversation_id,
+            request,
+        ):
+            if disconnected:
+                continue
+            payload = canonical_json(event.model_dump(mode="json"))
+            body = f"event: {event.event_kind.value}\ndata: {payload}\n\n".encode()
+            try:
+                self.wfile.write(body)
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                disconnected = True
+        self.close_connection = True
+
+    def _agent_repository_error(self, error: M8AgentConversationRepositoryError) -> None:
+        if error.failure_code == M8AgentFailureCode.CONVERSATION_NOT_FOUND:
+            self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+        elif error.failure_code == M8AgentFailureCode.AUTHORITY_CHANGED:
+            self._error(HTTPStatus.CONFLICT, M8ApiErrorReason.CONCURRENT_MODIFICATION)
+        else:
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, M8ApiErrorReason.INTERNAL_FAILURE)
 
     def _pilot_video(self, source: PilotUiVideoSource) -> None:
         with (
@@ -485,6 +585,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
 def build_m8_platform_server(
     *,
     platform_service: M8PlatformDemoService,
+    agent_chat_service: M8AgentChatService,
     role_tokens: dict[M8ActorRole, str],
     **kwargs: Any,
 ) -> M8PlatformHttpServer:
@@ -494,6 +595,7 @@ def build_m8_platform_server(
     server = M8PlatformHttpServer(("127.0.0.1", port), **kwargs)
     server.RequestHandlerClass = M8PlatformRequestHandler
     server.platform_service = platform_service
+    server.agent_chat_service = agent_chat_service
     server.platform_role_tokens = dict(role_tokens)
     return server
 
