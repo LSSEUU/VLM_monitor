@@ -81,9 +81,12 @@ class _AcceptedHttp:
         return M8FeishuHttpResponse(
             200,
             canonical_json(
-                {"code": 0, "data": {"message_id": "om-demo-alert-card"}}
+                {
+                    "code": 0,
+                    "data": {"message_id": f"om-demo-alert-card-{self.message_calls}"},
+                }
             ).encode(),
-            "feishu-message-demo-log",
+            f"feishu-message-demo-log-{self.message_calls}",
         )
 
 
@@ -287,7 +290,21 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     assert reminder is not None
     assert reminder.outcome.value == "CANCELLED_ACKNOWLEDGED"
 
+    resolved_alert = bridge._create_notification(
+        run.case_id, M8NotificationPurpose.CASE_ACTION_REQUIRED
+    )
+    delivery.run_one(
+        resolved_alert.notification_id,
+        binding,
+        b"demo-worker-token-32-byte-minimum-value",
+    )
+    now[0] += timedelta(minutes=2, seconds=1)
+    resolved_reminder = bridge.assess_reminder(resolved_alert.notification_id)
+    assert resolved_reminder is not None
+    assert resolved_reminder.outcome.value == "CANCELLED_CASE_RESOLVED"
+
     escalation = bridge._create_notification(
         run.case_id, M8NotificationPurpose.ESCALATION
     )
     assert escalation.status == M8NotificationStatus.QUEUED
+    assert bridge.assess_reminder(escalation.notification_id) is None

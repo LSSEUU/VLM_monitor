@@ -4,6 +4,7 @@
       "enum": [
         "QUEUED",
         "CANCELLED_ACKNOWLEDGED",
+        "CANCELLED_CASE_RESOLVED",
         "SUPPRESSED_UNKNOWN_DELIVERY"
       ],
       "title": "M8FeishuReminderOutcome",

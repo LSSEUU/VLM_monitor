@@ -115,6 +115,11 @@ class M8FeishuAlertBridgeService:
         self, source_notification_id: str
     ) -> M8FeishuReminderReceiptV1 | None:
         source = self._notifications.get_current_notification(source_notification_id)
+        source_plan = source.audit_event.notification_authority.plan
+        # A reminder is a terminal derivative of the initial emergency alert;
+        # it must never itself become the source of another reminder.
+        if source_plan.purpose != M8NotificationPurpose.CASE_ACTION_REQUIRED:
+            return None
         audit = self._notifications.list_notification_audit(source_notification_id)
         dispatch = next(
             (
@@ -130,8 +135,12 @@ class M8FeishuAlertBridgeService:
         prior = self._live.reminder(dispatch.request.dispatch_request_id)
         if prior is not None:
             return prior
+        case = self._operations.get_current_operational_case(source_plan.case_id)
         if source.status == M8NotificationStatus.ACKNOWLEDGED:
             outcome = M8FeishuReminderOutcome.CANCELLED_ACKNOWLEDGED
+            reminder_id = None
+        elif case.status != M8OperationalCaseStatus.PENDING_VERIFICATION:
+            outcome = M8FeishuReminderOutcome.CANCELLED_CASE_RESOLVED
             reminder_id = None
         elif dispatch.disposition == M8NotificationDispatchDisposition.UNKNOWN_DELIVERY:
             outcome = M8FeishuReminderOutcome.SUPPRESSED_UNKNOWN_DELIVERY
