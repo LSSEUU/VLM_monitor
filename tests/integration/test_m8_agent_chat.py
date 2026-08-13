@@ -21,25 +21,36 @@ from labcourt.contracts.m8_agent_chat import (
     M8AgentTurnOutcome,
     M8AgentTurnRequestV1,
 )
+from labcourt.contracts.m8_platform_agent import M8PlatformAgentIntentV2
 from labcourt.ports.m8_agent_chat import (
     M8AgentProviderDelta,
     M8AgentProviderDeltaKind,
     M8AgentProviderError,
     M8AgentProviderRequest,
 )
+from labcourt.services.m8_platform_agent import M8PlatformAgentIntentRouter
 
 _MP4_HEADER = b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
 
 
 class _ToolCallingModel:
-    def __init__(self, tool_name: str, arguments: dict[str, object]) -> None:
+    def __init__(
+        self,
+        tool_name: str,
+        arguments: dict[str, object],
+        *,
+        tool_preamble: str = "",
+    ) -> None:
         self.tool_name = tool_name
         self.arguments = arguments
+        self.tool_preamble = tool_preamble
         self.calls = 0
+        self.requests: list[dict[str, object]] = []
 
     def stream(self, request: M8AgentProviderRequest) -> Iterator[M8AgentProviderDelta]:
         self.calls += 1
         document = json.loads(request.body)
+        self.requests.append(document)
         messages = document["messages"]
         if messages[-1]["role"] == "tool":
             yield M8AgentProviderDelta(
@@ -48,6 +59,12 @@ class _ToolCallingModel:
                 text="这是基于平台可信工具回执形成的回答。",
             )
         else:
+            if self.tool_preamble:
+                yield M8AgentProviderDelta(
+                    kind=M8AgentProviderDeltaKind.TEXT,
+                    raw_event=b"tool-preamble\n",
+                    text=self.tool_preamble,
+                )
             arguments = json.dumps(self.arguments, ensure_ascii=False, separators=(",", ":"))
             split = max(1, len(arguments) // 2)
             yield M8AgentProviderDelta(
@@ -249,6 +266,96 @@ def test_live_only_calls_model_again_instead_of_replaying_cache(
         assert all(not item.cache_hit for item in first.model_call_receipts)
         assert all(not item.cache_hit for item in second.model_call_receipts)
         assert model.calls == 4
+    finally:
+        assembly.server.server_close()
+
+
+def test_live_agent_accepts_non_terminal_text_before_a_read_only_tool_call(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = _assembly(tmp_path)
+    try:
+        service = assembly.server.agent_chat_service
+        preamble = "我先查询设备投影, 再根据可信结果回答."
+        model = _ToolCallingModel(
+            "read_operations_projection",
+            {"focus": "ALL", "location_id": "room-chem-301"},
+            tool_preamble=preamble,
+        )
+        _install_model(service, model)
+        principal = _principal(assembly, M8ActorRole.SAFETY_OFFICER)
+        conversation = service.create_conversation(principal)
+
+        completion = service.complete_turn(
+            principal,
+            conversation.conversation_id,
+            M8AgentTurnRequestV1(query="查看化学楼 301 的设备状态"),
+        )
+
+        assert completion.execution_mode == M8AgentExecutionMode.LIVE_QWEN
+        assert completion.answer == "这是基于平台可信工具回执形成的回答。"
+        assert preamble not in completion.answer
+        assert len(completion.tool_receipts) == 1
+        assert len(completion.model_call_receipts) == 2
+        second_round_messages = model.requests[1]["messages"]
+        assert isinstance(second_round_messages, list)
+        assert second_round_messages[-2]["role"] == "assistant"
+        assert second_round_messages[-2]["content"] == preamble
+        assert second_round_messages[-2]["tool_calls"][0]["function"]["name"] == (
+            "read_operations_projection"
+        )
+        assert second_round_messages[-1]["role"] == "tool"
+        tool_result = json.loads(second_round_messages[-1]["content"])
+        assert tool_result["requested_location_id"] == "room-chem-301"
+        assert tool_result["location_filter_matched"] is True
+        assert tool_result["overview_scope"] == "ROLE_SCOPED_CAMPUS"
+        assert tool_result["map_nodes"][0]["parent_location_id"] == "floor-chem-03"
+    finally:
+        assembly.server.server_close()
+
+
+def test_agent_router_keeps_summary_queries_separate_from_confirmed_actions() -> None:
+    router = M8PlatformAgentIntentRouter()
+
+    assert router.classify("结合当前案件和知识库, 整理一份处置摘要.") == (
+        M8PlatformAgentIntentV2.CASE_QUERY
+    )
+    assert router.classify("确认当前待核实案件") == (
+        M8PlatformAgentIntentV2.CASE_TRANSITION_ACTION
+    )
+
+
+@pytest.mark.parametrize(
+    ("role", "query"),
+    [
+        (M8ActorRole.STUDENT, "查看设备状态"),
+        (M8ActorRole.OPERATIONS, "列出当前案件"),
+    ],
+)
+def test_live_agent_denies_unavailable_required_tools_before_calling_model(
+    tmp_path: Path,
+    socket_enabled: None,
+    role: M8ActorRole,
+    query: str,
+) -> None:
+    assembly = _assembly(tmp_path)
+    try:
+        service = assembly.server.agent_chat_service
+        model = _ToolCallingModel("query_knowledge", {"query": query})
+        _install_model(service, model)
+        principal = _principal(assembly, role)
+        conversation = service.create_conversation(principal)
+
+        with pytest.raises(M8AgentProviderError) as captured:
+            service.complete_turn(
+                principal,
+                conversation.conversation_id,
+                M8AgentTurnRequestV1(query=query),
+            )
+
+        assert captured.value.failure_code == M8AgentFailureCode.TOOL_FORBIDDEN
+        assert model.calls == 0
     finally:
         assembly.server.server_close()
 

@@ -76,6 +76,12 @@ class M8PlatformAgentIntentRouter:
             "详情",
             "说明",
             "风险",
+            "摘要",
+            "整理",
+            "结合",
+            "分析",
+            "概述",
+            "汇总",
         )
         if (
             has("案件", "事件")

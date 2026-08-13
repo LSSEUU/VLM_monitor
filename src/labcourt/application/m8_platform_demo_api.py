@@ -296,10 +296,10 @@ def assemble_m8_platform_demo_api(
         clock,
     )
     agent_profile = M8AgentModelProfileV1(
-        profile_id=platform_manifest("platform-qwen-agent-profile-v1"),
+        profile_id=platform_manifest("platform-qwen-agent-profile-v2"),
         model_manifest_id=platform_manifest("platform-qwen-agent-model-v1"),
-        prompt_manifest_id=platform_manifest("platform-qwen-agent-system-prompt-v1"),
-        tool_schema_manifest_id=platform_manifest("platform-qwen-agent-tools-v1"),
+        prompt_manifest_id=platform_manifest("platform-qwen-agent-system-prompt-v2"),
+        tool_schema_manifest_id=platform_manifest("platform-qwen-agent-tools-v2"),
     )
     agent_chat = M8AgentChatService(
         operations_api,

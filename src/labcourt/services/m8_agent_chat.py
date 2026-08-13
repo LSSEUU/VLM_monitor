@@ -46,6 +46,10 @@ _SYSTEM_PROMPT = """你是 LabCourt 校园安全运营平台的对话助手。
 你可以自然聊天, 但回答任何当前案件、通知、设备、传感器、地图或本地知识事实时必须调用提供的只读工具。
 工具结果已经按当前登录角色裁剪; 不得要求或推断更高权限数据。
 SOURCE_CATALOG_ONLY 只表示来源已登记, 不表示设备在线。模拟来源必须明确标注为模拟。
+工具参数 location_id 只能填写稳定平台 ID。
+只有中文位置名时应省略该参数, 再从 map_nodes 的名称与父级关系匹配。
+overview_scope 为 ROLE_SCOPED_CAMPUS 时概览是角色可见的全局计数, 不得写成某个房间的计数。
+location_filter_matched 为 false 时不得用全局概览代替该位置明细, 应省略位置过滤后重新查询。
 知识工具返回 NO_MATCH 时必须明确说当前知识库没有匹配, 不得用模型常识补成制度或规则。
 案例记忆不是当前规则, 机器弱标签不是事实。不得生成写操作或声称已经执行操作。
 不要使用联网搜索、外部工具、代码执行或任何未列出的能力。回答简洁, 并让界面显示服务端提供的引用。"""
@@ -255,6 +259,36 @@ class M8AgentChatService:
             return
         messages = self._messages(prior, query)
         schemas = self._tools.tool_schemas(actor)
+        required_tool = _REQUIRED_TOOL_BY_INTENT.get(intent)
+        required_tool_name = (
+            None
+            if required_tool is None
+            else {
+                M8AgentToolKind.READ_CASES: "read_cases",
+                M8AgentToolKind.READ_NOTIFICATIONS: "read_notifications",
+                M8AgentToolKind.READ_OPERATIONS_PROJECTION: "read_operations_projection",
+                M8AgentToolKind.QUERY_KNOWLEDGE: "query_knowledge",
+            }[required_tool]
+        )
+        if required_tool_name is not None and required_tool_name not in self._schema_tool_names(
+            schemas
+        ):
+            failure_code = M8AgentFailureCode.TOOL_FORBIDDEN
+            self._repository.fail_turn(
+                actor,
+                conversation_id,
+                turn.turn_id,
+                failure_code,
+            )
+            event_index[0] += 1
+            yield M8AgentStreamEventV1(
+                event_kind=M8AgentStreamEventKind.TURN_FAILED,
+                conversation_id=conversation_id,
+                turn_id=turn.turn_id,
+                event_index=event_index[0],
+                failure_code=failure_code,
+            )
+            return
         cache_key = sha256_hex(
             [
                 "m8-agent-live-only-response-cache",
@@ -395,8 +429,7 @@ class M8AgentChatService:
             if calls:
                 if len(calls) != 1:
                     raise M8AgentProviderError(M8AgentFailureCode.TOOL_FORBIDDEN)
-                if text_parts:
-                    raise M8AgentProviderError(M8AgentFailureCode.RESPONSE_INVALID)
+                tool_preamble = "".join(text_parts).strip()
                 tool_calls: list[_ToolCall] = []
                 for call_index in sorted(calls):
                     call_id, name, arguments = calls[call_index].complete()
@@ -407,7 +440,13 @@ class M8AgentChatService:
                             "function": {"name": name, "arguments": arguments},
                         }
                     )
-                messages.append({"role": "assistant", "content": "", "tool_calls": tool_calls})
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": tool_preamble,
+                        "tool_calls": tool_calls,
+                    }
+                )
                 for call in tool_calls:
                     function = call["function"]
                     name = function["name"]
@@ -614,6 +653,20 @@ class M8AgentChatService:
             }[name]
         except KeyError:
             raise M8AgentProviderError(M8AgentFailureCode.TOOL_FORBIDDEN) from None
+
+    @staticmethod
+    def _schema_tool_names(
+        schemas: tuple[Mapping[str, object], ...],
+    ) -> frozenset[str]:
+        names: set[str] = set()
+        for schema in schemas:
+            function = schema.get("function")
+            if not isinstance(function, Mapping):
+                continue
+            name = function.get("name")
+            if isinstance(name, str):
+                names.add(name)
+        return frozenset(names)
 
     @staticmethod
     def _chunks(value: str, size: int = 96) -> Iterator[str]:

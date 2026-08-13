@@ -41,7 +41,15 @@ class M8AgentProjectionFocus(StrEnum):
 class M8AgentReadCasesArguments(FrozenContractModel):
     case_id: str | None = Field(default=None, min_length=1, max_length=64)
     status: M8OperationalCaseStatus | None = None
-    location_id: str | None = Field(default=None, min_length=1, max_length=64)
+    location_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=64,
+        description=(
+            "Exact stable platform location_id such as room-chem-301; "
+            "omit when only a human-readable place name is known."
+        ),
+    )
     limit: int = Field(default=10, ge=1, le=10, strict=True)
 
 
@@ -51,7 +59,15 @@ class M8AgentReadNotificationsArguments(FrozenContractModel):
 
 class M8AgentReadProjectionArguments(FrozenContractModel):
     focus: M8AgentProjectionFocus = M8AgentProjectionFocus.ALL
-    location_id: str | None = Field(default=None, min_length=1, max_length=64)
+    location_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=64,
+        description=(
+            "Exact stable platform location_id such as room-chem-301; "
+            "omit display names and use returned map_nodes to resolve them."
+        ),
+    )
     limit: int = Field(default=16, ge=1, le=32, strict=True)
 
 
@@ -299,6 +315,8 @@ class M8PlatformAgentToolService:
                 {
                     "location_id": node.location.location_id,
                     "name": node.location.display_name,
+                    "kind": node.location.kind.value,
+                    "parent_location_id": node.location.parent_location_id,
                     "source_ids": node.source_ids,
                     "current_case_ids": node.current_case_ids,
                 }
@@ -312,6 +330,15 @@ class M8PlatformAgentToolService:
                 "kind": "ROLE_SCOPED_OPERATIONS_PROJECTION",
                 "view_kind": view.view_kind.value,
                 "source_projection_id": view.source_projection_id,
+                "requested_location_id": arguments.location_id,
+                "location_filter_matched": (
+                    arguments.location_id is None
+                    or any(
+                        node.location.location_id == arguments.location_id
+                        for node in projection.map_nodes
+                    )
+                ),
+                "overview_scope": "ROLE_SCOPED_CAMPUS",
                 "overview": projection.overview.model_dump(mode="json"),
                 "sources": values,
                 "map_nodes": maps,
