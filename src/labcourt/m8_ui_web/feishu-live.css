@@ -1,0 +1,55 @@
+.feishu-live-settings .feishu-runtime-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:1px;
+  margin:18px 0;
+  border:var(--rule);
+  background:var(--line);
+}
+.feishu-live-settings .feishu-runtime-grid>div{
+  position:relative;
+  min-height:82px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:7px;
+  padding:14px 18px;
+  background:var(--paper);
+  transition:background-color var(--motion-fast) var(--ease-standard),transform var(--motion-fast) var(--ease-enter);
+}
+.feishu-live-settings .feishu-runtime-grid>div:hover{
+  z-index:1;
+  background:color-mix(in oklch,var(--paper) 92%,var(--accent));
+  transform:translateY(-2px);
+}
+.feishu-live-settings .feishu-runtime-grid span{
+  color:var(--muted);
+  font:10px/1.2 var(--mono);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.feishu-live-settings .feishu-runtime-grid strong{
+  font-size:15px;
+}
+.feishu-live-settings .feishu-runtime-grid i{
+  position:absolute;
+  top:15px;
+  right:15px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--danger);
+  box-shadow:0 0 0 4px color-mix(in oklch,var(--danger) 12%,transparent);
+}
+.feishu-live-settings .feishu-runtime-grid i.ready{
+  background:var(--success);
+  box-shadow:0 0 0 4px color-mix(in oklch,var(--success) 13%,transparent);
+}
+@media (max-width:700px){
+  .feishu-live-settings .feishu-runtime-grid{grid-template-columns:1fr}
+  .feishu-live-settings .feishu-runtime-grid>div{min-height:66px}
+}
+@media (prefers-reduced-motion:reduce){
+  .feishu-live-settings .feishu-runtime-grid>div{transition:none}
+  .feishu-live-settings .feishu-runtime-grid>div:hover{transform:none}
+}

@@ -277,7 +277,8 @@
         "READ_CASES",
         "READ_NOTIFICATIONS",
         "READ_OPERATIONS_PROJECTION",
-        "QUERY_KNOWLEDGE"
+        "QUERY_KNOWLEDGE",
+        "READ_FEISHU_STATUS"
       ],
       "title": "M8AgentToolKind",
       "type": "string"

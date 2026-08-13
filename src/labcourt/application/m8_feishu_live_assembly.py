@@ -39,11 +39,16 @@ from labcourt.contracts.m8_feishu_personal_demo import (
 from labcourt.exceptions import EvidenceMissing
 from labcourt.services.m8_agent_chat import M8AgentChatService
 from labcourt.services.m8_feishu_action_cards import M8FeishuActionCardService
+from labcourt.services.m8_feishu_agent_reply_delivery import (
+    M8FeishuAgentReplyDeliveryWorker,
+)
 from labcourt.services.m8_feishu_agent_worker import (
     M8FeishuAgentAuthorityWorker,
     M8FeishuTrustedActorContext,
 )
 from labcourt.services.m8_feishu_alert_bridge import M8FeishuAlertBridgeService
+from labcourt.services.m8_feishu_delivery_worker import M8FeishuDeliveryWorker
+from labcourt.services.m8_feishu_interactive_outbox import M8FeishuInteractiveOutboxRunner
 from labcourt.services.m8_feishu_live_api import M8FeishuLiveApiService
 from labcourt.services.m8_feishu_personal_demo import M8FeishuPersonalDemoService
 from labcourt.services.m8_feishu_platform import M8FeishuPlatformService
@@ -60,7 +65,9 @@ class M8FeishuLiveAssembly:
     action_cards: M8FeishuActionCardService
     alert_bridge: M8FeishuAlertBridgeService
     agent_worker: M8FeishuAgentAuthorityWorker
+    delivery_worker: M8FeishuDeliveryWorker | None
     secret_resolver: EnvironmentM8FeishuSecretResolver | None
+    clock: Callable[[], datetime]
 
 
 def assemble_m8_feishu_live_services(
@@ -236,15 +243,59 @@ def assemble_m8_feishu_live_services(
         repository_manifest,
     )
     secret_resolver = None
+    delivery_worker = None
     with suppress(EvidenceMissing):
         secret_resolver = build_secret_resolver()
+        activation = current_activation()
+        runtime = activation.activation_receipt.runtime_config
+        http = StdlibM8FeishuHttpTransport()
+        interactive = M8FeishuInteractiveOutboxRunner(
+            notification_repository,
+            notification_repository,
+            activation_repository,
+            secret_resolver,
+            http,
+            runtime.profile,
+            _workflow(),
+            action_cards,
+            clock,
+            platform_manifest("platform-feishu-notification-claim-v1"),
+            platform_manifest("platform-feishu-notification-call-fence-v1"),
+            platform_manifest("platform-feishu-notification-completion-v1"),
+            platform_manifest("platform-feishu-notification-result-v1"),
+        )
+        reply_delivery = M8FeishuAgentReplyDeliveryWorker(
+            live,
+            activation_repository,
+            secret_resolver,
+            http,
+            runtime.profile,
+            binding_by_id,
+            clock,
+            platform_manifest("platform-feishu-agent-reply-completion-v1"),
+        )
+        delivery_worker = M8FeishuDeliveryWorker(
+            live,
+            notification_repository,
+            alert_bridge,
+            interactive,
+            reply_delivery,
+            binding_by_id,
+            worker_key,
+            clock,
+            platform_manifest("platform-feishu-delivery-worker-v1"),
+        )
+        if len(worker_value.encode("utf-8")) < 32:
+            delivery_worker = None
     return M8FeishuLiveAssembly(
         api=api,
         repository=live,
         action_cards=action_cards,
         alert_bridge=alert_bridge,
         agent_worker=agent_worker,
+        delivery_worker=delivery_worker,
         secret_resolver=secret_resolver,
+        clock=clock,
     )
 
 

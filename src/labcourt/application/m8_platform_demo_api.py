@@ -305,7 +305,7 @@ def assemble_m8_platform_demo_api(
         profile_id=platform_manifest("platform-qwen-agent-profile-v2"),
         model_manifest_id=platform_manifest("platform-qwen-agent-model-v1"),
         prompt_manifest_id=platform_manifest("platform-qwen-agent-system-prompt-v2"),
-        tool_schema_manifest_id=platform_manifest("platform-qwen-agent-tools-v2"),
+        tool_schema_manifest_id=platform_manifest("platform-qwen-agent-tools-v3"),
     )
     agent_chat = M8AgentChatService(
         operations_api,
@@ -317,6 +317,7 @@ def assemble_m8_platform_demo_api(
             knowledge_projection,
             PLATFORM_CAMPUS_ID,
             clock,
+            feishu_platform.status,
         ),
         build_m8_qwen_agent_runtime(agent_profile),
         platform_service.agent_query,

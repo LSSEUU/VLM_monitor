@@ -12,6 +12,7 @@ from labcourt.contracts.m8_agent_chat import (
     M8AgentModelProfileV1,
     M8AgentStreamEventKind,
     M8AgentStreamEventV1,
+    M8AgentToolKind,
     M8AgentTurnRequestV1,
 )
 
@@ -57,6 +58,10 @@ def test_agent_model_profile_requires_live_qwen_and_disables_cache_replay() -> N
         M8AgentModelProfileV1.model_validate(
             {**profile.model_dump(mode="python"), "cache_enabled": True}
         )
+
+
+def test_agent_tool_kinds_include_read_only_feishu_status() -> None:
+    assert M8AgentToolKind.READ_FEISHU_STATUS.value == "READ_FEISHU_STATUS"
 
 
 def test_model_receipt_and_stream_event_enforce_terminal_shapes() -> None:

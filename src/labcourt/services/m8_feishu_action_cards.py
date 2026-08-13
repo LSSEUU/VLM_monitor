@@ -366,7 +366,7 @@ class M8FeishuActionCardService:
                 "tag": "button",
                 "text": {"tag": "plain_text", "content": text},
                 "type": button_type,
-                "url": f"http://127.0.0.1/app/cases/{case_id}",
+                "url": f"http://127.0.0.1:8877/app/cases/{case_id}",
             }
         return {
             "tag": "button",

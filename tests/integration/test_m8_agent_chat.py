@@ -269,6 +269,7 @@ def test_agent_http_api_removes_conversation_from_active_history_but_retains_aud
         ("当前温度和烟雾传感器状态如何?", "read_operations_projection", {"focus": "SENSORS"}, 1),
         ("查看校园地图", "read_operations_projection", {"focus": "MAP"}, 1),
         ("护目镜有什么要求?", "query_knowledge", {"query": "护目镜有什么要求?"}, 1),
+        ("当前飞书连接状态?", "read_feishu_status", {}, 1),
     ],
 )
 def test_live_agent_uses_role_scoped_read_only_tools_and_persists_receipts(
@@ -293,8 +294,13 @@ def test_live_agent_uses_role_scoped_read_only_tools_and_persists_receipts(
         )
         assert completion.execution_mode == M8AgentExecutionMode.LIVE_QWEN
         assert completion.tool_receipts[0].result_count >= expected_count
-        if expected_count:
+        if expected_count and tool_name != "read_feishu_status":
             assert completion.source_refs
+        if tool_name == "read_feishu_status":
+            tool_result = json.loads(model.requests[1]["messages"][-1]["content"])
+            assert tool_result["display_status"] == "NOT_CONFIGURED"
+            assert tool_result["secret_material_exposed"] is False
+            assert tool_result["clear_external_id_exposed"] is False
         assert len(completion.model_call_receipts) == 2
         restored = service.conversation(principal, conversation.conversation_id)
         assert restored.turns[0].completion == completion

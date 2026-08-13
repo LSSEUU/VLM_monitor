@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any, cast
@@ -115,9 +116,13 @@ class M8FeishuLongConnectionRunner:
         self._repository = repository
         self._clock = clock
         self._manifest = runtime_manifest_id
+        self._state = M8FeishuLiveConnectionState.DISCONNECTED
+        self._stop = threading.Event()
 
     def start(self) -> None:
         self._record(M8FeishuLiveConnectionState.CONNECTING)
+        heartbeat = threading.Thread(target=self._heartbeat_loop, daemon=True)
+        heartbeat.start()
         dynamic_client = cast(Any, self._client)
         dynamic_client.on_reconnecting = lambda: self._record(
             M8FeishuLiveConnectionState.RECONNECTING
@@ -137,10 +142,18 @@ class M8FeishuLongConnectionRunner:
         except Exception:
             self._record(M8FeishuLiveConnectionState.FAILED)
             raise
+        finally:
+            self._stop.set()
+            heartbeat.join(timeout=1)
+
+    def _heartbeat_loop(self) -> None:
+        while not self._stop.wait(10):
+            self._record(self._state)
 
     def _record(self, state: M8FeishuLiveConnectionState) -> None:
         from labcourt.contracts.m8_feishu_live import M8FeishuLiveFailureCode
 
+        self._state = state
         self._repository.record_heartbeat(
             M8FeishuRuntimeHeartbeatV1(
                 component="LONG_CONNECTION",

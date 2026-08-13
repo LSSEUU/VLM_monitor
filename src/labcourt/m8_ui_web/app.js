@@ -8,7 +8,7 @@ const STAGE_LABELS = {VIDEO:"录像",PERCEPTION:"视觉感知",EVIDENCE:"证据�
 const NAV = [["/app/monitor","监控"],["/app/cases","案件"],["/app/map","地图"],["/app/notifications","通知"],["/app/knowledge","知识库"],["/app/agent","Agent"],["/app/profile","我的"],["/app/settings","设置"]];
 const state = {
   token:sessionStorage.getItem(TOKEN_KEY),session:null,cases:[],notifications:[],conversations:[],projection:null,
-  cameras:[],reservations:[],run:null,readiness:null,feishu:null,users:null,rules:null,knowledgeCatalog:null,
+  cameras:[],reservations:[],run:null,readiness:null,feishu:null,feishuRuntime:null,feishuRoute:null,users:null,rules:null,knowledgeCatalog:null,
   knowledgeAnswer:null,knowledgeDocument:null,knowledgeSearch:"",agentMessages:[],action:null,agentTyping:false,loginRole:"SAFETY_OFFICER",
   videoUrl:null,videoPromise:null,videoPositions:new Map(),evidenceUrls:[],pollTimer:null,
   pollFailures:0,pollInFlight:false,toastTimer:null,routeController:null,routeSequence:0,
@@ -211,10 +211,10 @@ function errorPage(error){setRouteContent(`<div class="page-head"><div><p class=
 
 async function loadCore(signal) {
   const options=signal?{signal}:{};state.session=await api("/api/m8/session",options);
-  const [cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu]=await Promise.all([
-    optional("/api/m8/cases",[],options),optional("/api/m8/notifications",[],options),optional("/api/m8/notification-conversations",[],options),optional("/api/m8/campuses/campus-demo/operations-projection",null,options),optional("/api/m8/cameras",[],options),optional("/api/m8/reservations",[],options),optional("/api/m8/demo/scenario-runs/current",null,options),optional("/api/m8/demo/model-readiness",null,options),optional("/api/m8/integrations/feishu/status",null,options)
+  const [cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu,feishuRuntime,feishuRoute]=await Promise.all([
+    optional("/api/m8/cases",[],options),optional("/api/m8/notifications",[],options),optional("/api/m8/notification-conversations",[],options),optional("/api/m8/campuses/campus-demo/operations-projection",null,options),optional("/api/m8/cameras",[],options),optional("/api/m8/reservations",[],options),optional("/api/m8/demo/scenario-runs/current",null,options),optional("/api/m8/demo/model-readiness",null,options),optional("/api/m8/integrations/feishu/status",null,options),optional("/api/m8/integrations/feishu/runtime-status",null,options),optional("/api/m8/integrations/feishu/duty-route",null,options)
   ]);
-  Object.assign(state,{cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu});
+  Object.assign(state,{cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu,feishuRuntime,feishuRoute});
 }
 
 function metric(value,name,note) { return `<div class="metric"><span>${esc(name)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`; }
@@ -548,8 +548,15 @@ function feishuSettingsMarkup() {
   const value=state.feishu;if(!value)return empty("消息平台状态不可见","后端没有返回飞书平台投影，页面不会显示已连接。");
   const missing=[...(value.missing_evidence_kinds||[]),...(value.failed_evidence_kinds||[]),...(value.expired_evidence_kinds||[])];
   const last=value.last_audited_attempt;
-  const action=role()==="OPERATIONS"&&value.test_card_check_available?`<button class="button primary" type="button" data-action="feishu-test-check">确认并生成 CHECK_ONLY 测试卡收据</button>`:"";
-  return `<section class="message-platform"><header><div><p class="eyebrow">MESSAGE PLATFORM · API PROJECTION</p><h2>飞书 / Feishu</h2></div><span class="integration-state ${value.display_status==="ACTIVE"?"active":""}">${esc(value.display_status)}</span></header><div class="integration-default"><div><span>默认通知通道</span><strong>${esc(value.default_channel)}</strong></div><p>默认演示继续使用本地模拟通道，real_delivery_confirmed=${String(value.real_delivery_confirmed)}。</p></div><div class="integration-facts"><p><span>Commissioning</span><strong>${esc(value.readiness||"NOT_CONFIGURED")}</strong></p><p><span>Activation revision</span><strong>${value.activation_revision?`V${value.activation_revision}`:"—"}</strong></p><p><span>Recipient bindings</span><strong>${value.recipient_binding_count}</strong></p><p><span>Inbound</span><strong>${esc(value.inbound_status)}</strong></p><p><span>Activation ref</span><strong>${short(value.activation_status_id)}</strong></p><p><span>Readiness ref</span><strong>${short(value.readiness_assessment_id)}</strong></p></div>${missing.length?`<div class="integration-blocked"><strong>尚缺 commissioning authority</strong><p>${missing.map(esc).join(" · ")}</p></div>`:""}${last?`<div class="integration-attempt"><span>最近 audited attempt</span><strong>${esc(last.disposition)}</strong><code>${short(last.notification_id)} · ${short(last.dispatch_result_id)}</code><small>real_delivery_confirmed=${String(last.real_delivery_confirmed)} · automatic_retry_permitted=${String(last.automatic_retry_permitted)}</small></div>`:`<p class="help">当前没有可见的飞书 audited dispatch attempt；不推断送达。</p>`}<div class="form-actions">${action}</div><footer>不返回 secret、token 或 clear external ID。测试卡按钮只执行现有 CHECK_ONLY 能力，不联网、不发送消息。</footer></section>`;
+  const runtime=state.feishuRuntime,route=state.feishuRoute;
+  const runtimeItems=[
+    ["长连接",runtime?.connection?.connection_state||"未运行"],
+    ["Agent worker",runtime?.authority_worker?.worker_state||"未运行"],
+    ["发送 worker",runtime?.delivery_worker?.worker_state||"未运行"],
+  ];
+  const liveAction=role()==="OPERATIONS"&&runtime?.live_dispatch_available&&route?`<button class="button primary" type="button" data-action="feishu-live-test">发送真实测试卡</button>`:"";
+  const checkAction=role()==="OPERATIONS"&&value.test_card_check_available?`<button class="button quiet" type="button" data-action="feishu-test-check">仅检查配置</button>`:"";
+  return `<section class="message-platform feishu-live-settings"><header><div><p class="eyebrow">MESSAGE PLATFORM</p><h2>飞书</h2></div><span class="integration-state ${runtime?.live_dispatch_available?"active":""}">${runtime?.live_dispatch_available?"可发送":esc(value.display_status)}</span></header><div class="integration-default"><div><span>默认通道</span><strong>${esc(value.default_channel)}</strong></div><p>本地通知仍是默认通道；真实飞书只有在下方全部就绪时才可发送。</p></div><div class="feishu-runtime-grid">${runtimeItems.map(([name,status])=>`<div><span>${name}</span><strong>${esc(status)}</strong><i class="${["READY"].includes(status)?"ready":""}"></i></div>`).join("")}</div><div class="integration-facts"><p><span>应用状态</span><strong>${esc(value.display_status)}</strong></p><p><span>激活版本</span><strong>${value.activation_revision?`V${value.activation_revision}`:"—"}</strong></p><p><span>接收人绑定</span><strong>${value.recipient_binding_count}</strong></p><p><span>入站状态</span><strong>${esc(value.inbound_status)}</strong></p><p><span>值班安全管理员</span><strong>${route?esc(route.actor_id):"未设置"}</strong></p><p><span>值班路由</span><strong>${route?`V${route.route_revision}`:"—"}</strong></p></div>${missing.length?`<div class="integration-blocked"><strong>还不能启用</strong><p>${missing.map(esc).join(" · ")}</p></div>`:""}${last?`<div class="integration-attempt"><span>最近发送</span><strong>${esc(last.disposition)}</strong><code>${short(last.notification_id)}</code><small>${last.disposition==="UNKNOWN_DELIVERY"?"结果不确定，不会自动重试":"发送结果来自审计回执"}</small></div>`:`<p class="help">还没有发送记录。</p>`}<div class="form-actions">${liveAction}${checkAction}</div><footer>${runtime?.live_dispatch_available?"真实发送已经具备当前 authority；每次仍需人工确认。":"请先完成应用激活、接收人绑定、值班路由并启动三个 worker。"}</footer></section>`;
 }
 
 function renderSettings() {
@@ -665,6 +672,7 @@ async function handleClick(event) {
     if(target.dataset.action==="knowledge-query"){event.preventDefault();await submitKnowledgeQuery(target);return;}
     if(target.dataset.action==="agent-query"){event.preventDefault();await submitAgentQuery(target);return;}
     if(target.dataset.action==="feishu-test-check"){if(!state.feishu?.test_card_check_available)throw new Error("当前飞书 authority 不允许形成测试卡检查");if(!confirm("此操作只生成 CHECK_ONLY 收据，不联网、不发送真实飞书消息。是否继续？"))return;target.disabled=true;await api("/api/m8/integrations/feishu/test-card-checks",{method:"POST",body:{activation_revision:state.feishu.activation_revision,activation_status_id:state.feishu.activation_status_id,explicit_human_confirmation:true}});state.feishu=await api("/api/m8/integrations/feishu/status");renderSettings();toast("已生成 CHECK_ONLY 收据；没有真实消息发送");return;}
+    if(target.dataset.action==="feishu-live-test"){const route=state.feishuRoute;if(!state.feishuRuntime?.live_dispatch_available||!route)throw new Error("飞书实时通道尚未全部就绪");if(!confirm("将向当前值班安全管理员发送一张真实测试卡。测试卡不是案件通知，且失败后不会自动重试。确认发送吗？"))return;target.disabled=true;await api("/api/m8/integrations/feishu/test-card-dispatches",{method:"POST",body:{activation_revision:route.activation_revision,activation_status_id:route.activation_status_id,duty_route_id:route.route_id,duty_route_revision:route.route_revision,explicit_human_confirmation:true}});await loadCore();renderSettings();toast("真实测试卡调用已完成，请以飞书和审计回执为准");return;}
     if(target.dataset.action==="open-agent-confirm"){openAgentConfirmation(target);return;}
     if(target.dataset.action==="close-agent-confirm"){closeAgentConfirmation();return;}
     if(target.dataset.action==="confirm-agent"){target.disabled=true;await executeAgentAction(state.action);closeAgentConfirmation();state.action=null;await loadCore();const message={kind:"agent",text:"操作卡已由既有业务接口重新校验并执行，当前上下文已同步。",meta:"CONFIRMED · SERVER REVALIDATED"};state.agentMessages.push(message);appendAgentMessage(message);patchAgentChrome();patchRunUi();toast("操作已完成");return;}

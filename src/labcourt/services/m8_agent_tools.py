@@ -19,6 +19,7 @@ from labcourt.contracts.m8_agent_chat import (
 )
 from labcourt.contracts.m8_api import M8ApiKnowledgeQueryRequestV1, M8ApiPrincipalV1
 from labcourt.contracts.m8_case_persistence import M8ActorAuthorityCommitReceiptV1
+from labcourt.contracts.m8_feishu_platform import M8FeishuPlatformStatusV1
 from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 from labcourt.contracts.m8_knowledge_projection import M8KnowledgeQueryProjectionV1
 from labcourt.ports.m8_agent_chat import (
@@ -76,11 +77,16 @@ class M8AgentKnowledgeArguments(FrozenContractModel):
     max_citations: int = Field(default=3, ge=1, le=8, strict=True)
 
 
+class M8AgentReadFeishuStatusArguments(FrozenContractModel):
+    include_last_delivery: bool = True
+
+
 _AgentArgumentModel: TypeAlias = (
     type[M8AgentReadCasesArguments]
     | type[M8AgentReadNotificationsArguments]
     | type[M8AgentReadProjectionArguments]
     | type[M8AgentKnowledgeArguments]
+    | type[M8AgentReadFeishuStatusArguments]
 )
 
 _TOOL_MODELS: dict[str, tuple[M8AgentToolKind, _AgentArgumentModel]] = {
@@ -94,6 +100,10 @@ _TOOL_MODELS: dict[str, tuple[M8AgentToolKind, _AgentArgumentModel]] = {
         M8AgentReadProjectionArguments,
     ),
     "query_knowledge": (M8AgentToolKind.QUERY_KNOWLEDGE, M8AgentKnowledgeArguments),
+    "read_feishu_status": (
+        M8AgentToolKind.READ_FEISHU_STATUS,
+        M8AgentReadFeishuStatusArguments,
+    ),
 }
 
 _DESCRIPTIONS = {
@@ -103,6 +113,9 @@ _DESCRIPTIONS = {
         "读取当前角色裁剪后的设备、传感器和地图投影。目录登记不等于设备在线。"
     ),
     "query_knowledge": "查询本地权威知识目录, 返回精确引用或明确 NO_MATCH。",
+    "read_feishu_status": (
+        "读取飞书 readiness、activation 和最近一次审计送达状态; 不返回密钥或外部 ID。"
+    ),
 }
 
 
@@ -115,6 +128,7 @@ class M8PlatformAgentToolService:
         knowledge: M8KnowledgeProjectionService,
         campus_id: str,
         clock: Callable[[], datetime],
+        feishu_status: Callable[[], M8FeishuPlatformStatusV1],
     ) -> None:
         self._operations = operations
         self._notifications = notifications
@@ -122,13 +136,14 @@ class M8PlatformAgentToolService:
         self._knowledge = knowledge
         self._campus_id = campus_id
         self._clock = clock
+        self._feishu_status = feishu_status
 
     def tool_schemas(
         self,
         actor_receipt: M8ActorAuthorityCommitReceiptV1,
     ) -> tuple[dict[str, object], ...]:
         role = actor_receipt.authority.role
-        names = ["read_notifications", "query_knowledge"]
+        names = ["read_notifications", "query_knowledge", "read_feishu_status"]
         if role != M8ActorRole.OPERATIONS:
             names.insert(0, "read_cases")
         if role != M8ActorRole.STUDENT:
@@ -176,6 +191,8 @@ class M8PlatformAgentToolService:
             document, refs, count, knowledge = self._projection_result(principal, arguments)
         elif isinstance(arguments, M8AgentKnowledgeArguments):
             document, refs, count, knowledge = self._knowledge_result(principal, arguments)
+        elif isinstance(arguments, M8AgentReadFeishuStatusArguments):
+            document, refs, count, knowledge = self._feishu_status_result(arguments)
         else:
             raise M8AgentProviderError(M8AgentFailureCode.TOOL_ARGUMENT_INVALID)
         content = canonical_json(document)
@@ -382,11 +399,59 @@ class M8PlatformAgentToolService:
         }
         return document, refs, len(refs), projection
 
+    def _feishu_status_result(
+        self,
+        arguments: M8AgentReadFeishuStatusArguments,
+    ) -> tuple[dict[str, object], list[str], int, None]:
+        status = self._feishu_status()
+        refs = [
+            value
+            for value in (
+                status.candidate_authority_id,
+                status.readiness_assessment_id,
+                status.activation_status_id,
+                status.inbound_status_id,
+            )
+            if value is not None
+        ]
+        last = status.last_audited_attempt if arguments.include_last_delivery else None
+        if last is not None:
+            refs.extend((last.notification_id, last.dispatch_result_id, last.audit_event_id))
+        return (
+            {
+                "kind": "FEISHU_PLATFORM_STATUS",
+                "display_status": status.display_status.value,
+                "readiness": None if status.readiness is None else status.readiness.value,
+                "activation_revision": status.activation_revision,
+                "recipient_binding_count": status.recipient_binding_count,
+                "inbound_status": status.inbound_status.value,
+                "external_call_permitted": status.external_call_permitted,
+                "last_audited_attempt": (
+                    None
+                    if last is None
+                    else {
+                        "notification_id": last.notification_id,
+                        "disposition": last.disposition.value,
+                        "completed_at": last.completed_at.isoformat(),
+                        "real_delivery_confirmed": last.real_delivery_confirmed,
+                        "automatic_retry_permitted": last.automatic_retry_permitted,
+                    }
+                ),
+                "secret_material_exposed": False,
+                "clear_external_id_exposed": False,
+                "read_only": True,
+            },
+            refs,
+            1,
+            None,
+        )
+
 
 __all__ = [
     "M8AgentKnowledgeArguments",
     "M8AgentProjectionFocus",
     "M8AgentReadCasesArguments",
+    "M8AgentReadFeishuStatusArguments",
     "M8AgentReadNotificationsArguments",
     "M8AgentReadProjectionArguments",
     "M8PlatformAgentToolService",

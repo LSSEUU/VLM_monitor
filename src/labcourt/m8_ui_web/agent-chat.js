@@ -5,6 +5,7 @@ window.LabCourtAgentChat=(()=>{
   let modelStatus=null;
   let conversations=[];
   let activeConversation=null;
+  let channelProjections=new Map();
   let busy=false;
   let sidebarCollapsed=false;
   let pendingDeleteConversationId=null;
@@ -16,6 +17,7 @@ window.LabCourtAgentChat=(()=>{
     READ_NOTIFICATIONS:"通知",
     READ_OPERATIONS_PROJECTION:"设备 / 传感器 / 地图",
     QUERY_KNOWLEDGE:"知识库",
+    READ_FEISHU_STATUS:"飞书状态",
   };
   const actionLabels={
     CASE_TRANSITION:"案件状态操作",
@@ -98,8 +100,17 @@ window.LabCourtAgentChat=(()=>{
     return conversations.map((item,index)=>{
       const active=activeConversation?.summary?.conversation_id===item.conversation_id;
       const title=context.esc(item.title);
-      return `<div class="agent-conversation-row ${active?"active":""}" style="--agent-item-index:${index}"><button type="button" data-agent-conversation="${item.conversation_id}" class="${active?"active":""}" aria-pressed="${active}"><i class="agent-conversation-index" aria-hidden="true">${String(index+1).padStart(2,"0")}</i><span class="agent-conversation-copy"><strong data-agent-conversation-title>${title}</strong><small data-agent-conversation-meta>${item.turn_count} 轮 · ${new Date(item.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</small></span></button><button type="button" class="agent-conversation-delete" data-agent-delete-conversation="${item.conversation_id}" aria-label="删除对话：${title}" title="删除对话">删</button></div>`;
+      const channel=channelProjections.has(item.conversation_id)?`<em class="agent-channel-badge">飞书</em>`:"";
+      return `<div class="agent-conversation-row ${active?"active":""}" style="--agent-item-index:${index}"><button type="button" data-agent-conversation="${item.conversation_id}" class="${active?"active":""}" aria-pressed="${active}"><i class="agent-conversation-index" aria-hidden="true">${String(index+1).padStart(2,"0")}</i><span class="agent-conversation-copy"><strong data-agent-conversation-title>${title}${channel}</strong><small data-agent-conversation-meta>${item.turn_count} 轮 · ${new Date(item.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</small></span></button><button type="button" class="agent-conversation-delete" data-agent-delete-conversation="${item.conversation_id}" aria-label="删除对话：${title}" title="删除对话">删</button></div>`;
     }).join("");
+  }
+
+  async function loadChannelProjections(){
+    const rows=await Promise.all(conversations.map(async item=>{
+      try{return [item.conversation_id,await context.api(`/api/m8/agent/conversations/${encodeURIComponent(item.conversation_id)}/channel-projection`)];}
+      catch(_){return [item.conversation_id,null];}
+    }));
+    channelProjections=new Map(rows.filter(([,projection])=>projection));
   }
 
   function quickPromptMarkup(){
@@ -161,7 +172,9 @@ window.LabCourtAgentChat=(()=>{
       item.classList.toggle("active",active);
       item.closest(".agent-conversation-row")?.classList.toggle("active",active);
       item.setAttribute("aria-pressed",String(active));
-      item.querySelector("[data-agent-conversation-title]").textContent=conversation.title;
+      const titleNode=item.querySelector("[data-agent-conversation-title]");
+      titleNode.textContent=conversation.title;
+      if(channelProjections.has(conversation.conversation_id))titleNode.insertAdjacentHTML("beforeend",'<em class="agent-channel-badge">飞书</em>');
       item.querySelector("[data-agent-conversation-meta]").textContent=`${conversation.turn_count} 轮 · ${new Date(conversation.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}`;
       const remove=item.closest(".agent-conversation-row")?.querySelector("[data-agent-delete-conversation]");
       if(remove)remove.setAttribute("aria-label",`删除对话：${conversation.title}`);
@@ -282,6 +295,7 @@ window.LabCourtAgentChat=(()=>{
     modelStatus=null;
     conversations=[];
     activeConversation=null;
+    channelProjections=new Map();
     busy=false;
     sidebarCollapsed=sessionStorage.getItem(sidebarKey())==="true";
     pendingDeleteConversationId=null;
@@ -290,6 +304,7 @@ window.LabCourtAgentChat=(()=>{
     context.setRouteContent(workspaceMarkup(),{announcement:"安全运营 Agent",mount:()=>{bind();patchStatus();}});
     try{
       [modelStatus,conversations]=await Promise.all([context.api("/api/m8/agent/status"),context.api("/api/m8/agent/conversations")]);
+      await loadChannelProjections();
       let id=sessionStorage.getItem(storageKey());
       if(!id||!conversations.some(item=>item.conversation_id===id))id=conversations[0]?.conversation_id;
       if(!id){
@@ -298,6 +313,10 @@ window.LabCourtAgentChat=(()=>{
         id=created.conversation_id;
       }
       activeConversation=await context.api(`/api/m8/agent/conversations/${encodeURIComponent(id)}`);
+      if(!channelProjections.has(id)){
+        const projection=await context.api(`/api/m8/agent/conversations/${encodeURIComponent(id)}/channel-projection`);
+        if(projection)channelProjections.set(id,projection);
+      }
       sessionStorage.setItem(storageKey(),id);
       patchWorkspace({focus:Boolean(new URL(location.href).searchParams.get("q")),animate:false});
     }catch(error){

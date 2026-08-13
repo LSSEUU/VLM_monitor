@@ -72,6 +72,7 @@ _ASSETS = {
     "/assets/app.js": ("app.js", "text/javascript; charset=utf-8"),
     "/assets/agent-chat.css": ("agent-chat.css", "text/css; charset=utf-8"),
     "/assets/agent-chat.js": ("agent-chat.js", "text/javascript; charset=utf-8"),
+    "/assets/feishu-live.css": ("feishu-live.css", "text/css; charset=utf-8"),
     "/assets/source-serif-4.woff2": ("fonts/source-serif-4.woff2", "font/woff2"),
     "/assets/noto-serif-sc.woff2": ("fonts/noto-serif-sc.woff2", "font/woff2"),
     "/assets/ibm-plex-mono.woff2": ("fonts/ibm-plex-mono.woff2", "font/woff2"),

@@ -82,6 +82,7 @@ _REQUIRED_TOOL_BY_INTENT = {
     M8PlatformAgentIntentV2.CASE_QUERY: M8AgentToolKind.READ_CASES,
     M8PlatformAgentIntentV2.DELIVERY_STATUS_QUERY: M8AgentToolKind.READ_NOTIFICATIONS,
     M8PlatformAgentIntentV2.DEVICE_QUERY: M8AgentToolKind.READ_OPERATIONS_PROJECTION,
+    M8PlatformAgentIntentV2.FEISHU_STATUS_QUERY: M8AgentToolKind.READ_FEISHU_STATUS,
     M8PlatformAgentIntentV2.KNOWLEDGE_QUERY: M8AgentToolKind.QUERY_KNOWLEDGE,
     M8PlatformAgentIntentV2.MAP_QUERY: M8AgentToolKind.READ_OPERATIONS_PROJECTION,
     M8PlatformAgentIntentV2.NOTIFICATION_QUERY: M8AgentToolKind.READ_NOTIFICATIONS,
@@ -283,6 +284,7 @@ class M8AgentChatService:
                 M8AgentToolKind.READ_NOTIFICATIONS: "read_notifications",
                 M8AgentToolKind.READ_OPERATIONS_PROJECTION: "read_operations_projection",
                 M8AgentToolKind.QUERY_KNOWLEDGE: "query_knowledge",
+                M8AgentToolKind.READ_FEISHU_STATUS: "read_feishu_status",
             }[required_tool]
         )
         if required_tool_name is not None and required_tool_name not in self._schema_tool_names(
@@ -665,6 +667,7 @@ class M8AgentChatService:
                 "read_notifications": M8AgentToolKind.READ_NOTIFICATIONS,
                 "read_operations_projection": M8AgentToolKind.READ_OPERATIONS_PROJECTION,
                 "query_knowledge": M8AgentToolKind.QUERY_KNOWLEDGE,
+                "read_feishu_status": M8AgentToolKind.READ_FEISHU_STATUS,
             }[name]
         except KeyError:
             raise M8AgentProviderError(M8AgentFailureCode.TOOL_FORBIDDEN) from None
