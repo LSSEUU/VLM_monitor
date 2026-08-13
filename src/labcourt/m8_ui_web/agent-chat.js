@@ -92,7 +92,7 @@ window.LabCourtAgentChat=(()=>{
 
   function conversationListMarkup(){
     if(!conversations.length)return `<p class="agent-list-empty">还没有对话</p>`;
-    return conversations.map(item=>`<button type="button" data-agent-conversation="${item.conversation_id}" class="${activeConversation?.summary?.conversation_id===item.conversation_id?"active":""}" aria-pressed="${activeConversation?.summary?.conversation_id===item.conversation_id}"><strong>${context.esc(item.title)}</strong><span>${item.turn_count} 轮 · ${new Date(item.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span></button>`).join("");
+    return conversations.map((item,index)=>`<button type="button" data-agent-conversation="${item.conversation_id}" class="${activeConversation?.summary?.conversation_id===item.conversation_id?"active":""}" aria-pressed="${activeConversation?.summary?.conversation_id===item.conversation_id}" style="--agent-item-index:${index}"><i class="agent-conversation-index" aria-hidden="true">${String(index+1).padStart(2,"0")}</i><span class="agent-conversation-copy"><strong data-agent-conversation-title>${context.esc(item.title)}</strong><small data-agent-conversation-meta>${item.turn_count} 轮 · ${new Date(item.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</small></span></button>`).join("");
   }
 
   function quickPromptMarkup(){
@@ -101,7 +101,7 @@ window.LabCourtAgentChat=(()=>{
 
   function workspaceMarkup(){
     const prompt=new URL(location.href).searchParams.get("q")||"";
-    return `<header class="page-head agent-page-head"><div><h1>安全运营 Agent</h1></div></header>
+    return `<header class="page-head agent-page-head"><div><p class="eyebrow">实时平台助手</p><h1>安全运营 Agent</h1><p class="deck">连接案件、通知、设备与知识库，用自然语言完成查询和处置准备。</p></div></header>
       <div class="agent-chat-layout ${sidebarCollapsed?"is-sidebar-collapsed":""}" data-agent-chat-root>
         <aside id="agent-conversations" class="agent-conversations" aria-label="Agent 对话列表">
           <header><h2>对话</h2><div><button type="button" data-agent-collapse aria-label="收起对话列表">‹</button><button type="button" data-agent-new aria-label="新对话">＋</button></div></header>
@@ -140,7 +140,21 @@ window.LabCourtAgentChat=(()=>{
 
   function patchConversationList(){
     const host=document.querySelector("[data-agent-conversation-list]");
-    if(host)host.innerHTML=conversationListMarkup();
+    if(!host)return;
+    const items=[...host.querySelectorAll("[data-agent-conversation]")];
+    const sameItems=items.length===conversations.length&&items.every((item,index)=>item.dataset.agentConversation===conversations[index].conversation_id);
+    if(!sameItems){
+      host.innerHTML=conversationListMarkup();
+      return;
+    }
+    items.forEach((item,index)=>{
+      const conversation=conversations[index];
+      const active=activeConversation?.summary?.conversation_id===conversation.conversation_id;
+      item.classList.toggle("active",active);
+      item.setAttribute("aria-pressed",String(active));
+      item.querySelector("[data-agent-conversation-title]").textContent=conversation.title;
+      item.querySelector("[data-agent-conversation-meta]").textContent=`${conversation.turn_count} 轮 · ${new Date(conversation.latest_activity_at).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}`;
+    });
   }
 
   function patchMessages({animate=true}={}){
