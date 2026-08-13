@@ -1,0 +1,272 @@
+{
+  "$defs": {
+    "M8HearingL5Status": {
+      "enum": [
+        "NOT_RUN",
+        "PASSED",
+        "FAILED"
+      ],
+      "title": "M8HearingL5Status",
+      "type": "string"
+    },
+    "M8QwenHearingDemoAttemptOutcome": {
+      "enum": [
+        "COMPLETED",
+        "AUDITABLE_FAILURE",
+        "CONFIGURATION_FAILED",
+        "RECOVERY_REQUIRED"
+      ],
+      "title": "M8QwenHearingDemoAttemptOutcome",
+      "type": "string"
+    },
+    "M8QwenHearingDemoDeliveryState": {
+      "enum": [
+        "COMPLETED",
+        "DEFINITELY_NOT_SENT",
+        "UNKNOWN"
+      ],
+      "title": "M8QwenHearingDemoDeliveryState",
+      "type": "string"
+    },
+    "M8QwenHearingProviderReceiptV1": {
+      "additionalProperties": false,
+      "description": "Secret-free linkage from one provider envelope to frozen M4 authority.",
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "estimated_cost_cny": {
+          "minimum": 0,
+          "title": "Estimated Cost Cny",
+          "type": "number"
+        },
+        "input_tokens": {
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "labcourt_response_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Labcourt Response Id",
+          "type": "string"
+        },
+        "latency_ms": {
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        },
+        "provider_profile": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Provider Profile",
+          "type": "string"
+        },
+        "provider_response_id": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Provider Response Id",
+          "type": "string"
+        },
+        "raw_response_ref": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Raw Response Ref",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/VlmRole"
+        },
+        "schema_version": {
+          "const": "m8-qwen-hearing-provider-receipt-v1",
+          "default": "m8-qwen-hearing-provider-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "provider_profile",
+        "provider_response_id",
+        "labcourt_response_id",
+        "raw_response_ref",
+        "content_sha256",
+        "input_tokens",
+        "output_tokens",
+        "latency_ms",
+        "estimated_cost_cny"
+      ],
+      "title": "M8QwenHearingProviderReceiptV1",
+      "type": "object"
+    },
+    "VlmRole": {
+      "enum": [
+        "SCREENING",
+        "STRUCTURE_REPAIR",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "VlmRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-qwen-hearing-demo-attempt-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Auditable outcome of at most one explicit real-provider start attempt.",
+  "properties": {
+    "api_http_status": {
+      "anyOf": [
+        {
+          "maximum": 599,
+          "minimum": 100,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Api Http Status"
+    },
+    "api_key_persisted": {
+      "const": false,
+      "default": false,
+      "title": "Api Key Persisted",
+      "type": "boolean"
+    },
+    "attempt_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Attempt Receipt Id",
+      "type": "string"
+    },
+    "attempted_at": {
+      "format": "date-time",
+      "title": "Attempted At",
+      "type": "string"
+    },
+    "delivery_state": {
+      "$ref": "#/$defs/M8QwenHearingDemoDeliveryState"
+    },
+    "external_call_attempted": {
+      "title": "External Call Attempted",
+      "type": "boolean"
+    },
+    "hearing_session_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hearing Session Id"
+    },
+    "l5_status": {
+      "$ref": "#/$defs/M8HearingL5Status"
+    },
+    "outcome": {
+      "$ref": "#/$defs/M8QwenHearingDemoAttemptOutcome"
+    },
+    "preparation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Preparation Id",
+      "type": "string"
+    },
+    "provider_receipts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8QwenHearingProviderReceiptV1"
+      },
+      "maxItems": 30,
+      "title": "Provider Receipts",
+      "type": "array"
+    },
+    "raw_model_response_content_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Raw Model Response Content Exposed",
+      "type": "boolean"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason Code"
+    },
+    "role_response_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 30,
+      "title": "Role Response Ids",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m8-qwen-hearing-demo-attempt-receipt-v1",
+      "default": "m8-qwen-hearing-demo-attempt-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "silent_fallback_used": {
+      "const": false,
+      "default": false,
+      "title": "Silent Fallback Used",
+      "type": "boolean"
+    },
+    "typed_failure_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 30,
+      "title": "Typed Failure Ids",
+      "type": "array"
+    },
+    "view_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "View Id"
+    }
+  },
+  "required": [
+    "preparation_id",
+    "attempted_at",
+    "outcome",
+    "delivery_state",
+    "l5_status",
+    "external_call_attempted",
+    "attempt_receipt_id"
+  ],
+  "title": "M8QwenHearingDemoAttemptReceiptV1",
+  "type": "object"
+}

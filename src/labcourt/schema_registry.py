@@ -349,6 +349,11 @@ from labcourt.contracts.m8_feishu_transport import (
     M8FeishuSandboxSendReceiptV1,
     M8FeishuTokenAcquisitionReceiptV1,
 )
+from labcourt.contracts.m8_hearing_api import (
+    M8HearingProviderSelectionV1,
+    M8HearingStartRequestV1,
+    M8HearingViewV1,
+)
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
@@ -448,6 +453,12 @@ from labcourt.contracts.m8_projections import (
     M8ProjectionMapNodeV1,
     M8ProjectionOverviewV1,
     M8ProjectionSourceV1,
+)
+from labcourt.contracts.m8_qwen_hearing_demo import (
+    M8QwenHearingDemoAttemptReceiptV1,
+    M8QwenHearingDemoEvidenceV1,
+    M8QwenHearingDemoPreparationV1,
+    M8QwenHearingProviderReceiptV1,
 )
 from labcourt.contracts.m8_sensor_persistence import (
     M8SensorPollCacheCommitReceiptV1,
@@ -769,6 +780,13 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-api-error-response-v1": M8ApiErrorResponseV1,
     "m8-api-knowledge-query-request-v1": M8ApiKnowledgeQueryRequestV1,
     "m8-api-principal-v1": M8ApiPrincipalV1,
+    "m8-hearing-provider-selection-v1": M8HearingProviderSelectionV1,
+    "m8-hearing-start-request-v1": M8HearingStartRequestV1,
+    "m8-hearing-view-v1": M8HearingViewV1,
+    "m8-qwen-hearing-demo-attempt-receipt-v1": M8QwenHearingDemoAttemptReceiptV1,
+    "m8-qwen-hearing-demo-evidence-v1": M8QwenHearingDemoEvidenceV1,
+    "m8-qwen-hearing-demo-preparation-v1": M8QwenHearingDemoPreparationV1,
+    "m8-qwen-hearing-provider-receipt-v1": M8QwenHearingProviderReceiptV1,
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
     "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,
