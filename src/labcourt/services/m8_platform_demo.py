@@ -7,6 +7,7 @@ import os
 import shutil
 import threading
 import uuid
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -266,6 +267,18 @@ class M8PlatformDemoService:
                 run = M8PlatformScenarioRunV1.model_validate_json(path.read_bytes())
                 if run.state == "RUNNING":
                     run = self._refresh_ppe(run)
+        elif self._is_legacy_screening_failure(run):
+            # Preserve the original snapshot on disk, but project the already
+            # persisted Pilot authorities correctly for older runs that were
+            # previously misclassified as a CASE/ValueError failure.
+            with suppress(
+                EvidenceMissing,
+                PilotUiBoundaryError,
+                TypeError,
+                ValueError,
+                OSError,
+            ):
+                run = self._finalize_attention_required_ppe(run, persist=False)
         if run.case_id is not None:
             try:
                 current_case = self._operations().get_current_operational_case(run.case_id)
@@ -287,7 +300,14 @@ class M8PlatformDemoService:
         except (OSError, ValueError):
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
         current = self.current_run(principal)
-        return current if current is not None and current.run_id == run_id else run
+        if current is not None and current.run_id == run_id:
+            return current
+        if self._is_legacy_screening_failure(run):
+            try:
+                return self._finalize_attention_required_ppe(run, persist=False)
+            except (EvidenceMissing, PilotUiBoundaryError, TypeError, ValueError, OSError):
+                pass
+        return run
 
     def model_readiness(self, principal: M8ApiPrincipalV1) -> M8PlatformModelReadinessV1:
         self._actor(principal)
@@ -700,6 +720,8 @@ class M8PlatformDemoService:
             return failed
         projected = self._project_ppe_progress(run, progress, "REPORT")
         try:
+            if job.state == "ATTENTION_REQUIRED":
+                return self._finalize_attention_required_ppe(projected)
             return self._finalize_ppe(projected)
         except (EvidenceMissing, PilotUiBoundaryError, TypeError, ValueError, OSError) as error:
             failed = self._failed_ppe_run(
@@ -709,6 +731,21 @@ class M8PlatformDemoService:
             )
             self._write_run(failed)
             return failed
+
+    @staticmethod
+    def _is_legacy_screening_failure(run: M8PlatformScenarioRunV1) -> bool:
+        return (
+            run.scenario_kind == M8PlatformScenarioKind.PPE_GOGGLES_MISSING
+            and run.recognition_mode == M8PlatformRecognitionMode.FULL_MODEL
+            and run.state == "FAILED"
+            and run.failure_code == "ValueError"
+            and run.screening_decision is None
+            and any(
+                item.stage == M8PlatformScenarioStage.PERCEPTION
+                and item.state == M8PlatformStageState.COMPLETE
+                for item in run.stages
+            )
+        )
 
     @staticmethod
     def _pilot_to_m8_stage(stage: str) -> M8PlatformScenarioStage:
@@ -1053,6 +1090,123 @@ class M8PlatformDemoService:
         )
         self._write_run(completed)
         return completed
+
+    def _finalize_attention_required_ppe(
+        self,
+        run: M8PlatformScenarioRunV1,
+        *,
+        persist: bool = True,
+    ) -> M8PlatformScenarioRunV1:
+        """Project a Pilot screening backlog without pretending CASE was reached."""
+
+        service = self._pilot_service_for(run)
+        dashboard = service.dashboard(run_id=run.run_id)
+        source_case, source_pack, stream, manifest = self._pilot_ppe_base_authorities(run)
+        if source_case.screening_results:
+            return self._finalize_ppe(run) if persist else run
+
+        reason_code = self._screening_attention_reason(source_case)
+        failure_code = (
+            "SCREENING_PROVIDER_UNAVAILABLE"
+            if reason_code == "PROVIDER_UNAVAILABLE"
+            else "SCREENING_ATTENTION_REQUIRED"
+        )
+        pilot_case = dashboard.cases[0] if dashboard.cases else None
+        evidence = tuple(
+            M8PlatformEvidenceViewV1(
+                evidence_id=item.crop_id,
+                role=item.role,
+                frame_index=item.frame_index,
+                media_url=(
+                    f"/api/m8/demo/scenario-runs/{run.run_id}/evidence/{item.crop_id}"
+                ),
+                integrity=item.integrity,
+            )
+            for item in (pilot_case.evidence if pilot_case is not None else ())
+            if item.integrity == "VERIFIED"
+        )
+        stages = self._preserve_perception_progress(
+            (
+                self._stage(
+                    M8PlatformScenarioStage.VIDEO,
+                    "真实录像已校验",
+                    (PLATFORM_CAMERA_ID,),
+                ),
+                self._stage(
+                    M8PlatformScenarioStage.PERCEPTION,
+                    "本地视觉感知和目标定位已完成",
+                    (source_case.manifest_id,),
+                ),
+                self._stage(
+                    M8PlatformScenarioStage.EVIDENCE,
+                    "证据裁剪与完整性校验已完成",
+                    (source_pack.pack_id, *(item.evidence_id for item in evidence)),
+                ),
+                M8PlatformScenarioStageV1(
+                    stage=M8PlatformScenarioStage.SCREENING,
+                    state=M8PlatformStageState.FAILED,
+                    summary=failure_code,
+                    authority_refs=(),
+                ),
+                M8PlatformScenarioStageV1(
+                    stage=M8PlatformScenarioStage.CASE,
+                    state=M8PlatformStageState.PENDING,
+                    summary="尚未生成",
+                    authority_refs=(),
+                ),
+                M8PlatformScenarioStageV1(
+                    stage=M8PlatformScenarioStage.NOTIFICATION,
+                    state=M8PlatformStageState.PENDING,
+                    summary="尚未生成",
+                    authority_refs=(),
+                ),
+            ),
+            run,
+        )
+        failed = M8PlatformScenarioRunV1(
+            run_id=run.run_id,
+            scenario_kind=run.scenario_kind,
+            state="FAILED",
+            failure_code=failure_code,
+            stages=stages,
+            recognition_mode=run.recognition_mode,
+            retry_of_run_id=run.retry_of_run_id,
+            model_components=self._model_components(run, manifest),
+            evidence=evidence,
+            video_profile=self._video_profile(stream),
+            perception_preview_url=(
+                f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"
+            ),
+            model_or_fixture_id=manifest.models["screening"].model,
+        )
+        if persist:
+            self._write_run(failed)
+        return failed
+
+    @staticmethod
+    def _screening_attention_reason(source_case: Case) -> str | None:
+        if source_case.screening_results:
+            return None
+        for entry in reversed(source_case.timeline):
+            reason = entry.details.get("reason_code")
+            if isinstance(reason, str):
+                return reason
+        return None
+
+    @staticmethod
+    def _video_profile(stream: StreamManifest) -> M8PlatformVideoProfileV1:
+        return M8PlatformVideoProfileV1(
+            input_file_sha256=stream.input_file_sha256,
+            fps_num=stream.fps_num,
+            fps_den=stream.fps_den,
+            frame_count=stream.frame_count,
+            width=stream.width,
+            height=stream.height,
+            duration_millis=(
+                stream.frame_count * 1000 * stream.fps_den + stream.fps_num - 1
+            )
+            // stream.fps_num,
+        )
 
     def _finalize_screening_no_action(
         self,
@@ -1585,6 +1739,27 @@ class M8PlatformDemoService:
         self,
         run: M8PlatformScenarioRunV1,
     ) -> tuple[Case, EvidencePack, StreamManifest, str]:
+        source_case, source_pack, stream, _ = self._pilot_ppe_base_authorities(run)
+        if not source_case.screening_results:
+            raise ValueError("Pilot projection is missing screening authority")
+        service = self._pilot_service_for(run)
+        run_root = self.project_root / service.config.run.workspace / run.run_id
+        raw_response = source_case.screening_results[-1].parsed_output
+        raw_path = run_root / "model_responses" / f"{raw_response.response_id}.json"
+        raw_bytes = raw_path.read_bytes()
+        if hashlib.sha256(raw_bytes).hexdigest() != raw_response.response_content_sha256:
+            raise ValueError("Pilot raw screening response hash does not match its authority")
+        return (
+            source_case,
+            source_pack,
+            stream,
+            raw_path.relative_to(self.project_root).as_posix(),
+        )
+
+    def _pilot_ppe_base_authorities(
+        self,
+        run: M8PlatformScenarioRunV1,
+    ) -> tuple[Case, EvidencePack, StreamManifest, RunManifest]:
         run_id = run.run_id
         service = self._pilot_service_for(run)
         run_root = self.project_root / service.config.run.workspace / run_id
@@ -1614,19 +1789,13 @@ class M8PlatformDemoService:
         if (
             source_case.event.event_id != summary.event_id
             or len(packs) != 1
-            or not source_case.screening_results
         ):
-            raise ValueError("Pilot projection is missing event, evidence or screening authority")
-        raw_response = source_case.screening_results[-1].parsed_output
-        raw_path = run_root / "model_responses" / f"{raw_response.response_id}.json"
-        raw_bytes = raw_path.read_bytes()
-        if hashlib.sha256(raw_bytes).hexdigest() != raw_response.response_content_sha256:
-            raise ValueError("Pilot raw screening response hash does not match its authority")
+            raise ValueError("Pilot projection is missing event or evidence authority")
         return (
             source_case,
             packs[0],
             manifest.streams[0],
-            raw_path.relative_to(self.project_root).as_posix(),
+            manifest,
         )
 
     def _archive_paths(self) -> tuple[Path, ...]:

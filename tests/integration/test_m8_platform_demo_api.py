@@ -474,6 +474,54 @@ def test_platform_projects_truthful_hot_progress_and_failure_stage(
     assert refreshed.stages[1].completed_units == 8
     assert writes == []  # hot frame updates remain visible without per-frame disk writes
 
+    attention_job = PilotUiJobStatus(
+        job_id="job-platform-attention",
+        state="ATTENTION_REQUIRED",
+        run_id=running.run_id,
+        video_id="a" * 64,
+        report_id="b" * 64,
+    )
+
+    class _AttentionJobs:
+        @staticmethod
+        def snapshot():
+            return attention_job
+
+        @staticmethod
+        def progress_snapshot():
+            return progress
+
+    screening_failed = platform._failed_ppe_run(
+        projected,
+        failure_code="SCREENING_PROVIDER_UNAVAILABLE",
+        failed_stage=M8PlatformScenarioStage.SCREENING,
+    ).model_copy(
+        update={
+            "model_components": (),
+            "outcome": None,
+            "case_id": None,
+            "case_status": None,
+            "notification_id": None,
+        }
+    )
+    monkeypatch.setattr(platform, "_pilot_jobs_for", lambda _run: _AttentionJobs())
+    monkeypatch.setattr(
+        platform,
+        "_finalize_attention_required_ppe",
+        lambda _run: screening_failed,
+    )
+    monkeypatch.setattr(
+        platform,
+        "_finalize_ppe",
+        lambda _run: (_ for _ in ()).throw(AssertionError("must not finalize a case")),
+    )
+    refreshed_attention = platform._refresh_ppe(running)
+    assert refreshed_attention.failure_code == "SCREENING_PROVIDER_UNAVAILABLE"
+    assert refreshed_attention.stages[3].state == "FAILED"
+    assert refreshed_attention.stages[4].state == "PENDING"
+    assert refreshed_attention.case_id is None
+    assert refreshed_attention.notification_id is None
+
     completed_stages = tuple(
         M8PlatformScenarioStageV1(
             stage=stage,

@@ -200,6 +200,48 @@ def test_video_profile_uses_verified_pilot_timing() -> None:
         M8PlatformVideoProfileV1.model_validate(invalid)
 
 
+def test_screening_failure_preserves_completed_authorities_without_case() -> None:
+    stages = tuple(
+        M8PlatformScenarioStageV1(
+            stage=stage,
+            state=(
+                "COMPLETE"
+                if index < 3
+                else "FAILED"
+                if index == 3
+                else "PENDING"
+            ),
+            summary=(
+                "SCREENING_PROVIDER_UNAVAILABLE" if index == 3 else "authority retained"
+            ),
+            completed_units=(241 if stage == M8PlatformScenarioStage.PERCEPTION else None),
+            total_units=(241 if stage == M8PlatformScenarioStage.PERCEPTION else None),
+            unit=("FRAME" if stage == M8PlatformScenarioStage.PERCEPTION else None),
+        )
+        for index, stage in enumerate(M8PlatformScenarioStage)
+    )
+    failed = M8PlatformScenarioRunV1(
+        run_id="platform-ppe-screening-unavailable",
+        scenario_kind="PPE_GOGGLES_MISSING",
+        state="FAILED",
+        stages=stages,
+        recognition_mode="FULL_MODEL",
+        failure_code="SCREENING_PROVIDER_UNAVAILABLE",
+        video_profile=M8PlatformVideoProfileV1(
+            input_file_sha256=SHA,
+            fps_num=24,
+            fps_den=1,
+            frame_count=241,
+            width=1280,
+            height=720,
+            duration_millis=10_042,
+        ),
+    )
+    assert failed.stages[1].completed_units == 241
+    assert failed.stages[3].state == M8PlatformStageState.FAILED
+    assert failed.case_id is failed.notification_id is None
+
+
 @pytest.mark.parametrize(
     ("contract", "payload"),
     [

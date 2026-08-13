@@ -14,6 +14,7 @@ const state = {
   pollFailures:0,pollInFlight:false,toastTimer:null,routeController:null,routeSequence:0,
   shellMounted:false,currentRoute:"",casesFilter:"ALL",knowledgeFilter:"ALL",knowledgeSelected:null,
   settingsSection:"models",mapFloor:null,mapLocation:null,confirmationOpen:false,navOpen:false,scrollSaveFrame:0,
+  lastRunAnnouncement:"",caseDetail:null,settingsPanels:null,
 };
 
 const esc = value => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
@@ -82,13 +83,15 @@ function publicRibbon() {
 }
 
 function renderHome() {
-  app.innerHTML=`<header class="landing-head"><div class="landing-wrap landing-head__in"><a class="landing-brand" href="/">LabCourt <small>校园实验室安全</small></a><nav aria-label="首页导航"><a href="#problem">现状</a><a href="#principles">原则</a><a href="#workflow">闭环</a><a href="#ethics">伦理</a></nav><a class="landing-cta" href="/login">进入平台 →</a></div></header>
+  const entryHref=state.token?"/app/monitor":"/login";
+  const entryLabel=state.token?"返回安全运营平台":"进入平台";
+  app.innerHTML=`<header class="landing-head"><div class="landing-wrap landing-head__in"><a class="landing-brand" href="/">LabCourt <small>校园实验室安全</small></a><nav aria-label="首页导航"><a href="#problem">现状</a><a href="#principles">原则</a><a href="#workflow">闭环</a><a href="#ethics">伦理</a></nav><a class="landing-cta" href="${entryHref}">${entryLabel} →</a></div></header>
   <main id="main-content" class="landing">
     <section class="landing-hero">
       <div class="landing-hero__media" data-parallax><video src="/api/m8/demo/public-media/recorded-video" autoplay muted loop playsinline preload="metadata"></video><div class="landing-grid" aria-hidden="true"></div></div>
       <span class="recorded-tag"><i></i>SIMULATED · RECORDED VIDEO</span>
       <div class="landing-hud" aria-hidden="true"><span></span><span></span><span></span><span></span><b>CAMERA-RECORDED-DEMO-01<br>NO VISUAL IDENTITY</b></div>
-      <div class="landing-wrap landing-hero__content"><p class="landing-eyebrow"><b>LabCourt</b> · 海南大学 · 信通学院 · 校园实验室安全</p><h1>实验室的每一秒，<br>都值得被认真对待。</h1><p>录像与模拟传感器进入同一条可审计流程：真实模型识别、结构化取证、规则建案与人在环处置。不做人脸识别，AI 不自动定责。</p><div class="landing-actions"><a class="landing-button primary" href="/login">选择演示角色 →</a><a class="landing-button" href="#workflow">了解处理闭环</a></div></div>
+      <div class="landing-wrap landing-hero__content"><p class="landing-eyebrow"><b>LabCourt</b> · 海南大学 · 信通学院 · 校园实验室安全</p><h1>实验室的每一秒，<br>都值得被认真对待。</h1><p>录像与模拟传感器进入同一条可审计流程：真实模型识别、结构化取证、规则建案与人在环处置。不做人脸识别，AI 不自动定责。</p><div class="landing-actions"><a class="landing-button primary" href="${entryHref}">${state.token?"返回安全运营平台":"选择演示角色"} →</a><a class="landing-button" href="#workflow">了解处理闭环</a></div></div>
     </section>
     <section class="landing-block" id="problem"><div class="landing-wrap"><p class="landing-eyebrow reveal"><b>现状</b> · WHY</p><h2 class="reveal">传统监控只录像，不“看懂”。</h2><p class="landing-lead reveal">人防有盲区、事后追溯难、来源说不清。安全运营需要的不只是画面，而是一条能解释、能复核、能回应的证据链。</p><div class="landing-three"><article class="landing-rule reveal"><i>01</i><h3>盲区</h3><p>值班人员无法持续覆盖每一路录像和每一类传感器变化。</p></article><article class="landing-rule reveal"><i>02</i><h3>滞后</h3><p>只在事后翻看录像，无法形成即时、可核验的处置入口。</p></article><article class="landing-rule reveal"><i>03</i><h3>难说清</h3><p>机器发现与人工决定之间，需要保留结构化证据、版本和回复。</p></article></div></div></section>
     <section class="landing-block landing-paper" id="principles"><div class="landing-wrap"><p class="landing-eyebrow reveal"><b>我们的做法</b> · PRINCIPLES</p><h2 class="reveal">AI 看见，人做决定。</h2><p class="landing-lead reveal">模型只生成弱标签和证据引用；规则守住边界，安全负责人完成核实，学生可以说明或申诉。</p><div class="landing-three"><article class="landing-card reveal"><i>01 / 识别</i><h3>真实模型，来源可见</h3><p>本地 Grounding DINO、ViTPose 与 ByteTrack 处理录像；Qwen3-VL 生成严格结构化初审。</p></article><article class="landing-card reveal"><i>02 / 伦理</i><h3>不识别人，不自动定责</h3><p>预约关联不是视觉身份识别，不做人脸识别或跨摄像头重识别。</p></article><article class="landing-card reveal"><i>03 / 处置</i><h3>确认、回应、申诉</h3><p>案件、通知、学生回复和结果确认都由服务端状态机留痕。</p></article></div></div></section>
@@ -100,7 +103,7 @@ function renderHome() {
     </div></div></section>
     <section class="landing-ethics" id="ethics"><div class="landing-wrap"><p class="landing-eyebrow reveal"><b>伦理立场</b> · BOUNDARIES</p><h2 class="reveal">AI 提议，代码守门，<br>人，<em>盖章</em>。</h2><p class="landing-lead reveal">技术可以辅助发现风险，但不能替人完成责任判断。每一步都必须能回到原始来源。</p><div class="landing-four"><article class="reveal"><i>01</i><h3>不做人脸识别</h3><p>预约关联，非视觉身份识别。</p></article><article class="reveal"><i>02</i><h3>弱标签</h3><p>模型输出不是事实或处分依据。</p></article><article class="reveal"><i>03</i><h3>可说明与申诉</h3><p>回复和结果各自生成新 authority。</p></article><article class="reveal"><i>04</i><h3>人在环</h3><p>操作卡和状态变更都需确认。</p></article></div><div class="landing-stamp reveal" aria-hidden="true">人工<br>确认</div></div></section>
     <section class="landing-block landing-proof"><div class="landing-wrap"><p class="landing-eyebrow reveal"><b>能力证明</b> · API-BACKED</p><h2 class="reveal">不展示未经测量的数字。</h2><div class="landing-proof__grid"><article class="reveal"><i>输入</i><strong>录像 · 传感器</strong><p>来源类型由正式适配器定义</p></article><article class="reveal"><i>处理</i><strong>六阶段</strong><p>状态来自真实运行产物</p></article><article class="reveal"><i>决定</i><strong>人工确认</strong><p>机器不直接执行处分</p></article></div></div></section>
-    <section class="landing-final"><div class="landing-wrap reveal"><h2>走进控制台。</h2><p>切换四种角色，运行真实识别或明确标记的演示回退，亲自完成一条安全闭环。</p><div class="landing-actions"><a class="landing-button primary" href="/login">进入平台 →</a><a class="landing-button" href="#ethics">查看边界</a></div></div></section>
+    <section class="landing-final"><div class="landing-wrap reveal"><h2>走进控制台。</h2><p>切换四种角色，运行真实识别或明确标记的演示回退，亲自完成一条安全闭环。</p><div class="landing-actions"><a class="landing-button primary" href="${entryHref}">${entryLabel} →</a><a class="landing-button" href="#ethics">查看边界</a></div></div></section>
   </main><footer class="landing-footer"><div class="landing-wrap"><b>LabCourt <small>校园实验室安全</small></b><span>海南大学 · 信息与通信工程学院</span><span>PERSONAL DEMO ONLY · PRODUCTION READY: FALSE</span></div></footer>`;
   initLandingMotion();
 }
@@ -146,7 +149,7 @@ function runStripMarkup() {
   const progress=perception?.total_units?perception.completed_units/perception.total_units:run.stages.filter(item=>item.state==="COMPLETE").length/run.stages.length;
   const frame=perception?.total_units?`${perception.completed_units} / ${perception.total_units} FRAME`:"AUTHORITY STAGES";
   const runClass=run.state==="SUCCEEDED"?"complete":run.state.toLowerCase();
-  return `<div id="global-run-strip" class="global-run-strip is-${runClass}" style="--progress:${Math.max(0,Math.min(1,progress||0))}" aria-live="polite"><div class="run-strip__state"><span class="run-strip__summary">${run.state==="RUNNING"?"识别运行中":run.state==="FAILED"?"识别失败":"识别已完成"} · ${esc(STAGE_LABELS[active?.stage]||active?.stage||"等待")}</span></div><div><div class="run-strip__track"><i class="run-strip__fill"></i></div><div class="run-strip__stages" aria-hidden="true">${run.stages.map(item=>`<i class="run-strip__stage ${item.state==="RUNNING"?"is-active":item.state==="COMPLETE"?"is-complete":item.state==="FAILED"?"is-failed":""}">${esc(item.stage)}</i>`).join("")}</div></div><div class="run-strip__meta"><strong data-run-frame>${esc(frame)}</strong><span>${esc(run.recognition_mode||run.scenario_kind)}</span></div></div>`;
+  return `<div id="global-run-strip" class="global-run-strip is-${runClass}" style="--progress:${Math.max(0,Math.min(1,progress||0))}"><div class="run-strip__state"><span class="run-strip__summary" data-run-summary>${run.state==="RUNNING"?"识别运行中":run.state==="FAILED"?"识别失败":"识别已完成"} · ${esc(STAGE_LABELS[active?.stage]||active?.stage||"等待")}</span></div><div><div class="run-strip__track"><i class="run-strip__fill"></i></div><div class="run-strip__stages" aria-hidden="true">${run.stages.map(item=>`<i class="run-strip__stage ${item.state==="RUNNING"?"is-active":item.state==="COMPLETE"?"is-complete":item.state==="FAILED"?"is-failed":""}" data-run-stage="${esc(item.stage)}">${esc(item.stage)}</i>`).join("")}</div></div><div class="run-strip__meta"><strong data-run-frame>${esc(frame)}</strong><span data-run-mode>${esc(run.recognition_mode||run.scenario_kind)}</span></div></div>`;
 }
 
 function alarmMarkup(){return isEmergency()?`<div class="alarm-banner" role="alert"><div><p class="eyebrow">EMERGENCY · SIMULATED SENSOR</p><strong>实验室 301 烟雾与高温信号联动</strong></div><a href="${state.run?.case_id?`/app/cases/${state.run.case_id}`:"/app/cases"}">查看案件 →</a></div>`:"";}
@@ -154,7 +157,7 @@ function alarmMarkup(){return isEmergency()?`<div class="alarm-banner" role="ale
 function ensureShell() {
   if(state.shellMounted&&document.getElementById("route-view"))return;
   const active=currentNav(location.pathname);
-  app.innerHTML=`<div class="app-shell shell-frame">${publicRibbon()}<header class="shell-head"><div class="head-row"><a class="brand" href="/app/monitor">LabCourt<small>校园安全运营平台</small></a><button class="icon-button nav-toggle" type="button" data-action="nav-toggle" aria-expanded="false" aria-controls="primary-nav">菜单</button><nav id="primary-nav" class="nav" aria-label="主导航">${NAV.map(([href,text])=>`<a href="${href}" ${active===href?'aria-current="page"':""}>${text}</a>`).join("")}</nav><div class="head-actions"><span class="role-chip"><span>${esc(ROLE_LABELS[role()]||role())}</span></span><button class="icon-button" type="button" data-action="logout" aria-label="退出当前角色">退出</button></div></div></header><div id="alarm-host">${alarmMarkup()}</div><div id="run-strip-host">${runStripMarkup()}</div><main id="main-content" class="page"><div id="route-view" class="route-view"></div></main><p class="route-live-region sr-only" aria-live="polite"></p></div>`;
+  app.innerHTML=`<div class="app-shell shell-frame">${publicRibbon()}<header class="shell-head"><div class="head-row"><a class="brand" href="/" aria-label="返回 LabCourt 产品介绍首页">LabCourt<small>校园安全运营平台</small></a><button class="icon-button nav-toggle" type="button" data-action="nav-toggle" aria-expanded="false" aria-controls="primary-nav">菜单</button><nav id="primary-nav" class="nav" aria-label="主导航">${NAV.map(([href,text])=>`<a href="${href}" ${active===href?'aria-current="page"':""}>${text}</a>`).join("")}</nav><div class="head-actions"><span class="role-chip"><span>${esc(ROLE_LABELS[role()]||role())}</span></span><button class="icon-button" type="button" data-action="logout" aria-label="退出当前角色">退出</button></div></div></header><div id="alarm-host">${alarmMarkup()}</div><div id="run-strip-host">${runStripMarkup()}</div><main id="main-content" class="page"><div id="route-view" class="route-view"></div></main><p class="route-live-region sr-only" aria-live="polite"></p></div>`;
   state.shellMounted=true;
 }
 
@@ -162,8 +165,29 @@ function patchShell() {
   if(!state.shellMounted)return;
   const active=currentNav(location.pathname);
   document.querySelectorAll(".nav a").forEach(link=>{const current=new URL(link.href).pathname===active;if(current)link.setAttribute("aria-current","page");else link.removeAttribute("aria-current");});
-  const alarm=document.getElementById("alarm-host");if(alarm)alarm.innerHTML=alarmMarkup();
-  const strip=document.getElementById("run-strip-host");if(strip)strip.innerHTML=runStripMarkup();
+  const alarm=document.getElementById("alarm-host");if(alarm){const markup=alarmMarkup();if(alarm.innerHTML!==markup)alarm.innerHTML=markup;}
+  patchRunStrip();
+}
+
+function patchRunStrip() {
+  const host=document.getElementById("run-strip-host");if(!host)return;
+  let strip=document.getElementById("global-run-strip");
+  if(!state.run){if(strip)strip.hidden=true;return;}
+  if(!strip?.querySelector("[data-run-summary]")){host.innerHTML=runStripMarkup();strip=document.getElementById("global-run-strip");}
+  if(!strip)return;
+  const run=state.run,active=run.stages.find(item=>item.state==="RUNNING"||item.state==="FAILED")||run.stages.at(-1);
+  const perception=run.stages.find(item=>item.stage==="PERCEPTION");
+  const progress=perception?.total_units?perception.completed_units/perception.total_units:run.stages.filter(item=>item.state==="COMPLETE").length/run.stages.length;
+  const frame=perception?.total_units?`${perception.completed_units} / ${perception.total_units} FRAME`:"AUTHORITY STAGES";
+  const runClass=run.state==="SUCCEEDED"?"complete":run.state.toLowerCase();
+  strip.hidden=false;strip.classList.remove("is-running","is-failed","is-complete");strip.classList.add(`is-${runClass}`);
+  strip.style.setProperty("--progress",String(Math.max(0,Math.min(1,progress||0))));
+  strip.querySelector("[data-run-summary]").textContent=`${run.state==="RUNNING"?"识别运行中":run.state==="FAILED"?"识别失败":"识别已完成"} · ${STAGE_LABELS[active?.stage]||active?.stage||"等待"}`;
+  strip.querySelector("[data-run-frame]").textContent=frame;
+  strip.querySelector("[data-run-mode]").textContent=run.recognition_mode||run.scenario_kind;
+  strip.querySelectorAll("[data-run-stage]").forEach(node=>{const item=run.stages.find(value=>value.stage===node.dataset.runStage);node.classList.toggle("is-active",item?.state==="RUNNING");node.classList.toggle("is-complete",item?.state==="COMPLETE");node.classList.toggle("is-failed",item?.state==="FAILED");});
+  const semanticKey=`${run.run_id}:${run.state}:${active?.stage||"NONE"}`;
+  if(semanticKey!==state.lastRunAnnouncement){state.lastRunAnnouncement=semanticKey;const live=document.querySelector(".route-live-region");if(live)live.textContent=strip.querySelector("[data-run-summary]").textContent;}
 }
 
 function setRouteContent(content,{mount,announcement}={}) {
@@ -197,6 +221,27 @@ function sourceValue(item) {
   return String(sample.value);
 }
 
+function runFailureExplanation(run=state.run) {
+  if(!run||run.state!=="FAILED")return "";
+  if(run.failure_code==="SCREENING_PROVIDER_UNAVAILABLE"||(run.failure_code==="ValueError"&&run.recognition_mode==="FULL_MODEL"&&!run.screening_decision))return "本地视觉识别和证据生成已完成，云端 Qwen 初审未返回，因此没有建案。";
+  return `识别在 ${STAGE_LABELS[run.stages?.find(item=>item.state==="FAILED")?.stage]||"当前阶段"}结束；失败代码 ${run.failure_code}。状态未伪装为成功。`;
+}
+
+function monitorCandidatesMarkup() {
+  const active=state.cases.filter(item=>!terminalCase(item.status));
+  return active.length?active.slice(0,4).map(item=>`<a class="candidate-card" href="/app/cases/${item.case_id}"><div><h3>${caseTitle(item)}</h3><p>${esc(caseAuthority(item)?.location_id)} · ${short(item.case_id)}</p></div><span class="candidate-card__state">${esc(label(item.status))}<br>查看卷宗 →</span></a>`).join(""):empty("暂无候选事件","标准现场没有活动案件；运行场景后会在这里出现入口。");
+}
+
+function monitorDevicesMarkup() {
+  return sources().map(item=>`<article class="device ${item.latest_sample_receipt?.sample?.value===true||item.source.sensor_type==="TEMPERATURE"&&Number(item.latest_sample_receipt?.sample?.value)>60000?"alert":""}"><div class="device-head"><h3>${esc(item.source.device_id)}</h3><span class="badge">${item.source.source_kind==="SENSOR"?"SIMULATED SENSOR":"RECORDED"}</span></div><strong>${esc(sourceValue(item))}</strong><small>${esc(item.source.sensor_type||item.source.mode)} · ${esc(item.observation_state)}</small></article>`).join("")||empty("设备不可见","当前角色不具备设备健康读取能力。");
+}
+
+function monitorFailureMarkup() {
+  const run=state.run;if(run?.state!=="FAILED")return "";
+  const actions=role()==="OPERATIONS"&&run.recognition_mode==="FULL_MODEL"?`<div class="form-actions"><button class="button" type="button" data-scenario="PPE_GOGGLES_MISSING" data-mode="FULL_MODEL">重新运行真实模式</button><button class="button quiet" type="button" data-scenario="PPE_GOGGLES_MISSING" data-mode="DEMO_FIXTURE" data-retry="${esc(run.run_id)}">以演示模式重试</button></div>`:"";
+  return `<div class="run-failure-card"><p class="help risk">${esc(runFailureExplanation(run))}</p><small>原始响应：${run.raw_response_ref?esc(run.raw_response_ref):"未生成"}</small>${actions}</div>`;
+}
+
 function stageList() {
   const stages=state.run?.stages || Object.keys(STAGE_LABELS).map(stage=>({stage,state:"PENDING",summary:"尚未生成"}));
   return `<div class="stage-list">${stages.map((item,i)=>`<div class="stage ${item.state.toLowerCase()}"><span class="stage-mark">${item.state==="COMPLETE"?"✓":i+1}</span><span class="stage-name">${STAGE_LABELS[item.stage]}</span><span class="stage-summary">${esc(item.summary)}</span></div>`).join("")}</div>`;
@@ -209,11 +254,10 @@ function renderMonitor() {
   const realReady=state.readiness?.full_model_ready===true;
   const actions=ops?`<button class="button primary" type="button" data-scenario="PPE_GOGGLES_MISSING" data-mode="FULL_MODEL" ${state.run?.state==="RUNNING"||!realReady?"disabled":""}>运行真实 PPE 识别</button><button class="button quiet" type="button" data-scenario="PPE_GOGGLES_MISSING" data-mode="DEMO_FIXTURE" ${state.run?.state==="RUNNING"?"disabled":""}>运行明确标记的演示模式</button><button class="button alarm" type="button" data-scenario="SMOKE_TEMPERATURE_EMERGENCY" ${state.run?.state==="RUNNING"?"disabled":""}>触发烟雾—高温联动</button>`:"";
   const videoAllowed=state.cameras.length>0;
-  const fallback=ops&&state.run?.state==="FAILED"&&state.run?.recognition_mode==="FULL_MODEL"?`<button class="button quiet" type="button" data-scenario="PPE_GOGGLES_MISSING" data-mode="DEMO_FIXTURE" data-retry="${esc(state.run.run_id)}">以演示模式重试（创建新运行）</button>`:"";
-  const candidates=active.length?active.slice(0,4).map(item=>`<a class="candidate-card" href="/app/cases/${item.case_id}"><div><h3>${caseTitle(item)}</h3><p>${esc(caseAuthority(item)?.location_id)} · ${short(item.case_id)}</p></div><span class="candidate-card__state">${esc(label(item.status))}<br>查看卷宗 →</span></a>`).join(""):empty("暂无候选事件","标准现场没有活动案件；运行场景后会在这里出现入口。");
-  const deviceCards=sources().map(item=>`<article class="device ${item.latest_sample_receipt?.sample?.value===true||item.source.sensor_type==="TEMPERATURE"&&Number(item.latest_sample_receipt?.sample?.value)>60000?"alert":""}"><div class="device-head"><h3>${esc(item.source.device_id)}</h3><span class="badge">${item.source.source_kind==="SENSOR"?"SIMULATED SENSOR":"RECORDED"}</span></div><strong>${esc(sourceValue(item))}</strong><small>${esc(item.source.sensor_type||item.source.mode)} · ${esc(item.observation_state)}</small></article>`).join("")||empty("设备不可见","当前角色不具备设备健康读取能力。");
+  const candidates=monitorCandidatesMarkup();
+  const deviceCards=monitorDevicesMarkup();
   const eventFrame=state.run?.evidence?.[0]?.frame_index;const eventPosition=profile&&Number.isInteger(eventFrame)?Math.max(0,Math.min(100,eventFrame/profile.frame_count*100)):null;
-  const content=`${pageHead("LIVE OPERATIONS","实时监控","演示校区 / 化学楼 / 三层 / 实验室 301。主画面用于巡看；证据、初审和处置集中在案件卷宗。",actions)}<div class="monitor-layout"><section class="monitor-workspace"><div class="panel-head"><h2>实验室 301 · 原始录像</h2><span>CAMERA-RECORDED-DEMO-01</span></div><div class="camera-main"><div class="video-stage ${state.run?.state==="RUNNING"?"is-recognizing":""}">${videoAllowed?`<video id="recorded-video" controls muted playsinline preload="metadata"></video>`:`<div class="video-placeholder">当前角色无录像读取权限</div>`}<span class="source-badge">SIMULATED · RECORDED VIDEO</span><span id="frame-counter" class="frame-counter">FRAME — / ${totalFrames}</span><div class="monitor-hud ${state.run?.state==="RUNNING"?"is-running":""}"><span class="monitor-hud__status">${state.run?.state==="RUNNING"?"识别运行中":"录像待机"}</span><b class="monitor-hud__stage">${esc(STAGE_LABELS[state.run?.stages?.find(item=>item.state==="RUNNING")?.stage]||state.run?.state||"READY")}</b></div></div><div class="camera-meta"><span>${esc(videoMeta)}</span><span>预约关联，非视觉身份识别</span></div></div><div class="camera-strip" aria-label="真实机位"><button class="camera-thumb active" type="button" aria-selected="true"><span class="camera-thumb__preview"></span><span><strong>实验室 301</strong><small>录像模拟机位 · 已选择</small></span></button></div><section class="monitor-timeline"><div class="panel-head"><h2>录像事件时间轴</h2><span>FRAME AUTHORITY</span></div><div class="timeline-rail">${eventPosition!==null?`<a class="timeline-event is-alert" href="${state.run?.case_id?`/app/cases/${state.run.case_id}?tab=evidence`:"/app/cases"}" style="left:${eventPosition}%" data-label="证据帧 ${eventFrame}" aria-label="查看证据帧 ${eventFrame}"></a>`:""}</div><p class="help">时间轴只使用真实录像帧索引与已生成证据；没有产物时不补造事件。</p></section></section><aside class="monitor-side"><section class="panel"><div class="panel-head"><h2>当前候选</h2><span>${active.length} CASES</span></div><div id="monitor-candidates" class="candidate-list">${candidates}</div>${state.run?.state==="FAILED"?`<p class="help risk">${esc(state.run.failure_code)} · 状态未伪装为成功</p>${fallback}`:""}</section><section><div class="panel-head"><h2>设备状态</h2><span>OPERATIONS PROJECTION</span></div><div id="monitor-devices" class="device-grid">${deviceCards}</div></section></aside></div>`;
+  const content=`${pageHead("LIVE OPERATIONS","实时监控","演示校区 / 化学楼 / 三层 / 实验室 301。主画面用于巡看；证据、初审和处置集中在案件卷宗。",actions)}<div class="monitor-layout"><section class="monitor-workspace"><div class="panel-head"><h2>实验室 301 · 原始录像</h2><span>CAMERA-RECORDED-DEMO-01</span></div><div class="camera-main"><div class="video-stage ${state.run?.state==="RUNNING"?"is-recognizing":""}">${videoAllowed?`<video id="recorded-video" controls muted playsinline preload="metadata"></video>`:`<div class="video-placeholder">当前角色无录像读取权限</div>`}<span class="source-badge">SIMULATED · RECORDED VIDEO</span><span id="frame-counter" class="frame-counter">FRAME — / ${totalFrames}</span><div class="monitor-hud ${state.run?.state==="RUNNING"?"is-running":""}"><span class="monitor-hud__status">${state.run?.state==="RUNNING"?"识别运行中":"录像待机"}</span><b class="monitor-hud__stage">${esc(STAGE_LABELS[state.run?.stages?.find(item=>item.state==="RUNNING")?.stage]||state.run?.state||"READY")}</b></div></div><div class="camera-meta"><span>${esc(videoMeta)}</span><span>预约关联，非视觉身份识别</span></div></div><div class="camera-strip" aria-label="真实机位"><button class="camera-thumb active" type="button" aria-selected="true"><span class="camera-thumb__preview"></span><span><strong>实验室 301</strong><small>录像模拟机位 · 已选择</small></span></button></div><section class="monitor-timeline"><div class="panel-head"><h2>录像事件时间轴</h2><span>FRAME AUTHORITY</span></div><div class="timeline-rail"><span class="timeline-flow" aria-hidden="true"><i></i></span>${eventPosition!==null?`<a class="timeline-event is-alert" href="${state.run?.case_id?`/app/cases/${state.run.case_id}?tab=evidence`:"/app/cases"}" style="left:${eventPosition}%" data-label="证据帧 ${eventFrame}" aria-label="查看证据帧 ${eventFrame}"></a>`:""}</div><p class="help">时间轴只使用真实录像帧索引与已生成证据；没有产物时不补造事件。</p></section></section><aside class="monitor-side"><section class="panel"><div class="panel-head"><h2>当前候选</h2><span data-candidate-count>${active.length} CASES</span></div><div id="monitor-candidates" class="candidate-list">${candidates}</div><div id="monitor-failure">${monitorFailureMarkup()}</div></section><section><div class="panel-head"><h2>设备状态</h2><span>OPERATIONS PROJECTION</span></div><div id="monitor-devices" class="device-grid">${deviceCards}</div></section></aside></div>`;
   setRouteContent(content,{mount:()=>{if(videoAllowed)attachVideo();schedulePoll();},announcement:"实时监控"});
 }
 
@@ -242,9 +286,9 @@ function schedulePoll() {
   state.pollTimer=setTimeout(async()=>{state.pollInFlight=true;const prior=state.run;try{const next=await api("/api/m8/demo/scenario-runs/current");state.pollFailures=0;state.run=next;patchRunUi();if(prior?.state==="RUNNING"&&next?.state!=="RUNNING")await refreshAfterRun(next);}catch(error){if(error.name!=="AbortError"){state.pollFailures+=1;toast(`进度同步暂时中断，正在自动重连：${error.message}`,"error");}}finally{state.pollInFlight=false;schedulePoll();}},delay);
 }
 
-function patchRunUi(){patchShell();const run=state.run;const hud=document.querySelector(".monitor-hud");if(hud){const active=run?.stages?.find(item=>item.state==="RUNNING"||item.state==="FAILED");hud.classList.toggle("is-running",run?.state==="RUNNING");hud.querySelector(".monitor-hud__status").textContent=run?.state==="RUNNING"?"识别运行中":run?.state==="FAILED"?"识别失败":"识别已完成";hud.querySelector(".monitor-hud__stage").textContent=STAGE_LABELS[active?.stage]||active?.stage||run?.state||"READY";}document.querySelector(".video-stage")?.classList.toggle("is-recognizing",run?.state==="RUNNING");}
+function patchRunUi(){patchShell();const run=state.run;const hud=document.querySelector(".monitor-hud");if(hud){const active=run?.stages?.find(item=>item.state==="RUNNING"||item.state==="FAILED");hud.classList.toggle("is-running",run?.state==="RUNNING");hud.querySelector(".monitor-hud__status").textContent=run?.state==="RUNNING"?"识别运行中":run?.state==="FAILED"?"识别失败":"识别已完成";hud.querySelector(".monitor-hud__stage").textContent=STAGE_LABELS[active?.stage]||active?.stage||run?.state||"READY";}document.querySelector(".video-stage")?.classList.toggle("is-recognizing",run?.state==="RUNNING");const failure=document.getElementById("monitor-failure");if(failure)failure.innerHTML=monitorFailureMarkup();}
 
-async function refreshAfterRun(run){const [cases,notifications,projection]=await Promise.all([optional("/api/m8/cases",[]),optional("/api/m8/notifications",[]),optional("/api/m8/campuses/campus-demo/operations-projection",null)]);Object.assign(state,{cases,notifications,projection});if(location.pathname==="/app/monitor")renderMonitor();else patchShell();toast(run.state==="SUCCEEDED"?(run.case_id?"识别已完成，候选案件入口已出现":"识别已完成，未建立可行动风险"):"识别已结束，请查看失败阶段",run.state==="SUCCEEDED"?"success":"error");}
+async function refreshAfterRun(run){const [cases,notifications,projection]=await Promise.all([optional("/api/m8/cases",[]),optional("/api/m8/notifications",[]),optional("/api/m8/campuses/campus-demo/operations-projection",null)]);Object.assign(state,{cases,notifications,projection});if(location.pathname==="/app/monitor"){const candidates=document.getElementById("monitor-candidates"),devices=document.getElementById("monitor-devices"),count=document.querySelector("[data-candidate-count]"),failure=document.getElementById("monitor-failure");if(candidates)candidates.innerHTML=monitorCandidatesMarkup();if(devices)devices.innerHTML=monitorDevicesMarkup();if(count)count.textContent=`${state.cases.filter(item=>!terminalCase(item.status)).length} CASES`;if(failure)failure.innerHTML=monitorFailureMarkup();}patchShell();toast(run.state==="SUCCEEDED"?(run.case_id?"识别已完成，候选案件入口已出现":"识别已完成，未建立可行动风险"):runFailureExplanation(run),run.state==="SUCCEEDED"?"success":"error");}
 
 function caseTitle(item) { const command=caseCommand(item); return command?.risk_level==="EMERGENCY"?"烟雾与高温联动紧急事件":"护目镜缺失候选事件"; }
 function caseList(items=state.cases) {
@@ -252,11 +296,24 @@ function caseList(items=state.cases) {
   return `<div class="list">${items.map(item=>{const authority=caseAuthority(item);return `<a class="list-item" href="/app/cases/${item.case_id}"><div><h3>${caseTitle(item)}</h3><p>${esc(authority.location_id)} · ${short(item.case_id)} · V${item.case_version}</p></div><div class="status"><span class="badge ${authority.risk_level==="EMERGENCY"?"risk":""}">${esc(authority.risk_level)}</span><p>${esc(label(item.status))} →</p></div></a>`}).join("")}</div>`;
 }
 
-function renderCases() {
+function caseFilterProjection() {
   const active=state.cases.filter(x=>!terminalCase(x.status)), archived=state.cases.filter(x=>terminalCase(x.status));
   const filters=[["ALL","全部",state.cases.length],["ACTIVE","进行中",active.length],["EMERGENCY","紧急",state.cases.filter(x=>caseAuthority(x)?.risk_level==="EMERGENCY").length],["ARCHIVED","已归档",archived.length]];
   let items=state.cases;if(state.casesFilter==="ACTIVE")items=active;if(state.casesFilter==="EMERGENCY")items=state.cases.filter(x=>caseAuthority(x)?.risk_level==="EMERGENCY");if(state.casesFilter==="ARCHIVED")items=archived;
-  setRouteContent(`${pageHead("CASE CENTER","案件中心","案件来自服务端状态机。候选事件需经人工核实；机器输出不能直接产生处分。")}<div class="case-tabs" role="tablist" aria-label="案件筛选">${filters.map(([key,text,count])=>`<button class="case-tab" type="button" role="tab" data-case-filter="${key}" aria-selected="${state.casesFilter===key}">${text}<span class="case-tab-count">${count}</span></button>`).join("")}</div><section><div class="panel-head"><h2>${filters.find(x=>x[0]===state.casesFilter)?.[1]||"全部"}卷宗</h2><span>${items.length} CASES</span></div>${caseList(items)}</section>`,{announcement:"案件中心"});
+  return {active,archived,filters,items};
+}
+
+function renderCases() {
+  const requested=new URL(location.href).searchParams.get("filter")?.toUpperCase();if(["ALL","ACTIVE","EMERGENCY","ARCHIVED"].includes(requested))state.casesFilter=requested;
+  const {filters,items}=caseFilterProjection();
+  setRouteContent(`${pageHead("CASE CENTER","案件中心","案件来自服务端状态机。候选事件需经人工核实；机器输出不能直接产生处分。")}<div class="case-tabs" role="tablist" aria-label="案件筛选">${filters.map(([key,text,count])=>`<button class="case-tab" type="button" role="tab" data-case-filter="${key}" aria-selected="${state.casesFilter===key}">${text}<span class="case-tab-count">${count}</span></button>`).join("")}</div><section data-case-list-region><div class="panel-head"><h2 data-case-list-title>${filters.find(x=>x[0]===state.casesFilter)?.[1]||"全部"}卷宗</h2><span data-case-list-count>${items.length} CASES</span></div><div data-case-list>${caseList(items)}</div></section>`,{announcement:"案件中心"});
+}
+
+function patchCasesFilter(filter,{historyMode="push"}={}) {
+  if(!["ALL","ACTIVE","EMERGENCY","ARCHIVED"].includes(filter))return false;state.casesFilter=filter;
+  if(historyMode){const url=new URL(location.href);url.searchParams.set("filter",filter);history[historyMode==="replace"?"replaceState":"pushState"]({labcourt:{key:crypto.randomUUID(),ui:captureEntry()}},"",`${url.pathname}${url.search}`);state.currentRoute=`${url.pathname}${url.search}`;}
+  const {filters,items}=caseFilterProjection();document.querySelectorAll("[data-case-filter]").forEach(node=>node.setAttribute("aria-selected",String(node.dataset.caseFilter===filter)));
+  const region=document.querySelector("[data-case-list-region]");if(!region)return false;region.classList.remove("is-updating");document.querySelector("[data-case-list-title]").textContent=`${filters.find(x=>x[0]===filter)?.[1]||"全部"}卷宗`;document.querySelector("[data-case-list-count]").textContent=`${items.length} CASES`;document.querySelector("[data-case-list]").innerHTML=caseList(items);requestAnimationFrame(()=>region.classList.add("is-updating"));return true;
 }
 
 function flow(status) {
@@ -297,7 +354,15 @@ async function renderCaseDetail(caseId) {
   const panels={overview,evidence:caseRecognitionDossier(caseId,"evidence"),hearing:caseRecognitionDossier(caseId,"hearing"),handling};
   const tabs=[["overview","概览"],["evidence","证据"],["hearing","会审"],["handling","处理"]];
   const content=`${pageHead(authority.risk_level,caseTitle(item),`${authority.location_id} · 案件 ${short(item.case_id)} · ${authority.subject_actor_id?"预约关联，非视觉身份识别":"未关联个人身份"}`,`${notifyAction}${outcomeAction}<a class="button quiet" href="/app/cases">返回列表</a>`)}${flow(item.status)}<nav class="case-tabs" role="tablist" aria-label="案件卷宗内容">${tabs.map(([key,text])=>`<a class="case-tab" role="tab" data-case-tab="${key}" aria-selected="${activeTab===key}" tabindex="${activeTab===key?0:-1}" href="?tab=${key}">${text}${key==="evidence"?`<span class="case-tab-count">${state.run?.case_id===caseId?state.run.evidence?.length||0:0}</span>`:""}</a>`).join("")}</nav><section class="case-panel is-active" role="tabpanel" data-case-panel="${activeTab}">${panels[activeTab]}</section>`;
+  state.caseDetail={caseId,panels,tabs};
   setRouteContent(content,{mount:()=>{if(activeTab==="evidence"){attachEvidence();attachPerception();}},announcement:`${caseTitle(item)} · ${tabs.find(x=>x[0]===activeTab)[1]}`});
+}
+
+function patchCaseTab(tab,{historyMode="push",focus=false}={}) {
+  const detail=state.caseDetail;if(!detail||!["overview","evidence","hearing","handling"].includes(tab))return false;
+  if(historyMode){const url=new URL(location.href);url.searchParams.set("tab",tab);history[historyMode==="replace"?"replaceState":"pushState"]({labcourt:{key:crypto.randomUUID(),ui:captureEntry()}},"",`${url.pathname}${url.search}`);state.currentRoute=`${url.pathname}${url.search}`;}
+  document.querySelectorAll("[data-case-tab]").forEach(node=>{const selected=node.dataset.caseTab===tab;node.setAttribute("aria-selected",String(selected));node.tabIndex=selected?0:-1;});
+  const panel=document.querySelector("[data-case-panel]");if(!panel)return false;panel.classList.remove("is-updating");panel.dataset.casePanel=tab;panel.innerHTML=detail.panels[tab];requestAnimationFrame(()=>panel.classList.add("is-updating"));if(tab==="evidence"){attachEvidence();attachPerception();}if(focus)document.querySelector(`[data-case-tab="${tab}"]`)?.focus();return true;
 }
 
 function notificationCards(items=state.notifications) {
@@ -336,12 +401,22 @@ function renderProfile() {
 }
 
 function renderSettings() {
+  const requested=new URL(location.href).searchParams.get("section");if(["models","devices","rules","users"].includes(requested))state.settingsSection=requested;
   const ops=role()==="OPERATIONS";
   const userRows=(state.users||[]).map(item=>{const a=item.authority||item;return `<tr><td>${esc(a.actor_id)}</td><td>${esc(a.role)}</td><td>${esc(a.scope_kind)}</td><td>V${a.authority_revision}</td></tr>`}).join("");
   const reset=ops?`<section class="panel"><div class="panel-head"><h2>演示现场复位</h2><span>OPERATIONS ONLY</span></div><p>复位会将当前数据库和演示回执归档到 session 目录，再原子替换为无案件、无告警的标准现场。历史不会删除。</p><button class="button alarm" type="button" data-action="reset">确认归档并一键复位</button></section>`:"";
-  const modelStatus=state.readiness?`<section class="model-readiness"><p class="eyebrow">MODEL READINESS</p>${state.readiness.components.map(item=>`<div><span class="readiness-dot ${item.ready?"ready":""}"></span><b>${esc(item.component)}</b><span>${esc(item.model)}</span><small>${item.ready?"READY":esc(item.failure_code)}</small></div>`).join("")}<p class="help">真实模式在启动前预检；失败不会自动替换为演示结果。</p></section>`:"";
+  const lastCall=state.run?state.run.state==="FAILED"?runFailureExplanation(state.run):state.run.state==="RUNNING"?"最近实际调用：运行中。":"最近实际调用：已完成；结果以该运行的阶段和产物为准。":"最近实际调用：尚无运行记录。";
+  const modelStatus=state.readiness?`<section class="model-readiness"><p class="eyebrow">MODEL CONFIGURATION</p>${state.readiness.components.map(item=>`<div><span class="readiness-dot ${item.ready?"ready":""}"></span><b>${esc(item.component)}</b><span>${esc(item.model)}</span><small>${item.ready?"配置就绪":esc(item.failure_code)}</small></div>`).join("")}<p class="help">“配置就绪”只表示本地依赖或云端参数已经提供，不代表远端服务当前在线。失败不会自动替换为演示结果。</p><p class="help">${esc(lastCall)}</p></section>`:"";
   const sections={models:`${modelStatus||empty("模型状态不可见","当前角色无模型 readiness 读取权限。")} ${reset}`,devices:`<div class="panel-head"><h2>来源与接口</h2><span>${sources().length} REGISTERED</span></div><div class="table-wrap"><table class="table"><thead><tr><th>设备</th><th>类型</th><th>适配器</th><th>状态</th></tr></thead><tbody>${sources().map(x=>`<tr><td>${esc(x.source.device_id)}</td><td>${esc(x.source.sensor_type||x.source.source_kind)}</td><td>${esc(x.source.adapter_id)}</td><td>${esc(x.observation_state)}</td></tr>`).join("")}</tbody></table></div>`,rules:`<section class="panel"><div class="panel-head"><h2>规则状态</h2><span>SERVER AUTHORITY</span></div><p>${state.rules?`当前规则修订 V${esc(state.rules.revision||state.rules.authority_revision||"—")}`:"当前角色无规则读取权限"}</p><p class="help">烟雾与温度联动由后端规则生成 EMERGENCY，不通过页面属性伪造。</p></section>`,users:`<div class="panel-head"><h2>用户权限</h2><span>${state.users?state.users.length:"ROLE-SCOPED"}</span></div>${state.users?`<div class="table-wrap"><table class="table"><thead><tr><th>用户</th><th>角色</th><th>范围</th><th>版本</th></tr></thead><tbody>${userRows}</tbody></table></div>`:empty("权限清单不可见","当前角色不具备用户权限管理能力。")}`};
+  state.settingsPanels=sections;
   setRouteContent(`${pageHead("PLATFORM SETTINGS","设备、规则与权限","只显示具备真实读取或执行接口的设置；不存在虚假保存按钮。")}<div class="settings-layout"><nav class="settings-nav" aria-label="设置分区">${[["models","模型与复位"],["devices","设备来源"],["rules","规则"],["users","用户权限"]].map(([key,text])=>`<button type="button" data-settings-section="${key}" class="${state.settingsSection===key?"active":""}" aria-current="${state.settingsSection===key}">${text}</button>`).join("")}</nav><section class="settings-panel">${sections[state.settingsSection]||sections.models}</section></div>`,{announcement:"平台设置"});
+}
+
+function patchSettingsSection(section,{historyMode="push"}={}) {
+  if(!state.settingsPanels||!["models","devices","rules","users"].includes(section))return false;state.settingsSection=section;
+  if(historyMode){const url=new URL(location.href);url.searchParams.set("section",section);history[historyMode==="replace"?"replaceState":"pushState"]({labcourt:{key:crypto.randomUUID(),ui:captureEntry()}},"",`${url.pathname}${url.search}`);state.currentRoute=`${url.pathname}${url.search}`;}
+  document.querySelectorAll("[data-settings-section]").forEach(node=>{const selected=node.dataset.settingsSection===section;node.classList.toggle("active",selected);node.setAttribute("aria-current",String(selected));});
+  const panel=document.querySelector(".settings-panel");if(!panel)return false;panel.classList.remove("is-updating");panel.innerHTML=state.settingsPanels[section];requestAnimationFrame(()=>panel.classList.add("is-updating"));return true;
 }
 
 function captureEntry(){const video=document.getElementById("recorded-video");if(video)state.videoPositions.set("recorded-video",video.currentTime);return {scrollX,scrollY,videoTime:video?.currentTime||state.videoPositions.get("recorded-video")||0};}
@@ -379,8 +454,8 @@ async function handleClick(event) {
   if(target.dataset.action==="logout"){logout();return} if(target.dataset.action==="switch-role"){event.preventDefault();logout();return} if(target.dataset.action==="reload"){state.session=null;renderRoute();return}
   try {
     if(target.dataset.action==="nav-toggle"){state.navOpen=!state.navOpen;target.setAttribute("aria-expanded",String(state.navOpen));document.getElementById("primary-nav")?.classList.toggle("is-open",state.navOpen);return;}
-    if(target.dataset.caseFilter){state.casesFilter=target.dataset.caseFilter;renderCases();return;}
-    if(target.dataset.settingsSection){state.settingsSection=target.dataset.settingsSection;renderSettings();return;}
+    if(target.dataset.caseFilter){patchCasesFilter(target.dataset.caseFilter);return;}
+    if(target.dataset.settingsSection){patchSettingsSection(target.dataset.settingsSection);return;}
     if(target.dataset.agentQuick){document.getElementById("agent-query").value=target.dataset.agentQuick;return;}
     if(target.dataset.location){state.mapLocation=target.dataset.location;toast(`已选择 ${target.textContent.trim()}；详情来自 topology 与来源投影`);return;}
     if(target.dataset.scenario){target.disabled=true;target.setAttribute("aria-busy","true");const payload={scenario_kind:target.dataset.scenario,explicit_human_confirmation:true};if(target.dataset.scenario==="PPE_GOGGLES_MISSING")payload.recognition_mode=target.dataset.mode||"FULL_MODEL";if(target.dataset.retry)payload.retry_of_run_id=target.dataset.retry;state.run=await api("/api/m8/demo/scenario-runs",{method:"POST",body:payload});patchRunUi();schedulePoll();toast(payload.recognition_mode==="FULL_MODEL"?"真实识别已启动，进度将在本页连续更新":"演示模式已明确启动，并创建了独立运行记录");return;}
@@ -406,11 +481,11 @@ async function executeAgentAction(action) {
 
 document.addEventListener("click",event=>{
   const link=event.target.closest("a[href]");if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.target&&link.target!=="_self"||link.hasAttribute("download")||link.dataset.action)return;
-  const raw=link.getAttribute("href");if(!raw||raw.startsWith("#"))return;const url=new URL(link.href,location.href);if(url.origin!==location.origin)return;event.preventDefault();navigateTo(url);
+  const raw=link.getAttribute("href");if(!raw||raw.startsWith("#"))return;const url=new URL(link.href,location.href);if(url.origin!==location.origin)return;event.preventDefault();if(link.dataset.caseTab&&url.pathname===location.pathname){patchCaseTab(link.dataset.caseTab);return;}navigateTo(url);
 },{capture:true});
 document.addEventListener("click",handleClick);
-document.addEventListener("keydown",event=>{const tab=event.target.closest('[role="tab"][data-case-tab]');if(!tab||!["ArrowLeft","ArrowRight"].includes(event.key))return;const tabs=[...tab.parentElement.querySelectorAll('[role="tab"][data-case-tab]')],next=tabs[(tabs.indexOf(tab)+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length];event.preventDefault();navigateTo(next.href,{replace:true}).then(()=>document.querySelector(`[data-case-tab="${next.dataset.caseTab}"]`)?.focus());});
-addEventListener("popstate",event=>renderRoute({restore:event.state?.labcourt?.ui||null}));
+document.addEventListener("keydown",event=>{const tab=event.target.closest('[role="tab"][data-case-tab]');if(!tab||!["ArrowLeft","ArrowRight"].includes(event.key))return;const tabs=[...tab.parentElement.querySelectorAll('[role="tab"][data-case-tab]')],next=tabs[(tabs.indexOf(tab)+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length];event.preventDefault();patchCaseTab(next.dataset.caseTab,{historyMode:"replace",focus:true});});
+addEventListener("popstate",event=>{const priorPath=state.currentRoute.split("?")[0],path=location.pathname;if(path===priorPath){const query=new URL(location.href).searchParams;if(path==="/app/cases"&&patchCasesFilter((query.get("filter")||"ALL").toUpperCase(),{historyMode:null}))return;if(path==="/app/settings"&&patchSettingsSection(query.get("section")||"models",{historyMode:null}))return;if(path.startsWith("/app/cases/")&&patchCaseTab(query.get("tab")||"overview",{historyMode:null}))return;}renderRoute({restore:event.state?.labcourt?.ui||null});});
 document.addEventListener("visibilitychange",()=>{document.body.classList.toggle("is-page-hidden",document.hidden);if(document.hidden){clearTimeout(state.pollTimer);persistEntry();}else if(state.run?.state==="RUNNING")schedulePoll();});
 addEventListener("scroll",()=>{if(!state.scrollSaveFrame)state.scrollSaveFrame=requestAnimationFrame(()=>{state.scrollSaveFrame=0;if(location.pathname.startsWith("/app/"))persistEntry();});},{passive:true});
 if(!history.state?.labcourt)history.replaceState({labcourt:{key:crypto.randomUUID(),ui:null}},"",location.href);
