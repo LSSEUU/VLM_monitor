@@ -62,11 +62,26 @@ class M8PlatformAgentIntentRouter:
             return M8PlatformAgentIntentV2.FEISHU_STATUS_QUERY
         if has("复位", "重置", "reset"):
             return M8PlatformAgentIntentV2.RESET_ACTION
-        if has("触发", "运行场景", "烟雾", "温度场景", "run scenario"):
+        if has("触发", "运行场景", "启动场景", "run scenario"):
             return M8PlatformAgentIntentV2.SCENARIO_ACTION
         if has("通知", "消息") and has("发送", "下发", "send"):
             return M8PlatformAgentIntentV2.NOTIFICATION_SEND_ACTION
-        if has("案件", "事件") and has("确认", "处置", "核实", "confirm"):
+        case_query_cue = has(
+            "查看",
+            "查询",
+            "列出",
+            "哪些",
+            "多少",
+            "状态",
+            "详情",
+            "说明",
+            "风险",
+        )
+        if (
+            has("案件", "事件")
+            and has("确认", "处置", "核实", "confirm")
+            and not case_query_cue
+        ):
             return M8PlatformAgentIntentV2.CASE_TRANSITION_ACTION
         if has("通知", "消息"):
             return M8PlatformAgentIntentV2.NOTIFICATION_QUERY

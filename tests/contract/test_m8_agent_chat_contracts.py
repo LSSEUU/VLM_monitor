@@ -8,6 +8,7 @@ from labcourt.contracts.m8_agent_chat import (
     M8AgentExecutionMode,
     M8AgentFailureCode,
     M8AgentModelCallReceiptV1,
+    M8AgentModelProfileV1,
     M8AgentStreamEventKind,
     M8AgentStreamEventV1,
     M8AgentTurnRequestV1,
@@ -25,6 +26,21 @@ def test_agent_turn_request_is_closed_and_rejects_blank_text() -> None:
         M8AgentTurnRequestV1(query="   ")
     with pytest.raises(ValidationError):
         M8AgentTurnRequestV1.model_validate({"query": "案件", "extra": True})
+
+
+def test_agent_model_profile_requires_live_qwen_and_disables_cache_replay() -> None:
+    profile = M8AgentModelProfileV1(
+        profile_id=_sha("a"),
+        prompt_manifest_id=_sha("b"),
+        tool_schema_manifest_id=_sha("c"),
+        model_manifest_id=_sha("d"),
+    )
+    assert profile.reply_policy == "LIVE_ONLY"
+    assert profile.cache_enabled is False
+    with pytest.raises(ValidationError):
+        M8AgentModelProfileV1.model_validate(
+            {**profile.model_dump(mode="python"), "cache_enabled": True}
+        )
 
 
 def test_model_receipt_and_stream_event_enforce_terminal_shapes() -> None:

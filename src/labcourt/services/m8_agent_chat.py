@@ -129,14 +129,16 @@ class M8AgentChatService:
         repository: M8AgentConversationRepository,
         tools: M8AgentToolExecutor,
         runtime: M8QwenAgentRuntime,
-        offline_query: Callable[[M8ApiPrincipalV1, str], M8PlatformAgentQueryResponseV2],
+        deterministic_action_query: Callable[
+            [M8ApiPrincipalV1, str], M8PlatformAgentQueryResponseV2
+        ],
         clock: Callable[[], datetime],
     ) -> None:
         self._operations = operations
         self._repository = repository
         self._tools = tools
         self._runtime = runtime
-        self._offline_query = offline_query
+        self._deterministic_action_query = deterministic_action_query
         self._clock = clock
         self._router = M8PlatformAgentIntentRouter()
 
@@ -157,11 +159,7 @@ class M8AgentChatService:
         )
         return M8AgentModelStatusV1(
             availability=availability,
-            default_execution_mode=(
-                M8AgentExecutionMode.LIVE_QWEN
-                if configured
-                else M8AgentExecutionMode.OFFLINE_FALLBACK
-            ),
+            default_execution_mode=M8AgentExecutionMode.LIVE_QWEN,
             provider=self._runtime.profile.provider,
             model=self._runtime.profile.model,
             revision=self._runtime.profile.revision,
@@ -229,45 +227,40 @@ class M8AgentChatService:
         )
         intent = self._router.classify(query)
         if intent in _ACTION_INTENTS:
-            yield from self._offline_completion_events(
+            yield from self._deterministic_action_events(
                 principal,
                 actor,
                 conversation_id,
                 turn.turn_id,
                 query,
                 event_index,
-                M8AgentExecutionMode.DETERMINISTIC_ACTION,
-            )
-            return
-        if intent == M8PlatformAgentIntentV2.FEISHU_STATUS_QUERY:
-            yield from self._offline_completion_events(
-                principal,
-                actor,
-                conversation_id,
-                turn.turn_id,
-                query,
-                event_index,
-                M8AgentExecutionMode.OFFLINE_FALLBACK,
             )
             return
         if self._runtime.client is None:
-            yield from self._offline_completion_events(
-                principal,
+            failure_code = M8AgentFailureCode.NOT_CONFIGURED
+            self._repository.fail_turn(
                 actor,
                 conversation_id,
                 turn.turn_id,
-                query,
-                event_index,
-                M8AgentExecutionMode.OFFLINE_FALLBACK,
+                failure_code,
+            )
+            event_index[0] += 1
+            yield M8AgentStreamEventV1(
+                event_kind=M8AgentStreamEventKind.TURN_FAILED,
+                conversation_id=conversation_id,
+                turn_id=turn.turn_id,
+                event_index=event_index[0],
+                failure_code=failure_code,
             )
             return
         messages = self._messages(prior, query)
         schemas = self._tools.tool_schemas(actor)
         cache_key = sha256_hex(
             [
-                "m8-agent-live-cache",
+                "m8-agent-live-only-response-cache",
                 1,
                 actor.commit_receipt_id,
+                turn.turn_id,
                 self._runtime.profile.model_manifest_id,
                 self._runtime.profile.prompt_manifest_id,
                 self._runtime.profile.tool_schema_manifest_id,
@@ -275,28 +268,6 @@ class M8AgentChatService:
                 schemas,
             ]
         )
-        cached = self._repository.read_cache(actor, cache_key)
-        if cached is not None:
-            replay = self._cache_replay(cached, conversation_id, turn.turn_id)
-            for chunk in self._chunks(replay.answer):
-                event_index[0] += 1
-                yield M8AgentStreamEventV1(
-                    event_kind=M8AgentStreamEventKind.MESSAGE_DELTA,
-                    conversation_id=conversation_id,
-                    turn_id=turn.turn_id,
-                    event_index=event_index[0],
-                    text_delta=chunk,
-                )
-            self._repository.complete_turn(actor, replay, (), None)
-            event_index[0] += 1
-            yield M8AgentStreamEventV1(
-                event_kind=M8AgentStreamEventKind.MESSAGE_COMPLETED,
-                conversation_id=conversation_id,
-                turn_id=turn.turn_id,
-                event_index=event_index[0],
-                completion=replay,
-            )
-            return
         raw_responses: list[tuple[M8AgentModelCallReceiptV1, bytes]] = []
         try:
             yield from self._live_completion_events(
@@ -545,7 +516,7 @@ class M8AgentChatService:
             return
         raise M8AgentProviderError(M8AgentFailureCode.TOOL_LOOP_LIMIT)
 
-    def _offline_completion_events(
+    def _deterministic_action_events(
         self,
         principal: M8ApiPrincipalV1,
         actor: M8ActorAuthorityCommitReceiptV1,
@@ -553,9 +524,8 @@ class M8AgentChatService:
         turn_id: str,
         query: str,
         event_index: list[int],
-        mode: M8AgentExecutionMode,
     ) -> Iterator[M8AgentStreamEventV1]:
-        response = self._offline_query(principal, query)
+        response = self._deterministic_action_query(principal, query)
         outcome = (
             M8AgentTurnOutcome.ACTION_PROPOSED
             if response.proposed_action is not None
@@ -567,7 +537,7 @@ class M8AgentChatService:
             conversation_id=conversation_id,
             turn_id=turn_id,
             outcome=outcome,
-            execution_mode=mode,
+            execution_mode=M8AgentExecutionMode.DETERMINISTIC_ACTION,
             answer=response.answer,
             source_refs=response.source_refs,
             knowledge_projection=response.knowledge_projection,
@@ -644,28 +614,6 @@ class M8AgentChatService:
             }[name]
         except KeyError:
             raise M8AgentProviderError(M8AgentFailureCode.TOOL_FORBIDDEN) from None
-
-    def _cache_replay(
-        self,
-        cached: M8AgentTurnCompletionV1,
-        conversation_id: str,
-        turn_id: str,
-    ) -> M8AgentTurnCompletionV1:
-        receipts = tuple(
-            item.model_copy(update={"cache_hit": True}) for item in cached.model_call_receipts
-        )
-        return M8AgentTurnCompletionV1(
-            conversation_id=conversation_id,
-            turn_id=turn_id,
-            outcome=cached.outcome,
-            execution_mode=M8AgentExecutionMode.CACHE_REPLAY,
-            answer=cached.answer,
-            source_refs=cached.source_refs,
-            tool_receipts=cached.tool_receipts,
-            model_call_receipts=receipts,
-            knowledge_projection=cached.knowledge_projection,
-            completed_at=self._clock(),
-        )
 
     @staticmethod
     def _chunks(value: str, size: int = 96) -> Iterator[str]:

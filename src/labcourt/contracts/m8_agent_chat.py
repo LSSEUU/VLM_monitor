@@ -89,7 +89,8 @@ class M8AgentModelProfileV1(FrozenContractModel):
     max_tool_rounds: int = Field(default=4, ge=1, le=4, strict=True)
     history_message_limit: int = Field(default=20, ge=2, le=40, strict=True)
     history_byte_limit: int = Field(default=64 * 1024, ge=1_024, le=256 * 1024)
-    cache_enabled: Literal[True] = True
+    reply_policy: Literal["LIVE_ONLY"] = "LIVE_ONLY"
+    cache_enabled: Literal[False] = False
     enable_thinking: Literal[False] = False
     parallel_tool_calls: Literal[False] = False
     prompt_manifest_id: Sha256Hex
@@ -100,9 +101,9 @@ class M8AgentModelProfileV1(FrozenContractModel):
 class M8AgentModelStatusV1(FrozenContractModel):
     schema_version: Literal["m8-agent-model-status-v1"] = "m8-agent-model-status-v1"
     availability: M8AgentModelAvailability
-    default_execution_mode: Literal[
-        M8AgentExecutionMode.LIVE_QWEN, M8AgentExecutionMode.OFFLINE_FALLBACK
-    ]
+    reply_policy: Literal["LIVE_ONLY"] = "LIVE_ONLY"
+    cache_enabled: Literal[False] = False
+    default_execution_mode: Literal[M8AgentExecutionMode.LIVE_QWEN]
     provider: str
     model: str
     revision: str

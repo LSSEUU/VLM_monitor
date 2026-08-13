@@ -44,11 +44,14 @@
     "availability": {
       "$ref": "#/$defs/M8AgentModelAvailability"
     },
+    "cache_enabled": {
+      "const": false,
+      "default": false,
+      "title": "Cache Enabled",
+      "type": "boolean"
+    },
     "default_execution_mode": {
-      "enum": [
-        "LIVE_QWEN",
-        "OFFLINE_FALLBACK"
-      ],
+      "const": "LIVE_QWEN",
       "title": "Default Execution Mode",
       "type": "string"
     },
@@ -96,6 +99,12 @@
     },
     "provider": {
       "title": "Provider",
+      "type": "string"
+    },
+    "reply_policy": {
+      "const": "LIVE_ONLY",
+      "default": "LIVE_ONLY",
+      "title": "Reply Policy",
       "type": "string"
     },
     "revision": {

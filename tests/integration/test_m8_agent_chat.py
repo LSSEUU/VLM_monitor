@@ -122,7 +122,7 @@ def _http_json(
         return response.status, response.read()
 
 
-def test_agent_http_api_supports_offline_status_persistence_and_sse(
+def test_agent_http_api_reports_live_only_and_fails_without_configuration(
     tmp_path: Path,
     socket_enabled: None,
 ) -> None:
@@ -134,7 +134,11 @@ def test_agent_http_api_supports_offline_status_persistence_and_sse(
         token = M8_PLATFORM_ROLE_TOKENS[M8ActorRole.SAFETY_OFFICER]
         status_code, status_body = _http_json(base_url, "GET", "/api/m8/agent/status", token=token)
         assert status_code == 200
-        assert json.loads(status_body)["availability"] == "NOT_CONFIGURED"
+        status = json.loads(status_body)
+        assert status["availability"] == "NOT_CONFIGURED"
+        assert status["reply_policy"] == "LIVE_ONLY"
+        assert status["cache_enabled"] is False
+        assert status["default_execution_mode"] == "LIVE_QWEN"
         create_code, create_body = _http_json(
             base_url,
             "POST",
@@ -154,8 +158,9 @@ def test_agent_http_api_supports_offline_status_persistence_and_sse(
         )
         assert stream_code == 200
         assert b"event: turn.accepted" in stream_body
-        assert b"event: message.delta" in stream_body
-        assert b"event: message.completed" in stream_body
+        assert b"event: turn.failed" in stream_body
+        assert b'"failure_code":"NOT_CONFIGURED"' in stream_body
+        assert b"event: message.completed" not in stream_body
         detail_code, detail_body = _http_json(
             base_url,
             "GET",
@@ -163,7 +168,9 @@ def test_agent_http_api_supports_offline_status_persistence_and_sse(
             token=token,
         )
         assert detail_code == 200
-        assert json.loads(detail_body)["turns"][0]["state"] == "COMPLETED"
+        turn = json.loads(detail_body)["turns"][0]
+        assert turn["state"] == "FAILED"
+        assert turn["failure_code"] == "NOT_CONFIGURED"
     finally:
         assembly.server.shutdown()
         assembly.server.server_close()
@@ -173,9 +180,11 @@ def test_agent_http_api_supports_offline_status_persistence_and_sse(
 @pytest.mark.parametrize(
     ("query", "tool_name", "arguments", "expected_count"),
     [
-        ("查看当前案件", "read_cases", {"limit": 10}, 0),
+        ("列出我能看到的待核实案件, 并说明风险等级。", "read_cases", {"limit": 10}, 0),
+        ("查看最近通知", "read_notifications", {"limit": 10}, 0),
         ("查看设备状态", "read_operations_projection", {"focus": "DEVICES"}, 1),
-        ("查看传感器状态", "read_operations_projection", {"focus": "SENSORS"}, 1),
+        ("当前温度和烟雾传感器状态如何?", "read_operations_projection", {"focus": "SENSORS"}, 1),
+        ("查看校园地图", "read_operations_projection", {"focus": "MAP"}, 1),
         ("护目镜有什么要求?", "query_knowledge", {"query": "护目镜有什么要求?"}, 1),
     ],
 )
@@ -207,6 +216,39 @@ def test_live_agent_uses_role_scoped_read_only_tools_and_persists_receipts(
         restored = service.conversation(principal, conversation.conversation_id)
         assert restored.turns[0].completion == completion
         assert model.calls == 2
+    finally:
+        assembly.server.server_close()
+
+
+def test_live_only_calls_model_again_instead_of_replaying_cache(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = _assembly(tmp_path)
+    try:
+        service = assembly.server.agent_chat_service
+        model = _ToolCallingModel("read_cases", {"limit": 10})
+        _install_model(service, model)
+        principal = _principal(assembly, M8ActorRole.SAFETY_OFFICER)
+        first_conversation = service.create_conversation(principal)
+        second_conversation = service.create_conversation(principal)
+
+        first = service.complete_turn(
+            principal,
+            first_conversation.conversation_id,
+            M8AgentTurnRequestV1(query="查看当前案件"),
+        )
+        second = service.complete_turn(
+            principal,
+            second_conversation.conversation_id,
+            M8AgentTurnRequestV1(query="查看当前案件"),
+        )
+
+        assert first.execution_mode == M8AgentExecutionMode.LIVE_QWEN
+        assert second.execution_mode == M8AgentExecutionMode.LIVE_QWEN
+        assert all(not item.cache_hit for item in first.model_call_receipts)
+        assert all(not item.cache_hit for item in second.model_call_receipts)
+        assert model.calls == 4
     finally:
         assembly.server.server_close()
 

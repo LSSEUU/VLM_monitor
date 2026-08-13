@@ -10,8 +10,8 @@
       "type": "string"
     },
     "cache_enabled": {
-      "const": true,
-      "default": true,
+      "const": false,
+      "default": false,
       "title": "Cache Enabled",
       "type": "boolean"
     },
@@ -99,6 +99,12 @@
       "const": "alibaba-cloud-model-studio",
       "default": "alibaba-cloud-model-studio",
       "title": "Provider",
+      "type": "string"
+    },
+    "reply_policy": {
+      "const": "LIVE_ONLY",
+      "default": "LIVE_ONLY",
+      "title": "Reply Policy",
       "type": "string"
     },
     "revision": {
