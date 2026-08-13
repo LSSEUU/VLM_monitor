@@ -32,6 +32,10 @@ from labcourt.adapters.storage.sqlite_m8_operations_repository import (
 from labcourt.adapters.storage.sqlite_m8_sensor_persistence_repository import (
     SQLiteM8SensorPersistenceRepository,
 )
+from labcourt.application.m8_feishu_live_assembly import (
+    M8FeishuLiveAssembly,
+    assemble_m8_feishu_live_services,
+)
 from labcourt.application.m8_platform_bootstrap import (
     PLATFORM_ACCESS_NAME,
     PLATFORM_CAMPUS_ID,
@@ -49,6 +53,7 @@ from labcourt.contracts.m8_agent_chat import M8AgentModelProfileV1
 from labcourt.contracts.m8_api import (
     M8ApiCredentialAuthorityV1,
     M8ApiCredentialCatalogAuthorityV1,
+    M8ApiPrincipalV1,
 )
 from labcourt.m8_platform_server import M8PlatformHttpServer, build_m8_platform_server
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
@@ -151,6 +156,7 @@ class M8PlatformDemoApiAssembly:
     database_path: Path
     artifact_root: Path
     input_media_path: Path
+    feishu_live: M8FeishuLiveAssembly
 
     def local_access_document(self) -> dict[str, object]:
         receipt = load_m8_platform_bootstrap(self.artifact_root)
@@ -316,6 +322,29 @@ def assemble_m8_platform_demo_api(
         platform_service.agent_query,
         clock,
     )
+    authenticator = M8HashedBearerAuthenticator(_credential_catalog())
+
+    def principal_for_actor(actor_id: str) -> M8ApiPrincipalV1:
+        actor = operations.get_current_actor_authority(actor_id).authority
+        token = M8_PLATFORM_ROLE_TOKENS[actor.role]
+        principal = authenticator.authenticate(f"Bearer {token}")
+        if principal.actor_id != actor_id:
+            raise ValueError("platform role token does not resolve to requested actor")
+        return principal
+
+    feishu_live = assemble_m8_feishu_live_services(
+        database_path=database,
+        busy_timeout_ms=_BUSY_TIMEOUT_MS,
+        operations_repository=operations,
+        operations_api=operations_api,
+        notification_repository=notifications,
+        notification_api=notification_api,
+        activation_repository=feishu_activations,
+        platform=feishu_platform,
+        agent_chat=agent_chat,
+        principal_for_actor=principal_for_actor,
+        clock=clock,
+    )
     catalog = inventory.get_current_source_catalog(PLATFORM_CAMPUS_ID)
     smoke_policy = build_offline_smoke_demo_bundle(
         source_catalog_id=catalog.catalog.catalog_id,
@@ -335,7 +364,7 @@ def assemble_m8_platform_demo_api(
             operations,
             clock=clock,
         ),
-        authenticator=M8HashedBearerAuthenticator(_credential_catalog()),
+        authenticator=authenticator,
         recorded_media_service=M8RecordedMediaApiService(
             database.parent,
             inventory,
@@ -348,6 +377,7 @@ def assemble_m8_platform_demo_api(
         rule_config_service=M8RuleConfigApiService(operations, smoke_policy),
         platform_service=platform_service,
         agent_chat_service=agent_chat,
+        feishu_live_service=feishu_live.api,
         role_tokens=M8_PLATFORM_ROLE_TOKENS,
     )
     assembly = M8PlatformDemoApiAssembly(
@@ -355,6 +385,7 @@ def assemble_m8_platform_demo_api(
         database_path=database,
         artifact_root=database.parent,
         input_media_path=input_media_path.absolute(),
+        feishu_live=feishu_live,
     )
     assembly.write_local_access()
     return assembly

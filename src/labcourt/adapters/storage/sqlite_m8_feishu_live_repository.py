@@ -335,6 +335,19 @@ class SQLiteM8FeishuLiveRepository:
             self._insert_job(connection, claimed)
             return claimed
 
+    def inbound_job(self, inbound_event_id: str) -> M8FeishuInboundJobV1 | None:
+        with self._read() as connection:
+            row = connection.execute(
+                "SELECT job_json FROM m8_feishu_inbound_job_events "
+                "WHERE inbound_event_id = ? ORDER BY state_revision DESC LIMIT 1",
+                (inbound_event_id,),
+            ).fetchone()
+        return (
+            None
+            if row is None
+            else M8FeishuInboundJobV1.model_validate_json(_row_str(row, "job_json"))
+        )
+
     def commit_inbound_job(self, job: M8FeishuInboundJobV1) -> M8FeishuInboundJobV1:
         if job.state_revision != 3:
             raise M8FeishuLiveRepositoryError("only terminal inbound jobs may be committed")

@@ -7,10 +7,19 @@ from pathlib import Path
 from labcourt.adapters.storage.sqlite_m8_feishu_live_repository import (
     SQLiteM8FeishuLiveRepository,
 )
-from labcourt.application.m8_platform_bootstrap import PLATFORM_DATABASE_NAME
+from labcourt.adapters.storage.sqlite_m8_operations_repository import (
+    SQLiteM8OperationsRepository,
+)
+from labcourt.application.m8_platform_bootstrap import (
+    PLATFORM_DATABASE_NAME,
+    platform_manifest,
+)
+from labcourt.application.m8_platform_demo_api import assemble_m8_platform_demo_api
 from labcourt.contracts.canonical import canonical_json
+from labcourt.contracts.m8_access_cases import M8ActorRole
 from labcourt.contracts.m8_feishu_live import (
     M8FeishuAgentReplyEnvelopeV1,
+    M8FeishuInboundJobState,
     M8FeishuLiveFailureCode,
 )
 from labcourt.contracts.m8_notification_lifecycle import M8NotificationDispatchDisposition
@@ -24,11 +33,18 @@ from labcourt.ports.m8_feishu_http import (
 from labcourt.services.m8_feishu_agent_reply_delivery import (
     M8FeishuAgentReplyDeliveryWorker,
 )
+from labcourt.services.m8_feishu_agent_worker import (
+    M8FeishuAgentAuthorityWorker,
+    M8FeishuTrustedActorContext,
+)
 from labcourt.services.m8_feishu_live_ingress import (
     M8FeishuLiveIngressService,
     M8FeishuP2PTextIngress,
 )
-from tests.contract.test_m8_feishu_notification_contracts import _preflight
+from tests.contract.test_m8_feishu_notification_contracts import (
+    FAKE_FEISHU_OPEN_ID,
+    _preflight,
+)
 from tests.contract.test_m8_feishu_transport_contracts import _activation_status
 from tests.unit.test_m8_feishu_sandbox_transport import (
     _ActivationRepository,
@@ -180,3 +196,82 @@ def test_agent_reply_is_accepted_once_or_unknown_without_retry(tmp_path: Path) -
     assert unknown.failure_code == M8FeishuLiveFailureCode.SEND_UNCERTAIN
     assert unknown_worker.run_one(b"x" * 32) is None
     assert unknown_http.message_calls == 1
+
+
+def test_feishu_agent_uses_shared_conversation_and_has_no_offline_reply(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    media = tmp_path / "fixture.mp4"
+    media.write_bytes(b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2" + b"\x00" * 40)
+    assembly = assemble_m8_platform_demo_api(
+        project_root=Path(__file__).parents[2],
+        database_path=tmp_path / PLATFORM_DATABASE_NAME,
+        input_media_path=media,
+        port=0,
+    )
+    server = assembly.server
+    safety_token = server.platform_role_tokens[M8ActorRole.SAFETY_OFFICER]
+    principal = server.api_authenticator.authenticate(f"Bearer {safety_token}")
+    operations = SQLiteM8OperationsRepository(
+        assembly.database_path,
+        5_000,
+        platform_manifest("labcourt-platform-sqlite-repository-v1"),
+    )
+    actor = operations.get_current_actor_authority(principal.actor_id)
+    original = _preflight().recipient_binding
+    target = original.target.model_copy(update={"actor_id": principal.actor_id})
+    binding = original.model_copy(update={"target": target})
+    sender_open_id = FAKE_FEISHU_OPEN_ID.decode("ascii")
+    assert hashlib.sha256(sender_open_id.encode()).hexdigest() == binding.receive_id_sha256
+    ingress = M8FeishuLiveIngressService(
+        assembly.feishu_live.repository,
+        platform_manifest("platform-feishu-live-agent-test-v1"),
+    )
+    accepted = ingress.accept_text(
+        M8FeishuP2PTextIngress(
+            provider_event_id="event-feishu-agent-unconfigured-01",
+            provider_message_id="om-feishu-agent-unconfigured-01",
+            sender_open_id=sender_open_id,
+            chat_id="oc-feishu-agent-private-01",
+            chat_type="p2p",
+            sender_type="user",
+            message_type="text",
+            text="请查看当前待核实案件",
+            received_at=datetime.now(UTC),
+        )
+    )
+    worker = M8FeishuAgentAuthorityWorker(
+        assembly.feishu_live.repository,
+        server.agent_chat_service,
+        lambda sender: M8FeishuTrustedActorContext(principal, actor, binding)
+        if sender == binding.receive_id_sha256
+        else (_ for _ in ()).throw(ValueError("actor not bound")),
+        lambda: datetime.now(UTC),
+        platform_manifest("platform-feishu-live-repository-v1"),
+        platform_manifest("platform-feishu-agent-envelope-test-v1"),
+        platform_manifest("platform-feishu-agent-worker-test-v1"),
+    )
+
+    assert worker.run_one() is True
+    terminal = assembly.feishu_live.repository.inbound_job(
+        accepted.job.inbound_event.inbound_event_id
+    )
+    assert terminal is not None
+    assert terminal.state == M8FeishuInboundJobState.FAILED
+    assert terminal.failure_code == M8FeishuLiveFailureCode.QWEN_UNAVAILABLE
+    assert terminal.conversation_id is not None
+    projection = assembly.feishu_live.repository.channel_projection(
+        terminal.conversation_id
+    )
+    assert projection is not None
+    assert projection.actor_id == principal.actor_id
+    assert projection.turn_origins[terminal.turn_id] == "FEISHU"
+    conversation = server.agent_chat_service.conversation(
+        principal, terminal.conversation_id
+    )
+    assert conversation.turns[-1].failure_code.value == "NOT_CONFIGURED"
+    reply = assembly.feishu_live.repository.claim_agent_reply("f" * 64)
+    assert reply is not None
+    assert "Qwen" in reply.content.decode("utf-8")
+    assert "离线" not in reply.content.decode("utf-8")

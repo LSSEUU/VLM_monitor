@@ -23,6 +23,11 @@ from labcourt.contracts.m8_api import (
     M8ApiKnowledgeQueryRequestV1,
     M8ApiPrincipalV1,
 )
+from labcourt.contracts.m8_feishu_live import (
+    M8FeishuDutyRouteRevisionRequestV1,
+    M8FeishuNotificationDispatchRequestV1,
+    M8FeishuTestCardDispatchRequestV1,
+)
 from labcourt.contracts.m8_feishu_platform import M8FeishuTestCardCheckRequestV1
 from labcourt.contracts.m8_platform_agent import M8PlatformNotificationDispatchRequestV2
 from labcourt.contracts.m8_platform_demo import (
@@ -43,6 +48,7 @@ from labcourt.ports.m8_agent_chat import (
 )
 from labcourt.ports.m8_api_authentication import M8AuthenticationError
 from labcourt.services.m8_agent_chat import M8AgentChatService
+from labcourt.services.m8_feishu_live_api import M8FeishuLiveApiService
 from labcourt.services.m8_operations_api import M8ApiServiceError
 from labcourt.services.m8_platform_demo import M8PlatformDemoService
 from labcourt.services.pilot_ui import PilotUiVideoSource
@@ -88,6 +94,7 @@ _STREAM_CHUNK_BYTES = 1024 * 1024
 class M8PlatformHttpServer(M8ApiHttpServer):
     platform_service: M8PlatformDemoService
     agent_chat_service: M8AgentChatService
+    feishu_live_service: M8FeishuLiveApiService
     platform_role_tokens: dict[M8ActorRole, str]
 
 
@@ -147,6 +154,30 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             if segments == ("api", "m8", "integrations", "feishu", "status"):
                 feishu_status = self.server.platform_service.feishu_status(principal)
                 self._json(HTTPStatus.OK, feishu_status.model_dump(mode="json"))
+                return
+            if segments == ("api", "m8", "integrations", "feishu", "runtime-status"):
+                runtime = self.server.feishu_live_service.runtime_status(principal)
+                self._json(HTTPStatus.OK, runtime.model_dump(mode="json"))
+                return
+            if segments == ("api", "m8", "integrations", "feishu", "duty-route"):
+                route = self.server.feishu_live_service.duty_route(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    None if route is None else route.model_dump(mode="json"),
+                )
+                return
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "agent", "conversations")
+                and segments[5] == "channel-projection"
+            ):
+                projection = self.server.feishu_live_service.channel_projection(
+                    principal, segments[4]
+                )
+                self._json(
+                    HTTPStatus.OK,
+                    None if projection is None else projection.model_dump(mode="json"),
+                )
                 return
             if (
                 len(segments) == 7
@@ -314,6 +345,58 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     feishu_request,
                 )
                 self._json(HTTPStatus.OK, receipt.model_dump(mode="json"))
+                return
+            if segments == (
+                "api",
+                "m8",
+                "integrations",
+                "feishu",
+                "duty-route-revisions",
+            ):
+                route_request = M8FeishuDutyRouteRevisionRequestV1.model_validate_json(
+                    self._json_body()
+                )
+                route = self.server.feishu_live_service.revise_duty_route(
+                    principal, route_request
+                )
+                self._json(HTTPStatus.CREATED, route.model_dump(mode="json"))
+                return
+            if segments == (
+                "api",
+                "m8",
+                "integrations",
+                "feishu",
+                "test-card-dispatches",
+            ):
+                test_dispatch_request = M8FeishuTestCardDispatchRequestV1.model_validate_json(
+                    self._json_body()
+                )
+                test_dispatch_receipt = self.server.feishu_live_service.dispatch_test_card(
+                    principal, test_dispatch_request
+                )
+                self._json(
+                    HTTPStatus.OK, test_dispatch_receipt.model_dump(mode="json")
+                )
+                return
+            if (
+                len(segments) == 5
+                and segments[:3] == ("api", "m8", "notifications")
+                and segments[4] == "feishu-dispatches"
+            ):
+                notification_dispatch_request = (
+                    M8FeishuNotificationDispatchRequestV1.model_validate_json(
+                        self._json_body()
+                    )
+                )
+                notification_dispatch_receipt = (
+                    self.server.feishu_live_service.dispatch_notification(
+                        principal, segments[3], notification_dispatch_request
+                    )
+                )
+                self._json(
+                    HTTPStatus.ACCEPTED,
+                    notification_dispatch_receipt.model_dump(mode="json"),
+                )
                 return
             if segments == ("api", "m8", "demo", "scenario-runs"):
                 scenario_request = M8PlatformScenarioStartRequestV1.model_validate_json(
@@ -626,6 +709,7 @@ def build_m8_platform_server(
     *,
     platform_service: M8PlatformDemoService,
     agent_chat_service: M8AgentChatService,
+    feishu_live_service: M8FeishuLiveApiService,
     role_tokens: dict[M8ActorRole, str],
     **kwargs: Any,
 ) -> M8PlatformHttpServer:
@@ -636,6 +720,7 @@ def build_m8_platform_server(
     server.RequestHandlerClass = M8PlatformRequestHandler
     server.platform_service = platform_service
     server.agent_chat_service = agent_chat_service
+    server.feishu_live_service = feishu_live_service
     server.platform_role_tokens = dict(role_tokens)
     return server
 
