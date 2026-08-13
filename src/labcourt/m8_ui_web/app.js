@@ -10,12 +10,12 @@ const state = {
   token:sessionStorage.getItem(TOKEN_KEY),session:null,cases:[],notifications:[],conversations:[],projection:null,
   cameras:[],reservations:[],run:null,readiness:null,users:null,rules:null,knowledgeCatalog:null,
   knowledgeAnswer:null,knowledgeDocument:null,knowledgeSearch:"",agentMessages:[],action:null,agentTyping:false,loginRole:"SAFETY_OFFICER",
-  videoUrl:null,videoPromise:null,videoPositions:new Map(),evidenceUrls:[],pollTimer:null,
+  videoUrl:null,videoPromise:null,videoPositions:new Map(),evidenceUrls:[],evidenceVideoUrl:null,evidenceVideoPromise:null,evidenceVideoSource:null,pollTimer:null,
   pollFailures:0,pollInFlight:false,toastTimer:null,routeController:null,routeSequence:0,
   shellMounted:false,currentRoute:"",casesFilter:"ALL",knowledgeFilter:"ALL",knowledgeSelected:null,
   settingsSection:"models",mapFloor:null,mapLocation:null,confirmationOpen:false,navOpen:false,scrollSaveFrame:0,
   lastRunAnnouncement:"",caseDetail:null,caseRun:null,settingsPanels:null,evidenceWorkspace:null,hearingView:null,conversation:null,confirmationTrigger:null,
-  evaluationDashboard:null,evaluationPollTimer:null,
+  evaluationDashboard:null,evaluationPollTimer:null,evaluationPollInFlight:false,evaluationFingerprint:null,
 };
 
 const esc = value => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
@@ -64,6 +64,10 @@ function clearObjectUrls() {
   if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
   state.videoUrl = null;
   state.videoPromise = null;
+  if (state.evidenceVideoUrl) URL.revokeObjectURL(state.evidenceVideoUrl);
+  state.evidenceVideoUrl = null;
+  state.evidenceVideoPromise = null;
+  state.evidenceVideoSource = null;
   state.evidenceUrls.forEach(URL.revokeObjectURL);
   state.evidenceUrls = [];
 }
@@ -293,6 +297,7 @@ function evaluationRunMarkup(run,truthById){
 function renderEvaluation(){
   if(role()==="STUDENT"){navigateTo("/app/monitor",{replace:true});return;}
   const dashboard=state.evaluationDashboard||{media:[],ground_truth:[],campaigns:[],runs:[]},media=dashboard.media||[],truths=dashboard.ground_truth||[],campaigns=dashboard.campaigns||[],runs=dashboard.runs||[];
+  state.evaluationFingerprint=JSON.stringify(dashboard);
   const ops=role()==="OPERATIONS",safety=role()==="SAFETY_OFFICER",truthByAsset=new Map(truths.map(item=>[item.asset_id,item])),truthById=new Map(truths.map(item=>[item.ground_truth_id,item]));
   const queued=runs.filter(item=>item.state==="QUEUED").length,running=runs.filter(item=>item.state==="RUNNING").length,waiting=runs.filter(item=>item.state==="AWAITING_HEARING").length,eligible=runs.filter(item=>item.accuracy_metrics_eligible&&["SUCCEEDED","FAILED"].includes(item.state)),matches=eligible.filter(item=>evaluationRouteMatches(truthById.get(item.ground_truth_id)?.expected_route,item.actual_route)).length;
   const operationsPanel=ops?`<section class="evaluation-panel"><div class="panel-head"><h2>导入真实 MP4</h2><span>OPERATIONS · CONTENT ADDRESSED</span></div><div class="evaluation-forms"><form data-evaluation-upload><label class="field"><span>网页上传（可解码 MP4）</span><input name="file" type="file" accept="video/mp4,.mp4" required></label><button class="button primary" type="submit">上传并探测</button></form><form data-evaluation-import><label class="field"><span>受控目录路径（每行一个）</span><textarea name="paths" rows="3" placeholder="evaluation-import/grey-zone.mp4" required></textarea></label><button class="button" type="submit">从服务器目录导入</button></form></div></section>`:"";
@@ -306,9 +311,9 @@ function renderEvaluation(){
 }
 
 function scheduleEvaluationPoll(){
-  clearTimeout(state.evaluationPollTimer);if(document.hidden||location.pathname!=="/app/evaluation")return;
+  clearTimeout(state.evaluationPollTimer);if(document.hidden||location.pathname!=="/app/evaluation"||state.evaluationPollInFlight)return;
   const active=(state.evaluationDashboard?.runs||[]).some(item=>["QUEUED","RUNNING"].includes(item.state));if(!active)return;
-  state.evaluationPollTimer=setTimeout(async()=>{try{state.evaluationDashboard=await api("/api/m8/evaluation/dashboard");if(location.pathname==="/app/evaluation")renderEvaluation();}catch(error){toast(`评估队列同步失败：${error.message}`,"error");}},1500);
+  state.evaluationPollTimer=setTimeout(async()=>{state.evaluationPollTimer=null;state.evaluationPollInFlight=true;try{const next=await api("/api/m8/evaluation/dashboard"),fingerprint=JSON.stringify(next),changed=fingerprint!==state.evaluationFingerprint;state.evaluationDashboard=next;state.evaluationFingerprint=fingerprint;if(location.pathname==="/app/evaluation"&&changed)renderEvaluation();}catch(error){toast(`评估队列同步失败：${error.message}`,"error");}finally{state.evaluationPollInFlight=false;scheduleEvaluationPoll();}},1500);
 }
 
 async function attachVideo() {
@@ -336,9 +341,12 @@ function paintWorkspaceFrame(video) {
   svg.innerHTML=record?(record.detections||[]).map(detection=>{const b=detection.bbox;return `<g><rect class="evidence-bbox" x="${b.x1}" y="${b.y1}" width="${b.x2-b.x1}" height="${b.y2-b.y1}"/><text class="evidence-track" x="${b.x1+8}" y="${Math.max(18,b.y1-8)}">ANONYMOUS TRACK</text>${(detection.keypoints||[]).map(point=>`<circle class="evidence-keypoint" cx="${point.x}" cy="${point.y}" r="5"/>`).join("")}</g>`;}).join(""):"";
 }
 
-function attachEvidenceWorkspace() {
+async function attachEvidenceWorkspace() {
   const video=document.getElementById("evidence-source-video");attachWorkspaceImages();if(!video)return;
-  const saved=state.videoPositions.get("evidence-source-video")||0;video.src=state.evidenceWorkspace.media_url;
+  const mediaUrl=state.evidenceWorkspace?.media_url;if(!mediaUrl)return;
+  if(state.evidenceVideoSource!==mediaUrl){if(state.evidenceVideoUrl)URL.revokeObjectURL(state.evidenceVideoUrl);state.evidenceVideoUrl=null;state.evidenceVideoPromise=null;state.evidenceVideoSource=mediaUrl;}
+  try{if(!state.evidenceVideoUrl){if(!state.evidenceVideoPromise){state.evidenceVideoPromise=api(mediaUrl,{binary:true,headers:{Range:"bytes=0-"}}).then(blob=>{if(state.evidenceVideoSource!==mediaUrl)return null;state.evidenceVideoUrl=URL.createObjectURL(blob);return state.evidenceVideoUrl;});}await state.evidenceVideoPromise;}if(!video.isConnected||!state.evidenceVideoUrl)return;video.src=state.evidenceVideoUrl;}catch(error){state.evidenceVideoPromise=null;toast(`案件录像读取失败：${error.message}`,"error");return;}
+  const saved=state.videoPositions.get("evidence-source-video")||0;
   video.addEventListener("loadedmetadata",()=>{video.currentTime=Math.min(saved,Number.isFinite(video.duration)?video.duration:saved);paintWorkspaceFrame(video);},{once:true});
   const update=()=>{if(!video.isConnected)return;state.videoPositions.set("evidence-source-video",video.currentTime);paintWorkspaceFrame(video);if("requestVideoFrameCallback" in video)video.requestVideoFrameCallback(update);};
   if("requestVideoFrameCallback" in video)video.requestVideoFrameCallback(update);else video.addEventListener("timeupdate",()=>paintWorkspaceFrame(video));
