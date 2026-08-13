@@ -202,6 +202,15 @@ class M8FeishuPlatformService:
         )
 
     def _last_audited_attempt(self) -> M8FeishuLastAuditedAttemptV1 | None:
+        for snapshot_attempt in range(2):
+            try:
+                return self._scan_last_audited_attempt()
+            except EvidenceMissing:
+                if snapshot_attempt:
+                    raise
+        raise AssertionError("bounded Feishu audit reread did not return")
+
+    def _scan_last_audited_attempt(self) -> M8FeishuLastAuditedAttemptV1 | None:
         attempts: list[M8FeishuLastAuditedAttemptV1] = []
         for current in self._notifications.list_current_notifications(20_000):
             plan = current.audit_event.notification_authority.plan
