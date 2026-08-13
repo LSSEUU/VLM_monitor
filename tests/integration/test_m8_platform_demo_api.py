@@ -108,8 +108,25 @@ def test_platform_pilot_config_keeps_real_screening_budget() -> None:
     assert real.screening.provider_profile == "pilot-screening"
     assert real.screening.timeout_seconds == 60.0
     assert real.providers["pilot-screening"].timeout_seconds == 60.0
+    assert all(
+        real.providers[profile].provider == "openai-compatible"
+        and "qwen" in real.providers[profile].model.lower()
+        for profile in (
+            real.hearing.prosecutor_profile,
+            real.hearing.defender_profile,
+            real.hearing.judge_profile,
+        )
+    )
     assert fixture.screening.provider_profile == "platform-fixture-screening"
     assert fixture.screening.timeout_seconds == 15.0
+    assert all(
+        fixture.providers[profile].provider == "fake"
+        for profile in (
+            fixture.hearing.prosecutor_profile,
+            fixture.hearing.defender_profile,
+            fixture.hearing.judge_profile,
+        )
+    )
 
 
 def test_platform_knowledge_document_rejects_hash_and_utf8_integrity_failures(

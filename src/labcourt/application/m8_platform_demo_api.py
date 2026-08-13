@@ -42,12 +42,14 @@ from labcourt.contracts.m8_api import (
 from labcourt.m8_platform_server import M8PlatformHttpServer, build_m8_platform_server
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
+from labcourt.services.m8_hearing_api import M8HearingApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_operations_api import M8OperationsApiService
 from labcourt.services.m8_operations_projection import M8OperationsProjectionService
 from labcourt.services.m8_platform_demo import M8PlatformDemoService
 from labcourt.services.m8_projection_api import M8ProjectionApiService
+from labcourt.services.m8_qwen_hearing_demo import build_m8_qwen_hearing_demo_config
 from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
 from labcourt.services.m8_rule_config_api import M8RuleConfigApiService
 from labcourt.services.m8_user_permission_api import M8UserPermissionApiService
@@ -125,7 +127,8 @@ def _pilot_config(project_root: Path, *, fixture: bool) -> AppConfig:
         payload["providers"] = providers
         screening["provider_profile"] = "pilot-screening"
     payload["screening"] = screening
-    return AppConfig.model_validate(payload)
+    config = AppConfig.model_validate(payload)
+    return config if fixture else build_m8_qwen_hearing_demo_config(config)
 
 
 @dataclass(frozen=True, slots=True)
@@ -262,6 +265,11 @@ def assemble_m8_platform_demo_api(
             operations, tuple(sorted(_ROLE_ACTORS.values()))
         ),
         rule_config_service=M8RuleConfigApiService(operations, smoke_policy),
+        hearing_service=M8HearingApiService(
+            operations,
+            {},
+            runtime_resolver=platform_service.open_hearing_runtime,
+        ),
         platform_service=platform_service,
         role_tokens=M8_PLATFORM_ROLE_TOKENS,
     )

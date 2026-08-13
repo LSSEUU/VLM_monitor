@@ -35,6 +35,9 @@ from labcourt.adapters.vlm.hearing_openai_compatible import (
     OpenAICompatibleHearingVLMClient,
     RoutedHearingVLMClient,
 )
+from labcourt.adapters.vlm.hearing_synthetic_demo import (
+    DeterministicSyntheticDemoHearingVLMClient,
+)
 from labcourt.adapters.vlm.http_transport import build_openai_compatible_transport
 from labcourt.adapters.vlm.openai_compatible import (
     AppendOnlyRenderedPromptRegistry,
@@ -105,6 +108,7 @@ def open_m8_hearing_runtime(
     location_by_zone: Mapping[str, str],
     model_mode: M8HearingModelMode = M8HearingModelMode.OFFLINE_FIXTURE,
     fixture_bundle: M4FakeVLMFixtureBundle | None = None,
+    synthetic_demo_fixture: bool = False,
     environment: Mapping[str, str] | None = None,
     transports: Mapping[str, OpenAICompatibleTransport] | None = None,
     acquisition_executor_factory: (
@@ -118,11 +122,17 @@ def open_m8_hearing_runtime(
         raise TypeError("config must be an AppConfig")
     if not isinstance(model_mode, M8HearingModelMode):
         raise TypeError("model_mode must be an M8HearingModelMode")
+    if not isinstance(synthetic_demo_fixture, bool):
+        raise TypeError("synthetic_demo_fixture must be a bool")
     controlled_run_id = require_reference_token(run_id, "M8 hearing runtime run reference")
     root = Path(workspace_root).absolute()
     database = Path(database_path).absolute()
-    if database != root / config.storage.database_filename:
-        raise ValueError("database_path must match the configured workspace database")
+    permitted_databases = {
+        root / config.storage.database_filename,
+        root / controlled_run_id / config.storage.database_filename,
+    }
+    if database not in permitted_databases:
+        raise ValueError("database_path must match the configured run workspace database")
     if set(location_by_zone) != {zone.zone_id for zone in config.zones}:
         raise ValueError("location_by_zone must cover exactly every configured zone")
 
@@ -133,10 +143,13 @@ def open_m8_hearing_runtime(
     )
     profile_names = tuple(item[2] for item in role_bindings)
     profiles = tuple(config.providers[name] for name in profile_names)
-    if config.perception.provider != "precomputed" or len(set(profile_names)) != 3:
+    if (
+        config.perception.provider not in {"precomputed", "local-worker"}
+        or len(set(profile_names)) != 3
+    ):
         raise M8HearingRuntimeError(M8HearingRuntimeFailureCode.DEPLOYMENT_UNSUPPORTED)
     if model_mode == M8HearingModelMode.OFFLINE_FIXTURE:
-        if fixture_bundle is None:
+        if fixture_bundle is None and not synthetic_demo_fixture:
             raise M8HearingRuntimeError(M8HearingRuntimeFailureCode.OFFLINE_FIXTURE_REQUIRED)
         if transports is not None or any(
             profile.provider != "fake"
@@ -146,6 +159,8 @@ def open_m8_hearing_runtime(
         ):
             raise M8HearingRuntimeError(M8HearingRuntimeFailureCode.DEPLOYMENT_UNSUPPORTED)
     else:
+        if synthetic_demo_fixture:
+            raise M8HearingRuntimeError(M8HearingRuntimeFailureCode.REAL_MODE_FIXTURE_FORBIDDEN)
         if fixture_bundle is not None and fixture_bundle.fixtures:
             raise M8HearingRuntimeError(M8HearingRuntimeFailureCode.REAL_MODE_FIXTURE_FORBIDDEN)
         if any(
@@ -225,11 +240,15 @@ def open_m8_hearing_runtime(
         response_store = SecureHearingModelResponseStore(workspace)
         prompt_registry = AppendOnlyRenderedPromptRegistry()
         if model_mode == M8HearingModelMode.OFFLINE_FIXTURE:
-            assert fixture_bundle is not None
-            vlm_client: HearingVLMClient = DeterministicFakeHearingVLMClient(
-                _fixture_mapping(fixture_bundle),
-                response_store,
-            )
+            vlm_client: HearingVLMClient
+            if synthetic_demo_fixture:
+                vlm_client = DeterministicSyntheticDemoHearingVLMClient(response_store)
+            else:
+                assert fixture_bundle is not None
+                vlm_client = DeterministicFakeHearingVLMClient(
+                    _fixture_mapping(fixture_bundle),
+                    response_store,
+                )
         else:
             role_clients = {}
             for role, component, profile_name in role_bindings:

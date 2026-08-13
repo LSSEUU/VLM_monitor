@@ -552,6 +552,7 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
     state: Literal["RUNNING", "SUCCEEDED", "FAILED"]
     stages: tuple[M8PlatformScenarioStageV1, ...] = Field(min_length=6, max_length=6)
     case_id: ReferenceToken | None = None
+    hearing_case_id: ReferenceToken | None = None
     case_status: M8OperationalCaseStatus | None = None
     notification_id: ReferenceToken | None = None
     recognition_mode: M8PlatformRecognitionMode | None = None
@@ -600,6 +601,8 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
             raise ValueError("M8 platform failed scenario requires exactly one failure code")
         if (self.case_id is None) != (self.case_status is None):
             raise ValueError("M8 platform scenario Case projection must be complete")
+        if self.hearing_case_id is not None and self.case_id is None:
+            raise ValueError("M8 platform hearing source requires an operational Case")
         is_ppe = self.scenario_kind == M8PlatformScenarioKind.PPE_GOGGLES_MISSING
         if is_ppe != (self.recognition_mode is not None):
             raise ValueError("PPE runs require an explicit recognition mode")
@@ -624,6 +627,7 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
                 value is None
                 for value in (
                     self.video_profile,
+                    self.hearing_case_id,
                     self.perception_preview_url,
                     self.screening_decision,
                     self.screening_summary,

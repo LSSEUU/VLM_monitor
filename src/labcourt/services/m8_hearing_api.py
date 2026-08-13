@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from contextlib import AbstractContextManager, nullcontext
 from typing import TypeVar
 
 from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
@@ -40,6 +41,7 @@ from labcourt.exceptions import (
     BudgetExceeded,
     ConcurrentModification,
     EvidenceMissing,
+    LabCourtError,
 )
 from labcourt.ports.evidence_repository import EvidenceRepository
 from labcourt.ports.hearing_repository import HearingRepository
@@ -188,6 +190,7 @@ class M4HearingApiRuntime:
             case_revision=snapshot.revision,
             case_status=case.status,
             eligibility=self._eligibility(case.status, screening.decision, session),
+            request_manifest_id=case.manifest_id,
             screening_id=screening.screening_id,
             screening_decision=screening.decision,
             screening_conflict_flags=tuple(flag.value for flag in screening.conflict_codes),
@@ -326,12 +329,14 @@ class M8HearingApiService:
         runtimes: Mapping[str, M8HearingRuntime],
         *,
         start_enabled: bool = True,
+        runtime_resolver: Callable[[str], AbstractContextManager[M8HearingRuntime]] | None = None,
     ) -> None:
         if not isinstance(start_enabled, bool):
             raise TypeError("start_enabled must be a bool")
         self._operations = operations_repository
         self._runtimes = dict(runtimes)
         self._start_enabled = start_enabled
+        self._runtime_resolver = runtime_resolver
         if any(run_id != runtime.run_id for run_id, runtime in self._runtimes.items()):
             raise ValueError("M8 hearing runtime map conflicts with runtime run IDs")
 
@@ -346,10 +351,24 @@ class M8HearingApiService:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         if request.run_id != run_id or request.case_id != case_id:
             raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
-        runtime = self._runtime(run_id)
-        view = self._call(lambda: runtime.view(case_id))
-        self._authorize(principal, view.case_location_id)
-        return self._call(lambda: runtime.start(request))
+        return self._call(lambda: self._start(principal, run_id, case_id, request))
+
+    def _start(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+        case_id: str,
+        request: M8HearingStartRequestV1,
+    ) -> M8HearingViewV1:
+        with self._runtime(run_id) as runtime:
+            view = runtime.view(case_id)
+            self._authorize(principal, view, start=True)
+            if view.hearing_session is None and view.eligibility not in {
+                M8HearingEligibility.ELIGIBLE_ESCALATED,
+                M8HearingEligibility.ELIGIBLE_REWORK_REQUIRED,
+            }:
+                raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
+            return runtime.start(request)
 
     def status(
         self,
@@ -357,36 +376,62 @@ class M8HearingApiService:
         run_id: str,
         case_id: str,
     ) -> M8HearingViewV1:
-        runtime = self._runtime(run_id)
-        view = self._call(lambda: runtime.view(case_id))
-        self._authorize(principal, view.case_location_id)
-        return view
+        return self._call(lambda: self._status(principal, run_id, case_id))
 
-    def _runtime(self, run_id: str) -> M8HearingRuntime:
-        try:
-            return self._runtimes[run_id]
-        except KeyError as error:
-            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from error
+    def _status(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+        case_id: str,
+    ) -> M8HearingViewV1:
+        with self._runtime(run_id) as runtime:
+            view = runtime.view(case_id)
+            self._authorize(principal, view, start=False)
+            return view
 
-    def _authorize(self, principal: M8ApiPrincipalV1, location_id: str) -> None:
+    def _runtime(self, run_id: str) -> AbstractContextManager[M8HearingRuntime]:
+        runtime = self._runtimes.get(run_id)
+        if runtime is not None:
+            return nullcontext(runtime)
+        if self._runtime_resolver is not None:
+            return self._runtime_resolver(run_id)
+        raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+
+    def _authorize(
+        self,
+        principal: M8ApiPrincipalV1,
+        view: M8HearingViewV1,
+        *,
+        start: bool,
+    ) -> None:
         if not isinstance(principal, M8ApiPrincipalV1):
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         receipt = self._call(
             lambda: self._operations.get_current_actor_authority(principal.actor_id)
         )
         actor = receipt.authority
-        if (
-            not actor.active
-            or actor.actor_id != principal.actor_id
-            or actor.role != M8ActorRole.SAFETY_OFFICER
-            or M8Capability.REQUEST_CASE_EVIDENCE not in actor.capabilities
-        ):
+        safety_access = (
+            actor.active
+            and actor.actor_id == principal.actor_id
+            and actor.role == M8ActorRole.SAFETY_OFFICER
+            and M8Capability.REQUEST_CASE_EVIDENCE in actor.capabilities
+        )
+        leader_read = (
+            not start
+            and actor.active
+            and actor.actor_id == principal.actor_id
+            and actor.role == M8ActorRole.LEADER
+            and M8Capability.VIEW_MAJOR_EVENTS in actor.capabilities
+            and view.eligibility
+            in {M8HearingEligibility.COMPLETED, M8HearingEligibility.HUMAN_REVIEW}
+        )
+        if not safety_access and not leader_read:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         if actor.scope_kind == M8ActorScopeKind.CAMPUS_WIDE:
             return
         if (
             actor.scope_kind != M8ActorScopeKind.LOCATIONS
-            or location_id not in actor.scope_location_ids
+            or view.case_location_id not in actor.scope_location_ids
         ):
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
 
@@ -401,6 +446,8 @@ class M8HearingApiService:
         except ConcurrentModification as error:
             raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION) from error
         except (BudgetExceeded, RepositoryIntegrityError) as error:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from error
+        except (LabCourtError, OSError, ValueError) as error:
             raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from error
 
 

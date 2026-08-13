@@ -73,6 +73,7 @@ def _eligible_view() -> M8HearingViewV1:
         case_revision=4,
         case_status=CaseStatus.ESCALATED,
         eligibility=M8HearingEligibility.ELIGIBLE_ESCALATED,
+        request_manifest_id=SHA_C,
         screening_id=SHA_A,
         screening_decision=ScreeningDecision.ESCALATE,
         screening_conflict_flags=("MODEL_SENSOR_CONFLICT",),
@@ -105,6 +106,7 @@ def test_view_is_additive_read_only_and_rejects_silent_real_model_fallback() -> 
     view = _eligible_view()
     assert view.raw_model_response_content_exposed is False
     assert view.case_transition_permitted is False
+    assert view.request_manifest_id == SHA_C
     assert view.hearing_session_id is None
     assert len(view.view_id) == 64
 

@@ -4931,6 +4931,11 @@
       "title": "Raw Model Response Content Exposed",
       "type": "boolean"
     },
+    "request_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Manifest Id",
+      "type": "string"
+    },
     "role_outputs": {
       "default": [],
       "items": {
@@ -5024,6 +5029,7 @@
     "case_revision",
     "case_status",
     "eligibility",
+    "request_manifest_id",
     "screening_id",
     "screening_decision",
     "current_evidence_pack_id",

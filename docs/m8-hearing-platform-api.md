@@ -6,8 +6,8 @@
 `HearingCoordinator`，并从现有 M4 SQLite authority 读取 session、checkpoint、round、
 role output、raw-response receipt、补证、Verdict、L5 review 与 backlog failure。
 
-本切片没有修改 M0–M6 wire/authority contracts，也没有修改
-`previews/labcourt-ops-ui/` 或 `src/labcourt/m8_ui_web/`。它不自动扫描或强迫案件进入会审，
+本切片没有修改 M0–M6 wire/authority contracts，也没有修改视觉母版
+`previews/labcourt-ops-ui/`。正式 `src/labcourt/m8_ui_web/` 案件详情页已经读取本 API。它不自动扫描或强迫案件进入会审，
 不新增纪律处分权限，不暴露 raw model response 内容。
 
 ## 现有 M4 能力审计
@@ -34,7 +34,8 @@ POST /api/m8/runs/{run_id}/cases/{case_id}/hearing
 ```
 
 只有当前持久化 authority 中处于 active 状态、具备 `REQUEST_CASE_EVIDENCE` capability、
-且 scope 覆盖案件地点的 `SAFETY_OFFICER` 可以查询或启动。客户端不能提交 actor、role、
+且 scope 覆盖案件地点的 `SAFETY_OFFICER` 可以查询资格或启动。`LEADER` 仅在已有会审完成或
+转人工复核后、具备 `VIEW_MAJOR_EVENTS` 时只读结果；学生和运维不读取会审 view。客户端不能提交 actor、role、
 capability 或地点 authority；服务端从 bearer principal、M8 actor repository 和 M4 Case zone
 映射重新解析。
 
@@ -62,7 +63,7 @@ Case、最新 screening、当前 EvidencePack 和 RunManifest fence。`ESCALATED
 
 GET/POST 返回 `m8-hearing-view-v1`，包括：
 
-- 当前资格与 Case 状态、revision、screening decision/conflicts 和 EvidencePack；
+- 当前资格与 Case 状态、revision、RunManifest fence、screening decision/conflicts 和 EvidencePack；
 - 三个精确 provider/profile/model/manifest 选择；
 - session、最新 checkpoint、所有完成 round 和三方结构化输出；
 - raw response 的持久化 receipt（只含 ref/hash/usage，不含 raw 内容）与 typed failures；
@@ -91,7 +92,9 @@ curl.exe --fail-with-body -X POST `
   "http://127.0.0.1:8765/api/m8/runs/run-2026-08-13-demo/cases/case-content-addressed-id/hearing"
 ```
 
-服务装配时将 runtime 显式注入现有 server；未注入时路由返回 404，不会隐式创建 runtime：
+正式平台将 `runtime_resolver` 注入现有同源 server。resolver 从持久化场景快照中的
+`hearing_case_id`、真实 `run_id`、Pilot workspace 与 SQLite 路径重新打开 M4 runtime；服务重启
+不依赖进程内字典。静态 runtime map 仍保留给受控测试和独立装配：
 
 ```python
 from labcourt.contracts.m8_hearing_api import M8HearingModelMode
@@ -117,6 +120,10 @@ with open_m8_hearing_runtime(
 `fake + LOCAL + IN_PROCESS`，fixture 按 frozen request cache key 精确匹配；缺失 fixture 会形成
 typed exact-role failure，不会改用其他 fixture 或真实模型。
 
+平台 `DEMO_FIXTURE` run 使用明确标注的 `DEMO / SYNTHETIC HEARING INPUT` 类型化响应生成器；
+它仍经过 raw-first response store、cache、usage、三角色严格解析、Verdict 与 L5，且只在调用者
+点击“启动离线会审”后运行。打开页签没有状态副作用。
+
 真实模式必须由调用者显式选择 `OPENAI_COMPATIBLE_QWEN`。三个独立 profile 必须满足：
 
 ```yaml
@@ -129,7 +136,7 @@ api_key_env: LABCOURT_QWEN_PROSECUTOR_API_KEY
 cache_enabled: true
 ```
 
-Defender 和 Judge 使用各自独立的 profile、endpoint/api-key 环境变量和 manifest component。
+Defender 和 Judge 使用各自独立的 profile 和 manifest component。
 配置身份必须与当前 RunManifest 的 prosecutor/defender/judge ModelManifest 精确一致。
 `open_m8_hearing_runtime` 只在这一模式下构造单次、有限 timeout 的 HTTPS transport；没有
 `AUTO` 模式，也不会在配置、网络、provider、解析或预算失败时切换到 offline fixture。
@@ -147,8 +154,8 @@ Defender 和 Judge 使用各自独立的 profile、endpoint/api-key 环境变量
 - 先例仍使用既有 M5 bridge；离线演示 embedding/retrieval 结果不代表真实检索准确率。
 - Qwen 接入不把 VLM 输出变成客观计数、时长、身份、坐标或证据存在性 authority；也不支持
   人脸识别或跨相机 ReID。
-- 真实 Qwen 的成功、延迟、成本或准确率只有在存在真实评测 artifact 时才能宣称。本切片验证的是
-  离线完整闭环和显式 Qwen 路线的可审计 definitely-not-sent failure，不宣称真实 provider 成功。
+- 真实 Qwen 的成功、延迟、成本或准确率只有在存在真实评测 artifact 时才能宣称。平台集成不重复
+  调用 provider；展示验证复用 `m8-qwen-hearing-demo` 已有 attempt/provider receipt 与完成 view。
 
 ## Schema 与 manifest 影响
 
@@ -161,3 +168,5 @@ Defender 和 Judge 使用各自独立的 profile、endpoint/api-key 环境变量
 没有修改 RunManifest、M0–M6 schema 或 authority。M8 start request 绑定现有 `manifest_id`；
 provider selections 绑定三个现有 ModelManifest ID；每个 M4 request/response/failure 继续绑定同一
 manifest、prompt bundle、EvidencePack 与 session。API 本身不生成新的模型事实或 Case transition。
+`m8-platform-scenario-run-v1` 只新增持久化 `hearing_case_id` 绑定，避免把 M8 运营 Case ID 错当成
+冻结 M4 Case ID；`m8-hearing-view-v1.request_manifest_id` 让 UI 可以提交精确 fence，而不是猜测。

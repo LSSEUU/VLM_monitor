@@ -9,7 +9,8 @@ import os
 import shutil
 import threading
 import uuid
-from contextlib import suppress
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -60,6 +61,7 @@ from labcourt.contracts.m8_api import (
     M8ApiKnowledgeQueryRequestV1,
     M8ApiPrincipalV1,
 )
+from labcourt.contracts.m8_hearing_api import M8HearingModelMode
 from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
@@ -127,6 +129,8 @@ from labcourt.contracts.pilot import PilotA2Report
 from labcourt.contracts.pilot_ui import PilotUiJobStartRequest
 from labcourt.contracts.projection_generation import ProjectionCurrentPointer
 from labcourt.exceptions import EvidenceMissing
+from labcourt.services.m8_hearing_api import M4HearingApiRuntime
+from labcourt.services.m8_hearing_runtime import open_m8_hearing_runtime
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_notifications import M8NotificationService
@@ -329,6 +333,52 @@ class M8PlatformDemoService:
             except (EvidenceMissing, PilotUiBoundaryError, TypeError, ValueError, OSError):
                 pass
         return run
+
+    @contextmanager
+    def open_hearing_runtime(self, run_id: str) -> Iterator[M4HearingApiRuntime]:
+        """Resolve one persisted Pilot run without keeping process-local hearing state."""
+
+        try:
+            run = self._read_run_snapshot(run_id)
+        except (OSError, ValueError):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
+        if (
+            run.scenario_kind != M8PlatformScenarioKind.PPE_GOGGLES_MISSING
+            or run.hearing_case_id is None
+        ):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        service = self._pilot_service_for(run)
+        config = service.config
+        profiles = tuple(
+            config.providers[name]
+            for name in (
+                config.hearing.prosecutor_profile,
+                config.hearing.defender_profile,
+                config.hearing.judge_profile,
+            )
+        )
+        qwen_mode = all(
+            profile.provider == "openai-compatible" and "qwen" in profile.model.lower()
+            for profile in profiles
+        )
+        model_mode = (
+            M8HearingModelMode.OPENAI_COMPATIBLE_QWEN
+            if qwen_mode
+            else M8HearingModelMode.OFFLINE_FIXTURE
+        )
+        workspace_root = self.project_root / config.run.workspace
+        database = workspace_root / run_id / config.storage.database_filename
+        with open_m8_hearing_runtime(
+            config=config,
+            run_id=run_id,
+            workspace_root=workspace_root,
+            database_path=database,
+            location_by_zone={zone.zone_id: PLATFORM_LOCATION_ID for zone in config.zones},
+            model_mode=model_mode,
+            synthetic_demo_fixture=(model_mode == M8HearingModelMode.OFFLINE_FIXTURE),
+            environment=os.environ if qwen_mode else None,
+        ) as runtime:
+            yield runtime
 
     def model_readiness(self, principal: M8ApiPrincipalV1) -> M8PlatformModelReadinessV1:
         self._actor(principal)
@@ -1268,6 +1318,7 @@ class M8PlatformDemoService:
             state="SUCCEEDED",
             stages=self._preserve_perception_progress(stages, run),
             case_id=case.case_id,
+            hearing_case_id=source_case.case_id,
             case_status=case.status,
             notification_id=notification.notification_id,
             recognition_mode=run.recognition_mode,

@@ -137,6 +137,8 @@ def test_scenario_run_requires_all_six_stages_in_stable_order() -> None:
         recognition_mode="FULL_MODEL",
     )
     assert tuple(item.stage for item in run.stages) == tuple(M8PlatformScenarioStage)
+    with pytest.raises(ValidationError, match="hearing source"):
+        run.model_copy(update={"hearing_case_id": "source-m4-case"})
     with pytest.raises(ValidationError):
         M8PlatformScenarioRunV1(
             run_id="platform-run-002",

@@ -4,8 +4,11 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from labcourt.adapters.fake_hearing_precedents import FakeHearingPrecedentRetriever
 from labcourt.adapters.hearing_prompt_renderer import HearingJinjaPromptCatalog
+from labcourt.adapters.pillow_media import encode_rgb_png
 from labcourt.adapters.storage import SecureHearingModelResponseStore, SecureWorkspace
 from labcourt.adapters.storage.m8_hearing_session_locator import (
     SQLiteM8HearingSessionLocator,
@@ -38,6 +41,7 @@ from labcourt.application.hearing_procedural_review import (
     DeterministicHearingProceduralReviewVerifier,
 )
 from labcourt.application.hearing_role_call import HearingRoleCallService
+from labcourt.application.m8_platform_demo_api import _pilot_config
 from labcourt.application.procedural_review import DeterministicProceduralReviewVerifier
 from labcourt.config_loader import load_config
 from labcourt.contracts.enums import (
@@ -52,9 +56,13 @@ from labcourt.contracts.m8_hearing_api import (
     M8HearingModelMode,
     M8HearingProviderSelectionV1,
     M8HearingStartRequestV1,
+    M8HearingViewV1,
 )
 from labcourt.contracts.manifests import RunManifest
+from labcourt.ports.pixels import rgb8_pixel_sha256
 from labcourt.services.m8_hearing_api import M4HearingApiRuntime, M8HearingApiService
+from labcourt.services.m8_hearing_runtime import open_m8_hearing_runtime
+from labcourt.services.m8_operations_api import M8ApiServiceError
 from tests.integration.test_m3_sqlite_repository import (
     BUSY_TIMEOUT_MS,
     ROOT,
@@ -169,7 +177,14 @@ def _qwen_config_and_manifest():
     return config, manifest
 
 
-def _real_escalated_case(tmp_path: Path, config, manifest: RunManifest, media: bytes):
+def _real_escalated_case(
+    tmp_path: Path,
+    config,
+    manifest: RunManifest,
+    media: bytes,
+    *,
+    pixel_sha256: str | None = None,
+):
     database = tmp_path / "labcourt.sqlite3"
     MigrationRunner(database, BUSY_TIMEOUT_MS, clock=_clock).apply_all()
     evidence = SQLiteEvidenceRepository(
@@ -196,6 +211,7 @@ def _real_escalated_case(tmp_path: Path, config, manifest: RunManifest, media: b
         update={
             "local_path": f"{RUN_ID}/frames/{media_sha256}.png",
             "media_sha256": media_sha256,
+            "pixel_sha256": pixel_sha256 or source_crop.pixel_sha256,
             "size_bytes": len(media),
             "privacy_receipt": privacy,
         }
@@ -273,6 +289,37 @@ class _DefinitelyNotSentQwenTransport:
             VLMProviderFailureCode.PROVIDER_OUTAGE,
             VLMDeliveryCertainty.DEFINITELY_NOT_SENT,
         )
+
+
+class _IneligibleRuntime:
+    run_id = RUN_ID
+
+    def __init__(self, config, manifest: RunManifest) -> None:
+        self.started = False
+        self._view = M8HearingViewV1(
+            run_id=RUN_ID,
+            case_id="case-clear-terminal",
+            case_location_id="room-chem-301",
+            model_mode=M8HearingModelMode.OFFLINE_FIXTURE,
+            provider_selections=_provider_selections(config, manifest),
+            case_revision=3,
+            case_status=CaseStatus.READY_FOR_ALERT_POLICY,
+            eligibility=M8HearingEligibility.NOT_ELIGIBLE,
+            request_manifest_id=manifest.manifest_id,
+            screening_id="a" * 64,
+            screening_decision="ESTABLISHED",
+            current_evidence_pack_id="b" * 64,
+            current_evidence_pack_version=1,
+            l5_status=M8HearingL5Status.NOT_RUN,
+        )
+
+    def view(self, case_id: str) -> M8HearingViewV1:
+        assert case_id == self._view.case_id
+        return self._view
+
+    def start(self, _request: M8HearingStartRequestV1) -> M8HearingViewV1:
+        self.started = True
+        raise AssertionError("ineligible runtime must not be started")
 
 
 def test_authenticated_api_runs_offline_hearing_and_recovers_terminal_projection(
@@ -389,14 +436,15 @@ def test_authenticated_api_runs_offline_hearing_and_recovers_terminal_projection
         assert recovered["procedural_reviews"] == posted["procedural_reviews"]
         assert recovered["start_request_id"] is None
 
-        forbidden_status, forbidden = _http_request(
+        leader_status, leader_view = _http_request(
             server,
             "GET",
             path,
             token=TOKENS["leader"],
         )
-        assert forbidden_status == 403
-        assert forbidden["reason_code"] == "FORBIDDEN"
+        assert leader_status == 200
+        assert leader_view["final_verdict"] == posted["final_verdict"]
+        assert leader_view["eligibility"] == M8HearingEligibility.COMPLETED.value
 
         repeated_status, repeated = _http_request(
             server,
@@ -540,3 +588,148 @@ def test_explicit_qwen_mode_persists_auditable_definitely_not_sent_failure(
             item["provider"] == "openai-compatible" and "qwen" in item["model"].lower()
             for item in body["provider_selections"]
         )
+
+
+def test_ineligible_case_refuses_start_and_crops_non_safety_roles(api_server) -> None:
+    config = load_config(ROOT / "configs" / "demo.yaml")
+    manifest = _manifest()
+    runtime = _IneligibleRuntime(config, manifest)
+    server, _operational_case, operations = api_server
+    server.hearing_service = M8HearingApiService(operations, {RUN_ID: runtime})
+    path = f"/api/m8/runs/{RUN_ID}/cases/{runtime._view.case_id}/hearing"
+
+    safety_status, safety_view = _http_request(
+        server,
+        "GET",
+        path,
+        token=TOKENS["safety"],
+    )
+    assert safety_status == 200
+    assert safety_view["eligibility"] == M8HearingEligibility.NOT_ELIGIBLE.value
+
+    request = M8HearingStartRequestV1(
+        run_id=RUN_ID,
+        case_id=runtime._view.case_id,
+        source_status=CaseStatus.ESCALATED,
+        source_screening_id=runtime._view.screening_id,
+        source_evidence_pack_id=runtime._view.current_evidence_pack_id,
+        source_evidence_pack_version=runtime._view.current_evidence_pack_version,
+        model_mode=runtime._view.model_mode,
+        request_manifest_id=runtime._view.request_manifest_id,
+    )
+    rejected_status, rejected = _http_request(
+        server,
+        "POST",
+        path,
+        token=TOKENS["safety"],
+        payload=request.model_dump(mode="json"),
+    )
+    assert rejected_status == 400
+    assert rejected["reason_code"] == "INVALID_REQUEST"
+    assert runtime.started is False
+
+    for token in (TOKENS["leader"], TOKENS["student"], TOKENS["operations"]):
+        cropped_status, cropped = _http_request(server, "GET", path, token=token)
+        assert cropped_status == 403
+        assert cropped["reason_code"] == "FORBIDDEN"
+
+
+def test_persisted_runtime_resolver_closes_offline_demo_and_recovers_after_reopen(
+    tmp_path: Path,
+    api_server,
+) -> None:
+    hearing_root = tmp_path / "persisted-platform-hearing"
+    hearing_root.mkdir()
+    config = _pilot_config(ROOT, fixture=True)
+    base_manifest = _manifest()
+    models = dict(base_manifest.models)
+    for component, profile_name in (
+        ("prosecutor", config.hearing.prosecutor_profile),
+        ("defender", config.hearing.defender_profile),
+        ("judge", config.hearing.judge_profile),
+    ):
+        profile = config.providers[profile_name]
+        models[component] = models[component].model_copy(
+            update={
+                "provider": profile.provider,
+                "model": profile.model,
+                "revision": profile.revision,
+                "quantization": profile.quantization,
+            }
+        )
+    platform_manifest = RunManifest.model_validate(
+        base_manifest.model_copy(
+            update={"config_sha256": config.config_sha256, "models": models}
+        ).model_dump(mode="json")
+    )
+    assert config.perception.provider == "local-worker"
+    pixels = bytes(100 * 200 * 3)
+    media = encode_rgb_png(100, 200, pixels)
+    database, repository, pack, escalated = _real_escalated_case(
+        hearing_root,
+        config,
+        platform_manifest,
+        media,
+        pixel_sha256=rgb8_pixel_sha256(100, 200, pixels),
+    )
+    with SecureWorkspace(hearing_root, config.storage.max_media_bytes) as workspace:
+        workspace.ensure_private_directory(".staging")
+        workspace.ensure_private_directory(f".staging/{RUN_ID}")
+        workspace.ensure_private_directory(RUN_ID)
+        workspace.ensure_private_directory(f"{RUN_ID}/frames")
+        workspace.ensure_private_directory(f"{RUN_ID}/model_responses")
+        workspace.create_new(pack.crops[0].local_path, media, hashlib.sha256(media).hexdigest())
+    manifest = repository.load_run_manifest(RUN_ID)
+
+    def resolve_runtime(run_id: str):
+        assert run_id == RUN_ID
+        return open_m8_hearing_runtime(
+            config=config,
+            run_id=run_id,
+            workspace_root=hearing_root,
+            database_path=database,
+            location_by_zone={pack.event.zone_id: "room-chem-301"},
+            model_mode=M8HearingModelMode.OFFLINE_FIXTURE,
+            synthetic_demo_fixture=True,
+        )
+
+    server, _operational_case, operations = api_server
+    hearing_service = M8HearingApiService(
+        operations,
+        {},
+        runtime_resolver=resolve_runtime,
+    )
+    server.hearing_service = hearing_service
+    request = M8HearingStartRequestV1(
+        run_id=RUN_ID,
+        case_id=pack.case_id,
+        source_status=CaseStatus.ESCALATED,
+        source_screening_id=escalated.case.screening_results[-1].screening_id,
+        source_evidence_pack_id=pack.pack_id,
+        source_evidence_pack_version=pack.version,
+        model_mode=M8HearingModelMode.OFFLINE_FIXTURE,
+        request_manifest_id=manifest.manifest_id,
+    )
+
+    safety = server.api_authenticator.authenticate(f"Bearer {TOKENS['safety']}")
+    posted = hearing_service.start(
+        safety,
+        RUN_ID,
+        pack.case_id,
+        request,
+    )
+    assert posted.eligibility == M8HearingEligibility.COMPLETED
+    assert posted.l5_status == M8HearingL5Status.PASSED
+    assert [item.role for item in posted.role_outputs] == [
+        VlmRole.PROSECUTOR,
+        VlmRole.DEFENDER,
+        VlmRole.JUDGE,
+    ]
+
+    recovered = hearing_service.status(safety, RUN_ID, pack.case_id)
+    assert recovered.hearing_session_id == posted.hearing_session_id
+    assert recovered.final_verdict == posted.final_verdict
+
+    student = server.api_authenticator.authenticate(f"Bearer {TOKENS['student']}")
+    with pytest.raises(M8ApiServiceError, match="FORBIDDEN"):
+        hearing_service.status(student, RUN_ID, pack.case_id)

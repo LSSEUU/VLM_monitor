@@ -245,6 +245,7 @@ class M8HearingViewV1(FrozenContractModel):
     case_revision: int = Field(gt=0, strict=True)
     case_status: CaseStatus
     eligibility: M8HearingEligibility
+    request_manifest_id: Sha256Hex
     screening_id: Sha256Hex
     screening_decision: ScreeningDecision
     screening_conflict_flags: tuple[str, ...] = Field(default=(), max_length=64)
