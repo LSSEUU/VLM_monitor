@@ -308,15 +308,19 @@ class SQLiteM8FeishuLiveRepository:
             self._insert_job(connection, job)
         return M8FeishuInboundEnqueueResult(job=job, duplicate=False)
 
-    def claim_inbound(self) -> M8FeishuInboundJobV1 | None:
+    def claim_inbound(self, inbound_event_id: str | None = None) -> M8FeishuInboundJobV1 | None:
         with self._write() as connection:
+            event_filter = "" if inbound_event_id is None else "AND queued.inbound_event_id = ? "
+            parameters: tuple[str, ...] = () if inbound_event_id is None else (inbound_event_id,)
             row = connection.execute(
                 "SELECT queued.job_json FROM m8_feishu_inbound_job_events AS queued "
                 "WHERE queued.state = 'QUEUED' AND NOT EXISTS ("
                 "SELECT 1 FROM m8_feishu_inbound_job_events AS next "
                 "WHERE next.inbound_event_id = queued.inbound_event_id "
                 "AND next.state_revision > 1) "
-                "ORDER BY queued.occurred_at, queued.inbound_event_id LIMIT 1"
+                + event_filter
+                + "ORDER BY queued.occurred_at, queued.inbound_event_id LIMIT 1",
+                parameters,
             ).fetchone()
             if row is None:
                 return None
@@ -461,6 +465,20 @@ class SQLiteM8FeishuLiveRepository:
         self, intent: M8FeishuCardActionIntentV1
     ) -> M8FeishuCardActionIntentV1:
         with self._write() as connection:
+            prior = connection.execute(
+                "SELECT intent_json FROM m8_feishu_card_action_intents "
+                "WHERE confirmation_token_sha256 = ?",
+                (intent.confirmation_token_sha256,),
+            ).fetchone()
+            if prior is not None:
+                persisted = M8FeishuCardActionIntentV1.model_validate_json(
+                    _row_str(prior, "intent_json")
+                )
+                if persisted != intent:
+                    raise M8FeishuLiveRepositoryError(
+                        "card token is already bound to another intent"
+                    )
+                return persisted
             connection.execute(
                 "INSERT INTO m8_feishu_card_action_intents VALUES (?, ?, ?, ?, ?)",
                 (

@@ -14,6 +14,7 @@ from labcourt.contracts.m8_feishu_live import (
     M8FeishuAgentReplyCompletionV1,
     M8FeishuAgentReplyEnvelopeV1,
     M8FeishuCardActionIntentV1,
+    M8FeishuCardStage,
     M8FeishuDutyRouteV1,
     M8FeishuInboundEventKind,
     M8FeishuInboundEventV1,
@@ -116,15 +117,17 @@ def test_confirmation_intent_and_agent_reply_are_single_use(tmp_path: Path) -> N
     intent = M8FeishuCardActionIntentV1(
         notification_id=SHA_A,
         notification_version=1,
+        notification_authority_sha256=SHA_E,
         case_id=SHA_B,
         case_version=2,
         case_authority_sha256=SHA_C,
         actor_id="safety-officer-demo",
         action=M8OperationalCaseAction.CONFIRM,
+        stage=M8FeishuCardStage.AWAITING_CONFIRMATION,
         confirmation_token_sha256=SHA_D,
         created_at=NOW,
         expires_at=NOW + timedelta(minutes=10),
-        intent_manifest_id=SHA_E,
+        intent_manifest_id=SHA_A,
     )
     repository.commit_card_intent(intent)
     assert repository.card_intent_for_token(SHA_D) == intent

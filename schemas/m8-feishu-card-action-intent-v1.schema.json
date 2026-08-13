@@ -19,7 +19,15 @@
   "additionalProperties": false,
   "properties": {
     "action": {
-      "$ref": "#/$defs/M8OperationalCaseAction"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8OperationalCaseAction"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "actor_id": {
       "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
@@ -67,6 +75,11 @@
       "title": "Intent Manifest Id",
       "type": "string"
     },
+    "notification_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Notification Authority Sha256",
+      "type": "string"
+    },
     "notification_id": {
       "pattern": "^[0-9a-f]{64}$",
       "title": "Notification Id",
@@ -84,8 +97,11 @@
       "type": "string"
     },
     "stage": {
-      "const": "AWAITING_CONFIRMATION",
-      "default": "AWAITING_CONFIRMATION",
+      "enum": [
+        "AWAITING_ACK",
+        "ACTIONS_AVAILABLE",
+        "AWAITING_CONFIRMATION"
+      ],
       "title": "Stage",
       "type": "string"
     }
@@ -93,11 +109,12 @@
   "required": [
     "notification_id",
     "notification_version",
+    "notification_authority_sha256",
     "case_id",
     "case_version",
     "case_authority_sha256",
     "actor_id",
-    "action",
+    "stage",
     "confirmation_token_sha256",
     "created_at",
     "expires_at",

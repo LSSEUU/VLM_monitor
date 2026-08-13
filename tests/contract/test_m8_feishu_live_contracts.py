@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 from labcourt.contracts.m8_access_cases import M8ActorRole, M8OperationalCaseAction
 from labcourt.contracts.m8_feishu_live import (
     M8FeishuCardActionIntentV1,
+    M8FeishuCardStage,
     M8FeishuConversationChannelProjectionV1,
     M8FeishuDutyRouteRevisionRequestV1,
     M8FeishuDutyRouteV1,
@@ -150,15 +151,17 @@ def test_card_intent_is_closed_single_use_boundary_with_ten_minute_expiry() -> N
     intent = M8FeishuCardActionIntentV1(
         notification_id=SHA_A,
         notification_version=2,
+        notification_authority_sha256=SHA_E,
         case_id=SHA_B,
         case_version=1,
         case_authority_sha256=SHA_C,
         actor_id="safety-officer-demo",
         action=M8OperationalCaseAction.CONFIRM,
+        stage=M8FeishuCardStage.AWAITING_CONFIRMATION,
         confirmation_token_sha256=SHA_D,
         created_at=NOW,
         expires_at=NOW + timedelta(minutes=10),
-        intent_manifest_id=SHA_E,
+        intent_manifest_id=SHA_A,
     )
     assert len(intent.intent_id) == 64
     with pytest.raises(ValidationError, match="closed first-release set"):

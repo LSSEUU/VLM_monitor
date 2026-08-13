@@ -329,8 +329,10 @@ class M8FeishuInboundJobV1(FrozenContractModel):
         terminal_failure = self.state == M8FeishuInboundJobState.FAILED
         if terminal_failure != (self.failure_code is not None):
             raise ValueError("M8 Feishu inbound job failure conflicts with state")
-        if self.state == M8FeishuInboundJobState.COMPLETED and (
-            self.actor_id is None or self.conversation_id is None or self.turn_id is None
+        if (
+            self.state == M8FeishuInboundJobState.COMPLETED
+            and self.inbound_event.event_kind == M8FeishuInboundEventKind.DIRECT_MESSAGE
+            and (self.actor_id is None or self.conversation_id is None or self.turn_id is None)
         ):
             raise ValueError("M8 Feishu completed inbound job requires Agent authorities")
         return self
@@ -379,14 +381,17 @@ class M8FeishuCardActionIntentV1(FrozenContractModel):
     )
     notification_id: Sha256Hex
     notification_version: int = Field(gt=0, strict=True)
+    notification_authority_sha256: Sha256Hex
     case_id: Sha256Hex
     case_version: int = Field(gt=0, strict=True)
     case_authority_sha256: Sha256Hex
     actor_id: ReferenceToken
-    action: M8OperationalCaseAction
-    stage: Literal[M8FeishuCardStage.AWAITING_CONFIRMATION] = (
-        M8FeishuCardStage.AWAITING_CONFIRMATION
-    )
+    action: M8OperationalCaseAction | None = None
+    stage: Literal[
+        M8FeishuCardStage.AWAITING_ACK,
+        M8FeishuCardStage.ACTIONS_AVAILABLE,
+        M8FeishuCardStage.AWAITING_CONFIRMATION,
+    ]
     confirmation_token_sha256: Sha256Hex
     created_at: datetime
     expires_at: datetime
@@ -401,7 +406,10 @@ class M8FeishuCardActionIntentV1(FrozenContractModel):
     def validate_expiry(self) -> Self:
         if self.expires_at != self.created_at + timedelta(minutes=10):
             raise ValueError("M8 Feishu card confirmation must expire after ten minutes")
-        if self.action not in {
+        awaiting_ack = self.stage == M8FeishuCardStage.AWAITING_ACK
+        if awaiting_ack != (self.action is None):
+            raise ValueError("M8 Feishu acknowledgement intent cannot contain a case action")
+        if not awaiting_ack and self.action not in {
             M8OperationalCaseAction.CONFIRM,
             M8OperationalCaseAction.REJECT,
             M8OperationalCaseAction.REQUEST_EVIDENCE,
@@ -418,6 +426,7 @@ class M8FeishuCardActionIntentV1(FrozenContractModel):
                 1,
                 self.notification_id,
                 self.notification_version,
+                self.notification_authority_sha256,
                 self.case_id,
                 self.case_version,
                 self.case_authority_sha256,

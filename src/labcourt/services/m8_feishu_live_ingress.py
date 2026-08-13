@@ -13,6 +13,7 @@ from labcourt.contracts.frames import Sha256Hex
 from labcourt.contracts.m8_feishu_live import (
     M8FeishuInboundEventKind,
     M8FeishuInboundEventV1,
+    M8FeishuInboundJobState,
 )
 from labcourt.contracts.references import ReferenceToken
 from labcourt.ports.m8_feishu_live import (
@@ -111,8 +112,8 @@ class M8FeishuLiveIngressService:
         )
         return self._repository.enqueue_inbound(event, sanitized, None)
 
-    @staticmethod
     def card_callback(
+        self,
         ingress: M8FeishuCardActionIngress,
         accept: Callable[[M8FeishuCardActionIngress], M8FeishuInboundEnqueueResult],
         execute: Callable[[str, str], dict[str, object]],
@@ -120,7 +121,22 @@ class M8FeishuLiveIngressService:
         result = accept(ingress)
         if result.duplicate:
             return {"toast": {"type": "info", "content": "该操作已处理"}}
-        return execute(ingress.action_token, result.job.inbound_event.sender_open_id_sha256)
+        claimed = self._repository.claim_inbound(result.job.inbound_event.inbound_event_id)
+        if claimed is None:
+            return {"toast": {"type": "info", "content": "该操作已处理"}}
+        response = execute(
+            ingress.action_token, result.job.inbound_event.sender_open_id_sha256
+        )
+        self._repository.commit_inbound_job(
+            claimed.model_copy(
+                update={
+                    "state": M8FeishuInboundJobState.COMPLETED,
+                    "state_revision": 3,
+                    "occurred_at": ingress.received_at,
+                }
+            )
+        )
+        return response
 
     @staticmethod
     def _digest_text(value: str) -> Sha256Hex:
