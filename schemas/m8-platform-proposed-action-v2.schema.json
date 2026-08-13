@@ -1,0 +1,234 @@
+{
+  "$defs": {
+    "M8AgentCaseTransitionPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "CONFIRM",
+          "title": "Action",
+          "type": "string"
+        },
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "source_case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Authority Sha256",
+          "type": "string"
+        },
+        "source_case_version": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Version",
+          "type": "integer"
+        },
+        "source_status": {
+          "const": "PENDING_VERIFICATION",
+          "title": "Source Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "source_case_version",
+        "source_case_authority_sha256",
+        "source_status",
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentCaseTransitionPayloadV2",
+      "type": "object"
+    },
+    "M8AgentFeishuTestCardPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "activation_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Activation Revision",
+          "type": "integer"
+        },
+        "activation_status_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Activation Status Id",
+          "type": "string"
+        },
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-feishu-test-card-check-request-v1",
+          "default": "m8-feishu-test-card-check-request-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "activation_revision",
+        "activation_status_id",
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentFeishuTestCardPayloadV2",
+      "type": "object"
+    },
+    "M8AgentNotificationSendPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "CASE_UPDATED",
+          "title": "Kind",
+          "type": "string"
+        },
+        "source_case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Authority Sha256",
+          "type": "string"
+        },
+        "source_case_version": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "source_case_version",
+        "source_case_authority_sha256",
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentNotificationSendPayloadV2",
+      "type": "object"
+    },
+    "M8AgentResetPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentResetPayloadV2",
+      "type": "object"
+    },
+    "M8AgentRunScenarioPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "scenario_kind": {
+          "const": "SMOKE_TEMPERATURE_EMERGENCY",
+          "title": "Scenario Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scenario_kind",
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentRunScenarioPayloadV2",
+      "type": "object"
+    },
+    "M8PlatformAgentActionKindV2": {
+      "enum": [
+        "CASE_TRANSITION",
+        "FEISHU_TEST_CARD_CHECK",
+        "NOTIFICATION_SEND",
+        "RESET_DEMO",
+        "RUN_SCENARIO"
+      ],
+      "title": "M8PlatformAgentActionKindV2",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-proposed-action-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action_kind": {
+      "$ref": "#/$defs/M8PlatformAgentActionKindV2"
+    },
+    "current_fence": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Current Fence",
+      "type": "string"
+    },
+    "current_version": {
+      "minimum": 0,
+      "title": "Current Version",
+      "type": "integer"
+    },
+    "endpoint_path": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Endpoint Path",
+      "type": "string"
+    },
+    "impact_summary": {
+      "maxLength": 240,
+      "minLength": 1,
+      "title": "Impact Summary",
+      "type": "string"
+    },
+    "request_payload": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8AgentCaseTransitionPayloadV2"
+        },
+        {
+          "$ref": "#/$defs/M8AgentRunScenarioPayloadV2"
+        },
+        {
+          "$ref": "#/$defs/M8AgentResetPayloadV2"
+        },
+        {
+          "$ref": "#/$defs/M8AgentNotificationSendPayloadV2"
+        },
+        {
+          "$ref": "#/$defs/M8AgentFeishuTestCardPayloadV2"
+        }
+      ],
+      "title": "Request Payload"
+    },
+    "requires_confirmation": {
+      "const": true,
+      "default": true,
+      "title": "Requires Confirmation",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-platform-proposed-action-v2",
+      "default": "m8-platform-proposed-action-v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "target_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Target Ref",
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_kind",
+    "target_ref",
+    "endpoint_path",
+    "current_version",
+    "current_fence",
+    "impact_summary",
+    "request_payload"
+  ],
+  "title": "M8PlatformProposedActionV2",
+  "type": "object"
+}

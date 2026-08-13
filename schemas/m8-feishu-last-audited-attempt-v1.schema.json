@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "M8NotificationDispatchDisposition": {
+      "enum": [
+        "ACCEPTED",
+        "DEFINITELY_NOT_SENT",
+        "UNKNOWN_DELIVERY"
+      ],
+      "title": "M8NotificationDispatchDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-last-audited-attempt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "audit_event_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Event Id",
+      "type": "string"
+    },
+    "automatic_retry_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Automatic Retry Permitted",
+      "type": "boolean"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "dispatch_request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dispatch Request Id",
+      "type": "string"
+    },
+    "dispatch_result_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dispatch Result Id",
+      "type": "string"
+    },
+    "disposition": {
+      "$ref": "#/$defs/M8NotificationDispatchDisposition"
+    },
+    "notification_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Notification Id",
+      "type": "string"
+    },
+    "notification_version": {
+      "exclusiveMinimum": 0,
+      "title": "Notification Version",
+      "type": "integer"
+    },
+    "raw_response_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "real_delivery_confirmed": {
+      "const": false,
+      "default": false,
+      "title": "Real Delivery Confirmed",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-feishu-last-audited-attempt-v1",
+      "default": "m8-feishu-last-audited-attempt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "notification_id",
+    "notification_version",
+    "dispatch_request_id",
+    "dispatch_result_id",
+    "disposition",
+    "completed_at",
+    "raw_response_ref",
+    "audit_event_id"
+  ],
+  "title": "M8FeishuLastAuditedAttemptV1",
+  "type": "object"
+}

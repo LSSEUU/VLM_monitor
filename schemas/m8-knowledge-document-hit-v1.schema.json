@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "M8KnowledgeDocumentType": {
+      "enum": [
+        "DEVICE_MANUAL",
+        "EMERGENCY_PLAN",
+        "FAQ",
+        "HISTORICAL_PRECEDENT",
+        "POLICY",
+        "SOP"
+      ],
+      "title": "M8KnowledgeDocumentType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-knowledge-document-hit-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "citation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Citation Id",
+      "type": "string"
+    },
+    "document_type": {
+      "$ref": "#/$defs/M8KnowledgeDocumentType"
+    },
+    "document_version": {
+      "exclusiveMinimum": 0,
+      "title": "Document Version",
+      "type": "integer"
+    },
+    "effective_at": {
+      "format": "date-time",
+      "title": "Effective At",
+      "type": "string"
+    },
+    "end_char": {
+      "exclusiveMinimum": 0,
+      "title": "End Char",
+      "type": "integer"
+    },
+    "exact_snippet": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Exact Snippet",
+      "type": "string"
+    },
+    "logical_document_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Logical Document Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-knowledge-document-hit-v1",
+      "default": "m8-knowledge-document-hit-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Source Ref",
+      "type": "string"
+    },
+    "start_char": {
+      "minimum": 0,
+      "title": "Start Char",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "document_type",
+    "logical_document_id",
+    "document_version",
+    "source_ref",
+    "effective_at",
+    "citation_id",
+    "start_char",
+    "end_char",
+    "exact_snippet"
+  ],
+  "title": "M8KnowledgeDocumentHitV1",
+  "type": "object"
+}

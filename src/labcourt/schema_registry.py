@@ -345,6 +345,12 @@ from labcourt.contracts.m8_feishu_personal_demo import (
     M8FeishuPersonalDemoProbeReceiptV1,
     M8FeishuPersonalDemoProbeV1,
 )
+from labcourt.contracts.m8_feishu_platform import (
+    M8FeishuLastAuditedAttemptV1,
+    M8FeishuPlatformStatusV1,
+    M8FeishuTestCardCheckReceiptV1,
+    M8FeishuTestCardCheckRequestV1,
+)
 from labcourt.contracts.m8_feishu_transport import (
     M8FeishuSandboxSendReceiptV1,
     M8FeishuTokenAcquisitionReceiptV1,
@@ -364,6 +370,12 @@ from labcourt.contracts.m8_knowledge_persistence import (
     M8KnowledgeAnswerCommitReceiptV1,
     M8KnowledgeCatalogCommitReceiptV1,
     M8KnowledgeDocumentCommitReceiptV1,
+)
+from labcourt.contracts.m8_knowledge_projection import (
+    M8CaseMemoryEntryV1,
+    M8CaseMemoryProjectionV1,
+    M8KnowledgeDocumentHitV1,
+    M8KnowledgeQueryProjectionV1,
 )
 from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
@@ -421,6 +433,11 @@ from labcourt.contracts.m8_personal_demo_api import (
     M8PersonalDemoApiProfileV1,
     M8PersonalDemoLocalAccessV1,
     M8PersonalDemoRoleTokensV1,
+)
+from labcourt.contracts.m8_platform_agent import (
+    M8PlatformAgentQueryResponseV2,
+    M8PlatformNotificationDispatchRequestV2,
+    M8PlatformProposedActionV2,
 )
 from labcourt.contracts.m8_platform_demo import (
     M8NotificationConversationSummaryV1,
@@ -817,6 +834,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-url-challenge-commit-receipt-v1": M8FeishuUrlChallengeCommitReceiptV1,
     "m8-feishu-url-challenge-verification-receipt-v1": (M8FeishuUrlChallengeVerificationReceiptV1),
     "m8-feishu-webhook-ingress-request-v1": M8FeishuWebhookIngressRequestV1,
+    "m8-feishu-last-audited-attempt-v1": M8FeishuLastAuditedAttemptV1,
+    "m8-feishu-platform-status-v1": M8FeishuPlatformStatusV1,
+    "m8-feishu-test-card-check-receipt-v1": M8FeishuTestCardCheckReceiptV1,
+    "m8-feishu-test-card-check-request-v1": M8FeishuTestCardCheckRequestV1,
     "m8-knowledge-answer-v1": M8KnowledgeAnswerV1,
     "m8-knowledge-answer-commit-receipt-v1": M8KnowledgeAnswerCommitReceiptV1,
     "m8-knowledge-catalog-authority-v1": M8KnowledgeCatalogAuthorityV1,
@@ -825,6 +846,10 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-knowledge-document-authority-v1": M8KnowledgeDocumentAuthorityV1,
     "m8-knowledge-document-commit-receipt-v1": M8KnowledgeDocumentCommitReceiptV1,
     "m8-knowledge-query-v1": M8KnowledgeQueryV1,
+    "m8-case-memory-entry-v1": M8CaseMemoryEntryV1,
+    "m8-case-memory-projection-v1": M8CaseMemoryProjectionV1,
+    "m8-knowledge-document-hit-v1": M8KnowledgeDocumentHitV1,
+    "m8-knowledge-query-projection-v1": M8KnowledgeQueryProjectionV1,
     "m8-actor-authority-v1": M8ActorAuthorityV1,
     "m8-actor-authority-commit-receipt-v1": M8ActorAuthorityCommitReceiptV1,
     "m8-authority-reference": M8AuthorityReference,
@@ -877,6 +902,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-platform-acknowledgement-request-v1": M8PlatformAcknowledgementRequestV1,
     "m8-platform-agent-query-request-v1": M8PlatformAgentQueryRequestV1,
     "m8-platform-agent-query-response-v1": M8PlatformAgentQueryResponseV1,
+    "m8-platform-agent-query-response-v2": M8PlatformAgentQueryResponseV2,
     "m8-platform-bootstrap-receipt-v1": M8PlatformBootstrapReceiptV1,
     "m8-platform-evidence-workspace-v1": M8PlatformEvidenceWorkspaceV1,
     "m8-platform-knowledge-document-view-v1": M8PlatformKnowledgeDocumentViewV1,
@@ -884,6 +910,8 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-platform-login-response-v1": M8PlatformLoginResponseV1,
     "m8-platform-model-readiness-v1": M8PlatformModelReadinessV1,
     "m8-platform-notification-dispatch-request-v1": (M8PlatformNotificationDispatchRequestV1),
+    "m8-platform-notification-dispatch-request-v2": (M8PlatformNotificationDispatchRequestV2),
+    "m8-platform-proposed-action-v2": M8PlatformProposedActionV2,
     "m8-platform-notification-reply-request-v1": M8PlatformNotificationReplyRequestV1,
     "m8-platform-reservation-authority-v1": M8PlatformReservationAuthorityV1,
     "m8-platform-reset-request-v1": M8PlatformResetRequestV1,
@@ -999,7 +1027,9 @@ SCHEMA_VALIDATION_MODELS = {
     "m8-platform-agent-query-request-v1",
     "m8-platform-login-request-v1",
     "m8-platform-notification-dispatch-request-v1",
+    "m8-platform-notification-dispatch-request-v2",
     "m8-platform-notification-reply-request-v1",
+    "m8-feishu-test-card-check-request-v1",
     "m8-platform-reset-request-v1",
     "m8-platform-scenario-start-request-v1",
     "prosecutor-model-payload",

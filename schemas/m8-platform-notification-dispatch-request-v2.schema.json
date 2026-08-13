@@ -1,0 +1,41 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-notification-dispatch-request-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "kind": {
+      "const": "CASE_UPDATED",
+      "title": "Kind",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-platform-notification-dispatch-request-v2",
+      "default": "m8-platform-notification-dispatch-request-v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_case_authority_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Case Authority Sha256",
+      "type": "string"
+    },
+    "source_case_version": {
+      "exclusiveMinimum": 0,
+      "title": "Source Case Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "kind",
+    "source_case_version",
+    "source_case_authority_sha256",
+    "explicit_human_confirmation"
+  ],
+  "title": "M8PlatformNotificationDispatchRequestV2",
+  "type": "object"
+}
