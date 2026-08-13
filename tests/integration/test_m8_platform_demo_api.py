@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import http.client
 import json
+import sqlite3
 import threading
 from pathlib import Path
 from types import SimpleNamespace
@@ -1007,6 +1008,7 @@ def test_platform_reset_archives_session_and_restores_empty_baseline(
     server = assembly.server
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    database_hold = sqlite3.connect(assembly.database_path)
     try:
         operations = _login(server.server_port, "OPERATIONS")
         _request(
@@ -1051,6 +1053,7 @@ def test_platform_reset_archives_session_and_restores_empty_baseline(
         assert cases_status == notifications_status == 200
         assert cases == notifications == []
     finally:
+        database_hold.close()
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)

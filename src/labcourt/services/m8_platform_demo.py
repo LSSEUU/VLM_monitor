@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import sqlite3
 import threading
 import uuid
 from contextlib import suppress
@@ -757,6 +758,7 @@ class M8PlatformDemoService:
         self._require_role(principal, M8ActorRole.OPERATIONS)
         if not self._operation_lock.acquire(blocking=False):
             raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
+        staging: Path | None = None
         try:
             if any(
                 jobs.snapshot().state == "RUNNING"
@@ -771,14 +773,27 @@ class M8PlatformDemoService:
             fresh = bootstrap_m8_platform_demo(
                 staged_database, self.input_media_path, session_id=new_session
             )
-            archive = self.artifact_root / "archive" / old.session_id
-            archive.mkdir(parents=True, exist_ok=False)
+            archive = self._reset_archive_path(old.session_id)
+            archived_database = archive / self.database_path.name
+            self._backup_sqlite_database(self.database_path, archived_database)
             for path in self._archive_paths():
-                if path.exists():
-                    destination = archive / path.relative_to(self.artifact_root)
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    path.replace(destination)
-            staged_database.replace(self.database_path)
+                if not path.exists() or path in {
+                    self.database_path,
+                    self.database_path.with_name(f"{self.database_path.name}-wal"),
+                    self.database_path.with_name(f"{self.database_path.name}-shm"),
+                }:
+                    continue
+                destination = archive / path.relative_to(self.artifact_root)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                if path.is_dir():
+                    shutil.copytree(path, destination)
+                else:
+                    shutil.copy2(path, destination)
+            self._preserve_live_integration_authorities(staged_database, archived_database)
+            # Restore through SQLite's online backup API. On Windows the Feishu
+            # workers keep opening this authority, so replacing the database file
+            # is neither reliable nor necessary.
+            self._backup_sqlite_database(staged_database, self.database_path)
             for relative in (
                 Path(PLATFORM_BOOTSTRAP_RECEIPT_NAME),
                 Path(PLATFORM_MEDIA_RECEIPT_NAME),
@@ -787,12 +802,19 @@ class M8PlatformDemoService:
                 source = staging / relative
                 destination = self.artifact_root / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                source.replace(destination)
-            shutil.rmtree(staging)
+                temporary = destination.with_name(f".{destination.name}.{new_session}.tmp")
+                shutil.copy2(source, temporary)
+                os.replace(temporary, destination)
+            scenario_state = self.artifact_root / PLATFORM_SCENARIO_STATE_NAME
+            with suppress(FileNotFoundError):
+                scenario_state.unlink()
+            scenario_runs = self.artifact_root / "scenario-runs"
+            if scenario_runs.exists():
+                shutil.rmtree(scenario_runs)
             return M8PlatformResetResponseV1(
                 session_id=fresh.receipt.session_id,
                 archived_session_id=old.session_id,
-                archive_ref=f"archive/{old.session_id}",
+                archive_ref=f"archive/{archive.name}",
                 baseline_summary={
                     "locations": fresh.receipt.location_count,
                     "sources": fresh.receipt.source_count,
@@ -801,7 +823,102 @@ class M8PlatformDemoService:
                 },
             )
         finally:
+            if staging is not None and staging.exists():
+                shutil.rmtree(staging)
             self._operation_lock.release()
+
+    def _reset_archive_path(self, session_id: str) -> Path:
+        archive_root = self.artifact_root / "archive"
+        archive_root.mkdir(parents=True, exist_ok=True)
+        archive = archive_root / session_id
+        if archive.exists() and any(archive.iterdir()):
+            archive = archive_root / f"{session_id}-retry-{uuid.uuid4().hex[:8]}"
+        archive.mkdir(parents=False, exist_ok=True)
+        return archive
+
+    @staticmethod
+    def _backup_sqlite_database(source_path: Path, destination_path: Path) -> None:
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        source = sqlite3.connect(source_path, timeout=10.0)
+        destination = sqlite3.connect(destination_path, timeout=10.0)
+        try:
+            source.execute("PRAGMA busy_timeout = 10000")
+            destination.execute("PRAGMA busy_timeout = 10000")
+            source.backup(destination, pages=256, sleep=0.05)
+        finally:
+            destination.close()
+            source.close()
+
+    @staticmethod
+    def _preserve_live_integration_authorities(
+        staged_database: Path,
+        archived_database: Path,
+    ) -> None:
+        # A Demo reset clears cases, notifications, conversations, outboxes and
+        # runtime events. It must not silently revoke an already commissioned
+        # Feishu adapter or its current duty route.
+        tables = (
+            "m8_actor_authorities",
+            "m8_notification_targets",
+            "m8_production_adapter_candidates",
+            "m8_commissioning_evidence",
+            "m8_feishu_sandbox_activations",
+            "m8_feishu_sandbox_activation_revocations",
+            "m8_feishu_duty_route_revisions",
+        )
+        connection = sqlite3.connect(staged_database, timeout=10.0)
+        try:
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("ATTACH DATABASE ? AS archived", (str(archived_database),))
+            try:
+                archived_tables = {
+                    str(row[0])
+                    for row in connection.execute(
+                        "SELECT name FROM archived.sqlite_master WHERE type = 'table'"
+                    )
+                }
+                for table in tables:
+                    if table not in archived_tables:
+                        continue
+                    columns = tuple(
+                        str(row[1])
+                        for row in connection.execute(f'PRAGMA main.table_info("{table}")')
+                    )
+                    primary_key = tuple(
+                        str(row[1])
+                        for row in sorted(
+                            connection.execute(f'PRAGMA main.table_info("{table}")'),
+                            key=lambda row: int(row[5]) if int(row[5]) else 10_000,
+                        )
+                        if int(row[5])
+                    )
+                    if not columns or not primary_key:
+                        raise sqlite3.IntegrityError(
+                            f"persistent integration table has no primary key: {table}"
+                        )
+                    quoted_columns = ", ".join(f'"{value}"' for value in columns)
+                    identity = " AND ".join(
+                        f'target."{value}" = source."{value}"' for value in primary_key
+                    )
+                    connection.execute(
+                        f'INSERT INTO main."{table}" ({quoted_columns}) '
+                        f'SELECT {quoted_columns} FROM archived."{table}" AS source '
+                        f'WHERE NOT EXISTS (SELECT 1 FROM main."{table}" AS target '
+                        f"WHERE {identity}) ORDER BY source.rowid"
+                    )
+                violations = connection.execute("PRAGMA foreign_key_check").fetchall()
+                if violations:
+                    raise sqlite3.IntegrityError(
+                        "preserved integration authorities violate foreign keys"
+                    )
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                raise
+            finally:
+                connection.execute("DETACH DATABASE archived")
+        finally:
+            connection.close()
 
     def _start_ppe(
         self,
