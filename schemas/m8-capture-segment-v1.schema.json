@@ -1,0 +1,197 @@
+{
+  "$defs": {
+    "M8EvaluationMediaAssetV1": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "codec": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Codec",
+          "type": "string"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "duration_millis": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Millis",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "frame_count": {
+          "exclusiveMinimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 32768,
+          "title": "Height",
+          "type": "integer"
+        },
+        "imported_at": {
+          "format": "date-time",
+          "title": "Imported At",
+          "type": "string"
+        },
+        "imported_by_actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Imported By Actor Id",
+          "type": "string"
+        },
+        "machine_output_is_ground_truth": {
+          "const": false,
+          "default": false,
+          "title": "Machine Output Is Ground Truth",
+          "type": "boolean"
+        },
+        "media_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Manifest Id",
+          "type": "string"
+        },
+        "media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Sha256",
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/$defs/M8EvaluationMediaOrigin"
+        },
+        "relative_path": {
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-evaluation-media-asset-v1",
+          "default": "m8-evaluation-media-asset-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 1073741824,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "maximum": 32768,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "asset_id",
+        "display_name",
+        "media_sha256",
+        "size_bytes",
+        "relative_path",
+        "origin",
+        "codec",
+        "width",
+        "height",
+        "fps_num",
+        "fps_den",
+        "frame_count",
+        "duration_millis",
+        "imported_by_actor_id",
+        "imported_at",
+        "media_manifest_id"
+      ],
+      "title": "M8EvaluationMediaAssetV1",
+      "type": "object"
+    },
+    "M8EvaluationMediaOrigin": {
+      "enum": [
+        "WEB_UPLOAD",
+        "SERVER_DIRECTORY",
+        "LIVE_CAPTURE_SEGMENT"
+      ],
+      "title": "M8EvaluationMediaOrigin",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-capture-segment-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset": {
+      "$ref": "#/$defs/M8EvaluationMediaAssetV1"
+    },
+    "capture_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Capture Manifest Id",
+      "type": "string"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "end_frame_exclusive": {
+      "exclusiveMinimum": 0,
+      "title": "End Frame Exclusive",
+      "type": "integer"
+    },
+    "immutable": {
+      "const": true,
+      "default": true,
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "lookahead_seconds": {
+      "const": 10,
+      "default": 10,
+      "title": "Lookahead Seconds",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-capture-segment-v1",
+      "default": "m8-capture-segment-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "segment_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Segment Id",
+      "type": "string"
+    },
+    "session_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "start_frame": {
+      "minimum": 0,
+      "title": "Start Frame",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "segment_id",
+    "session_id",
+    "asset",
+    "start_frame",
+    "end_frame_exclusive",
+    "captured_at",
+    "capture_manifest_id"
+  ],
+  "title": "M8CaptureSegmentV1",
+  "type": "object"
+}

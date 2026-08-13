@@ -1,0 +1,53 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-live-ingest-start-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "analysis_fps": {
+      "const": 5,
+      "default": 5,
+      "title": "Analysis Fps",
+      "type": "integer"
+    },
+    "candidate_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Authority Id",
+      "type": "string"
+    },
+    "endpoint_environment_variable": {
+      "title": "Endpoint Environment Variable",
+      "type": "string"
+    },
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "ring_buffer_seconds": {
+      "default": 60,
+      "maximum": 3600,
+      "minimum": 60,
+      "title": "Ring Buffer Seconds",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-live-ingest-start-request-v1",
+      "default": "m8-live-ingest-start-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Source Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_authority_id",
+    "source_id",
+    "endpoint_environment_variable",
+    "explicit_human_confirmation"
+  ],
+  "title": "M8LiveIngestStartRequestV1",
+  "type": "object"
+}

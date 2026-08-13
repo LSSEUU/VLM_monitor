@@ -390,8 +390,16 @@ class M8PlatformEvidenceWorkspaceV1(FrozenContractModel):
     @field_validator("media_url")
     @classmethod
     def validate_source_url(cls, value: str | None) -> str | None:
-        if value is not None and value != "/api/m8/demo/public-media/recorded-video":
-            raise ValueError("M8 evidence source replay must use the fixed H.264 media route")
+        if value is None or value == "/api/m8/demo/public-media/recorded-video":
+            return value
+        prefix = "/api/m8/demo/scenario-runs/"
+        suffix = "/source-video"
+        if not value.startswith(prefix) or not value.endswith(suffix):
+            raise ValueError("M8 evidence source replay must use a same-origin H.264 route")
+        run_id = value[len(prefix) : -len(suffix)]
+        require_portable_run_id(run_id, "M8 evidence source replay run")
+        if "/" in run_id or "\\" in value or ".." in value:
+            raise ValueError("M8 evidence source replay route is not controlled")
         return value
 
     @model_validator(mode="after")

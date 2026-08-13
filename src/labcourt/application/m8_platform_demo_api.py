@@ -11,6 +11,9 @@ from labcourt.adapters.m8_hashed_bearer_authenticator import M8HashedBearerAuthe
 from labcourt.adapters.storage.sqlite_m8_adapter_commissioning_repository import (
     SQLiteM8AdapterCommissioningRepository,
 )
+from labcourt.adapters.storage.sqlite_m8_evaluation_repository import (
+    SQLiteM8EvaluationRepository,
+)
 from labcourt.adapters.storage.sqlite_m8_inventory_repository import SQLiteM8InventoryRepository
 from labcourt.adapters.storage.sqlite_m8_knowledge_repository import SQLiteM8KnowledgeRepository
 from labcourt.adapters.storage.sqlite_m8_notification_repository import (
@@ -42,6 +45,7 @@ from labcourt.contracts.m8_api import (
 from labcourt.m8_platform_server import M8PlatformHttpServer, build_m8_platform_server
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
+from labcourt.services.m8_evaluation import M8EvaluationService
 from labcourt.services.m8_hearing_api import M8HearingApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_notification_api import M8NotificationApiService
@@ -146,6 +150,7 @@ class M8PlatformDemoApiAssembly:
     database_path: Path
     artifact_root: Path
     input_media_path: Path
+    evaluation_service: M8EvaluationService
 
     def local_access_document(self) -> dict[str, object]:
         receipt = load_m8_platform_bootstrap(self.artifact_root)
@@ -178,6 +183,9 @@ def assemble_m8_platform_demo_api(
     else:
         load_m8_platform_bootstrap(database.parent)
     repository_manifest_id = platform_manifest("labcourt-platform-sqlite-repository-v1")
+    evaluation_repository = SQLiteM8EvaluationRepository.initialize(
+        database, _BUSY_TIMEOUT_MS, repository_manifest_id
+    )
     inventory = SQLiteM8InventoryRepository(
         database, _BUSY_TIMEOUT_MS, repository_manifest_id
     )
@@ -240,6 +248,12 @@ def assemble_m8_platform_demo_api(
         fixture_pilot_service=fixture_pilot_service,
         model_pilot_service=model_pilot_service,
     )
+    evaluation_service = M8EvaluationService(
+        project_root=root,
+        repository=evaluation_repository,
+        operations_repository=operations,
+        platform_service=platform_service,
+    )
     catalog = inventory.get_current_source_catalog(PLATFORM_CAMPUS_ID)
     smoke_policy = build_offline_smoke_demo_bundle(
         source_catalog_id=catalog.catalog.catalog_id,
@@ -280,6 +294,7 @@ def assemble_m8_platform_demo_api(
             runtime_resolver=platform_service.open_hearing_runtime,
         ),
         platform_service=platform_service,
+        evaluation_service=evaluation_service,
         role_tokens=M8_PLATFORM_ROLE_TOKENS,
     )
     assembly = M8PlatformDemoApiAssembly(
@@ -287,6 +302,7 @@ def assemble_m8_platform_demo_api(
         database_path=database,
         artifact_root=database.parent,
         input_media_path=input_media_path.absolute(),
+        evaluation_service=evaluation_service,
     )
     assembly.write_local_access()
     return assembly

@@ -204,6 +204,15 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
         output: Annotated[Path, typer.Option("--output", file_okay=False)] = Path(
             ".labcourt-local/labcourt-platform-demo"
         ),
+        project_root: Annotated[
+            Path | None,
+            typer.Option(
+                "--project-root",
+                exists=True,
+                file_okay=False,
+                help="Root containing controlled inputs/ and evaluation-import/ directories.",
+            ),
+        ] = None,
         input_media: Annotated[
             Path,
             typer.Option("--input", exists=True, dir_okay=False),
@@ -221,7 +230,7 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
         try:
             output.mkdir(parents=True, exist_ok=True)
             assembly = assemble_m8_platform_demo_api(
-                project_root=Path(__file__).parents[2],
+                project_root=project_root or Path(__file__).parents[2],
                 database_path=output / PLATFORM_DATABASE_NAME,
                 input_media_path=input_media,
                 port=port,

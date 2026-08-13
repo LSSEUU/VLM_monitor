@@ -64,6 +64,7 @@ from labcourt.contracts.m8_api import (
     M8ApiKnowledgeQueryRequestV1,
     M8ApiPrincipalV1,
 )
+from labcourt.contracts.m8_evaluation import M8RunSourceRefV1
 from labcourt.contracts.m8_hearing_api import M8HearingModelMode
 from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
 from labcourt.contracts.m8_notification_cards import (
@@ -371,12 +372,7 @@ class M8PlatformDemoService:
         )
         workspace_root = self.project_root / config.run.workspace
         database = workspace_root / run_id / config.storage.database_filename
-        try:
-            input_relative_path = self.input_media_path.relative_to(
-                self.project_root
-            ).as_posix()
-        except ValueError:
-            raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from None
+        input_relative_path = self._run_input_relative_path(run_id)
         with open_m8_hearing_runtime(
             config=config,
             run_id=run_id,
@@ -589,7 +585,11 @@ class M8PlatformDemoService:
             stages=stages,
             video_profile=run.video_profile,
             media_url=(
-                "/api/m8/demo/public-media/recorded-video"
+                (
+                    f"/api/m8/demo/scenario-runs/{run.run_id}/source-video"
+                    if self._is_evaluation_run(run.run_id)
+                    else "/api/m8/demo/public-media/recorded-video"
+                )
                 if view_scope == M8PlatformEvidenceViewScope.FULL_PIPELINE
                 else None
             ),
@@ -930,6 +930,10 @@ class M8PlatformDemoService:
         self,
         recognition_mode: M8PlatformRecognitionMode,
         retry_of_run_id: str | None,
+        *,
+        source_relative_path: str | None = None,
+        requested_run_id: str | None = None,
+        source_ref: M8RunSourceRefV1 | None = None,
     ) -> M8PlatformScenarioRunV1:
         service = (
             self.model_pilot_service
@@ -943,12 +947,30 @@ class M8PlatformDemoService:
         )
         dashboard = service.dashboard()
         video = next(
-            (item for item in dashboard.videos if item.display_name == "goggles-missing.mp4"),
+            (
+                item
+                for item in dashboard.videos
+                if (
+                    item.relative_path == source_relative_path
+                    if source_relative_path is not None
+                    else item.display_name == "goggles-missing.mp4"
+                )
+            ),
             None,
         )
         if video is None:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
-        run_id = f"platform-ppe-{uuid.uuid4().hex[:12]}"
+        run_id = requested_run_id or f"platform-ppe-{uuid.uuid4().hex[:12]}"
+        if source_ref is not None:
+            if source_ref.run_id != run_id or source_ref.relative_path != video.relative_path:
+                raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
+            inspected = service.video_source(video.video_id)
+            if (
+                inspected.expected_sha256 != source_ref.media_sha256
+                or inspected.relative_path != source_ref.relative_path
+            ):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
+            self._write_run_source(source_ref)
         jobs.start(PilotUiJobStartRequest(video_id=video.video_id, run_id=run_id, resume=True))
         run = M8PlatformScenarioRunV1(
             run_id=run_id,
@@ -965,6 +987,52 @@ class M8PlatformDemoService:
         )
         self._write_run(run)
         return run
+
+    def start_evaluation_scenario(
+        self,
+        source: M8RunSourceRefV1,
+    ) -> M8PlatformScenarioRunV1:
+        """Start one exact, content-bound real-model run for the evaluation queue."""
+
+        if not isinstance(source, M8RunSourceRefV1):
+            raise TypeError("evaluation scenario requires a typed run source")
+        if not self._operation_lock.acquire(blocking=False):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
+        try:
+            if any(
+                jobs.snapshot().state == "RUNNING"
+                for jobs in (self.fixture_pilot_jobs, self.model_pilot_jobs)
+            ):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
+            return self._start_ppe(
+                M8PlatformRecognitionMode.FULL_MODEL,
+                None,
+                source_relative_path=source.relative_path,
+                requested_run_id=source.run_id,
+                source_ref=source,
+            )
+        finally:
+            self._operation_lock.release()
+
+    def refresh_evaluation_scenario(self, run_id: str) -> M8PlatformScenarioRunV1:
+        """Refresh one persisted evaluation run without relying on the current-run pointer."""
+
+        with self._operation_lock:
+            try:
+                run = self._read_run_snapshot(run_id)
+            except (OSError, ValueError):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
+            if run.state == "RUNNING":
+                run = self._refresh_ppe(run)
+            if run.case_id is not None:
+                try:
+                    current_case = self._operations().get_current_operational_case(run.case_id)
+                except EvidenceMissing:
+                    current_case = None
+                if current_case is not None and current_case.status != run.case_status:
+                    run = run.model_copy(update={"case_status": current_case.status})
+                    self._write_run(run)
+            return run
 
     def _refresh_ppe(self, run: M8PlatformScenarioRunV1) -> M8PlatformScenarioRunV1:
         if run.scenario_kind != M8PlatformScenarioKind.PPE_GOGGLES_MISSING:
@@ -1291,12 +1359,17 @@ class M8PlatformDemoService:
             platform_manifest("platform-case-authority-v1"),
             platform_manifest("platform-case-audit-v1"),
         )
-        notification = self._notify_case(
-            case_id=case.case_id,
-            target_actor_id="safety-officer-demo",
-            purpose=M8NotificationPurpose.CASE_ACTION_REQUIRED,
-            audience=M8NotificationAudienceKind.SAFETY_RESPONDER,
-            inbound_response_supported=False,
+        evaluation_run = self._is_evaluation_run(run.run_id)
+        notification = (
+            None
+            if evaluation_run
+            else self._notify_case(
+                case_id=case.case_id,
+                target_actor_id="safety-officer-demo",
+                purpose=M8NotificationPurpose.CASE_ACTION_REQUIRED,
+                audience=M8NotificationAudienceKind.SAFETY_RESPONDER,
+                inbound_response_supported=False,
+            )
         )
         stages = (
             self._stage(
@@ -1328,10 +1401,19 @@ class M8PlatformDemoService:
                 "一般风险案件已由规则投影建立",
                 (case.case_id,),
             ),
-            self._stage(
-                M8PlatformScenarioStage.NOTIFICATION,
-                "安全负责人本地模拟通知已送达",
-                (notification.notification_id,),
+            (
+                M8PlatformScenarioStageV1(
+                    stage=M8PlatformScenarioStage.NOTIFICATION,
+                    state=M8PlatformStageState.PENDING,
+                    summary="评估案件等待现有 Feishu activation-gated outbox 显式投递",
+                    authority_refs=(),
+                )
+                if evaluation_run
+                else self._stage(
+                    M8PlatformScenarioStage.NOTIFICATION,
+                    "安全负责人本地模拟通知已送达",
+                    (notification.notification_id,),  # type: ignore[union-attr]
+                )
             ),
         )
         completed = M8PlatformScenarioRunV1(
@@ -1342,7 +1424,7 @@ class M8PlatformDemoService:
             case_id=case.case_id,
             hearing_case_id=source_case.case_id,
             case_status=case.status,
-            notification_id=notification.notification_id,
+            notification_id=(notification.notification_id if notification else None),
             recognition_mode=run.recognition_mode,
             retry_of_run_id=run.retry_of_run_id,
             model_components=self._model_components(run, manifest),
@@ -2353,6 +2435,41 @@ class M8PlatformDemoService:
             snapshots.mkdir(parents=True, exist_ok=True)
             self._replace_text_atomically(snapshots / f"{run.run_id}.json", body)
 
+    def _write_run_source(self, source: M8RunSourceRefV1) -> None:
+        snapshots = self.artifact_root / "scenario-runs"
+        snapshots.mkdir(parents=True, exist_ok=True)
+        body = canonical_json(
+            source.model_dump(mode="json", exclude_computed_fields=True)
+        )
+        self._replace_text_atomically(snapshots / f"{source.run_id}.source.json", body)
+
+    def _is_evaluation_run(self, run_id: str) -> bool:
+        return (self.artifact_root / "scenario-runs" / f"{run_id}.source.json").is_file()
+
+    def _run_input_relative_path(self, run_id: str) -> str:
+        source_path = self.artifact_root / "scenario-runs" / f"{run_id}.source.json"
+        if source_path.is_file():
+            try:
+                source = M8RunSourceRefV1.model_validate_json(source_path.read_bytes())
+                media_path = (self.project_root / source.relative_path).absolute()
+                media_path.relative_to(self.project_root)
+                if not media_path.is_file():
+                    raise OSError("evaluation run media is absent")
+                hasher = hashlib.sha256()
+                with media_path.open("rb") as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        hasher.update(chunk)
+                digest = hasher.hexdigest()
+                if digest != source.media_sha256:
+                    raise ValueError("evaluation run media hash changed")
+                return source.relative_path
+            except (OSError, TypeError, ValueError):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from None
+        try:
+            return self.input_media_path.relative_to(self.project_root).as_posix()
+        except ValueError:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from None
+
     @staticmethod
     def _replace_text_atomically(path: Path, body: str) -> None:
         temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
@@ -2367,6 +2484,29 @@ class M8PlatformDemoService:
         return M8PlatformScenarioRunV1.model_validate_json(
             (self.artifact_root / "scenario-runs" / f"{run_id}.json").read_bytes()
         )
+
+    def scenario_source_video(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+    ) -> PilotUiVideoSource:
+        actor = self._actor(principal)
+        if actor.role not in {M8ActorRole.OPERATIONS, M8ActorRole.SAFETY_OFFICER}:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+        run = self._read_run_snapshot(run_id)
+        service = self._pilot_service_for(run)
+        relative_path = self._run_input_relative_path(run_id)
+        video = next(
+            (
+                item
+                for item in service.dashboard().videos
+                if item.relative_path == relative_path
+            ),
+            None,
+        )
+        if video is None:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        return service.video_source(video.video_id)
 
     def _pilot_service_for(self, run: M8PlatformScenarioRunV1) -> PilotUiService:
         return (

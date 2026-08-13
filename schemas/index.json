@@ -1276,6 +1276,12 @@
       "name": "m8-campus-topology-commit-receipt-v1"
     },
     {
+      "file": "m8-capture-segment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_evaluation.M8CaptureSegmentV1",
+      "name": "m8-capture-segment-v1"
+    },
+    {
       "file": "m8-commissioning-evidence-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8CommissioningEvidenceAuthorityV1",
@@ -1286,6 +1292,60 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8CommissioningEvidenceCommitReceiptV1",
       "name": "m8-commissioning-evidence-commit-receipt-v1"
+    },
+    {
+      "file": "m8-evaluation-campaign-create-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationCampaignCreateRequestV1",
+      "name": "m8-evaluation-campaign-create-request-v1"
+    },
+    {
+      "file": "m8-evaluation-campaign-start-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationCampaignStartRequestV1",
+      "name": "m8-evaluation-campaign-start-request-v1"
+    },
+    {
+      "file": "m8-evaluation-campaign-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationCampaignV1",
+      "name": "m8-evaluation-campaign-v1"
+    },
+    {
+      "file": "m8-evaluation-dashboard-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationDashboardV1",
+      "name": "m8-evaluation-dashboard-v1"
+    },
+    {
+      "file": "m8-evaluation-ground-truth-import-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationGroundTruthImportRequestV1",
+      "name": "m8-evaluation-ground-truth-import-request-v1"
+    },
+    {
+      "file": "m8-evaluation-ground-truth-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationGroundTruthV1",
+      "name": "m8-evaluation-ground-truth-v1"
+    },
+    {
+      "file": "m8-evaluation-media-asset-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationMediaAssetV1",
+      "name": "m8-evaluation-media-asset-v1"
+    },
+    {
+      "file": "m8-evaluation-media-import-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationMediaImportRequestV1",
+      "name": "m8-evaluation-media-import-request-v1"
+    },
+    {
+      "file": "m8-evaluation-run-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_evaluation.M8EvaluationRunV1",
+      "name": "m8-evaluation-run-v1"
     },
     {
       "file": "m8-feishu-adapter-profile-v1.schema.json",
@@ -1538,6 +1598,18 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge.M8KnowledgeQueryV1",
       "name": "m8-knowledge-query-v1"
+    },
+    {
+      "file": "m8-live-ingest-session-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_evaluation.M8LiveIngestSessionV1",
+      "name": "m8-live-ingest-session-v1"
+    },
+    {
+      "file": "m8-live-ingest-start-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_evaluation.M8LiveIngestStartRequestV1",
+      "name": "m8-live-ingest-start-request-v1"
     },
     {
       "file": "m8-notification-audit-event-v1.schema.json",
@@ -1976,6 +2048,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_qwen_hearing_demo.M8QwenHearingProviderReceiptV1",
       "name": "m8-qwen-hearing-provider-receipt-v1"
+    },
+    {
+      "file": "m8-run-source-ref-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_evaluation.M8RunSourceRefV1",
+      "name": "m8-run-source-ref-v1"
     },
     {
       "file": "m8-sensor-adapter-capability-authority-v1.schema.json",

@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import sqlite3
+from email import policy
+from email.parser import BytesParser
 from http import HTTPStatus
 from importlib.resources import files
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -12,6 +15,14 @@ from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
 from labcourt.contracts.m8_access_cases import M8ActorRole
 from labcourt.contracts.m8_api import M8ApiErrorReason
+from labcourt.contracts.m8_evaluation import (
+    MAX_M8_EVALUATION_MEDIA_BYTES,
+    M8EvaluationCampaignCreateRequestV1,
+    M8EvaluationCampaignStartRequestV1,
+    M8EvaluationGroundTruthImportRequestV1,
+    M8EvaluationGroundTruthV1,
+    M8EvaluationMediaImportRequestV1,
+)
 from labcourt.contracts.m8_platform_demo import (
     M8PlatformAcknowledgementRequestV1,
     M8PlatformAgentQueryRequestV1,
@@ -25,6 +36,7 @@ from labcourt.contracts.m8_platform_demo import (
 from labcourt.exceptions import ContractViolation
 from labcourt.m8_api_server import M8ApiHttpServer, M8ApiRequestHandler
 from labcourt.ports.m8_api_authentication import M8AuthenticationError
+from labcourt.services.m8_evaluation import M8EvaluationService
 from labcourt.services.m8_operations_api import M8ApiServiceError
 from labcourt.services.m8_platform_demo import M8PlatformDemoService
 from labcourt.services.pilot_ui import PilotUiVideoSource
@@ -41,6 +53,7 @@ _PAGE_PATHS = frozenset(
         "/app/agent",
         "/app/profile",
         "/app/settings",
+        "/app/evaluation",
     }
 )
 _ASSETS = {
@@ -63,11 +76,18 @@ _ASSETS = {
     ),
 }
 _STREAM_CHUNK_BYTES = 1024 * 1024
+_MAX_EVALUATION_JSON_BYTES = 8 * 1024 * 1024
+_MAX_MULTIPART_OVERHEAD_BYTES = 1024 * 1024
 
 
 class M8PlatformHttpServer(M8ApiHttpServer):
     platform_service: M8PlatformDemoService
+    evaluation_service: M8EvaluationService
     platform_role_tokens: dict[M8ActorRole, str]
+
+    def server_close(self) -> None:
+        self.evaluation_service.close()
+        super().server_close()
 
 
 class M8PlatformRequestHandler(M8ApiRequestHandler):
@@ -106,6 +126,42 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                     self.server.platform_service.reservations(principal),
                 )
                 return
+            if segments == ("api", "m8", "evaluation", "dashboard"):
+                dashboard = self.server.evaluation_service.dashboard(principal)
+                self._json(HTTPStatus.OK, dashboard.model_dump(mode="json"))
+                return
+            if segments == ("api", "m8", "evaluation", "media"):
+                media = self.server.evaluation_service.media(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    tuple(item.model_dump(mode="json") for item in media),
+                )
+                return
+            if segments == ("api", "m8", "evaluation", "campaigns"):
+                campaigns = self.server.evaluation_service.campaigns(principal)
+                self._json(
+                    HTTPStatus.OK,
+                    tuple(item.model_dump(mode="json") for item in campaigns),
+                )
+                return
+            if len(segments) == 5 and segments[:4] == (
+                "api",
+                "m8",
+                "evaluation",
+                "campaigns",
+            ):
+                campaign = self.server.evaluation_service.campaign(principal, segments[4])
+                self._json(HTTPStatus.OK, campaign.model_dump(mode="json"))
+                return
+            if len(segments) == 5 and segments[:4] == (
+                "api",
+                "m8",
+                "evaluation",
+                "runs",
+            ):
+                evaluation_run = self.server.evaluation_service.run(principal, segments[4])
+                self._json(HTTPStatus.OK, evaluation_run.model_dump(mode="json"))
+                return
             if (
                 len(segments) == 7
                 and segments[:4] == ("api", "m8", "knowledge", "catalogs")
@@ -123,10 +179,12 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self._json(HTTPStatus.OK, readiness.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "demo", "scenario-runs", "current"):
-                run = self.server.platform_service.current_run(principal)
+                current_scenario = self.server.platform_service.current_run(principal)
                 self._json(
                     HTTPStatus.OK,
-                    run.model_dump(mode="json") if run is not None else None,
+                    current_scenario.model_dump(mode="json")
+                    if current_scenario is not None
+                    else None,
                 )
                 return
             if segments == ("api", "m8", "notification-conversations"):
@@ -160,8 +218,10 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 "demo",
                 "scenario-runs",
             ):
-                run = self.server.platform_service.scenario_run(principal, segments[4])
-                self._json(HTTPStatus.OK, run.model_dump(mode="json"))
+                scenario_run = self.server.platform_service.scenario_run(
+                    principal, segments[4]
+                )
+                self._json(HTTPStatus.OK, scenario_run.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 7
@@ -179,6 +239,16 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 and segments[5] == "perception-preview"
             ):
                 source = self.server.platform_service.perception_preview(principal, segments[4])
+                self._pilot_video(source)
+                return
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "demo", "scenario-runs")
+                and segments[5] == "source-video"
+            ):
+                source = self.server.platform_service.scenario_source_video(
+                    principal, segments[4]
+                )
                 self._pilot_video(source)
                 return
         except M8AuthenticationError as error:
@@ -205,8 +275,8 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self._error(HTTPStatus.FORBIDDEN, M8ApiErrorReason.FORBIDDEN)
                 return
             if segments == ("api", "m8", "demo", "login"):
-                request = M8PlatformLoginRequestV1.model_validate_json(self._json_body())
-                token = self.server.platform_role_tokens[request.role]
+                login_request = M8PlatformLoginRequestV1.model_validate_json(self._json_body())
+                token = self.server.platform_role_tokens[login_request.role]
                 principal = self.server.api_authenticator.authenticate(f"Bearer {token}")
                 session = self.server.api_service.session(principal)
                 response = M8PlatformLoginResponseV1(
@@ -219,14 +289,71 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self.headers.get("Authorization")
             )
             if segments == ("api", "m8", "demo", "scenario-runs"):
-                request = M8PlatformScenarioStartRequestV1.model_validate_json(self._json_body())
+                scenario_request = M8PlatformScenarioStartRequestV1.model_validate_json(
+                    self._json_body()
+                )
                 run = self.server.platform_service.start_scenario(
                     principal,
-                    request.scenario_kind,
-                    request.recognition_mode,
-                    request.retry_of_run_id,
+                    scenario_request.scenario_kind,
+                    scenario_request.recognition_mode,
+                    scenario_request.retry_of_run_id,
                 )
                 self._json(HTTPStatus.ACCEPTED, run.model_dump(mode="json"))
+                return
+            if segments == ("api", "m8", "evaluation", "media", "uploads"):
+                display_name, body = self._evaluation_upload()
+                asset = self.server.evaluation_service.upload_media(
+                    principal,
+                    display_name=display_name,
+                    body=body,
+                )
+                self._json(HTTPStatus.CREATED, asset.model_dump(mode="json"))
+                return
+            if segments == ("api", "m8", "evaluation", "media", "imports"):
+                media_import_request = M8EvaluationMediaImportRequestV1.model_validate_json(
+                    self._evaluation_json_body()
+                )
+                media = self.server.evaluation_service.import_media(
+                    principal, media_import_request
+                )
+                self._json(
+                    HTTPStatus.CREATED,
+                    tuple(item.model_dump(mode="json") for item in media),
+                )
+                return
+            if segments == ("api", "m8", "evaluation", "ground-truth-imports"):
+                truth_import_request = M8EvaluationGroundTruthImportRequestV1.model_validate_json(
+                    self._evaluation_json_body()
+                )
+                labels = self.server.evaluation_service.import_ground_truth(
+                    principal, truth_import_request
+                )
+                self._json(
+                    HTTPStatus.CREATED,
+                    tuple(item.model_dump(mode="json") for item in labels),
+                )
+                return
+            if segments == ("api", "m8", "evaluation", "campaigns"):
+                campaign_request = M8EvaluationCampaignCreateRequestV1.model_validate_json(
+                    self._evaluation_json_body()
+                )
+                campaign = self.server.evaluation_service.create_campaign(
+                    principal, campaign_request
+                )
+                self._json(HTTPStatus.CREATED, campaign.model_dump(mode="json"))
+                return
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "evaluation", "campaigns")
+                and segments[5] == "start"
+            ):
+                M8EvaluationCampaignStartRequestV1.model_validate_json(
+                    self._evaluation_json_body()
+                )
+                campaign = self.server.evaluation_service.start_campaign(
+                    principal, segments[4]
+                )
+                self._json(HTTPStatus.ACCEPTED, campaign.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "demo", "reset"):
                 M8PlatformResetRequestV1.model_validate_json(self._json_body())
@@ -234,20 +361,24 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self._json(HTTPStatus.OK, result.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "agent", "queries"):
-                request = M8PlatformAgentQueryRequestV1.model_validate_json(self._json_body())
-                response = self.server.platform_service.agent_query(principal, request.query)
-                self._json(HTTPStatus.OK, response.model_dump(mode="json"))
+                agent_request = M8PlatformAgentQueryRequestV1.model_validate_json(
+                    self._json_body()
+                )
+                agent_response = self.server.platform_service.agent_query(
+                    principal, agent_request.query
+                )
+                self._json(HTTPStatus.OK, agent_response.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 5
                 and segments[:3] == ("api", "m8", "cases")
                 and segments[4] == "notification-dispatches"
             ):
-                request = M8PlatformNotificationDispatchRequestV1.model_validate_json(
+                dispatch_request = M8PlatformNotificationDispatchRequestV1.model_validate_json(
                     self._json_body()
                 )
                 result = self.server.platform_service.dispatch_case_notification(
-                    principal, segments[3], request.kind
+                    principal, segments[3], dispatch_request.kind
                 )
                 self._json(HTTPStatus.OK, result.model_dump(mode="json"))
                 return
@@ -256,11 +387,11 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 and segments[:3] == ("api", "m8", "notifications")
                 and segments[4] == "replies"
             ):
-                request = M8PlatformNotificationReplyRequestV1.model_validate_json(
+                reply_request = M8PlatformNotificationReplyRequestV1.model_validate_json(
                     self._json_body()
                 )
                 result = self.server.platform_service.reply_notification(
-                    principal, segments[3], request.reply_kind, request.body
+                    principal, segments[3], reply_request.reply_kind, reply_request.body
                 )
                 self._json(HTTPStatus.OK, result.model_dump(mode="json"))
                 return
@@ -288,6 +419,92 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             self._error(HTTPStatus.INTERNAL_SERVER_ERROR, M8ApiErrorReason.INTERNAL_FAILURE)
             return
         super().do_POST()
+
+    def do_PUT(self) -> None:
+        segments = self._segments()
+        try:
+            if not self._local_host_allowed():
+                self._error(HTTPStatus.FORBIDDEN, M8ApiErrorReason.LOCAL_HOST_REQUIRED)
+                return
+            if not self._same_origin_allowed():
+                self._error(HTTPStatus.FORBIDDEN, M8ApiErrorReason.FORBIDDEN)
+                return
+            principal = self.server.api_authenticator.authenticate(
+                self.headers.get("Authorization")
+            )
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "evaluation", "media")
+                and segments[5:] == ("ground-truth",)
+            ):
+                truth = M8EvaluationGroundTruthV1.model_validate_json(
+                    self._evaluation_json_body()
+                )
+                published = self.server.evaluation_service.put_ground_truth(
+                    principal, segments[4], truth
+                )
+                self._json(HTTPStatus.OK, published.model_dump(mode="json"))
+                return
+        except M8AuthenticationError as error:
+            self._authentication_error(error)
+            return
+        except M8ApiServiceError as error:
+            self._service_error(error)
+            return
+        except (TypeError, ValueError, ContractViolation, ValidationError):
+            self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+            return
+        except (OSError, sqlite3.DatabaseError, RepositoryIntegrityError):
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, M8ApiErrorReason.INTERNAL_FAILURE)
+            return
+        self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+
+    def _evaluation_json_body(self) -> bytes:
+        content_type = self.headers.get("Content-Type", "").split(";", maxsplit=1)[0].strip()
+        if content_type != "application/json":
+            raise ValueError("M8 evaluation API requires application/json")
+        length_text = self.headers.get("Content-Length")
+        if length_text is None:
+            raise ValueError("M8 evaluation API requires Content-Length")
+        length = int(length_text)
+        if length <= 0 or length > _MAX_EVALUATION_JSON_BYTES:
+            raise ValueError("M8 evaluation JSON body is outside its bound")
+        body = self.rfile.read(length)
+        if len(body) != length:
+            raise ValueError("M8 evaluation JSON body ended early")
+        return body
+
+    def _evaluation_upload(self) -> tuple[str, bytes]:
+        content_type = self.headers.get("Content-Type", "")
+        if not content_type.casefold().startswith("multipart/form-data;"):
+            raise ValueError("M8 evaluation upload requires multipart/form-data")
+        length_text = self.headers.get("Content-Length")
+        if length_text is None:
+            raise ValueError("M8 evaluation upload requires Content-Length")
+        length = int(length_text)
+        maximum = MAX_M8_EVALUATION_MEDIA_BYTES + _MAX_MULTIPART_OVERHEAD_BYTES
+        if length <= 0 or length > maximum:
+            raise ValueError("M8 evaluation upload body is outside its bound")
+        body = self.rfile.read(length)
+        if len(body) != length:
+            raise ValueError("M8 evaluation upload ended early")
+        message = BytesParser(policy=policy.default).parsebytes(
+            b"Content-Type: " + content_type.encode("ascii") + b"\r\n\r\n" + body
+        )
+        parts = tuple(message.iter_parts()) if message.is_multipart() else ()
+        files = tuple(
+            part
+            for part in parts
+            if part.get_content_disposition() == "form-data"
+            and part.get_param("name", header="content-disposition") == "file"
+        )
+        if len(files) != 1 or len(parts) != 1:
+            raise ValueError("M8 evaluation upload requires exactly one file part")
+        filename = files[0].get_filename()
+        payload = files[0].get_payload(decode=True)
+        if not isinstance(filename, str) or not isinstance(payload, bytes):
+            raise ValueError("M8 evaluation upload file is invalid")
+        return filename, payload
 
     def _pilot_video(self, source: PilotUiVideoSource) -> None:
         with (
@@ -419,8 +636,9 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
 def build_m8_platform_server(
     *,
     platform_service: M8PlatformDemoService,
+    evaluation_service: M8EvaluationService,
     role_tokens: dict[M8ActorRole, str],
-    **kwargs,
+    **kwargs: Any,
 ) -> M8PlatformHttpServer:
     port = kwargs.pop("port")
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65_535:
@@ -428,6 +646,7 @@ def build_m8_platform_server(
     server = M8PlatformHttpServer(("127.0.0.1", port), **kwargs)
     server.RequestHandlerClass = M8PlatformRequestHandler
     server.platform_service = platform_service
+    server.evaluation_service = evaluation_service
     server.platform_role_tokens = dict(role_tokens)
     return server
 

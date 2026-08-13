@@ -1,0 +1,60 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-evaluation-campaign-create-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset_ids": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Asset Ids",
+      "type": "array"
+    },
+    "execution_profile": {
+      "const": "REAL_MODELS",
+      "default": "REAL_MODELS",
+      "title": "Execution Profile",
+      "type": "string"
+    },
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "notification_delivery": {
+      "const": "LIVE_SANDBOX",
+      "default": "LIVE_SANDBOX",
+      "title": "Notification Delivery",
+      "type": "string"
+    },
+    "repetitions": {
+      "default": 1,
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-evaluation-campaign-create-request-v1",
+      "default": "m8-evaluation-campaign-create-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "asset_ids",
+    "explicit_human_confirmation"
+  ],
+  "title": "M8EvaluationCampaignCreateRequestV1",
+  "type": "object"
+}
