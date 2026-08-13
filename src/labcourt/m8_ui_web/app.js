@@ -396,9 +396,10 @@ function hearingDossier(caseId){
   const view=state.hearingView;
   if(!view)return `<div class="hearing-state"><p class="eyebrow">SERVICE-CROPPED VIEW</p><h2>当前角色暂不可读取会审 authority</h2><p>学生与运维不读取会审内容；领导仅可读取已经完成或转人工复核的结果。安全负责人可查看资格并显式启动。</p></div>`;
   const eligible=["ELIGIBLE_ESCALATED","ELIGIBLE_REWORK_REQUIRED"].includes(view.eligibility);
-  const fastPathComplete=!view.hearing_session&&view.case_status==="READY_FOR_ALERT_POLICY"&&view.l5_status==="PASSED";
+  const fastPathComplete=!view.hearing_session&&["READY_FOR_ALERT_POLICY","CLOSED"].includes(view.case_status)&&view.l5_status==="PASSED";
   const noSessionTitle=eligible?"尚未建立会审 session":fastPathComplete?"快速路径已完成 · 不符合会审条件":"不符合会审条件";
-  const noSessionBody=eligible?"只有安全负责人显式操作才会开始；打开页签不会改变 M4 或 M8 状态。":fastPathComplete?`初审为 ${esc(view.screening_decision)}，L5 程序审查已通过并进入 READY_FOR_ALERT_POLICY；该清晰案例无需三方会审，后续仍由告警策略与 M8 人工流程处理。`:`当前初审为 ${esc(view.screening_decision)}、冻结状态为 ${esc(view.case_status)}；明确终态不会为展示被强迫进入会审。`;
+  const fastPathBody=view.case_status==="CLOSED"?`初审为 ${esc(view.screening_decision)}，L5 程序审查已通过，告警策略闭环已完成；该清晰案例无需三方会审，M8 人工案件状态仍独立处理。`:`初审为 ${esc(view.screening_decision)}，L5 程序审查已通过并进入 READY_FOR_ALERT_POLICY；该清晰案例无需三方会审，后续仍由告警策略与 M8 人工流程处理。`;
+  const noSessionBody=eligible?"只有安全负责人显式操作才会开始；打开页签不会改变 M4 或 M8 状态。":fastPathComplete?fastPathBody:`当前初审为 ${esc(view.screening_decision)}、冻结状态为 ${esc(view.case_status)}；明确终态不会为展示被强迫进入会审。`;
   const modelLabel=view.model_mode==="OPENAI_COMPATIBLE_QWEN"?"显式真实 Qwen 会审":"离线合成会审";
   const safetyAction=role()==="SAFETY_OFFICER"&&eligible?`<button class="button ${view.model_mode==="OPENAI_COMPATIBLE_QWEN"?"alarm":"primary"}" type="button" data-hearing-start="${esc(view.model_mode)}" data-hearing-case="${esc(caseId)}">启动${modelLabel}</button>`:"";
   const providers=(view.provider_selections||[]).map(item=>`<span>${esc(item.role)} · ${esc(item.provider)} / ${esc(item.model)}</span>`).join("");
