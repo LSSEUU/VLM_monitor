@@ -8,3 +8,10 @@
 *.jinja text eol=lf
 *.md text eol=lf
 Makefile text eol=lf
+
+# M8 migration checksums are append-only authority. Versions 0001-0012 were
+# first installed from CRLF working-tree bytes; versions 0013+ from LF bytes.
+# Keep those exact bytes stable across Windows and POSIX checkouts.
+src/labcourt/adapters/storage/m8_migrations/000?_*.sql text eol=crlf
+src/labcourt/adapters/storage/m8_migrations/001[0-2]_*.sql text eol=crlf
+src/labcourt/adapters/storage/m8_migrations/001[3-9]_*.sql text eol=lf
