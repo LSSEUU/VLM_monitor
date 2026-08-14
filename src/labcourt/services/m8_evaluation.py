@@ -88,9 +88,7 @@ class M8EvaluationService:
         config_payload = self._platform.model_pilot_service.config.model_dump(
             mode="json", exclude_computed_fields=True
         )
-        self.config_sha256 = sha256_hex(
-            ["m8-evaluation-config", 1, config_payload]
-        )
+        self.config_sha256 = sha256_hex(["m8-evaluation-config", 1, config_payload])
         self.model_profile_sha256 = sha256_hex(
             [
                 "m8-evaluation-model-profile",
@@ -201,13 +199,10 @@ class M8EvaluationService:
         request: M8EvaluationGroundTruthImportRequestV1,
     ) -> tuple[M8EvaluationGroundTruthV1, ...]:
         return tuple(
-            self.put_ground_truth(principal, truth.asset_id, truth)
-            for truth in request.labels
+            self.put_ground_truth(principal, truth.asset_id, truth) for truth in request.labels
         )
 
-    def campaigns(
-        self, principal: M8ApiPrincipalV1
-    ) -> tuple[M8EvaluationCampaignV1, ...]:
+    def campaigns(self, principal: M8ApiPrincipalV1) -> tuple[M8EvaluationCampaignV1, ...]:
         self._require_read(principal)
         return self._repository.list_campaigns()
 
@@ -326,9 +321,7 @@ class M8EvaluationService:
             self._wake.set()
             return published
 
-    def campaign(
-        self, principal: M8ApiPrincipalV1, campaign_id: str
-    ) -> M8EvaluationCampaignV1:
+    def campaign(self, principal: M8ApiPrincipalV1, campaign_id: str) -> M8EvaluationCampaignV1:
         self._require_read(principal)
         with self._lock:
             self._refresh_waiting_runs()
@@ -340,8 +333,7 @@ class M8EvaluationService:
         with self._lock:
             run = self._repository.get_run(run_id)
             if run.hearing_case_id is not None and (
-                run.state == M8EvaluationRunState.AWAITING_HEARING
-                or run.l5_status is None
+                run.state == M8EvaluationRunState.AWAITING_HEARING or run.l5_status is None
             ):
                 run = self._refresh_hearing(run)
             return run
@@ -409,9 +401,7 @@ class M8EvaluationService:
                 fps_den=manifest.fps_den,
                 frame_count=manifest.frame_count,
                 duration_millis=(
-                    manifest.frame_count * 1000 * manifest.fps_den
-                    + manifest.fps_num
-                    - 1
+                    manifest.frame_count * 1000 * manifest.fps_den + manifest.fps_num - 1
                 )
                 // manifest.fps_num,
                 imported_by_actor_id=actor_id,
@@ -470,11 +460,7 @@ class M8EvaluationService:
                 if scenario.state != "RUNNING":
                     break
                 active = next(
-                    (
-                        item.stage.value
-                        for item in scenario.stages
-                        if item.state.value == "RUNNING"
-                    ),
+                    (item.stage.value for item in scenario.stages if item.state.value == "RUNNING"),
                     running.active_stage,
                 )
                 if active != running.active_stage:
@@ -501,6 +487,36 @@ class M8EvaluationService:
         completed_at = self._utc_now()
         receipts = (scenario.raw_response_ref,) if scenario.raw_response_ref else ()
         if scenario.outcome == "HUMAN_REVIEW_REQUIRED":
+            hearing_case_id = scenario.hearing_case_id
+            prehearing = (
+                self._platform.prehearing_preparation(
+                    running.run_id,
+                    hearing_case_id,
+                )
+                if hearing_case_id is not None
+                else None
+            )
+            if prehearing is not None:
+                assert hearing_case_id is not None
+                with self._platform.open_hearing_runtime(running.run_id) as runtime:
+                    hearing_view = runtime.view(hearing_case_id)
+                return running.model_copy(
+                    update={
+                        "revision": running.revision + 1,
+                        "state": M8EvaluationRunState.SUCCEEDED,
+                        "active_stage": None,
+                        "actual_route": M8EvaluationActualRoute.HUMAN_REVIEW,
+                        "route_reason_code": "NO_NOVEL_CLEAR_FRAME",
+                        "case_id": scenario.case_id,
+                        "hearing_case_id": scenario.hearing_case_id,
+                        "m4_case_status": hearing_view.case_status,
+                        "hearing_eligibility": hearing_view.eligibility,
+                        "l5_status": hearing_view.l5_status,
+                        "completed_at": completed_at,
+                        "delivery_state": M8EvaluationDeliveryState.NOT_APPLICABLE,
+                        "provider_receipt_refs": receipts,
+                    }
+                )
             return running.model_copy(
                 update={
                     "revision": running.revision + 1,
@@ -647,8 +663,7 @@ class M8EvaluationService:
     def _refresh_waiting_runs(self) -> None:
         for run in self._repository.list_runs():
             if run.hearing_case_id is not None and (
-                run.state == M8EvaluationRunState.AWAITING_HEARING
-                or run.l5_status is None
+                run.state == M8EvaluationRunState.AWAITING_HEARING or run.l5_status is None
             ):
                 self._refresh_hearing(run)
 
@@ -707,9 +722,7 @@ class M8EvaluationService:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         return actor
 
-    def _require_role(
-        self, principal: M8ApiPrincipalV1, role: M8ActorRole
-    ) -> M8ActorAuthorityV1:
+    def _require_role(self, principal: M8ApiPrincipalV1, role: M8ActorRole) -> M8ActorAuthorityV1:
         actor = self._actor(principal)
         if actor.role != role:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
