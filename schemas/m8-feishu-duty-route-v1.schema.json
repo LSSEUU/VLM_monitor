@@ -1,0 +1,96 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-duty-route-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "activation_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Activation Revision",
+      "type": "integer"
+    },
+    "activation_status_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Activation Status Id",
+      "type": "string"
+    },
+    "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+    },
+    "actor_authority_commit_receipt_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Actor Authority Commit Receipt Id",
+      "type": "string"
+    },
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "actor_role": {
+      "const": "SAFETY_OFFICER",
+      "default": "SAFETY_OFFICER",
+      "title": "Actor Role",
+      "type": "string"
+    },
+    "committed_at": {
+      "format": "date-time",
+      "title": "Committed At",
+      "type": "string"
+    },
+    "prior_route_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Route Id"
+    },
+    "recipient_binding_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Recipient Binding Authority Id",
+      "type": "string"
+    },
+    "repository_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Repository Manifest Id",
+      "type": "string"
+    },
+    "route_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Route Id",
+      "type": "string"
+    },
+    "route_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Route Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-feishu-duty-route-v1",
+      "default": "m8-feishu-duty-route-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "actor_id",
+    "actor_authority_commit_receipt_id",
+    "recipient_binding_authority_id",
+    "activation_revision",
+    "activation_status_id",
+    "route_revision",
+    "committed_at",
+    "repository_manifest_id",
+    "route_id"
+  ],
+  "title": "M8FeishuDutyRouteV1",
+  "type": "object"
+}

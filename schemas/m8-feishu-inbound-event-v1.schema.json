@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "M8FeishuInboundEventKind": {
+      "enum": [
+        "DIRECT_MESSAGE",
+        "CARD_ACTION"
+      ],
+      "title": "M8FeishuInboundEventKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-inbound-event-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action_token_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Action Token Sha256"
+    },
+    "chat_id_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Chat Id Sha256",
+      "type": "string"
+    },
+    "clear_sender_identifier_persisted": {
+      "const": false,
+      "default": false,
+      "title": "Clear Sender Identifier Persisted",
+      "type": "boolean"
+    },
+    "content_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Ref"
+    },
+    "content_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Sha256"
+    },
+    "event_kind": {
+      "$ref": "#/$defs/M8FeishuInboundEventKind"
+    },
+    "inbound_event_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Inbound Event Id",
+      "type": "string"
+    },
+    "ingress_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Ingress Manifest Id",
+      "type": "string"
+    },
+    "provider_event_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Provider Event Id",
+      "type": "string"
+    },
+    "provider_message_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Provider Message Id",
+      "type": "string"
+    },
+    "raw_event_ref": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Raw Event Ref",
+      "type": "string"
+    },
+    "raw_event_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Event Sha256",
+      "type": "string"
+    },
+    "received_at": {
+      "format": "date-time",
+      "title": "Received At",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-feishu-inbound-event-v1",
+      "default": "m8-feishu-inbound-event-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sender_open_id_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sender Open Id Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_kind",
+    "provider_event_id",
+    "provider_message_id",
+    "sender_open_id_sha256",
+    "chat_id_sha256",
+    "received_at",
+    "raw_event_ref",
+    "raw_event_sha256",
+    "ingress_manifest_id",
+    "inbound_event_id"
+  ],
+  "title": "M8FeishuInboundEventV1",
+  "type": "object"
+}

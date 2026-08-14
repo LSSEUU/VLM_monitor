@@ -1,0 +1,112 @@
+{
+  "$defs": {
+    "M8OperationalCaseStatus": {
+      "enum": [
+        "PENDING_VERIFICATION",
+        "CONFIRMED",
+        "REJECTED",
+        "EVIDENCE_REQUESTED",
+        "RESOLVED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "M8OperationalCaseStatus",
+      "type": "string"
+    },
+    "M8OperationalRiskLevel": {
+      "enum": [
+        "REMINDER",
+        "GENERAL",
+        "SEVERE",
+        "EMERGENCY"
+      ],
+      "title": "M8OperationalRiskLevel",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-case-memory-entry-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One role-scoped, persisted Case citation; never a rule or ground truth.",
+  "properties": {
+    "audit_event_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Event Id",
+      "type": "string"
+    },
+    "case_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Authority Id",
+      "type": "string"
+    },
+    "case_document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Document Sha256",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_version": {
+      "exclusiveMinimum": 0,
+      "title": "Case Version",
+      "type": "integer"
+    },
+    "current_rule_rewrite_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Current Rule Rewrite Permitted",
+      "type": "boolean"
+    },
+    "location_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Location Id",
+      "type": "string"
+    },
+    "machine_weak_label_is_ground_truth": {
+      "const": false,
+      "default": false,
+      "title": "Machine Weak Label Is Ground Truth",
+      "type": "boolean"
+    },
+    "persisted_case_authority": {
+      "const": true,
+      "default": true,
+      "title": "Persisted Case Authority",
+      "type": "boolean"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/M8OperationalRiskLevel"
+    },
+    "schema_version": {
+      "const": "m8-case-memory-entry-v1",
+      "default": "m8-case-memory-entry-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/M8OperationalCaseStatus"
+    },
+    "summary": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "case_version",
+    "status",
+    "risk_level",
+    "location_id",
+    "case_authority_id",
+    "case_document_sha256",
+    "audit_event_id",
+    "summary"
+  ],
+  "title": "M8CaseMemoryEntryV1",
+  "type": "object"
+}

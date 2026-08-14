@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "M8AgentFailureCode": {
+      "enum": [
+        "NOT_CONFIGURED",
+        "PROVIDER_TIMEOUT",
+        "TRANSPORT_UNAVAILABLE",
+        "PROVIDER_REJECTED",
+        "RESPONSE_INVALID",
+        "RESPONSE_TOO_LARGE",
+        "TOOL_ARGUMENT_INVALID",
+        "TOOL_FORBIDDEN",
+        "TOOL_LOOP_LIMIT",
+        "STREAM_INTERRUPTED",
+        "AUTHORITY_CHANGED",
+        "CONVERSATION_NOT_FOUND"
+      ],
+      "title": "M8AgentFailureCode",
+      "type": "string"
+    },
+    "M8AgentModelAvailability": {
+      "enum": [
+        "NOT_CONFIGURED",
+        "CONFIGURED_NOT_PROBED",
+        "AVAILABLE",
+        "DEGRADED"
+      ],
+      "title": "M8AgentModelAvailability",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-agent-model-status-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "api_key_configured": {
+      "title": "Api Key Configured",
+      "type": "boolean"
+    },
+    "api_key_env": {
+      "title": "Api Key Env",
+      "type": "string"
+    },
+    "availability": {
+      "$ref": "#/$defs/M8AgentModelAvailability"
+    },
+    "cache_enabled": {
+      "const": false,
+      "default": false,
+      "title": "Cache Enabled",
+      "type": "boolean"
+    },
+    "default_execution_mode": {
+      "const": "LIVE_QWEN",
+      "title": "Default Execution Mode",
+      "type": "string"
+    },
+    "endpoint_configured": {
+      "title": "Endpoint Configured",
+      "type": "boolean"
+    },
+    "endpoint_env": {
+      "title": "Endpoint Env",
+      "type": "string"
+    },
+    "last_failure_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8AgentFailureCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "last_model_call_ref": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Model Call Ref"
+    },
+    "model": {
+      "title": "Model",
+      "type": "string"
+    },
+    "network_call_at_startup": {
+      "const": false,
+      "default": false,
+      "title": "Network Call At Startup",
+      "type": "boolean"
+    },
+    "provider": {
+      "title": "Provider",
+      "type": "string"
+    },
+    "reply_policy": {
+      "const": "LIVE_ONLY",
+      "default": "LIVE_ONLY",
+      "title": "Reply Policy",
+      "type": "string"
+    },
+    "revision": {
+      "title": "Revision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-agent-model-status-v1",
+      "default": "m8-agent-model-status-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "secret_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Secret Exposed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "availability",
+    "default_execution_mode",
+    "provider",
+    "model",
+    "revision",
+    "endpoint_env",
+    "api_key_env",
+    "endpoint_configured",
+    "api_key_configured"
+  ],
+  "title": "M8AgentModelStatusV1",
+  "type": "object"
+}

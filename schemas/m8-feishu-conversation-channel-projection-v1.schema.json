@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "M8FeishuTurnOrigin": {
+      "enum": [
+        "WEB",
+        "FEISHU"
+      ],
+      "title": "M8FeishuTurnOrigin",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-conversation-channel-projection-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "binding_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Binding Revision",
+      "type": "integer"
+    },
+    "bound_at": {
+      "format": "date-time",
+      "title": "Bound At",
+      "type": "string"
+    },
+    "channel": {
+      "const": "FEISHU_P2P",
+      "default": "FEISHU_P2P",
+      "title": "Channel",
+      "type": "string"
+    },
+    "chat_id_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Chat Id Sha256",
+      "type": "string"
+    },
+    "conversation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-feishu-conversation-channel-projection-v1",
+      "default": "m8-feishu-conversation-channel-projection-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "turn_origins": {
+      "patternProperties": {
+        "^[0-9a-f]{64}$": {
+          "$ref": "#/$defs/M8FeishuTurnOrigin"
+        }
+      },
+      "title": "Turn Origins",
+      "type": "object"
+    }
+  },
+  "required": [
+    "conversation_id",
+    "actor_id",
+    "binding_revision",
+    "chat_id_sha256",
+    "bound_at"
+  ],
+  "title": "M8FeishuConversationChannelProjectionV1",
+  "type": "object"
+}

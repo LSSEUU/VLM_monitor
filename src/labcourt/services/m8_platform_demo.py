@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import sqlite3
 import threading
 import uuid
 from contextlib import suppress
@@ -56,11 +57,13 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseStatus,
     M8OperationalRiskLevel,
 )
-from labcourt.contracts.m8_api import (
-    M8ApiKnowledgeQueryRequestV1,
-    M8ApiPrincipalV1,
+from labcourt.contracts.m8_api import M8ApiKnowledgeQueryRequestV1, M8ApiPrincipalV1
+from labcourt.contracts.m8_feishu_platform import (
+    M8FeishuPlatformStatusV1,
+    M8FeishuTestCardCheckReceiptV1,
+    M8FeishuTestCardCheckRequestV1,
 )
-from labcourt.contracts.m8_knowledge import M8KnowledgeDocumentType
+from labcourt.contracts.m8_knowledge_projection import M8KnowledgeQueryProjectionV1
 from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
 )
@@ -79,6 +82,7 @@ from labcourt.contracts.m8_notifications import (
     M8NotificationTargetAuthorityV1,
     M8NotificationTemplateAuthorityV1,
 )
+from labcourt.contracts.m8_platform_agent import M8PlatformAgentQueryResponseV2
 from labcourt.contracts.m8_platform_demo import (
     M8NotificationConversationActionKind,
     M8NotificationConversationActionV1,
@@ -87,8 +91,6 @@ from labcourt.contracts.m8_platform_demo import (
     M8NotificationConversationSummaryV1,
     M8NotificationConversationTechnicalV1,
     M8NotificationConversationV1,
-    M8PlatformAgentActionKind,
-    M8PlatformAgentQueryResponseV1,
     M8PlatformEvidenceAccess,
     M8PlatformEvidenceDetectionV1,
     M8PlatformEvidenceFrameAnnotationV1,
@@ -105,7 +107,6 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformModelComponentV1,
     M8PlatformModelReadinessComponentV1,
     M8PlatformModelReadinessV1,
-    M8PlatformProposedActionV1,
     M8PlatformRecognitionMode,
     M8PlatformResetResponseV1,
     M8PlatformScenarioKind,
@@ -127,7 +128,9 @@ from labcourt.contracts.pilot import PilotA2Report
 from labcourt.contracts.pilot_ui import PilotUiJobStartRequest
 from labcourt.contracts.projection_generation import ProjectionCurrentPointer
 from labcourt.exceptions import EvidenceMissing
+from labcourt.services.m8_feishu_platform import M8FeishuPlatformService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
+from labcourt.services.m8_knowledge_projection import M8KnowledgeProjectionService
 from labcourt.services.m8_notification_api import M8NotificationApiService
 from labcourt.services.m8_notifications import M8NotificationService
 from labcourt.services.m8_operations_api import (
@@ -135,6 +138,7 @@ from labcourt.services.m8_operations_api import (
     M8ApiServiceFailureCode,
     M8OperationsApiService,
 )
+from labcourt.services.m8_platform_agent import M8PlatformAgentService
 from labcourt.services.pilot_a5 import run_pilot_a5
 from labcourt.services.pilot_operations import build_expected_perception_manifest
 from labcourt.services.pilot_progress import PilotProgressUpdate
@@ -204,7 +208,11 @@ class M8PlatformDemoService:
         database_path: Path,
         input_media_path: Path,
         api_service: M8OperationsApiService,
+        notification_service: M8NotificationApiService,
         knowledge_service: M8KnowledgeApiService,
+        knowledge_projection_service: M8KnowledgeProjectionService,
+        feishu_platform_service: M8FeishuPlatformService,
+        agent_service: M8PlatformAgentService,
         fixture_pilot_service: PilotUiService,
         model_pilot_service: PilotUiService,
     ) -> None:
@@ -213,7 +221,11 @@ class M8PlatformDemoService:
         self.artifact_root = self.database_path.parent
         self.input_media_path = input_media_path.absolute()
         self.api_service = api_service
+        self.notification_service = notification_service
         self.knowledge_service = knowledge_service
+        self.knowledge_projection_service = knowledge_projection_service
+        self.feishu_platform_service = feishu_platform_service
+        self.agent_service = agent_service
         self.fixture_pilot_service = fixture_pilot_service
         self.model_pilot_service = model_pilot_service
         self.pilot_service = fixture_pilot_service
@@ -583,10 +595,19 @@ class M8PlatformDemoService:
         principal: M8ApiPrincipalV1,
         case_id: str,
         kind: str,
+        source_case_version: int | None = None,
+        source_case_authority_sha256: str | None = None,
     ):
         self._require_role(principal, M8ActorRole.SAFETY_OFFICER)
         operations = self._operations()
         case = operations.get_current_operational_case(case_id)
+        if (source_case_version is None) != (source_case_authority_sha256 is None):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
+        if source_case_version is not None and (
+            case.case_version != source_case_version
+            or case.case_document_sha256 != source_case_authority_sha256
+        ):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
         subject = case.audit_event.case_authority.subject_actor_id
         if subject is None:
             raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
@@ -667,117 +688,46 @@ class M8PlatformDemoService:
         self,
         principal: M8ApiPrincipalV1,
         query: str,
-    ) -> M8PlatformAgentQueryResponseV1:
+    ) -> M8PlatformAgentQueryResponseV2:
         actor = self._actor(principal)
-        normalized = query.casefold()
-        cases = self.api_service.cases(principal)
-        if actor.role == M8ActorRole.OPERATIONS and any(
-            word in normalized for word in ("触发", "烟雾", "温度", "复位", "reset")
-        ):
-            reset = "复位" in normalized or "reset" in normalized
-            return M8PlatformAgentQueryResponseV1(
-                outcome="ANSWERED",
-                answer=("可生成复位操作卡。" if reset else "可生成烟雾与温度联动场景卡。"),
-                proposed_action=M8PlatformProposedActionV1(
-                    action_kind=(
-                        M8PlatformAgentActionKind.RESET_DEMO
-                        if reset
-                        else M8PlatformAgentActionKind.RUN_SCENARIO
-                    ),
-                    target_ref=("platform-demo" if reset else "smoke-temperature-emergency"),
-                    current_version=1,
-                    impact_summary=(
-                        "归档当前 Demo 并恢复无案件基线"
-                        if reset
-                        else "写入两路模拟信号并自动建立紧急案件"
-                    ),
-                    request_payload=(
-                        {"explicit_human_confirmation": True}
-                        if reset
-                        else {
-                            "scenario_kind": "SMOKE_TEMPERATURE_EMERGENCY",
-                            "explicit_human_confirmation": True,
-                        }
-                    ),
-                ),
-            )
-        if (
-            actor.role == M8ActorRole.SAFETY_OFFICER
-            and cases
-            and any(word in normalized for word in ("处置", "确认", "案件"))
-        ):
-            pending = next(
-                (
-                    item
-                    for item in cases
-                    if item.status == M8OperationalCaseStatus.PENDING_VERIFICATION
-                ),
-                None,
-            )
-            if pending is None:
-                return M8PlatformAgentQueryResponseV1(
-                    outcome="ANSWERED",
-                    answer="当前没有处于待核实状态的案件; 请在案件中心查看其他可用动作。",
-                    source_refs=tuple(item.case_id for item in cases),
-                )
-            case = pending
-            return M8PlatformAgentQueryResponseV1(
-                outcome="ANSWERED",
-                answer="已按当前案件版本生成处置操作卡，确认后仍由案件接口复核权限和版本。",
-                source_refs=(case.case_id,),
-                proposed_action=M8PlatformProposedActionV1(
-                    action_kind=M8PlatformAgentActionKind.CASE_TRANSITION,
-                    target_ref=case.case_id,
-                    current_version=case.case_version,
-                    impact_summary="将待核实案件转为已确认, 后续可通知关联学生",
-                    request_payload={
-                        "action": "CONFIRM",
-                        "source_case_version": case.case_version,
-                        "source_case_authority_sha256": case.case_document_sha256,
-                        "source_status": case.status.value,
-                        "explicit_human_confirmation": True,
-                    },
-                ),
-            )
-        if "案件" in normalized:
-            return M8PlatformAgentQueryResponseV1(
-                outcome="ANSWERED",
-                answer=f"当前权限范围内共有 {len(cases)} 个案件。",
-                source_refs=tuple(item.case_id for item in cases),
-            )
-        if any(word in normalized for word in ("设备", "传感器", "地图")):
-            projection = self.api_service.source_catalog(principal, PLATFORM_CAMPUS_ID)
-            return M8PlatformAgentQueryResponseV1(
-                outcome="ANSWERED",
-                answer=(
-                    f"当前校区登记 {len(projection.catalog.sources)} 个数据源，状态来自运营投影。"
-                ),
-                source_refs=tuple(item.source_id for item in projection.catalog.sources),
-            )
-        try:
-            catalog = self.knowledge_service.current_catalog(principal, "campus-safety-knowledge")
-            request = M8ApiKnowledgeQueryRequestV1(
-                query_text=query,
-                locale="zh-CN",
-                as_of=_utc_now(),
-                allowed_document_types=tuple(
-                    sorted(M8KnowledgeDocumentType, key=lambda item: item.value)
-                ),
-                max_citations=3,
-            )
-            answer = self.knowledge_service.query(principal, catalog.catalog.catalog_id, request)
-        except (EvidenceMissing, M8ApiServiceError, TypeError, ValueError):
-            return M8PlatformAgentQueryResponseV1(
-                outcome="NO_MATCH",
-                answer="离线知识库中没有匹配答案；Agent 未执行任何操作。",
-            )
-        return M8PlatformAgentQueryResponseV1(
-            outcome=answer.answer.outcome.value,
-            answer=answer.answer.answer_text,
-            source_refs=tuple(
-                item.document.logical_document_id for item in answer.answer.citations
-            ),
+        return self.agent_service.query(
+            principal,
+            actor,
+            query,
+            self._feishu_projection(principal),
         )
+
+    def knowledge_query_projection(
+        self,
+        principal: M8ApiPrincipalV1,
+        catalog_id: str,
+        request: M8ApiKnowledgeQueryRequestV1,
+    ) -> M8KnowledgeQueryProjectionV1:
+        return self.knowledge_projection_service.query(principal, catalog_id, request)
+
+    def feishu_status(self, principal: M8ApiPrincipalV1) -> M8FeishuPlatformStatusV1:
+        self._actor(principal)
+        return self._feishu_projection(principal)
+
+    def check_feishu_test_card(
+        self,
+        principal: M8ApiPrincipalV1,
+        request: M8FeishuTestCardCheckRequestV1,
+    ) -> M8FeishuTestCardCheckReceiptV1:
+        self._require_role(principal, M8ActorRole.OPERATIONS)
+        return self.feishu_platform_service.check_test_card(request)
+
+    def _feishu_projection(self, principal: M8ApiPrincipalV1) -> M8FeishuPlatformStatusV1:
+        status = self.feishu_platform_service.status()
+        attempt = status.last_audited_attempt
+        if attempt is None:
+            return status
+        visible_notification_ids = {
+            item.notification_id for item in self.notification_service.notifications(principal)
+        }
+        if attempt.notification_id not in visible_notification_ids:
+            return status.model_copy(update={"last_audited_attempt": None})
+        return status
 
     def knowledge_document(
         self,
@@ -808,6 +758,7 @@ class M8PlatformDemoService:
         self._require_role(principal, M8ActorRole.OPERATIONS)
         if not self._operation_lock.acquire(blocking=False):
             raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
+        staging: Path | None = None
         try:
             if any(
                 jobs.snapshot().state == "RUNNING"
@@ -822,14 +773,27 @@ class M8PlatformDemoService:
             fresh = bootstrap_m8_platform_demo(
                 staged_database, self.input_media_path, session_id=new_session
             )
-            archive = self.artifact_root / "archive" / old.session_id
-            archive.mkdir(parents=True, exist_ok=False)
+            archive = self._reset_archive_path(old.session_id)
+            archived_database = archive / self.database_path.name
+            self._backup_sqlite_database(self.database_path, archived_database)
             for path in self._archive_paths():
-                if path.exists():
-                    destination = archive / path.relative_to(self.artifact_root)
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    path.replace(destination)
-            staged_database.replace(self.database_path)
+                if not path.exists() or path in {
+                    self.database_path,
+                    self.database_path.with_name(f"{self.database_path.name}-wal"),
+                    self.database_path.with_name(f"{self.database_path.name}-shm"),
+                }:
+                    continue
+                destination = archive / path.relative_to(self.artifact_root)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                if path.is_dir():
+                    shutil.copytree(path, destination)
+                else:
+                    shutil.copy2(path, destination)
+            self._preserve_live_integration_authorities(staged_database, archived_database)
+            # Restore through SQLite's online backup API. On Windows the Feishu
+            # workers keep opening this authority, so replacing the database file
+            # is neither reliable nor necessary.
+            self._backup_sqlite_database(staged_database, self.database_path)
             for relative in (
                 Path(PLATFORM_BOOTSTRAP_RECEIPT_NAME),
                 Path(PLATFORM_MEDIA_RECEIPT_NAME),
@@ -838,12 +802,19 @@ class M8PlatformDemoService:
                 source = staging / relative
                 destination = self.artifact_root / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                source.replace(destination)
-            shutil.rmtree(staging)
+                temporary = destination.with_name(f".{destination.name}.{new_session}.tmp")
+                shutil.copy2(source, temporary)
+                os.replace(temporary, destination)
+            scenario_state = self.artifact_root / PLATFORM_SCENARIO_STATE_NAME
+            with suppress(FileNotFoundError):
+                scenario_state.unlink()
+            scenario_runs = self.artifact_root / "scenario-runs"
+            if scenario_runs.exists():
+                shutil.rmtree(scenario_runs)
             return M8PlatformResetResponseV1(
                 session_id=fresh.receipt.session_id,
                 archived_session_id=old.session_id,
-                archive_ref=f"archive/{old.session_id}",
+                archive_ref=f"archive/{archive.name}",
                 baseline_summary={
                     "locations": fresh.receipt.location_count,
                     "sources": fresh.receipt.source_count,
@@ -852,7 +823,102 @@ class M8PlatformDemoService:
                 },
             )
         finally:
+            if staging is not None and staging.exists():
+                shutil.rmtree(staging)
             self._operation_lock.release()
+
+    def _reset_archive_path(self, session_id: str) -> Path:
+        archive_root = self.artifact_root / "archive"
+        archive_root.mkdir(parents=True, exist_ok=True)
+        archive = archive_root / session_id
+        if archive.exists() and any(archive.iterdir()):
+            archive = archive_root / f"{session_id}-retry-{uuid.uuid4().hex[:8]}"
+        archive.mkdir(parents=False, exist_ok=True)
+        return archive
+
+    @staticmethod
+    def _backup_sqlite_database(source_path: Path, destination_path: Path) -> None:
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        source = sqlite3.connect(source_path, timeout=10.0)
+        destination = sqlite3.connect(destination_path, timeout=10.0)
+        try:
+            source.execute("PRAGMA busy_timeout = 10000")
+            destination.execute("PRAGMA busy_timeout = 10000")
+            source.backup(destination, pages=256, sleep=0.05)
+        finally:
+            destination.close()
+            source.close()
+
+    @staticmethod
+    def _preserve_live_integration_authorities(
+        staged_database: Path,
+        archived_database: Path,
+    ) -> None:
+        # A Demo reset clears cases, notifications, conversations, outboxes and
+        # runtime events. It must not silently revoke an already commissioned
+        # Feishu adapter or its current duty route.
+        tables = (
+            "m8_actor_authorities",
+            "m8_notification_targets",
+            "m8_production_adapter_candidates",
+            "m8_commissioning_evidence",
+            "m8_feishu_sandbox_activations",
+            "m8_feishu_sandbox_activation_revocations",
+            "m8_feishu_duty_route_revisions",
+        )
+        connection = sqlite3.connect(staged_database, timeout=10.0)
+        try:
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("ATTACH DATABASE ? AS archived", (str(archived_database),))
+            try:
+                archived_tables = {
+                    str(row[0])
+                    for row in connection.execute(
+                        "SELECT name FROM archived.sqlite_master WHERE type = 'table'"
+                    )
+                }
+                for table in tables:
+                    if table not in archived_tables:
+                        continue
+                    columns = tuple(
+                        str(row[1])
+                        for row in connection.execute(f'PRAGMA main.table_info("{table}")')
+                    )
+                    primary_key = tuple(
+                        str(row[1])
+                        for row in sorted(
+                            connection.execute(f'PRAGMA main.table_info("{table}")'),
+                            key=lambda row: int(row[5]) if int(row[5]) else 10_000,
+                        )
+                        if int(row[5])
+                    )
+                    if not columns or not primary_key:
+                        raise sqlite3.IntegrityError(
+                            f"persistent integration table has no primary key: {table}"
+                        )
+                    quoted_columns = ", ".join(f'"{value}"' for value in columns)
+                    identity = " AND ".join(
+                        f'target."{value}" = source."{value}"' for value in primary_key
+                    )
+                    connection.execute(
+                        f'INSERT INTO main."{table}" ({quoted_columns}) '
+                        f'SELECT {quoted_columns} FROM archived."{table}" AS source '
+                        f'WHERE NOT EXISTS (SELECT 1 FROM main."{table}" AS target '
+                        f"WHERE {identity}) ORDER BY source.rowid"
+                    )
+                violations = connection.execute("PRAGMA foreign_key_check").fetchall()
+                if violations:
+                    raise sqlite3.IntegrityError(
+                        "preserved integration authorities violate foreign keys"
+                    )
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                raise
+            finally:
+                connection.execute("DETACH DATABASE archived")
+        finally:
+            connection.close()
 
     def _start_ppe(
         self,

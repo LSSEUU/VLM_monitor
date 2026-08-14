@@ -1216,6 +1216,78 @@
       "name": "m8-adapter-readiness-assessment-v1"
     },
     {
+      "file": "m8-agent-conversation-create-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationCreateRequestV1",
+      "name": "m8-agent-conversation-create-request-v1"
+    },
+    {
+      "file": "m8-agent-conversation-removal-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationRemovalReceiptV1",
+      "name": "m8-agent-conversation-removal-receipt-v1"
+    },
+    {
+      "file": "m8-agent-conversation-summary-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationSummaryV1",
+      "name": "m8-agent-conversation-summary-v1"
+    },
+    {
+      "file": "m8-agent-conversation-turn-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationTurnV1",
+      "name": "m8-agent-conversation-turn-v1"
+    },
+    {
+      "file": "m8-agent-conversation-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentConversationV1",
+      "name": "m8-agent-conversation-v1"
+    },
+    {
+      "file": "m8-agent-model-call-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentModelCallReceiptV1",
+      "name": "m8-agent-model-call-receipt-v1"
+    },
+    {
+      "file": "m8-agent-model-profile-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentModelProfileV1",
+      "name": "m8-agent-model-profile-v1"
+    },
+    {
+      "file": "m8-agent-model-status-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentModelStatusV1",
+      "name": "m8-agent-model-status-v1"
+    },
+    {
+      "file": "m8-agent-stream-event-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentStreamEventV1",
+      "name": "m8-agent-stream-event-v1"
+    },
+    {
+      "file": "m8-agent-tool-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentToolReceiptV1",
+      "name": "m8-agent-tool-receipt-v1"
+    },
+    {
+      "file": "m8-agent-turn-completion-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentTurnCompletionV1",
+      "name": "m8-agent-turn-completion-v1"
+    },
+    {
+      "file": "m8-agent-turn-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_agent_chat.M8AgentTurnRequestV1",
+      "name": "m8-agent-turn-request-v1"
+    },
+    {
       "file": "m8-api-case-transition-request-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_api.M8ApiCaseTransitionRequestV1",
@@ -1276,6 +1348,18 @@
       "name": "m8-campus-topology-commit-receipt-v1"
     },
     {
+      "file": "m8-case-memory-entry-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_projection.M8CaseMemoryEntryV1",
+      "name": "m8-case-memory-entry-v1"
+    },
+    {
+      "file": "m8-case-memory-projection-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_projection.M8CaseMemoryProjectionV1",
+      "name": "m8-case-memory-projection-v1"
+    },
+    {
       "file": "m8-commissioning-evidence-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8CommissioningEvidenceAuthorityV1",
@@ -1294,6 +1378,36 @@
       "name": "m8-feishu-adapter-profile-v1"
     },
     {
+      "file": "m8-feishu-agent-reply-completion-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuAgentReplyCompletionV1",
+      "name": "m8-feishu-agent-reply-completion-v1"
+    },
+    {
+      "file": "m8-feishu-agent-reply-envelope-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuAgentReplyEnvelopeV1",
+      "name": "m8-feishu-agent-reply-envelope-v1"
+    },
+    {
+      "file": "m8-feishu-alert-bridge-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuAlertBridgeReceiptV1",
+      "name": "m8-feishu-alert-bridge-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-card-action-intent-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuCardActionIntentV1",
+      "name": "m8-feishu-card-action-intent-v1"
+    },
+    {
+      "file": "m8-feishu-card-action-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuCardActionReceiptV1",
+      "name": "m8-feishu-card-action-receipt-v1"
+    },
+    {
       "file": "m8-feishu-card-dispatch-preflight-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_notification.M8FeishuCardDispatchPreflightV1",
@@ -1306,6 +1420,24 @@
       "name": "m8-feishu-conformance-result-v1"
     },
     {
+      "file": "m8-feishu-conversation-channel-projection-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuConversationChannelProjectionV1",
+      "name": "m8-feishu-conversation-channel-projection-v1"
+    },
+    {
+      "file": "m8-feishu-duty-route-revision-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuDutyRouteRevisionRequestV1",
+      "name": "m8-feishu-duty-route-revision-request-v1"
+    },
+    {
+      "file": "m8-feishu-duty-route-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuDutyRouteV1",
+      "name": "m8-feishu-duty-route-v1"
+    },
+    {
       "file": "m8-feishu-emergency-demo-probe-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_emergency_demo.M8FeishuEmergencyDemoProbeReceiptV1",
@@ -1316,6 +1448,18 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_emergency_demo.M8FeishuEmergencyDemoProbeV1",
       "name": "m8-feishu-emergency-demo-probe-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-event-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuInboundEventV1",
+      "name": "m8-feishu-inbound-event-v1"
+    },
+    {
+      "file": "m8-feishu-inbound-job-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuInboundJobV1",
+      "name": "m8-feishu-inbound-job-v1"
     },
     {
       "file": "m8-feishu-inbound-message-commit-receipt-v1.schema.json",
@@ -1372,6 +1516,12 @@
       "name": "m8-feishu-inbound-webhook-profile-v1"
     },
     {
+      "file": "m8-feishu-last-audited-attempt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_platform.M8FeishuLastAuditedAttemptV1",
+      "name": "m8-feishu-last-audited-attempt-v1"
+    },
+    {
       "file": "m8-feishu-local-demo-config-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_local_demo.M8FeishuLocalDemoConfigV1",
@@ -1390,6 +1540,12 @@
       "name": "m8-feishu-notification-card-v1"
     },
     {
+      "file": "m8-feishu-notification-dispatch-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuNotificationDispatchRequestV1",
+      "name": "m8-feishu-notification-dispatch-request-v1"
+    },
+    {
       "file": "m8-feishu-personal-demo-probe-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_personal_demo.M8FeishuPersonalDemoProbeReceiptV1",
@@ -1402,10 +1558,40 @@
       "name": "m8-feishu-personal-demo-probe-v1"
     },
     {
+      "file": "m8-feishu-platform-status-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_platform.M8FeishuPlatformStatusV1",
+      "name": "m8-feishu-platform-status-v1"
+    },
+    {
+      "file": "m8-feishu-queued-dispatch-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuQueuedDispatchReceiptV1",
+      "name": "m8-feishu-queued-dispatch-receipt-v1"
+    },
+    {
       "file": "m8-feishu-recipient-binding-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_notification.M8FeishuRecipientBindingAuthorityV1",
       "name": "m8-feishu-recipient-binding-authority-v1"
+    },
+    {
+      "file": "m8-feishu-reminder-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuReminderReceiptV1",
+      "name": "m8-feishu-reminder-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-runtime-heartbeat-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuRuntimeHeartbeatV1",
+      "name": "m8-feishu-runtime-heartbeat-v1"
+    },
+    {
+      "file": "m8-feishu-runtime-status-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuRuntimeStatusV2",
+      "name": "m8-feishu-runtime-status-v2"
     },
     {
       "file": "m8-feishu-sandbox-activation-commit-receipt-v1.schema.json",
@@ -1442,6 +1628,24 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_transport.M8FeishuSandboxSendReceiptV1",
       "name": "m8-feishu-sandbox-send-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-test-card-check-receipt-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_feishu_platform.M8FeishuTestCardCheckReceiptV1",
+      "name": "m8-feishu-test-card-check-receipt-v1"
+    },
+    {
+      "file": "m8-feishu-test-card-check-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_feishu_platform.M8FeishuTestCardCheckRequestV1",
+      "name": "m8-feishu-test-card-check-request-v1"
+    },
+    {
+      "file": "m8-feishu-test-card-dispatch-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_feishu_live.M8FeishuTestCardDispatchRequestV1",
+      "name": "m8-feishu-test-card-dispatch-request-v1"
     },
     {
       "file": "m8-feishu-token-acquisition-receipt-v1.schema.json",
@@ -1514,6 +1718,18 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_knowledge_persistence.M8KnowledgeDocumentCommitReceiptV1",
       "name": "m8-knowledge-document-commit-receipt-v1"
+    },
+    {
+      "file": "m8-knowledge-document-hit-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_projection.M8KnowledgeDocumentHitV1",
+      "name": "m8-knowledge-document-hit-v1"
+    },
+    {
+      "file": "m8-knowledge-query-projection-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_knowledge_projection.M8KnowledgeQueryProjectionV1",
+      "name": "m8-knowledge-query-projection-v1"
     },
     {
       "file": "m8-knowledge-query-v1.schema.json",
@@ -1828,6 +2044,12 @@
       "name": "m8-platform-agent-query-response-v1"
     },
     {
+      "file": "m8-platform-agent-query-response-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_agent.M8PlatformAgentQueryResponseV2",
+      "name": "m8-platform-agent-query-response-v2"
+    },
+    {
       "file": "m8-platform-bootstrap-receipt-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_platform_demo.M8PlatformBootstrapReceiptV1",
@@ -1870,10 +2092,22 @@
       "name": "m8-platform-notification-dispatch-request-v1"
     },
     {
+      "file": "m8-platform-notification-dispatch-request-v2.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_platform_agent.M8PlatformNotificationDispatchRequestV2",
+      "name": "m8-platform-notification-dispatch-request-v2"
+    },
+    {
       "file": "m8-platform-notification-reply-request-v1.schema.json",
       "mode": "validation",
       "model": "labcourt.contracts.m8_platform_demo.M8PlatformNotificationReplyRequestV1",
       "name": "m8-platform-notification-reply-request-v1"
+    },
+    {
+      "file": "m8-platform-proposed-action-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_platform_agent.M8PlatformProposedActionV2",
+      "name": "m8-platform-proposed-action-v2"
     },
     {
       "file": "m8-platform-reservation-authority-v1.schema.json",

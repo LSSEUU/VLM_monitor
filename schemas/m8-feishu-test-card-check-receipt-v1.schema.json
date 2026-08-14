@@ -1,0 +1,359 @@
+{
+  "$defs": {
+    "M8FeishuPersonalDemoOutcome": {
+      "enum": [
+        "CHECKED",
+        "MESSAGE_ACCEPTED",
+        "MESSAGE_REJECTED",
+        "MESSAGE_RESPONSE_INVALID",
+        "MESSAGE_TRANSPORT_FAILED",
+        "TOKEN_REJECTED",
+        "TOKEN_RESPONSE_INVALID",
+        "TOKEN_TRANSPORT_FAILED"
+      ],
+      "title": "M8FeishuPersonalDemoOutcome",
+      "type": "string"
+    },
+    "M8FeishuPersonalDemoProbeReceiptV1": {
+      "additionalProperties": false,
+      "properties": {
+        "case_transition_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Case Transition Permitted",
+          "type": "boolean"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "direct_disciplinary_action_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "message_call_attempted": {
+          "title": "Message Call Attempted",
+          "type": "boolean"
+        },
+        "message_raw_response_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message Raw Response Ref"
+        },
+        "message_raw_response_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message Raw Response Sha256"
+        },
+        "notification_transition_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Notification Transition Permitted",
+          "type": "boolean"
+        },
+        "outcome": {
+          "$ref": "#/$defs/M8FeishuPersonalDemoOutcome"
+        },
+        "probe": {
+          "$ref": "#/$defs/M8FeishuPersonalDemoProbeV1"
+        },
+        "probe_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Probe Receipt Id",
+          "type": "string"
+        },
+        "provider_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Code"
+        },
+        "provider_http_status": {
+          "anyOf": [
+            {
+              "maximum": 599,
+              "minimum": 100,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Http Status"
+        },
+        "provider_log_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Log Id"
+        },
+        "provider_message_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Message Id"
+        },
+        "real_delivery_confirmed": {
+          "const": false,
+          "default": false,
+          "title": "Real Delivery Confirmed",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-feishu-personal-demo-probe-receipt-v1",
+          "default": "m8-feishu-personal-demo-probe-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "token_call_attempted": {
+          "title": "Token Call Attempted",
+          "type": "boolean"
+        },
+        "token_raw_response_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Token Raw Response Ref"
+        },
+        "token_raw_response_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Token Raw Response Sha256"
+        }
+      },
+      "required": [
+        "probe",
+        "outcome",
+        "completed_at",
+        "token_call_attempted",
+        "message_call_attempted",
+        "probe_receipt_id"
+      ],
+      "title": "M8FeishuPersonalDemoProbeReceiptV1",
+      "type": "object"
+    },
+    "M8FeishuPersonalDemoProbeV1": {
+      "additionalProperties": false,
+      "description": "Static, visibly simulated card request with no domain authority.",
+      "properties": {
+        "app_id_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "App Id Sha256",
+          "type": "string"
+        },
+        "case_transition_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Case Transition Permitted",
+          "type": "boolean"
+        },
+        "direct_disciplinary_action_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Direct Disciplinary Action Permitted",
+          "type": "boolean"
+        },
+        "display_badge": {
+          "const": "PERSONAL DEMO · SIMULATED SAFETY EVENT",
+          "default": "PERSONAL DEMO · SIMULATED SAFETY EVENT",
+          "title": "Display Badge",
+          "type": "string"
+        },
+        "external_call_permitted": {
+          "const": false,
+          "default": false,
+          "title": "External Call Permitted",
+          "type": "boolean"
+        },
+        "notification_transition_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Notification Transition Permitted",
+          "type": "boolean"
+        },
+        "probe_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Probe Id",
+          "type": "string"
+        },
+        "probe_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Probe Manifest Id",
+          "type": "string"
+        },
+        "provider_content_json": {
+          "readOnly": true,
+          "title": "Provider Content Json",
+          "type": "string"
+        },
+        "provider_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Provider Content Sha256",
+          "type": "string"
+        },
+        "provider_uuid": {
+          "readOnly": true,
+          "title": "Provider Uuid",
+          "type": "string"
+        },
+        "recipient_open_id_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Recipient Open Id Sha256",
+          "type": "string"
+        },
+        "requested_at": {
+          "format": "date-time",
+          "title": "Requested At",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-feishu-personal-demo-probe-v1",
+          "default": "m8-feishu-personal-demo-probe-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "simulated": {
+          "const": true,
+          "default": true,
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "timeout_ms": {
+          "default": 5000,
+          "maximum": 10000,
+          "minimum": 1000,
+          "title": "Timeout Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "app_id_sha256",
+        "recipient_open_id_sha256",
+        "requested_at",
+        "probe_manifest_id",
+        "provider_uuid",
+        "provider_content_json",
+        "provider_content_sha256",
+        "probe_id"
+      ],
+      "title": "M8FeishuPersonalDemoProbeV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-test-card-check-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An activation-fenced CHECK_ONLY receipt; it never sends the card.",
+  "properties": {
+    "activation_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Activation Revision",
+      "type": "integer"
+    },
+    "activation_status_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Activation Status Id",
+      "type": "string"
+    },
+    "automatic_retry_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Automatic Retry Permitted",
+      "type": "boolean"
+    },
+    "case_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Case Transition Permitted",
+      "type": "boolean"
+    },
+    "external_call_attempted": {
+      "const": false,
+      "default": false,
+      "title": "External Call Attempted",
+      "type": "boolean"
+    },
+    "notification_transition_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Notification Transition Permitted",
+      "type": "boolean"
+    },
+    "probe_receipt": {
+      "$ref": "#/$defs/M8FeishuPersonalDemoProbeReceiptV1"
+    },
+    "real_delivery_confirmed": {
+      "const": false,
+      "default": false,
+      "title": "Real Delivery Confirmed",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-feishu-test-card-check-receipt-v1",
+      "default": "m8-feishu-test-card-check-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "activation_revision",
+    "activation_status_id",
+    "probe_receipt"
+  ],
+  "title": "M8FeishuTestCardCheckReceiptV1",
+  "type": "object"
+}

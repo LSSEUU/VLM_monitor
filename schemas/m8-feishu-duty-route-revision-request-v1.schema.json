@@ -1,0 +1,60 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-duty-route-revision-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "activation_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Activation Revision",
+      "type": "integer"
+    },
+    "activation_status_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Activation Status Id",
+      "type": "string"
+    },
+    "actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "expected_prior_revision": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Prior Revision"
+    },
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "recipient_binding_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Recipient Binding Authority Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-feishu-duty-route-revision-request-v1",
+      "default": "m8-feishu-duty-route-revision-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "actor_id",
+    "recipient_binding_authority_id",
+    "activation_revision",
+    "activation_status_id",
+    "explicit_human_confirmation"
+  ],
+  "title": "M8FeishuDutyRouteRevisionRequestV1",
+  "type": "object"
+}

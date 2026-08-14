@@ -1,0 +1,629 @@
+{
+  "$defs": {
+    "M8CommissioningEvidenceKind": {
+      "enum": [
+        "LICENSE_REVIEW",
+        "OFFLINE_FALLBACK_DRILL",
+        "SAFETY_REVIEW",
+        "SECURITY_REVIEW",
+        "SITE_ACCEPTANCE"
+      ],
+      "title": "M8CommissioningEvidenceKind",
+      "type": "string"
+    },
+    "M8CommissioningReadiness": {
+      "enum": [
+        "BLOCKED",
+        "READY_FOR_HUMAN_ACTIVATION"
+      ],
+      "title": "M8CommissioningReadiness",
+      "type": "string"
+    },
+    "M8FeishuDutyRouteV1": {
+      "additionalProperties": false,
+      "properties": {
+        "activation_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Activation Revision",
+          "type": "integer"
+        },
+        "activation_status_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Activation Status Id",
+          "type": "string"
+        },
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        },
+        "actor_authority_commit_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Actor Authority Commit Receipt Id",
+          "type": "string"
+        },
+        "actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "actor_role": {
+          "const": "SAFETY_OFFICER",
+          "default": "SAFETY_OFFICER",
+          "title": "Actor Role",
+          "type": "string"
+        },
+        "committed_at": {
+          "format": "date-time",
+          "title": "Committed At",
+          "type": "string"
+        },
+        "prior_route_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prior Route Id"
+        },
+        "recipient_binding_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Recipient Binding Authority Id",
+          "type": "string"
+        },
+        "repository_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Repository Manifest Id",
+          "type": "string"
+        },
+        "route_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Route Id",
+          "type": "string"
+        },
+        "route_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Route Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-feishu-duty-route-v1",
+          "default": "m8-feishu-duty-route-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor_id",
+        "actor_authority_commit_receipt_id",
+        "recipient_binding_authority_id",
+        "activation_revision",
+        "activation_status_id",
+        "route_revision",
+        "committed_at",
+        "repository_manifest_id",
+        "route_id"
+      ],
+      "title": "M8FeishuDutyRouteV1",
+      "type": "object"
+    },
+    "M8FeishuInboundDisplayStatus": {
+      "enum": [
+        "ACTIVE",
+        "INVALIDATED",
+        "NOT_CONFIGURED",
+        "REVOKED"
+      ],
+      "title": "M8FeishuInboundDisplayStatus",
+      "type": "string"
+    },
+    "M8FeishuLastAuditedAttemptV1": {
+      "additionalProperties": false,
+      "properties": {
+        "audit_event_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Audit Event Id",
+          "type": "string"
+        },
+        "automatic_retry_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Automatic Retry Permitted",
+          "type": "boolean"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "dispatch_request_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Dispatch Request Id",
+          "type": "string"
+        },
+        "dispatch_result_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Dispatch Result Id",
+          "type": "string"
+        },
+        "disposition": {
+          "$ref": "#/$defs/M8NotificationDispatchDisposition"
+        },
+        "notification_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Notification Id",
+          "type": "string"
+        },
+        "notification_version": {
+          "exclusiveMinimum": 0,
+          "title": "Notification Version",
+          "type": "integer"
+        },
+        "raw_response_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Raw Response Ref",
+          "type": "string"
+        },
+        "real_delivery_confirmed": {
+          "const": false,
+          "default": false,
+          "title": "Real Delivery Confirmed",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-feishu-last-audited-attempt-v1",
+          "default": "m8-feishu-last-audited-attempt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "notification_id",
+        "notification_version",
+        "dispatch_request_id",
+        "dispatch_result_id",
+        "disposition",
+        "completed_at",
+        "raw_response_ref",
+        "audit_event_id"
+      ],
+      "title": "M8FeishuLastAuditedAttemptV1",
+      "type": "object"
+    },
+    "M8FeishuLiveConnectionState": {
+      "enum": [
+        "NOT_CONFIGURED",
+        "DISCONNECTED",
+        "CONNECTING",
+        "READY",
+        "RECONNECTING",
+        "FAILED"
+      ],
+      "title": "M8FeishuLiveConnectionState",
+      "type": "string"
+    },
+    "M8FeishuLiveFailureCode": {
+      "enum": [
+        "ACTOR_NOT_BOUND",
+        "AUTHORITY_CHANGED",
+        "CARD_EXPIRED",
+        "DUPLICATE_ACTION",
+        "INVALID_EVENT",
+        "QWEN_UNAVAILABLE",
+        "SEND_REJECTED",
+        "SEND_UNCERTAIN",
+        "VERSION_CONFLICT",
+        "WORKER_UNAVAILABLE"
+      ],
+      "title": "M8FeishuLiveFailureCode",
+      "type": "string"
+    },
+    "M8FeishuPlatformDisplayStatus": {
+      "enum": [
+        "ACTIVE",
+        "INVALIDATED",
+        "NOT_CONFIGURED",
+        "OFFLINE_FAKE",
+        "READINESS_BLOCKED",
+        "READY_NOT_ACTIVE",
+        "REVOKED"
+      ],
+      "title": "M8FeishuPlatformDisplayStatus",
+      "type": "string"
+    },
+    "M8FeishuPlatformStatusV1": {
+      "additionalProperties": false,
+      "properties": {
+        "activation_revision": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activation Revision"
+        },
+        "activation_status_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activation Status Id"
+        },
+        "assessed_at": {
+          "format": "date-time",
+          "title": "Assessed At",
+          "type": "string"
+        },
+        "candidate_authority_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Authority Id"
+        },
+        "clear_external_id_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Clear External Id Exposed",
+          "type": "boolean"
+        },
+        "default_channel": {
+          "const": "LOCAL_OFFLINE_FAKE",
+          "default": "LOCAL_OFFLINE_FAKE",
+          "title": "Default Channel",
+          "type": "string"
+        },
+        "default_channel_status": {
+          "const": "OFFLINE_FAKE",
+          "default": "OFFLINE_FAKE",
+          "title": "Default Channel Status",
+          "type": "string"
+        },
+        "display_status": {
+          "$ref": "#/$defs/M8FeishuPlatformDisplayStatus"
+        },
+        "expired_evidence_kinds": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M8CommissioningEvidenceKind"
+          },
+          "title": "Expired Evidence Kinds",
+          "type": "array"
+        },
+        "external_call_permitted": {
+          "title": "External Call Permitted",
+          "type": "boolean"
+        },
+        "failed_evidence_kinds": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M8CommissioningEvidenceKind"
+          },
+          "title": "Failed Evidence Kinds",
+          "type": "array"
+        },
+        "inbound_status": {
+          "$ref": "#/$defs/M8FeishuInboundDisplayStatus",
+          "default": "NOT_CONFIGURED"
+        },
+        "inbound_status_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inbound Status Id"
+        },
+        "last_audited_attempt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8FeishuLastAuditedAttemptV1"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "missing_evidence_kinds": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M8CommissioningEvidenceKind"
+          },
+          "title": "Missing Evidence Kinds",
+          "type": "array"
+        },
+        "production_activation_claimed": {
+          "const": false,
+          "default": false,
+          "title": "Production Activation Claimed",
+          "type": "boolean"
+        },
+        "readiness": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8CommissioningReadiness"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "readiness_assessment_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Readiness Assessment Id"
+        },
+        "real_delivery_confirmed": {
+          "const": false,
+          "default": false,
+          "title": "Real Delivery Confirmed",
+          "type": "boolean"
+        },
+        "recipient_binding_count": {
+          "default": 0,
+          "maximum": 32,
+          "minimum": 0,
+          "title": "Recipient Binding Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-feishu-platform-status-v1",
+          "default": "m8-feishu-platform-status-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "secret_material_exposed": {
+          "const": false,
+          "default": false,
+          "title": "Secret Material Exposed",
+          "type": "boolean"
+        },
+        "test_card_check_available": {
+          "title": "Test Card Check Available",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "display_status",
+        "assessed_at",
+        "test_card_check_available",
+        "external_call_permitted"
+      ],
+      "title": "M8FeishuPlatformStatusV1",
+      "type": "object"
+    },
+    "M8FeishuRuntimeHeartbeatV1": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "enum": [
+            "LONG_CONNECTION",
+            "AUTHORITY_WORKER",
+            "DELIVERY_WORKER"
+          ],
+          "title": "Component",
+          "type": "string"
+        },
+        "connection_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8FeishuLiveConnectionState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "detail_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail Ref"
+        },
+        "failure_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8FeishuLiveFailureCode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "heartbeat_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Heartbeat Id",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "runtime_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Runtime Manifest Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-feishu-runtime-heartbeat-v1",
+          "default": "m8-feishu-runtime-heartbeat-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "worker_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8FeishuWorkerState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "component",
+        "observed_at",
+        "runtime_manifest_id",
+        "heartbeat_id"
+      ],
+      "title": "M8FeishuRuntimeHeartbeatV1",
+      "type": "object"
+    },
+    "M8FeishuWorkerState": {
+      "enum": [
+        "NOT_RUNNING",
+        "READY",
+        "BUSY",
+        "FAILED"
+      ],
+      "title": "M8FeishuWorkerState",
+      "type": "string"
+    },
+    "M8NotificationDispatchDisposition": {
+      "enum": [
+        "ACCEPTED",
+        "DEFINITELY_NOT_SENT",
+        "UNKNOWN_DELIVERY"
+      ],
+      "title": "M8NotificationDispatchDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-runtime-status-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assessed_at": {
+      "format": "date-time",
+      "title": "Assessed At",
+      "type": "string"
+    },
+    "authority_worker": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuRuntimeHeartbeatV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "clear_external_id_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Clear External Id Exposed",
+      "type": "boolean"
+    },
+    "connection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuRuntimeHeartbeatV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "delivery_worker": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuRuntimeHeartbeatV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "duty_route": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8FeishuDutyRouteV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "live_dispatch_available": {
+      "title": "Live Dispatch Available",
+      "type": "boolean"
+    },
+    "platform": {
+      "$ref": "#/$defs/M8FeishuPlatformStatusV1"
+    },
+    "schema_version": {
+      "const": "m8-feishu-runtime-status-v2",
+      "default": "m8-feishu-runtime-status-v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "secret_material_exposed": {
+      "const": false,
+      "default": false,
+      "title": "Secret Material Exposed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "platform",
+    "assessed_at",
+    "live_dispatch_available"
+  ],
+  "title": "M8FeishuRuntimeStatusV2",
+  "type": "object"
+}

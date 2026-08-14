@@ -1,0 +1,1214 @@
+{
+  "$defs": {
+    "M8AgentCaseTransitionPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "CONFIRM",
+          "title": "Action",
+          "type": "string"
+        },
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "source_case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Authority Sha256",
+          "type": "string"
+        },
+        "source_case_version": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Version",
+          "type": "integer"
+        },
+        "source_status": {
+          "const": "PENDING_VERIFICATION",
+          "title": "Source Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "source_case_version",
+        "source_case_authority_sha256",
+        "source_status",
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentCaseTransitionPayloadV2",
+      "type": "object"
+    },
+    "M8AgentFeishuTestCardPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "activation_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Activation Revision",
+          "type": "integer"
+        },
+        "activation_status_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Activation Status Id",
+          "type": "string"
+        },
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-feishu-test-card-check-request-v1",
+          "default": "m8-feishu-test-card-check-request-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "activation_revision",
+        "activation_status_id",
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentFeishuTestCardPayloadV2",
+      "type": "object"
+    },
+    "M8AgentNotificationSendPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "CASE_UPDATED",
+          "title": "Kind",
+          "type": "string"
+        },
+        "source_case_authority_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Case Authority Sha256",
+          "type": "string"
+        },
+        "source_case_version": {
+          "exclusiveMinimum": 0,
+          "title": "Source Case Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "source_case_version",
+        "source_case_authority_sha256",
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentNotificationSendPayloadV2",
+      "type": "object"
+    },
+    "M8AgentResetPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentResetPayloadV2",
+      "type": "object"
+    },
+    "M8AgentRunScenarioPayloadV2": {
+      "additionalProperties": false,
+      "properties": {
+        "explicit_human_confirmation": {
+          "const": true,
+          "title": "Explicit Human Confirmation",
+          "type": "boolean"
+        },
+        "scenario_kind": {
+          "const": "SMOKE_TEMPERATURE_EMERGENCY",
+          "title": "Scenario Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scenario_kind",
+        "explicit_human_confirmation"
+      ],
+      "title": "M8AgentRunScenarioPayloadV2",
+      "type": "object"
+    },
+    "M8CaseMemoryAvailability": {
+      "enum": [
+        "AVAILABLE",
+        "NO_MATCH",
+        "NO_PLATFORM_AUTHORITY"
+      ],
+      "title": "M8CaseMemoryAvailability",
+      "type": "string"
+    },
+    "M8CaseMemoryEntryV1": {
+      "additionalProperties": false,
+      "description": "One role-scoped, persisted Case citation; never a rule or ground truth.",
+      "properties": {
+        "audit_event_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Audit Event Id",
+          "type": "string"
+        },
+        "case_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Authority Id",
+          "type": "string"
+        },
+        "case_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Document Sha256",
+          "type": "string"
+        },
+        "case_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_version": {
+          "exclusiveMinimum": 0,
+          "title": "Case Version",
+          "type": "integer"
+        },
+        "current_rule_rewrite_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Current Rule Rewrite Permitted",
+          "type": "boolean"
+        },
+        "location_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Location Id",
+          "type": "string"
+        },
+        "machine_weak_label_is_ground_truth": {
+          "const": false,
+          "default": false,
+          "title": "Machine Weak Label Is Ground Truth",
+          "type": "boolean"
+        },
+        "persisted_case_authority": {
+          "const": true,
+          "default": true,
+          "title": "Persisted Case Authority",
+          "type": "boolean"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/M8OperationalRiskLevel"
+        },
+        "schema_version": {
+          "const": "m8-case-memory-entry-v1",
+          "default": "m8-case-memory-entry-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/M8OperationalCaseStatus"
+        },
+        "summary": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "case_version",
+        "status",
+        "risk_level",
+        "location_id",
+        "case_authority_id",
+        "case_document_sha256",
+        "audit_event_id",
+        "summary"
+      ],
+      "title": "M8CaseMemoryEntryV1",
+      "type": "object"
+    },
+    "M8CaseMemoryProjectionV1": {
+      "additionalProperties": false,
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/M8CaseMemoryAvailability"
+        },
+        "current_rule_rewrite_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Current Rule Rewrite Permitted",
+          "type": "boolean"
+        },
+        "entries": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M8CaseMemoryEntryV1"
+          },
+          "maxItems": 8,
+          "title": "Entries",
+          "type": "array"
+        },
+        "machine_weak_label_is_ground_truth": {
+          "const": false,
+          "default": false,
+          "title": "Machine Weak Label Is Ground Truth",
+          "type": "boolean"
+        },
+        "ordinary_document_partition_used": {
+          "const": false,
+          "default": false,
+          "title": "Ordinary Document Partition Used",
+          "type": "boolean"
+        },
+        "partition": {
+          "const": "CASE_PRECEDENT_AUTHORITY",
+          "default": "CASE_PRECEDENT_AUTHORITY",
+          "title": "Partition",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-case-memory-projection-v1",
+          "default": "m8-case-memory-projection-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "availability"
+      ],
+      "title": "M8CaseMemoryProjectionV1",
+      "type": "object"
+    },
+    "M8KnowledgeAnswerCommitReceiptV1": {
+      "additionalProperties": false,
+      "description": "Receipt binding a deterministic answer to the repository-resolved requester.",
+      "properties": {
+        "answer": {
+          "$ref": "#/$defs/M8KnowledgeAnswerV1"
+        },
+        "answer_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Answer Id",
+          "type": "string"
+        },
+        "commit_receipt_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Commit Receipt Id",
+          "type": "string"
+        },
+        "query_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Query Id",
+          "type": "string"
+        },
+        "repository_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Repository Manifest Id",
+          "type": "string"
+        },
+        "resolved_actor_document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Resolved Actor Document Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-knowledge-answer-commit-receipt-v1",
+          "default": "m8-knowledge-answer-commit-receipt-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "answer",
+        "resolved_actor_document_sha256",
+        "repository_manifest_id",
+        "query_id",
+        "answer_id",
+        "commit_receipt_id"
+      ],
+      "title": "M8KnowledgeAnswerCommitReceiptV1",
+      "type": "object"
+    },
+    "M8KnowledgeAnswerOutcome": {
+      "enum": [
+        "ANSWERED",
+        "NO_MATCH"
+      ],
+      "title": "M8KnowledgeAnswerOutcome",
+      "type": "string"
+    },
+    "M8KnowledgeAnswerV1": {
+      "additionalProperties": false,
+      "description": "Deterministic extractive answer with exact versioned citations.",
+      "properties": {
+        "adapter_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Adapter Manifest Id",
+          "type": "string"
+        },
+        "answer_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Answer Id",
+          "type": "string"
+        },
+        "answer_text": {
+          "readOnly": true,
+          "title": "Answer Text",
+          "type": "string"
+        },
+        "case_transition_permitted": {
+          "readOnly": true,
+          "title": "Case Transition Permitted",
+          "type": "boolean"
+        },
+        "catalog": {
+          "$ref": "#/$defs/M8KnowledgeCatalogAuthorityV1"
+        },
+        "citations": {
+          "items": {
+            "$ref": "#/$defs/M8KnowledgeCitationV1"
+          },
+          "maxItems": 10,
+          "title": "Citations",
+          "type": "array"
+        },
+        "model_used": {
+          "readOnly": true,
+          "title": "Model Used",
+          "type": "boolean"
+        },
+        "network_used": {
+          "readOnly": true,
+          "title": "Network Used",
+          "type": "boolean"
+        },
+        "ordinary_document_used_as_case_rule": {
+          "readOnly": true,
+          "title": "Ordinary Document Used As Case Rule",
+          "type": "boolean"
+        },
+        "outcome": {
+          "$ref": "#/$defs/M8KnowledgeAnswerOutcome",
+          "readOnly": true
+        },
+        "query": {
+          "$ref": "#/$defs/M8KnowledgeQueryV1"
+        },
+        "schema_version": {
+          "const": "m8-knowledge-answer-v1",
+          "default": "m8-knowledge-answer-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "catalog",
+        "query",
+        "citations",
+        "adapter_manifest_id",
+        "outcome",
+        "answer_text",
+        "network_used",
+        "model_used",
+        "ordinary_document_used_as_case_rule",
+        "case_transition_permitted",
+        "answer_id"
+      ],
+      "title": "M8KnowledgeAnswerV1",
+      "type": "object"
+    },
+    "M8KnowledgeCatalogAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Stable inventory of immutable document versions with non-overlapping validity.",
+      "properties": {
+        "catalog_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Catalog Authority Id",
+          "type": "string"
+        },
+        "catalog_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Catalog Id",
+          "type": "string"
+        },
+        "catalog_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Manifest Id",
+          "type": "string"
+        },
+        "catalog_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Catalog Revision",
+          "type": "integer"
+        },
+        "documents": {
+          "items": {
+            "$ref": "#/$defs/M8KnowledgeDocumentAuthorityV1"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Documents",
+          "type": "array"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "ordinary_documents_can_define_case_rules": {
+          "readOnly": true,
+          "title": "Ordinary Documents Can Define Case Rules",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-knowledge-catalog-authority-v1",
+          "default": "m8-knowledge-catalog-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "catalog_id",
+        "catalog_revision",
+        "documents",
+        "generated_at",
+        "catalog_manifest_id",
+        "ordinary_documents_can_define_case_rules",
+        "catalog_authority_id"
+      ],
+      "title": "M8KnowledgeCatalogAuthorityV1",
+      "type": "object"
+    },
+    "M8KnowledgeCitationV1": {
+      "additionalProperties": false,
+      "description": "Exact extractive span from one immutable knowledge document version.",
+      "properties": {
+        "chunk_index": {
+          "minimum": 0,
+          "title": "Chunk Index",
+          "type": "integer"
+        },
+        "citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Citation Id",
+          "type": "string"
+        },
+        "document": {
+          "$ref": "#/$defs/M8KnowledgeDocumentAuthorityV1"
+        },
+        "lexical_match_count": {
+          "exclusiveMinimum": 0,
+          "maximum": 512,
+          "title": "Lexical Match Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-knowledge-citation-v1",
+          "default": "m8-knowledge-citation-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snippet": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Snippet",
+          "type": "string"
+        },
+        "snippet_end_char": {
+          "exclusiveMinimum": 0,
+          "title": "Snippet End Char",
+          "type": "integer"
+        },
+        "snippet_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Snippet Sha256",
+          "type": "string"
+        },
+        "snippet_start_char": {
+          "minimum": 0,
+          "title": "Snippet Start Char",
+          "type": "integer"
+        },
+        "source_effective_at": {
+          "format": "date-time",
+          "readOnly": true,
+          "title": "Source Effective At",
+          "type": "string"
+        },
+        "source_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "readOnly": true,
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "source_version": {
+          "readOnly": true,
+          "title": "Source Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "document",
+        "chunk_index",
+        "snippet_start_char",
+        "snippet_end_char",
+        "snippet",
+        "lexical_match_count",
+        "source_ref",
+        "source_version",
+        "source_effective_at",
+        "snippet_sha256",
+        "citation_id"
+      ],
+      "title": "M8KnowledgeCitationV1",
+      "type": "object"
+    },
+    "M8KnowledgeContentType": {
+      "enum": [
+        "MARKDOWN",
+        "PLAIN_TEXT"
+      ],
+      "title": "M8KnowledgeContentType",
+      "type": "string"
+    },
+    "M8KnowledgeDocumentAuthorityV1": {
+      "additionalProperties": false,
+      "description": "Metadata for one immutable ordinary knowledge document version.",
+      "properties": {
+        "content_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Content Ref",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "content_size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 1048576,
+          "title": "Content Size Bytes",
+          "type": "integer"
+        },
+        "content_type": {
+          "$ref": "#/$defs/M8KnowledgeContentType"
+        },
+        "direct_case_decision_permitted": {
+          "readOnly": true,
+          "title": "Direct Case Decision Permitted",
+          "type": "boolean"
+        },
+        "document_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Document Authority Id",
+          "type": "string"
+        },
+        "document_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Manifest Id",
+          "type": "string"
+        },
+        "document_type": {
+          "$ref": "#/$defs/M8KnowledgeDocumentType"
+        },
+        "document_version": {
+          "exclusiveMinimum": 0,
+          "title": "Document Version",
+          "type": "integer"
+        },
+        "effective_at": {
+          "format": "date-time",
+          "title": "Effective At",
+          "type": "string"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires At"
+        },
+        "issuer_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Issuer Id",
+          "type": "string"
+        },
+        "locale": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Locale",
+          "type": "string"
+        },
+        "logical_document_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Logical Document Id",
+          "type": "string"
+        },
+        "ordinary_document_can_define_case_rule": {
+          "readOnly": true,
+          "title": "Ordinary Document Can Define Case Rule",
+          "type": "boolean"
+        },
+        "published_at": {
+          "format": "date-time",
+          "title": "Published At",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-knowledge-document-authority-v1",
+          "default": "m8-knowledge-document-authority-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "logical_document_id",
+        "document_version",
+        "document_type",
+        "title",
+        "locale",
+        "issuer_id",
+        "source_ref",
+        "content_ref",
+        "content_sha256",
+        "content_size_bytes",
+        "content_type",
+        "published_at",
+        "effective_at",
+        "document_manifest_id",
+        "ordinary_document_can_define_case_rule",
+        "direct_case_decision_permitted",
+        "document_authority_id"
+      ],
+      "title": "M8KnowledgeDocumentAuthorityV1",
+      "type": "object"
+    },
+    "M8KnowledgeDocumentHitV1": {
+      "additionalProperties": false,
+      "properties": {
+        "citation_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Citation Id",
+          "type": "string"
+        },
+        "document_type": {
+          "$ref": "#/$defs/M8KnowledgeDocumentType"
+        },
+        "document_version": {
+          "exclusiveMinimum": 0,
+          "title": "Document Version",
+          "type": "integer"
+        },
+        "effective_at": {
+          "format": "date-time",
+          "title": "Effective At",
+          "type": "string"
+        },
+        "end_char": {
+          "exclusiveMinimum": 0,
+          "title": "End Char",
+          "type": "integer"
+        },
+        "exact_snippet": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Exact Snippet",
+          "type": "string"
+        },
+        "logical_document_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Logical Document Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-knowledge-document-hit-v1",
+          "default": "m8-knowledge-document-hit-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "start_char": {
+          "minimum": 0,
+          "title": "Start Char",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "document_type",
+        "logical_document_id",
+        "document_version",
+        "source_ref",
+        "effective_at",
+        "citation_id",
+        "start_char",
+        "end_char",
+        "exact_snippet"
+      ],
+      "title": "M8KnowledgeDocumentHitV1",
+      "type": "object"
+    },
+    "M8KnowledgeDocumentType": {
+      "enum": [
+        "DEVICE_MANUAL",
+        "EMERGENCY_PLAN",
+        "FAQ",
+        "HISTORICAL_PRECEDENT",
+        "POLICY",
+        "SOP"
+      ],
+      "title": "M8KnowledgeDocumentType",
+      "type": "string"
+    },
+    "M8KnowledgeNormalizedIntent": {
+      "enum": [
+        "CASE_MEMORY",
+        "DEVICE",
+        "EMERGENCY",
+        "FAQ",
+        "GENERAL",
+        "HISTORICAL_PRECEDENT",
+        "POLICY",
+        "SOP"
+      ],
+      "title": "M8KnowledgeNormalizedIntent",
+      "type": "string"
+    },
+    "M8KnowledgeQueryProjectionV1": {
+      "additionalProperties": false,
+      "description": "Explain one existing deterministic answer without inventing quality metrics.",
+      "properties": {
+        "accuracy_claimed": {
+          "const": false,
+          "default": false,
+          "title": "Accuracy Claimed",
+          "type": "boolean"
+        },
+        "answer_receipt": {
+          "$ref": "#/$defs/M8KnowledgeAnswerCommitReceiptV1"
+        },
+        "applied_document_types": {
+          "items": {
+            "$ref": "#/$defs/M8KnowledgeDocumentType"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "title": "Applied Document Types",
+          "type": "array"
+        },
+        "case_memory": {
+          "$ref": "#/$defs/M8CaseMemoryProjectionV1"
+        },
+        "document_hits": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/M8KnowledgeDocumentHitV1"
+          },
+          "maxItems": 32,
+          "title": "Document Hits",
+          "type": "array"
+        },
+        "exact_citations_only": {
+          "const": true,
+          "default": true,
+          "title": "Exact Citations Only",
+          "type": "boolean"
+        },
+        "latency_claimed": {
+          "const": false,
+          "default": false,
+          "title": "Latency Claimed",
+          "type": "boolean"
+        },
+        "model_used": {
+          "const": false,
+          "default": false,
+          "title": "Model Used",
+          "type": "boolean"
+        },
+        "network_used": {
+          "const": false,
+          "default": false,
+          "title": "Network Used",
+          "type": "boolean"
+        },
+        "normalized_intent": {
+          "$ref": "#/$defs/M8KnowledgeNormalizedIntent"
+        },
+        "normalized_query": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Normalized Query",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/M8KnowledgeAnswerOutcome"
+        },
+        "recall_claimed": {
+          "const": false,
+          "default": false,
+          "title": "Recall Claimed",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-knowledge-query-projection-v1",
+          "default": "m8-knowledge-query-projection-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "similarity_score_reported": {
+          "const": false,
+          "default": false,
+          "title": "Similarity Score Reported",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "normalized_query",
+        "normalized_intent",
+        "applied_document_types",
+        "outcome",
+        "answer_receipt",
+        "case_memory"
+      ],
+      "title": "M8KnowledgeQueryProjectionV1",
+      "type": "object"
+    },
+    "M8KnowledgeQueryV1": {
+      "additionalProperties": false,
+      "description": "Bounded lexical query over one exact catalog and requester authority.",
+      "properties": {
+        "allowed_document_types": {
+          "items": {
+            "$ref": "#/$defs/M8KnowledgeDocumentType"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "title": "Allowed Document Types",
+          "type": "array"
+        },
+        "as_of": {
+          "format": "date-time",
+          "title": "As Of",
+          "type": "string"
+        },
+        "catalog_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Authority Id",
+          "type": "string"
+        },
+        "locale": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Locale",
+          "type": "string"
+        },
+        "max_citations": {
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "title": "Max Citations",
+          "type": "integer"
+        },
+        "query_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Query Id",
+          "type": "string"
+        },
+        "query_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Query Manifest Id",
+          "type": "string"
+        },
+        "query_text": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Query Text",
+          "type": "string"
+        },
+        "requester_actor_authority_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Requester Actor Authority Id",
+          "type": "string"
+        },
+        "requester_actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Requester Actor Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-knowledge-query-v1",
+          "default": "m8-knowledge-query-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "catalog_authority_id",
+        "requester_actor_id",
+        "requester_actor_authority_id",
+        "query_text",
+        "locale",
+        "as_of",
+        "allowed_document_types",
+        "max_citations",
+        "query_manifest_id",
+        "query_id"
+      ],
+      "title": "M8KnowledgeQueryV1",
+      "type": "object"
+    },
+    "M8OperationalCaseStatus": {
+      "enum": [
+        "PENDING_VERIFICATION",
+        "CONFIRMED",
+        "REJECTED",
+        "EVIDENCE_REQUESTED",
+        "RESOLVED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "M8OperationalCaseStatus",
+      "type": "string"
+    },
+    "M8OperationalRiskLevel": {
+      "enum": [
+        "REMINDER",
+        "GENERAL",
+        "SEVERE",
+        "EMERGENCY"
+      ],
+      "title": "M8OperationalRiskLevel",
+      "type": "string"
+    },
+    "M8PlatformAgentActionKindV2": {
+      "enum": [
+        "CASE_TRANSITION",
+        "FEISHU_TEST_CARD_CHECK",
+        "NOTIFICATION_SEND",
+        "RESET_DEMO",
+        "RUN_SCENARIO"
+      ],
+      "title": "M8PlatformAgentActionKindV2",
+      "type": "string"
+    },
+    "M8PlatformAgentIntentV2": {
+      "enum": [
+        "CASE_QUERY",
+        "CASE_TRANSITION_ACTION",
+        "DELIVERY_STATUS_QUERY",
+        "DEVICE_QUERY",
+        "FEISHU_STATUS_QUERY",
+        "FEISHU_TEST_CARD_ACTION",
+        "KNOWLEDGE_QUERY",
+        "MAP_QUERY",
+        "NOTIFICATION_QUERY",
+        "NOTIFICATION_SEND_ACTION",
+        "RESET_ACTION",
+        "SCENARIO_ACTION",
+        "SENSOR_QUERY",
+        "UNKNOWN"
+      ],
+      "title": "M8PlatformAgentIntentV2",
+      "type": "string"
+    },
+    "M8PlatformProposedActionV2": {
+      "additionalProperties": false,
+      "properties": {
+        "action_kind": {
+          "$ref": "#/$defs/M8PlatformAgentActionKindV2"
+        },
+        "current_fence": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Current Fence",
+          "type": "string"
+        },
+        "current_version": {
+          "minimum": 0,
+          "title": "Current Version",
+          "type": "integer"
+        },
+        "endpoint_path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Endpoint Path",
+          "type": "string"
+        },
+        "impact_summary": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Impact Summary",
+          "type": "string"
+        },
+        "request_payload": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8AgentCaseTransitionPayloadV2"
+            },
+            {
+              "$ref": "#/$defs/M8AgentRunScenarioPayloadV2"
+            },
+            {
+              "$ref": "#/$defs/M8AgentResetPayloadV2"
+            },
+            {
+              "$ref": "#/$defs/M8AgentNotificationSendPayloadV2"
+            },
+            {
+              "$ref": "#/$defs/M8AgentFeishuTestCardPayloadV2"
+            }
+          ],
+          "title": "Request Payload"
+        },
+        "requires_confirmation": {
+          "const": true,
+          "default": true,
+          "title": "Requires Confirmation",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-platform-proposed-action-v2",
+          "default": "m8-platform-proposed-action-v2",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_ref": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Target Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_kind",
+        "target_ref",
+        "endpoint_path",
+        "current_version",
+        "current_fence",
+        "impact_summary",
+        "request_payload"
+      ],
+      "title": "M8PlatformProposedActionV2",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-platform-agent-query-response-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "answer": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Answer",
+      "type": "string"
+    },
+    "direct_execution_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Direct Execution Permitted",
+      "type": "boolean"
+    },
+    "knowledge_projection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8KnowledgeQueryProjectionV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "model_used": {
+      "const": false,
+      "default": false,
+      "title": "Model Used",
+      "type": "boolean"
+    },
+    "network_used": {
+      "const": false,
+      "default": false,
+      "title": "Network Used",
+      "type": "boolean"
+    },
+    "normalized_intent": {
+      "$ref": "#/$defs/M8PlatformAgentIntentV2"
+    },
+    "outcome": {
+      "enum": [
+        "ANSWERED",
+        "NO_MATCH"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "proposed_action": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8PlatformProposedActionV2"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": "m8-platform-agent-query-response-v2",
+      "default": "m8-platform-agent-query-response-v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_refs": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Source Refs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "outcome",
+    "normalized_intent",
+    "answer"
+  ],
+  "title": "M8PlatformAgentQueryResponseV2",
+  "type": "object"
+}

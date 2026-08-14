@@ -24,6 +24,11 @@ class M8AdapterCommissioningRepository(Protocol):
         candidate_authority_id: str,
     ) -> M8ProductionAdapterCandidateCommitReceiptV1: ...
 
+    def list_candidates(
+        self,
+        limit: int,
+    ) -> tuple[M8ProductionAdapterCandidateCommitReceiptV1, ...]: ...
+
     def commit_evidence(
         self,
         evidence: M8CommissioningEvidenceAuthorityV1,

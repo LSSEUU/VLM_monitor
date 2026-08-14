@@ -23,7 +23,15 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
         "webhook-revoke",
         "webhook-serve",
         "webhook-status",
+        "live-run",
+        "live-supervise",
     }
+    supervise = feishu.commands["live-supervise"]
+    assert isinstance(supervise, TyperCommand)
+    supervise_options = {
+        option for parameter in supervise.params for option in parameter.opts
+    }
+    assert {"--output", "--input", "--interval-ms", "--check"} <= supervise_options
     serve = feishu.commands["webhook-serve"]
     assert isinstance(serve, TyperCommand)
 

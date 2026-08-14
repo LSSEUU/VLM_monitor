@@ -1,0 +1,15 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-agent-conversation-create-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "m8-agent-conversation-create-request-v1",
+      "default": "m8-agent-conversation-create-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "title": "M8AgentConversationCreateRequestV1",
+  "type": "object"
+}

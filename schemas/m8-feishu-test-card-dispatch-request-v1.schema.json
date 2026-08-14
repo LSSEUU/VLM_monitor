@@ -1,0 +1,47 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-feishu-test-card-dispatch-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "activation_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Activation Revision",
+      "type": "integer"
+    },
+    "activation_status_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Activation Status Id",
+      "type": "string"
+    },
+    "duty_route_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Duty Route Id",
+      "type": "string"
+    },
+    "duty_route_revision": {
+      "exclusiveMinimum": 0,
+      "title": "Duty Route Revision",
+      "type": "integer"
+    },
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-feishu-test-card-dispatch-request-v1",
+      "default": "m8-feishu-test-card-dispatch-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "activation_revision",
+    "activation_status_id",
+    "duty_route_id",
+    "duty_route_revision",
+    "explicit_human_confirmation"
+  ],
+  "title": "M8FeishuTestCardDispatchRequestV1",
+  "type": "object"
+}
