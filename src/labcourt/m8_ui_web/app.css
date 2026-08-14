@@ -143,6 +143,49 @@ button:not(:disabled),a[href],[role="tab"]:not([aria-disabled="true"]),[role="bu
 .role-chip::before,.status-pill::before,.readiness-dot.ready{animation:status-breathe 3.2s ease-in-out infinite}
 @keyframes status-breathe{50%{opacity:.48;transform:scale(.82)}}
 
+/* Additive evaluation workbench; it reuses the platform's paper/ink system. */
+.badge.evaluation{border-color:var(--accent);color:var(--accent);background:color-mix(in oklch,var(--surface) 88%,var(--accent));white-space:normal}
+.evaluation-metrics{margin-bottom:22px}
+.evaluation-panel{margin:0 0 22px;border:var(--rule);background:var(--surface)}
+.evaluation-panel>.panel-head{padding:14px 17px;border-bottom:2px solid var(--fg)}
+.evaluation-forms{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.evaluation-forms form{display:grid;align-content:start;gap:12px;padding:18px;border-right:var(--rule)}
+.evaluation-forms form:last-child{border-right:0}
+.evaluation-forms .field,.evaluation-truth-form .field,.evaluation-campaign-form .field{display:grid;gap:6px}
+.evaluation-forms textarea,.evaluation-truth-form input,.evaluation-truth-form select,.evaluation-campaign-form input{width:100%;border:var(--rule);background:var(--bg);padding:10px;color:var(--fg)}
+.evaluation-truth-form{display:grid;grid-template-columns:2fr repeat(4,1fr) auto;gap:10px;align-items:end;padding:18px}
+.evaluation-table-wrap{overflow:auto}
+.evaluation-table{width:100%;min-width:760px;border-collapse:collapse;text-align:left}
+.evaluation-table th{padding:9px 13px;background:var(--fg);color:var(--bg);font:8px var(--mono);letter-spacing:.1em}
+.evaluation-table td{padding:13px;border-bottom:var(--rule);vertical-align:top;font-size:13px}
+.evaluation-table td b,.evaluation-table td small{display:block}.evaluation-table td small{margin-top:4px;color:var(--muted);font:8px var(--mono)}
+.evaluation-campaign-form{display:grid;grid-template-columns:2fr 150px;gap:12px;padding:18px}
+.evaluation-campaign-form fieldset{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin:0;padding:0;border:var(--rule)}
+.evaluation-campaign-form legend{padding:0 8px;font:8px var(--mono)}
+.evaluation-campaign-form fieldset label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;padding:10px;border-bottom:var(--rule);font-size:13px}
+.evaluation-campaign-form fieldset label:nth-last-child(-n+2){border-bottom:0}.evaluation-campaign-form fieldset code{font:8px var(--mono);color:var(--muted)}
+.evaluation-campaigns{display:grid}
+.evaluation-campaign{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 18px;border-bottom:var(--rule)}
+.evaluation-campaign:last-child{border-bottom:0}.evaluation-campaign__identity{min-width:0}.evaluation-campaign h3{margin:2px 0;font-size:18px;overflow-wrap:anywhere}.evaluation-campaign code{font:8px var(--mono);color:var(--muted)}
+.evaluation-campaign__meta{display:flex;flex-wrap:wrap;gap:5px 14px;margin:5px 0;color:var(--muted);font:9px var(--mono)}
+.evaluation-campaign__note{margin:0 0 5px;color:var(--muted);font-size:12px;overflow-wrap:anywhere}.evaluation-campaign__action{display:grid;justify-items:end;gap:7px;max-width:360px}.evaluation-action-status{margin:0;max-width:360px;font:9px/1.45 var(--mono);text-align:right}.evaluation-action-status.warning,.evaluation-action-status.error{color:var(--alarm)}.evaluation-action-status.success{color:var(--success)}
+.evaluation-runs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}
+.evaluation-run{padding:18px;border-right:var(--rule);border-bottom:var(--rule);min-width:0}
+.evaluation-run:nth-child(2n){border-right:0}.evaluation-run header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.evaluation-run h3{margin:7px 0 0;font:12px var(--mono);overflow-wrap:anywhere}
+.evaluation-run__time{display:flex;flex-wrap:wrap;gap:5px 12px;margin:7px 0 4px;color:var(--muted);font:9px var(--mono)}
+.evaluation-run__route{display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center;margin:14px 0;padding:12px;border-block:var(--rule)}
+.evaluation-run__route span{display:grid;color:var(--muted);font:8px var(--mono)}.evaluation-run__route b{margin-top:3px;color:var(--fg);font-size:10px}.evaluation-run__route i{font-style:normal}.evaluation-run__route em{padding:4px 6px;font:8px var(--mono);font-style:normal}.evaluation-run__route .match{color:var(--success)}.evaluation-run__route .mismatch{color:var(--alarm)}
+.evaluation-run dl{margin:0}.evaluation-run dl div{display:grid;grid-template-columns:92px minmax(0,1fr);padding:5px 0}.evaluation-run dt{color:var(--muted);font:8px var(--mono)}.evaluation-run dd{margin:0;font:9px var(--mono);overflow-wrap:anywhere}.evaluation-run footer{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:12px;font:9px var(--mono)}.evaluation-run footer details{max-width:55%}.evaluation-run footer code{display:block;overflow-wrap:anywhere}
+.evaluation-run.state-failed{border-left:3px solid var(--alarm)}.evaluation-run.state-running{border-left:3px solid var(--accent)}
+.calibration-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:20px}.calibration-intro h3{margin:4px 0 8px;font-size:23px}.calibration-intro p:not(.eyebrow){max-width:78ch;margin:0;color:var(--muted)}.calibration-intro>.status-pill{flex:0 0 auto}.calibration-intro>.status-pill.is-warning{color:var(--alarm);border-color:var(--alarm)}
+.calibration-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-block:var(--rule)}.calibration-counts>div{display:grid;gap:3px;padding:15px 18px;border-right:var(--rule)}.calibration-counts>div:last-child{border-right:0}.calibration-counts span,.calibration-counts small{font:8px var(--mono);color:var(--muted)}.calibration-counts strong{font-size:22px}
+.calibration-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border-bottom:var(--rule)}.calibration-metrics>div{padding:12px 18px;border-right:var(--rule)}.calibration-metrics>div:last-child{border-right:0}.calibration-metrics dt{font:8px var(--mono);color:var(--muted)}.calibration-metrics dd{margin:4px 0 0;font:12px var(--mono)}
+.calibration-panel>footer{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 18px}.calibration-panel>footer>div{display:grid;gap:3px}.calibration-panel>footer b,.calibration-panel>footer span{font:9px var(--mono)}.calibration-panel>footer span{color:var(--muted)}
+.live-boundary{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px}.live-boundary h2{margin:0}.live-boundary p:last-child{max-width:75ch;color:var(--muted)}
+@media(max-width:900px){.evaluation-truth-form{grid-template-columns:1fr 1fr}.evaluation-truth-form .field:first-child{grid-column:1/-1}.evaluation-runs{grid-template-columns:1fr}.evaluation-run{border-right:0}.evaluation-campaign-form fieldset{grid-template-columns:1fr}.evaluation-campaign-form fieldset label:nth-last-child(-n+2){border-bottom:var(--rule)}.evaluation-campaign-form fieldset label:last-child{border-bottom:0}}
+@media(max-width:640px){.evaluation-forms,.evaluation-campaign-form,.evaluation-truth-form{grid-template-columns:1fr}.evaluation-forms form{border-right:0;border-bottom:var(--rule)}.evaluation-forms form:last-child{border-bottom:0}.evaluation-truth-form .field:first-child{grid-column:auto}.evaluation-campaign-form fieldset{grid-column:auto}.evaluation-campaign,.live-boundary{align-items:flex-start;flex-direction:column}.evaluation-campaign__action{justify-items:start;max-width:100%}.evaluation-action-status{text-align:left}.evaluation-run__route{grid-template-columns:1fr auto 1fr}.evaluation-run__route em{grid-column:1/-1}.evaluation-run footer{flex-direction:column}.evaluation-run footer details{max-width:100%}}
+@media(max-width:640px){.calibration-intro,.calibration-panel>footer{align-items:flex-start;flex-direction:column}.calibration-counts,.calibration-metrics{grid-template-columns:1fr}.calibration-counts>div,.calibration-metrics>div{border-right:0;border-bottom:var(--rule)}.calibration-counts>div:last-child,.calibration-metrics>div:last-child{border-bottom:0}}
+
 /* Buttons, segmented controls and form feedback. */
 .button,.quick,.landing-button,.landing-cta,.login-submit,.login-roles button,.role-card{
   position:relative;
@@ -280,6 +323,8 @@ a.candidate-card:hover::before,.candidate-card[data-interactive]:hover::before,.
 .case-flow-node i{font-style:normal;display:grid;place-content:center;width:23px;height:23px;margin:0 auto 6px;border-radius:50%;border:1px solid var(--border);transition:color var(--motion-fast),background-color var(--motion-fast),border-color var(--motion-fast),transform var(--motion-fast),box-shadow var(--motion-fast)}
 .case-flow-node.is-complete i,.case-flow-node.is-current i{background:var(--fg);border-color:var(--fg);color:var(--bg)}
 .case-flow-node.is-current i{animation:flow-current 2.8s ease-in-out infinite}
+.case-flow-node.is-skipped i{border-style:dashed;color:var(--muted)}
+.case-flow-node.is-skipped small{display:block;margin-top:3px;font:9px var(--mono);letter-spacing:.04em}
 .case-flow-join{height:1px;background:var(--border);flex:1;min-width:24px;margin-top:11px;transform:scaleX(0);transform-origin:left;animation:flow-join-enter var(--motion-panel) var(--ease-enter) forwards}
 .case-flow-join.is-complete{background:var(--fg)}
 .case-flow-node:nth-child(1){animation-delay:0ms}.case-flow-node:nth-child(3){animation-delay:60ms}.case-flow-node:nth-child(5){animation-delay:120ms}.case-flow-node:nth-child(7){animation-delay:180ms}.case-flow-node:nth-child(9){animation-delay:240ms}.case-flow-node:nth-child(11){animation-delay:300ms}.case-flow-node:nth-child(13){animation-delay:360ms}.case-flow-node:nth-child(15){animation-delay:420ms}
@@ -316,8 +361,14 @@ a.candidate-card:hover::before,.candidate-card[data-interactive]:hover::before,.
 .hearing-card h3,.review-card h3{margin:4px 0 8px;font-size:17px}.hearing-card p,.review-card p{margin:0;color:var(--muted);font-size:13px}
 .hearing-card .eyebrow,.review-card .eyebrow{margin-bottom:5px}
 .hearing-card.is-alert::before,.review-card.is-alert::before{background:var(--alarm)}
+.hearing-dossier{display:grid;gap:18px}.hearing-status{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:20px;border:var(--rule);background:var(--surface)}.hearing-status h2{margin:4px 0;font-size:clamp(22px,3vw,34px)}.hearing-status p{margin:0;color:var(--muted)}.synthetic-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 14px;border:1px solid var(--alarm);color:var(--alarm);font:10px var(--mono);letter-spacing:.04em}.hearing-providers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--border);border:var(--rule)}.hearing-providers span{padding:10px;background:var(--surface);font:10px var(--mono);overflow-wrap:anywhere}.hearing-state{padding:28px;border:var(--rule);background:var(--surface)}.hearing-state h2,.hearing-state h3{margin:4px 0 8px}.hearing-state p{max-width:760px;color:var(--muted)}.hearing-role-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.hearing-role{padding:18px;border:var(--rule);background:var(--surface);min-width:0}.hearing-role header{display:flex;justify-content:space-between;gap:10px}.hearing-role h3{margin:3px 0 12px;font-size:21px}.hearing-role>p,.hearing-arguments p,.hearing-responses p,.hearing-outcome p{color:var(--muted);font-size:12px}.hearing-arguments,.hearing-responses{display:grid;gap:12px;margin:16px 0;padding-left:20px}.hearing-arguments li,.hearing-responses li{padding-top:10px;border-top:var(--rule)}.hearing-arguments small,.hearing-responses small{font:9px var(--mono);color:var(--muted)}.hearing-outcome{margin-top:16px;padding:13px;border-left:2px solid var(--fg);background:var(--bg)}.hearing-outcome span{font:9px var(--mono);color:var(--muted)}.hearing-outcome strong{display:block;margin:3px 0}.hearing-refs{display:flex;flex-wrap:wrap;gap:6px}.hearing-ref{display:inline-flex;gap:7px;padding:5px 7px;border:var(--rule);font:9px var(--mono)}.hearing-ref code{color:var(--muted)}.hearing-verdict{display:grid;grid-template-columns:1.4fr .6fr;gap:24px;padding:22px;border:2px solid var(--fg);background:var(--surface)}.hearing-verdict h2{margin:3px 0;font-size:30px}.hearing-verdict p{color:var(--muted)}.hearing-verdict dl{margin:0}.hearing-verdict dl div{padding:8px 0;border-top:var(--rule)}.hearing-verdict dt{font:9px var(--mono);color:var(--muted)}.hearing-verdict dd{margin:3px 0;overflow-wrap:anywhere}.hearing-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.hearing-detail-grid>section{padding:16px;border:var(--rule);background:var(--surface)}.hearing-detail-grid article{padding:9px 0;border-top:var(--rule)}.hearing-detail-grid article p{margin:4px 0;color:var(--muted);font-size:12px}.hearing-detail-grid article small{font:9px var(--mono);color:var(--muted)}.hearing-failure b{color:var(--alarm)}.hearing-screening-source{margin-top:20px}
 .hearing-verdict{margin-top:16px;padding:16px 18px;border:1px solid var(--fg);background:var(--bg);animation:panel-enter var(--motion-panel) var(--ease-enter) 150ms both}
 .hearing-verdict.is-alert{border-color:var(--alarm);background:color-mix(in oklch,var(--surface) 88%,var(--alarm-soft))}
+.prehearing-state{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,.6fr);gap:22px;padding:20px;border:1px solid var(--fg);background:var(--surface)}
+.prehearing-state.is-terminal{border-color:var(--alarm)}.prehearing-state h3{margin:4px 0 8px;font-size:22px}.prehearing-state p:not(.eyebrow){max-width:72ch;margin:0;color:var(--muted)}
+.prehearing-state dl{margin:0;border-block:var(--rule)}.prehearing-state dl div{display:grid;grid-template-columns:94px minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:var(--rule)}.prehearing-state dl div:last-child{border-bottom:0}.prehearing-state dt{font:8px var(--mono);color:var(--muted)}.prehearing-state dd{margin:0;font:9px var(--mono);overflow-wrap:anywhere}
+.risk-assessment-state{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr);gap:22px;margin-top:18px;padding:20px;border:var(--rule);background:var(--surface)}.risk-assessment-state h3{margin:4px 0 8px;font-size:20px}.risk-assessment-state p:not(.eyebrow){max-width:72ch;margin:0;color:var(--muted)}.risk-assessment-state dl{margin:0;border-block:var(--rule)}.risk-assessment-state dl div{display:grid;grid-template-columns:94px minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:var(--rule)}.risk-assessment-state dl div:last-child{border-bottom:0}.risk-assessment-state dt{font:8px var(--mono);color:var(--muted)}.risk-assessment-state dd{margin:0;font:9px var(--mono);overflow-wrap:anywhere}
+.uncalibrated-notice{display:grid;gap:3px;margin:18px 0;padding:11px 13px;border-left:2px solid var(--alarm);background:var(--bg)}.uncalibrated-notice b{font:9px var(--mono);color:var(--alarm)}.uncalibrated-notice span{font-size:12px;color:var(--muted)}
 @keyframes hearing-rule-in{to{transform:scaleY(1)}}
 .processing-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,.42fr);gap:22px;align-items:start}
 .audit-timeline{border-left:1px solid var(--border);margin-left:8px;padding-left:22px}
@@ -405,6 +456,7 @@ html[data-page-hidden="true"] *,body.is-page-hidden *,body.page-hidden *{animati
   .case-tabs,.case-tablist{margin-inline:-16px;padding-inline:16px;scroll-padding-inline:16px}
   .case-tab,.case-tabs [role="tab"]{min-height:48px;padding-inline:15px}
   .hearing-grid,.review-grid{grid-template-columns:1fr}
+  .hearing-status,.synthetic-banner{align-items:flex-start;flex-direction:column}.hearing-status h2{font-size:16px;letter-spacing:-.02em;overflow-wrap:normal}.hearing-providers,.hearing-role-grid,.hearing-verdict,.hearing-detail-grid,.prehearing-state,.risk-assessment-state{grid-template-columns:1fr}
   .processing-layout{grid-template-columns:1fr}
   .knowledge-reader{min-height:340px;padding:22px 18px}
   .agent-layout{gap:14px}.agent-log{min-height:270px}.message{max-width:94%}

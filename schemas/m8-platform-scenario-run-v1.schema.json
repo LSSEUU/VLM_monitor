@@ -344,6 +344,19 @@
       "default": null,
       "title": "Failure Code"
     },
+    "hearing_case_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hearing Case Id"
+    },
     "machine_output_is_ground_truth": {
       "const": false,
       "default": false,
@@ -390,7 +403,8 @@
         {
           "enum": [
             "ACTIONABLE_RISK",
-            "NO_ACTIONABLE_RISK_ESTABLISHED"
+            "NO_ACTIONABLE_RISK_ESTABLISHED",
+            "HUMAN_REVIEW_REQUIRED"
           ],
           "type": "string"
         },

@@ -1,0 +1,187 @@
+{
+  "$defs": {
+    "M8LiveIngestState": {
+      "enum": [
+        "STARTING",
+        "RUNNING",
+        "DEGRADED",
+        "STOPPED",
+        "FAILED"
+      ],
+      "title": "M8LiveIngestState",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-live-ingest-session-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "analysis_fps": {
+      "const": 5,
+      "default": 5,
+      "title": "Analysis Fps",
+      "type": "integer"
+    },
+    "backlog_depth": {
+      "minimum": 0,
+      "title": "Backlog Depth",
+      "type": "integer"
+    },
+    "candidate_authority_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Authority Id",
+      "type": "string"
+    },
+    "endpoint_reference": {
+      "title": "Endpoint Reference",
+      "type": "string"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Code"
+    },
+    "frames_analyzed": {
+      "minimum": 0,
+      "title": "Frames Analyzed",
+      "type": "integer"
+    },
+    "frames_dropped": {
+      "minimum": 0,
+      "title": "Frames Dropped",
+      "type": "integer"
+    },
+    "frames_ingested": {
+      "minimum": 0,
+      "title": "Frames Ingested",
+      "type": "integer"
+    },
+    "ingest_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Ingest Manifest Id",
+      "type": "string"
+    },
+    "life_safety_authority": {
+      "const": false,
+      "default": false,
+      "title": "Life Safety Authority",
+      "type": "boolean"
+    },
+    "observed_duration_millis": {
+      "minimum": 0,
+      "title": "Observed Duration Millis",
+      "type": "integer"
+    },
+    "p95_analysis_latency_ms": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "P95 Analysis Latency Ms"
+    },
+    "realtime_claim_permitted": {
+      "readOnly": true,
+      "title": "Realtime Claim Permitted",
+      "type": "boolean"
+    },
+    "reconnect_count": {
+      "minimum": 0,
+      "title": "Reconnect Count",
+      "type": "integer"
+    },
+    "revision": {
+      "exclusiveMinimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "ring_buffer_seconds": {
+      "maximum": 3600,
+      "minimum": 60,
+      "title": "Ring Buffer Seconds",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-live-ingest-session-v1",
+      "default": "m8-live-ingest-session-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "session_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "source_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/M8LiveIngestState"
+    },
+    "stopped_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Stopped At"
+    },
+    "target_analysis_fps": {
+      "readOnly": true,
+      "title": "Target Analysis Fps",
+      "type": "integer"
+    },
+    "target_p95_latency_ms": {
+      "readOnly": true,
+      "title": "Target P95 Latency Ms",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "session_id",
+    "revision",
+    "candidate_authority_id",
+    "source_id",
+    "endpoint_reference",
+    "state",
+    "ring_buffer_seconds",
+    "started_at",
+    "frames_ingested",
+    "frames_analyzed",
+    "frames_dropped",
+    "reconnect_count",
+    "backlog_depth",
+    "observed_duration_millis",
+    "ingest_manifest_id",
+    "target_analysis_fps",
+    "target_p95_latency_ms",
+    "realtime_claim_permitted"
+  ],
+  "title": "M8LiveIngestSessionV1",
+  "type": "object"
+}

@@ -5,22 +5,31 @@ const TOKEN_KEY = "labcourt.platform.token";
 const ROLE_LABELS = {LEADER:"校级领导",SAFETY_OFFICER:"安全负责人",STUDENT:"学生",OPERATIONS:"运维人员"};
 const STATUS_LABELS = {PENDING_VERIFICATION:"等待人工核实",CONFIRMED:"已确认",REJECTED:"已排除",EVIDENCE_REQUESTED:"待补充证据",RESOLVED:"已结案",APPEALED:"申诉处理中",APPEAL_RESOLVED:"申诉已处理",DELIVERED:"已送达",RESPONDED:"已回复",ACKNOWLEDGED:"已确认"};
 const STAGE_LABELS = {VIDEO:"录像",PERCEPTION:"视觉感知",EVIDENCE:"证据裁剪",SCREENING:"结构化初审",CASE:"规则建案",NOTIFICATION:"消息通知"};
-const NAV = [["/app/monitor","监控"],["/app/cases","案件"],["/app/map","地图"],["/app/notifications","通知"],["/app/knowledge","知识库"],["/app/agent","Agent"],["/app/profile","我的"],["/app/settings","设置"]];
+const NAV = [["/app/monitor","监控"],["/app/cases","案件"],["/app/evaluation","测试与评估"],["/app/map","地图"],["/app/notifications","通知"],["/app/knowledge","知识库"],["/app/agent","Agent"],["/app/profile","我的"],["/app/settings","设置"]];
 const state = {
   token:sessionStorage.getItem(TOKEN_KEY),session:null,cases:[],notifications:[],conversations:[],projection:null,
   cameras:[],reservations:[],run:null,readiness:null,feishu:null,feishuRuntime:null,feishuRoute:null,users:null,rules:null,knowledgeCatalog:null,
   knowledgeAnswer:null,knowledgeDocument:null,knowledgeSearch:"",agentMessages:[],action:null,agentTyping:false,loginRole:"SAFETY_OFFICER",
-  videoUrl:null,videoPromise:null,videoPositions:new Map(),evidenceUrls:[],pollTimer:null,
+  videoUrl:null,videoPromise:null,videoPositions:new Map(),evidenceUrls:[],evidenceVideoUrl:null,evidenceVideoPromise:null,evidenceVideoSource:null,pollTimer:null,
   pollFailures:0,pollInFlight:false,toastTimer:null,routeController:null,routeSequence:0,
   shellMounted:false,currentRoute:"",casesFilter:"ALL",knowledgeFilter:"ALL",knowledgeSelected:null,
   settingsSection:"messages",mapFloor:null,mapLocation:null,confirmationOpen:false,navOpen:false,scrollSaveFrame:0,
-  lastRunAnnouncement:"",caseDetail:null,settingsPanels:null,evidenceWorkspace:null,conversation:null,confirmationTrigger:null,
+  lastRunAnnouncement:"",caseDetail:null,caseRun:null,settingsPanels:null,evidenceWorkspace:null,hearingView:null,hearingPreparation:null,hearingAcquisitions:[],riskAssessment:null,conversation:null,confirmationTrigger:null,
+  evaluationDashboard:null,calibrationDashboard:null,evaluationPollTimer:null,evaluationPollInFlight:false,evaluationFingerprint:null,
+  evaluationStartConfirm:null,evaluationStartInFlight:null,evaluationStartMessage:null,
 };
 
 const esc = value => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
 const short = value => value ? `${String(value).slice(0,8)}…${String(value).slice(-6)}` : "—";
 const label = value => STATUS_LABELS[value] || value || "—";
+const localDateTime = value => {
+  const date=value instanceof Date?value:new Date(value);
+  if(Number.isNaN(date.getTime()))return "时间未知";
+  return new Intl.DateTimeFormat("zh-CN",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date).replaceAll("/","-");
+};
 const role = () => state.session?.authority?.role;
+const canReadCaseDetails = () => role() !== "OPERATIONS";
+const runCaseHref = (caseId,{evidence=false}={}) => canReadCaseDetails()&&caseId?`/app/cases/${encodeURIComponent(caseId)}${evidence?"?tab=evidence":""}`:"/app/monitor";
 const caseAuthority = item => item?.audit_event?.case_authority;
 const caseCommand = item => caseAuthority(item)?.create_command;
 const notificationAuthority = item => item?.audit_event?.notification_authority;
@@ -35,8 +44,10 @@ async function api(path, options={}) {
   const headers = new Headers(options.headers || {});
   headers.set("Accept", options.binary ? "*/*" : "application/json");
   if (state.token) headers.set("Authorization", `Bearer ${state.token}`);
-  if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  const response = await fetch(path,{...options,headers,body:options.body && typeof options.body !== "string" ? JSON.stringify(options.body) : options.body});
+  const directBody=options.body instanceof FormData||options.body instanceof Blob||typeof options.body==="string";
+  if (options.body && !directBody && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const body=options.body&&!directBody?JSON.stringify(options.body):options.body;
+  const response = await fetch(path,{...options,headers,body});
   if (response.status === 401) {
     logout(false);
     throw new Error("登录状态已失效，请重新选择角色");
@@ -61,6 +72,10 @@ function clearObjectUrls() {
   if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
   state.videoUrl = null;
   state.videoPromise = null;
+  if (state.evidenceVideoUrl) URL.revokeObjectURL(state.evidenceVideoUrl);
+  state.evidenceVideoUrl = null;
+  state.evidenceVideoPromise = null;
+  state.evidenceVideoSource = null;
   state.evidenceUrls.forEach(URL.revokeObjectURL);
   state.evidenceUrls = [];
 }
@@ -68,6 +83,7 @@ function clearObjectUrls() {
 function logout(navigate=true) {
   sessionStorage.removeItem(TOKEN_KEY); state.token=null; state.session=null; clearObjectUrls();
   if (state.pollTimer) clearTimeout(state.pollTimer);
+  if (state.evaluationPollTimer) clearTimeout(state.evaluationPollTimer);
   state.shellMounted=false;
   if (navigate) navigateTo("/login",{replace:true});
 }
@@ -149,7 +165,8 @@ function initLoginMotion(){
   addEventListener("pointermove",event=>{if(stage)stage.style.transform=`translate3d(${((event.clientX/innerWidth)-.5)*-12}px,${((event.clientY/innerHeight)-.5)*-12}px,0)`;},{passive:true});
 }
 
-function currentNav(path) { return NAV.find(([href]) => path === href || (["/app/cases","/app/notifications"].includes(href) && path.startsWith(`${href}/`)))?.[0]; }
+function navItems(){return NAV.filter(([href])=>href!=="/app/evaluation"||role()!=="STUDENT");}
+function currentNav(path) { return navItems().find(([href]) => path === href || (["/app/cases","/app/notifications"].includes(href) && path.startsWith(`${href}/`)))?.[0]; }
 function runStripMarkup() {
   const run=state.run;
   if(!run)return `<div id="global-run-strip" class="global-run-strip" hidden></div>`;
@@ -158,15 +175,16 @@ function runStripMarkup() {
   const frame=perception?.total_units?`${perception.completed_units} / ${perception.total_units} FRAME`:"AUTHORITY STAGES";
   const runClass=run.state==="SUCCEEDED"?"complete":run.state.toLowerCase();
   const failure=run.state==="FAILED"?` · ${esc(run.failure_code||"TYPED FAILURE")}`:"";
-  return `<div id="global-run-strip" class="global-run-strip is-${runClass}"><div class="run-strip__state"><span class="run-strip__summary" data-run-summary>${run.state==="RUNNING"?"识别运行中":run.state==="FAILED"?"识别失败":"识别已完成"} · ${esc(STAGE_LABELS[active?.stage]||active?.stage||"等待")}${failure}</span></div><div class="run-strip__rail" role="list" aria-label="识别六阶段">${run.stages.map(item=>`<span role="listitem" class="run-strip__stage ${item.state==="RUNNING"?"is-active":item.state==="COMPLETE"?"is-complete":item.state==="FAILED"?"is-failed":""}" data-run-stage="${esc(item.stage)}"><i aria-hidden="true"></i><b>${esc(STAGE_LABELS[item.stage]||item.stage)}</b></span>`).join("")}</div><div class="run-strip__meta"><strong data-run-frame>${esc(frame)}</strong><span data-run-mode>${esc(run.recognition_mode||run.scenario_kind)}</span><a data-run-case href="${run.case_id?`/app/cases/${esc(run.case_id)}`:"/app/cases"}" ${run.case_id?"":"hidden"}>案件 →</a></div></div>`;
+  const caseLabel=canReadCaseDetails()?"案件 →":"监控 →";
+  return `<div id="global-run-strip" class="global-run-strip is-${runClass}"><div class="run-strip__state"><span class="run-strip__summary" data-run-summary>${run.state==="RUNNING"?"识别运行中":run.state==="FAILED"?"识别失败":"识别已完成"} · ${esc(STAGE_LABELS[active?.stage]||active?.stage||"等待")}${failure}</span></div><div class="run-strip__rail" role="list" aria-label="识别六阶段">${run.stages.map(item=>`<span role="listitem" class="run-strip__stage ${item.state==="RUNNING"?"is-active":item.state==="COMPLETE"?"is-complete":item.state==="FAILED"?"is-failed":""}" data-run-stage="${esc(item.stage)}"><i aria-hidden="true"></i><b>${esc(STAGE_LABELS[item.stage]||item.stage)}</b></span>`).join("")}</div><div class="run-strip__meta"><strong data-run-frame>${esc(frame)}</strong><span data-run-mode>${esc(run.recognition_mode||run.scenario_kind)}</span><a data-run-case href="${runCaseHref(run.case_id)}" ${run.case_id?"":"hidden"}>${caseLabel}</a></div></div>`;
 }
 
-function alarmMarkup(){return isEmergency()?`<div class="alarm-banner" role="alert"><div><p class="eyebrow">EMERGENCY · SIMULATED SENSOR</p><strong>实验室 301 烟雾与高温信号联动</strong></div><a href="${state.run?.case_id?`/app/cases/${state.run.case_id}`:"/app/cases"}">查看案件 →</a></div>`:"";}
+function alarmMarkup(){const operations=role()==="OPERATIONS";return isEmergency()?`<div class="alarm-banner" role="alert"><div><p class="eyebrow">EMERGENCY · SIMULATED SENSOR</p><strong>实验室 301 烟雾与高温信号联动</strong></div><a href="${operations?"/app/monitor":state.run?.case_id?runCaseHref(state.run.case_id):"/app/cases"}">${operations?"查看运营监控":"查看案件"} →</a></div>`:"";}
 
 function ensureShell() {
   if(state.shellMounted&&document.getElementById("route-view"))return;
   const active=currentNav(location.pathname);
-  app.innerHTML=`<div class="app-shell shell-frame">${publicRibbon()}<header class="shell-head"><div class="head-row"><a class="brand" href="/" aria-label="返回 LabCourt 产品介绍首页">LabCourt<small>校园安全运营平台</small></a><button class="icon-button nav-toggle" type="button" data-action="nav-toggle" aria-expanded="false" aria-controls="primary-nav">菜单</button><nav id="primary-nav" class="nav" aria-label="主导航">${NAV.map(([href,text])=>`<a href="${href}" ${active===href?'aria-current="page"':""}>${text}</a>`).join("")}</nav><div class="head-actions"><span class="role-chip"><span>${esc(ROLE_LABELS[role()]||role())}</span></span><button class="icon-button" type="button" data-action="logout" aria-label="退出当前角色">退出</button></div></div></header><div id="alarm-host">${alarmMarkup()}</div><div id="run-strip-host">${runStripMarkup()}</div><main id="main-content" class="page"><div id="route-view" class="route-view"></div></main><p class="route-live-region sr-only" aria-live="polite"></p></div>`;
+  app.innerHTML=`<div class="app-shell shell-frame">${publicRibbon()}<header class="shell-head"><div class="head-row"><a class="brand" href="/" aria-label="返回 LabCourt 产品介绍首页">LabCourt<small>校园安全运营平台</small></a><button class="icon-button nav-toggle" type="button" data-action="nav-toggle" aria-expanded="false" aria-controls="primary-nav">菜单</button><nav id="primary-nav" class="nav" aria-label="主导航">${navItems().map(([href,text])=>`<a href="${href}" ${active===href?'aria-current="page"':""}>${text}</a>`).join("")}</nav><div class="head-actions"><span class="role-chip"><span>${esc(ROLE_LABELS[role()]||role())}</span></span><button class="icon-button" type="button" data-action="logout" aria-label="退出当前角色">退出</button></div></div></header><div id="alarm-host">${alarmMarkup()}</div><div id="run-strip-host">${runStripMarkup()}</div><main id="main-content" class="page"><div id="route-view" class="route-view"></div></main><p class="route-live-region sr-only" aria-live="polite"></p></div>`;
   state.shellMounted=true;
 }
 
@@ -193,7 +211,7 @@ function patchRunStrip() {
   strip.querySelector("[data-run-frame]").textContent=frame;
   strip.querySelector("[data-run-mode]").textContent=run.recognition_mode||run.scenario_kind;
   strip.querySelectorAll("[data-run-stage]").forEach(node=>{const item=run.stages.find(value=>value.stage===node.dataset.runStage);node.classList.toggle("is-active",item?.state==="RUNNING");node.classList.toggle("is-complete",item?.state==="COMPLETE");node.classList.toggle("is-failed",item?.state==="FAILED");});
-  const caseLink=strip.querySelector("[data-run-case]");if(caseLink){caseLink.hidden=!run.case_id;caseLink.href=run.case_id?`/app/cases/${run.case_id}`:"/app/cases";}
+  const caseLink=strip.querySelector("[data-run-case]");if(caseLink){caseLink.hidden=!run.case_id;caseLink.href=runCaseHref(run.case_id);caseLink.textContent=canReadCaseDetails()?"案件 →":"监控 →";}
   const semanticKey=`${run.run_id}:${run.state}:${active?.stage||"NONE"}`;
   if(semanticKey!==state.lastRunAnnouncement){state.lastRunAnnouncement=semanticKey;const live=document.querySelector(".route-live-region");if(live)live.textContent=strip.querySelector("[data-run-summary]").textContent;}
 }
@@ -211,10 +229,12 @@ function errorPage(error){setRouteContent(`<div class="page-head"><div><p class=
 
 async function loadCore(signal) {
   const options=signal?{signal}:{};state.session=await api("/api/m8/session",options);
-  const [cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu,feishuRuntime,feishuRoute]=await Promise.all([
-    optional("/api/m8/cases",[],options),optional("/api/m8/notifications",[],options),optional("/api/m8/notification-conversations",[],options),optional("/api/m8/campuses/campus-demo/operations-projection",null,options),optional("/api/m8/cameras",[],options),optional("/api/m8/reservations",[],options),optional("/api/m8/demo/scenario-runs/current",null,options),optional("/api/m8/demo/model-readiness",null,options),optional("/api/m8/integrations/feishu/status",null,options),optional("/api/m8/integrations/feishu/runtime-status",null,options),optional("/api/m8/integrations/feishu/duty-route",null,options)
+  const evaluationRequest=role()==="STUDENT"?Promise.resolve(null):optional("/api/m8/evaluation/dashboard",null,options);
+  const calibrationRequest=role()==="STUDENT"?Promise.resolve(null):optional("/api/m8/evaluation/calibration",null,options);
+  const [cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu,feishuRuntime,feishuRoute,evaluationDashboard,calibrationDashboard]=await Promise.all([
+    optional("/api/m8/cases",[],options),optional("/api/m8/notifications",[],options),optional("/api/m8/notification-conversations",[],options),optional("/api/m8/campuses/campus-demo/operations-projection",null,options),optional("/api/m8/cameras",[],options),optional("/api/m8/reservations",[],options),optional("/api/m8/demo/scenario-runs/current",null,options),optional("/api/m8/demo/model-readiness",null,options),optional("/api/m8/integrations/feishu/status",null,options),optional("/api/m8/integrations/feishu/runtime-status",null,options),optional("/api/m8/integrations/feishu/duty-route",null,options),evaluationRequest,calibrationRequest
   ]);
-  Object.assign(state,{cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu,feishuRuntime,feishuRoute});
+  Object.assign(state,{cases,notifications,conversations,projection,cameras,reservations,run,readiness,feishu,feishuRuntime,feishuRoute,evaluationDashboard,calibrationDashboard});
 }
 
 function metric(value,name,note) { return `<div class="metric"><span>${esc(name)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`; }
@@ -233,6 +253,7 @@ function runFailureExplanation(run=state.run) {
   if(!run||run.state!=="FAILED")return "";
   if(run.failure_code==="SCREENING_PROVIDER_UNAVAILABLE"||(run.failure_code==="ValueError"&&run.recognition_mode==="FULL_MODEL"&&!run.screening_decision))return "本地视觉识别和证据生成已完成，云端 Qwen 初审未能完成，因此没有建案。请重新运行真实模式；平台不会自动切换演示结果。";
   if(run.failure_code==="SCREENING_RESPONSE_INVALID")return "本地识别和证据已完成，但 Qwen 返回内容未通过严格结构校验，因此没有建案。";
+  if(run.failure_code==="SCREENING_MEDIA_LOCAL_ONLY")return "该视角无法形成可安全外发的最小 PPE 裁剪；平台没有调用云端 Qwen，已保留本地证据供安全负责人复核。";
   if(run.failure_code==="SCREENING_RESPONSE_BUDGET_EXCEEDED")return "本地识别和证据已完成，但 Qwen 响应超出受控预算，因此没有建案。";
   if(run.failure_code==="SCREENING_EVIDENCE_CHANGED")return "初审期间证据 authority 已变化，平台已停止本次建案。";
   if(run.failure_code==="SCREENING_PROJECTION_INVALID")return "本地识别和证据已完成，但初审结果投影不完整，因此没有进入规则建案。";
@@ -263,14 +284,62 @@ function renderMonitor() {
   const ops=role()==="OPERATIONS"; const active=state.cases.filter(item=>!terminalCase(item.status));
   const profile=state.run?.video_profile; const totalFrames=profile?.frame_count||"—";
   const videoMeta=profile?`${profile.fps_num/profile.fps_den} FPS · ${profile.width}×${profile.height} · ${(profile.duration_millis/1000).toFixed(1)} 秒 · ${profile.timing_authority}`:"录像帧信息将在 Pilot manifest 生成后显示";
-  const realReady=state.readiness?.full_model_ready===true;
-  const actions=ops?`<button class="button primary" type="button" data-scenario="PPE_GOGGLES_MISSING" data-mode="FULL_MODEL" ${state.run?.state==="RUNNING"||!realReady?"disabled":""}>运行真实 PPE 识别</button><button class="button quiet" type="button" data-scenario="PPE_GOGGLES_MISSING" data-mode="DEMO_FIXTURE" ${state.run?.state==="RUNNING"?"disabled":""}>运行明确标记的演示模式</button><button class="button alarm" type="button" data-scenario="SMOKE_TEMPERATURE_EMERGENCY" ${state.run?.state==="RUNNING"?"disabled":""}>触发烟雾—高温联动</button>`:"";
+  const queueCount=(state.evaluationDashboard?.runs||[]).filter(item=>["QUEUED","RUNNING"].includes(item.state)).length;
+  const actions=ops?`<a class="button primary" href="/app/evaluation">进入测试与评估 · ${queueCount} 排队/运行</a><button class="button alarm" type="button" data-scenario="SMOKE_TEMPERATURE_EMERGENCY" ${state.run?.state==="RUNNING"?"disabled":""}>触发烟雾—高温联动</button>`:"";
   const videoAllowed=state.cameras.length>0;
   const candidates=monitorCandidatesMarkup();
   const deviceCards=monitorDevicesMarkup();
   const eventFrame=state.run?.evidence?.[0]?.frame_index;const eventPosition=profile&&Number.isInteger(eventFrame)?Math.max(0,Math.min(100,eventFrame/profile.frame_count*100)):null;
-  const content=`${pageHead("LIVE OPERATIONS","实时监控","演示校区 / 化学楼 / 三层 / 实验室 301。主画面用于巡看；证据、初审和处置集中在案件卷宗。",actions)}<div class="monitor-layout"><section class="monitor-workspace"><div class="panel-head"><h2>实验室 301 · 原始录像</h2><span>CAMERA-RECORDED-DEMO-01</span></div><div class="camera-main"><div class="video-stage ${state.run?.state==="RUNNING"?"is-recognizing":""}">${videoAllowed?`<video id="recorded-video" controls muted playsinline preload="metadata"></video>`:`<div class="video-placeholder">当前角色无录像读取权限</div>`}<span class="source-badge">SIMULATED · RECORDED VIDEO</span><span id="frame-counter" class="frame-counter">FRAME — / ${totalFrames}</span><div class="monitor-hud ${state.run?.state==="RUNNING"?"is-running":""}"><span class="monitor-hud__status">${state.run?.state==="RUNNING"?"识别运行中":"录像待机"}</span><b class="monitor-hud__stage">${esc(STAGE_LABELS[state.run?.stages?.find(item=>item.state==="RUNNING")?.stage]||state.run?.state||"READY")}</b></div></div><div class="camera-meta"><span>${esc(videoMeta)}</span><span>预约关联，非视觉身份识别</span></div></div><div class="camera-strip" aria-label="真实机位"><button class="camera-thumb active" type="button" aria-selected="true"><span class="camera-thumb__preview"></span><span><strong>实验室 301</strong><small>录像模拟机位 · 已选择</small></span></button></div><section class="monitor-timeline"><div class="panel-head"><h2>录像事件时间轴</h2><span>FRAME AUTHORITY</span></div><div class="timeline-rail"><span class="timeline-flow" aria-hidden="true"><i></i></span>${eventPosition!==null?`<a class="timeline-event is-alert" href="${state.run?.case_id?`/app/cases/${state.run.case_id}?tab=evidence`:"/app/cases"}" style="left:${eventPosition}%" data-label="证据帧 ${eventFrame}" aria-label="查看证据帧 ${eventFrame}"></a>`:""}</div><p class="help">时间轴只使用真实录像帧索引与已生成证据；没有产物时不补造事件。</p></section></section><aside class="monitor-side"><section class="panel"><div class="panel-head"><h2>当前候选</h2><span data-candidate-count>${active.length} CASES</span></div><div id="monitor-candidates" class="candidate-list">${candidates}</div><div id="monitor-failure">${monitorFailureMarkup()}</div></section><section><div class="panel-head"><h2>设备状态</h2><span>OPERATIONS PROJECTION</span></div><div id="monitor-devices" class="device-grid">${deviceCards}</div></section></aside></div>`;
+  const content=`${pageHead("LIVE OPERATIONS","实时监控","演示校区 / 化学楼 / 三层 / 实验室 301。主画面用于巡看；证据、初审和处置集中在案件卷宗。",actions)}<div class="monitor-layout"><section class="monitor-workspace"><div class="panel-head"><h2>实验室 301 · 原始录像</h2><span>CAMERA-RECORDED-DEMO-01</span></div><div class="camera-main"><div class="video-stage ${state.run?.state==="RUNNING"?"is-recognizing":""}">${videoAllowed?`<video id="recorded-video" controls muted playsinline preload="metadata"></video>`:`<div class="video-placeholder">当前角色无录像读取权限</div>`}<span class="source-badge">SIMULATED · RECORDED VIDEO</span><span id="frame-counter" class="frame-counter">FRAME — / ${totalFrames}</span><div class="monitor-hud ${state.run?.state==="RUNNING"?"is-running":""}"><span class="monitor-hud__status">${state.run?.state==="RUNNING"?"识别运行中":"录像待机"}</span><b class="monitor-hud__stage">${esc(STAGE_LABELS[state.run?.stages?.find(item=>item.state==="RUNNING")?.stage]||state.run?.state||"READY")}</b></div></div><div class="camera-meta"><span>${esc(videoMeta)}</span><span>预约关联，非视觉身份识别</span></div></div><div class="camera-strip" aria-label="真实机位"><button class="camera-thumb active" type="button" aria-selected="true"><span class="camera-thumb__preview"></span><span><strong>实验室 301</strong><small>录像模拟机位 · 已选择</small></span></button></div><section class="monitor-timeline"><div class="panel-head"><h2>录像事件时间轴</h2><span>FRAME AUTHORITY</span></div><div class="timeline-rail"><span class="timeline-flow" aria-hidden="true"><i></i></span>${eventPosition!==null?`<a class="timeline-event is-alert" href="${state.run?.case_id?runCaseHref(state.run.case_id,{evidence:true}):"/app/monitor"}" style="left:${eventPosition}%" data-label="证据帧 ${eventFrame}" aria-label="${canReadCaseDetails()?`查看证据帧 ${eventFrame}`:"查看运行进度"}"></a>`:""}</div><p class="help">时间轴只使用真实录像帧索引与已生成证据；没有产物时不补造事件。</p></section></section><aside class="monitor-side"><section class="panel"><div class="panel-head"><h2>当前候选</h2><span data-candidate-count>${active.length} CASES</span></div><div id="monitor-candidates" class="candidate-list">${candidates}</div><div id="monitor-failure">${monitorFailureMarkup()}</div></section><section><div class="panel-head"><h2>设备状态</h2><span>OPERATIONS PROJECTION</span></div><div id="monitor-devices" class="device-grid">${deviceCards}</div></section></aside></div>`;
   setRouteContent(content,{mount:()=>{if(videoAllowed)attachVideo();schedulePoll();},announcement:"实时监控"});
+}
+
+function evaluationRouteMatches(expected,actual){
+  return expected==="NO_CANDIDATE"&&actual==="NO_CANDIDATE"||expected==="FAST_VERDICT"&&actual==="FAST_VERDICT"||expected==="HEARING"&&actual==="HEARING_REQUIRED"||expected==="HUMAN_REVIEW"&&actual==="HUMAN_REVIEW";
+}
+
+function evaluationRunMarkup(run,truthById,mediaById){
+  const truth=truthById.get(run.ground_truth_id),media=mediaById.get(run.source.asset_id),finished=["SUCCEEDED","FAILED"].includes(run.state),matches=truth&&finished?evaluationRouteMatches(truth.expected_route,run.actual_route):null;
+  const localReview=run.actual_route==="HUMAN_REVIEW"&&run.route_reason_code==="SCREENING_MEDIA_LOCAL_ONLY",qualityReview=run.actual_route==="HUMAN_REVIEW"&&run.route_reason_code==="NO_NOVEL_CLEAR_FRAME";
+  const caseLink=run.case_id?(role()==="OPERATIONS"?`<span>正式案件 ${short(run.case_id)} · 安全负责人 / 领导查看</span>`:`<a href="/app/cases/${esc(run.case_id)}">打开正式案件 →</a>`):localReview?"<span>证据仅限本地处理；需安全负责人复核，不自动建案</span>":"<span>安全阴性或尚未建案</span>";
+  const receipts=(run.provider_receipt_refs||[]).length?`<details><summary>Provider receipts · ${run.provider_receipt_refs.length}</summary>${run.provider_receipt_refs.map(item=>`<code>${esc(item)}</code>`).join("")}</details>`:localReview?"<span>隐私门禁在调用前停止外发 · 无 Provider 调用</span>":"<span>Provider receipt 尚未生成</span>";
+  return `<article class="evaluation-run state-${run.state.toLowerCase()}"><header><div><span class="badge evaluation">EVALUATION / 全真模拟</span><h3>${esc(media?.display_name||run.source.asset_id)}</h3><p class="evaluation-run__time"><time datetime="${esc(run.created_at)}">创建 ${localDateTime(run.created_at)}</time>${run.started_at?`<time datetime="${esc(run.started_at)}">启动 ${localDateTime(run.started_at)}</time>`:""}${run.completed_at?`<time datetime="${esc(run.completed_at)}">完成 ${localDateTime(run.completed_at)}</time>`:""}</p><code>${esc(run.run_id)}</code></div><span class="status-pill">${esc(run.state)}</span></header><div class="evaluation-run__route"><span>预期路由 <b>${esc(truth?.expected_route||"探索性 / 未确认")}</b></span><i>→</i><span>实际路由 <b>${esc(run.actual_route||run.active_stage||"等待执行")}</b></span>${matches===null?"":`<em class="${matches?"match":"mismatch"}">${matches?"样本级一致":"样本级不一致"}</em>`}</div>${localReview?'<p class="help risk">视角未提供足够眼部关键点，只能生成 LOCAL_ONLY 裁剪。系统遵守数据最小化边界，未向云端 Qwen 发送图像，并将结果路由为人工复核。</p>':qualityReview?'<p class="help risk">候选已建立，但事件区间的清晰帧仍少于 K。全部帧已按同一观测阈值检查，没有把较差帧伪装成补证；三方调用为 0，案件已转人工复核。</p>':""}<dl><div><dt>媒体 SHA</dt><dd><code>${short(run.source.media_sha256)}</code></dd></div><div><dt>配置 / 模型</dt><dd><code>${short(run.config_sha256)} · ${short(run.model_profile_sha256)}</code></dd></div><div><dt>M4 / 会审资格</dt><dd>${esc(run.m4_case_status||"尚未建案")} · ${esc(run.hearing_eligibility||"尚未判定")}</dd></div><div><dt>L5 程序审查</dt><dd>${esc(run.l5_status||"尚未运行")}</dd></div><div><dt>告警投递</dt><dd>${esc(run.delivery_state)}</dd></div><div><dt>失败 / 路由原因</dt><dd>${esc(run.failure_code||run.route_reason_code||"—")}</dd></div></dl><footer>${caseLink}${receipts}</footer></article>`;
+}
+
+function calibrationPanel(){
+  const value=state.calibrationDashboard,counts=value?.confirmed_interval_counts||{},minimum=value?.minimum_samples_per_label||100,status=value?.status||"INSUFFICIENT_DATA",dataset=value?.dataset_manifest,artifact=value?.artifact,report=value?.report;
+  const countMarkup=["WORN","NOT_WORN","UNCLEAR"].map(key=>`<div><span>${key}</span><strong>${Number(counts[key]||0)} / ${minimum}</strong><small>HUMAN_CONFIRMED 区间</small></div>`).join("");
+  const action=role()==="SAFETY_OFFICER"?'<button class="button" type="button" data-calibration-dataset>封存当前人工标签快照</button>':role()==="OPERATIONS"&&dataset?`<button class="button" type="button" data-calibration-fit="${esc(dataset.dataset_manifest_id)}">运行离线拟合检查</button>`:"";
+  const metrics=report?`<dl class="calibration-metrics"><div><dt>Event Brier</dt><dd>${Number(report.event_risk_metrics.brier_score).toFixed(4)}</dd></div><div><dt>Event ECE</dt><dd>${Number(report.event_risk_metrics.expected_calibration_error).toFixed(4)}</dd></div><div><dt>Recall / FPR</dt><dd>${Number(report.event_risk_metrics.recall).toFixed(4)} / ${Number(report.event_risk_metrics.false_positive_rate).toFixed(4)}</dd></div><div><dt>Sealed test</dt><dd>${report.event_risk_metrics.sample_count} 段</dd></div></dl>`:"";
+  return `<section class="evaluation-panel calibration-panel"><div class="panel-head"><h2>非大模型概率校准</h2><span>${esc(status)} · SHADOW ONLY</span></div><div class="calibration-intro"><div><p class="eyebrow">THREE INDEPENDENT AUTHORITIES</p><h3>证据质量 ≠ 违规概率 ≠ 语义裁决</h3><p>证据质量只回答像素是否足够；EventRisk 只允许使用本地检测与时序特征；L3/L4 负责解释完整证据。Qwen 自报的 probability / confidence 永远不是这里的训练特征。</p></div><span class="status-pill ${status==="SHADOW_READY"?"":"is-warning"}">${status==="SHADOW_READY"?"影子评估可读":"尚未建立统计概率"}</span></div><div class="calibration-counts">${countMarkup}</div>${metrics}<footer><div><b>${dataset?`DATASET ${short(dataset.dataset_manifest_id)}`:"尚未封存数据集"}</b><span>${artifact?`ARTIFACT ${short(artifact.artifact_id)} · 不参与裁决`:"当前样本不足时不发布 Accuracy、概率或可靠性结论"}</span></div>${action}</footer></section>`;
+}
+
+function renderEvaluation(){
+  if(role()==="STUDENT"){navigateTo("/app/monitor",{replace:true});return;}
+  const dashboard=state.evaluationDashboard||{media:[],ground_truth:[],campaigns:[],runs:[]},media=dashboard.media||[],truths=dashboard.ground_truth||[],campaigns=dashboard.campaigns||[],runs=dashboard.runs||[];
+  state.evaluationFingerprint=JSON.stringify(dashboard);
+  const ops=role()==="OPERATIONS",safety=role()==="SAFETY_OFFICER",truthByAsset=new Map(truths.map(item=>[item.asset_id,item])),truthById=new Map(truths.map(item=>[item.ground_truth_id,item]));
+  const queued=runs.filter(item=>item.state==="QUEUED").length,running=runs.filter(item=>item.state==="RUNNING").length,waiting=runs.filter(item=>item.state==="AWAITING_HEARING").length,eligible=runs.filter(item=>item.accuracy_metrics_eligible&&["SUCCEEDED","FAILED"].includes(item.state)),matches=eligible.filter(item=>evaluationRouteMatches(truthById.get(item.ground_truth_id)?.expected_route,item.actual_route)).length;
+  const operationsPanel=ops?`<section class="evaluation-panel"><div class="panel-head"><h2>导入真实 MP4</h2><span>OPERATIONS · CONTENT ADDRESSED</span></div><div class="evaluation-forms"><form data-evaluation-upload><label class="field"><span>网页上传（可解码 MP4）</span><input name="file" type="file" accept="video/mp4,.mp4" required></label><button class="button primary" type="submit">上传并探测</button></form><form data-evaluation-import><label class="field"><span>受控目录路径（每行一个）</span><textarea name="paths" rows="3" placeholder="evaluation-import/grey-zone.mp4" required></textarea></label><button class="button" type="submit">从服务器目录导入</button></form></div></section>`:"";
+  const truthPanel=safety&&media.length?`<section class="evaluation-panel"><div class="panel-head"><h2>人工真值封存</h2><span>SAFETY OFFICER ONLY · MACHINE OUTPUT ≠ TRUTH</span></div><form class="evaluation-truth-form" data-evaluation-truth><label class="field"><span>媒体资产</span><select name="asset">${media.map(item=>`<option value="${item.asset_id}">${esc(item.display_name)} · ${short(item.asset_id)}</option>`).join("")}</select></label><label class="field"><span>PPE 标签</span><select name="ppe"><option>WORN</option><option>NOT_WORN</option><option>UNCLEAR</option></select></label><label class="field"><span>预期路由</span><select name="route"><option>NO_CANDIDATE</option><option>FAST_VERDICT</option><option>HEARING</option><option>HUMAN_REVIEW</option></select></label><label class="field"><span>开始帧</span><input name="start" type="number" min="0" value="0" required></label><label class="field"><span>结束帧（不含）</span><input name="end" type="number" min="1" value="1" required></label><button class="button primary" type="submit">确认并发布新版本</button></form></section>`:"";
+  const mediaRows=media.length?media.map(item=>{const truth=truthByAsset.get(item.asset_id),truthMarkup=truth?`<span class="badge">${esc(truth.review_state)}</span><small>${esc(truth.expected_route)} · V${truth.revision}</small>`:`<span class="muted">未标注 / 探索性</span>`;return `<tr><td><b>${esc(item.display_name)}</b><small>${esc(item.origin)}</small></td><td><code>${short(item.media_sha256)}</code></td><td>${item.width}×${item.height}<small>${(item.fps_num/item.fps_den).toFixed(2)} FPS · ${(item.duration_millis/1000).toFixed(1)} 秒</small></td><td>${truthMarkup}</td></tr>`}).join(""):`<tr><td colspan="4">尚未导入媒体</td></tr>`;
+  const campaignPanel=ops&&media.length?`<section class="evaluation-panel"><div class="panel-head"><h2>创建真实评估批次</h2><span>FIFO · SINGLE GPU</span></div><form class="evaluation-campaign-form" data-evaluation-campaign><label class="field"><span>批次备注</span><input name="title" value="真实评估 · ${localDateTime(new Date())}" required></label><label class="field"><span>独立重复次数</span><input name="repetitions" type="number" min="1" max="10" value="1" required></label><fieldset><legend>选择不可变媒体</legend>${media.map(item=>`<label><input type="checkbox" name="asset" value="${item.asset_id}"> <span>${esc(item.display_name)}</span><code>${short(item.asset_id)}</code></label>`).join("")}</fieldset><button class="button primary" type="submit">创建草稿批次</button></form></section>`:"";
+  const mediaById=new Map(media.map(item=>[item.asset_id,item]));
+  const readinessFailures=(state.readiness?.components||[]).filter(item=>!item.ready).map(item=>item.failure_code||item.component).join("、");
+  const campaignRows=campaigns.length?campaigns.slice().sort((left,right)=>new Date(right.created_at)-new Date(left.created_at)).map(item=>{
+    const names=item.asset_ids.map(assetId=>mediaById.get(assetId)?.display_name||short(assetId)),confirming=state.evaluationStartConfirm===item.campaign_id,inFlight=state.evaluationStartInFlight===item.campaign_id,message=state.evaluationStartMessage?.campaignId===item.campaign_id?state.evaluationStartMessage:null;
+    const action=ops&&item.state==="DRAFT"?`<div class="evaluation-campaign__action"><button class="button ${confirming?"alarm":"primary"}" type="button" data-evaluation-start="${item.campaign_id}" ${state.readiness?.full_model_ready&&!inFlight?"":"disabled"} ${inFlight?'aria-busy="true"':""}>${inFlight?"正在创建持久化队列…":confirming?"再次点击确认启动":"显式启动真实模型"}</button>${!state.readiness?.full_model_ready?`<p class="evaluation-action-status error" role="status">真实模型尚未就绪${readinessFailures?`：${esc(readinessFailures)}`:""}</p>`:""}${confirming?'<p class="evaluation-action-status warning" role="status">将调用真实模型且不回退 Fixture。再次点击即确认启动。</p>':""}${message?`<p class="evaluation-action-status ${esc(message.tone)}" role="status">${esc(message.text)}</p>`:""}</div>`:message?`<p class="evaluation-action-status ${esc(message.tone)}" role="status">${esc(message.text)}</p>`:"";
+    return `<article class="evaluation-campaign"><div class="evaluation-campaign__identity"><span class="eyebrow">${esc(item.state)} · ${item.run_ids.length} RUNS</span><h3>${names.map(esc).join("、")}</h3><p class="evaluation-campaign__meta"><time datetime="${esc(item.created_at)}">创建 ${localDateTime(item.created_at)}</time>${item.started_at?`<time datetime="${esc(item.started_at)}">启动 ${localDateTime(item.started_at)}</time>`:""}</p><p class="evaluation-campaign__note">${esc(item.title)}</p><code>${esc(item.campaign_id)}</code></div>${action}</article>`;
+  }).join(""):empty("暂无评估批次","运维人员可选择一个或多个真实 MP4 创建批次。");
+  const runRows=runs.length?runs.slice().reverse().map(item=>evaluationRunMarkup(item,truthById,mediaById)).join(""):empty("队列为空","创建并启动批次后，每个视频与重复次数会生成独立 run。");
+  const content=`${pageHead("REAL-MEDIA EVALUATION","测试与评估","多视频全真运行使用正式 EvidencePack、M3、M4、L5、告警策略和权限。不会把模型输出当作真值，也不会在失败时回退 Fixture。",ops?'<span class="badge evaluation">EVALUATION / 全真模拟</span>':"")}<div class="metrics evaluation-metrics">${metric(media.length,"媒体资产","SHA-256 去重")}${metric(`${queued} / ${running}`,"排队 / 运行","持久化 FIFO")}${metric(waiting,"待显式会审","安全负责人启动")}${metric(`${matches} / ${eligible.length}`,"已确认样本路由一致","不足每类 100 段不发布准确率")}</div>${operationsPanel}${truthPanel}<section class="evaluation-panel"><div class="panel-head"><h2>媒体库与真值</h2><span>${media.length} ASSETS · ${truths.filter(item=>item.review_state==="HUMAN_CONFIRMED").length} CONFIRMED</span></div><div class="evaluation-table-wrap"><table class="evaluation-table"><thead><tr><th>媒体</th><th>内容身份</th><th>探测参数</th><th>人工真值</th></tr></thead><tbody>${mediaRows}</tbody></table></div></section>${calibrationPanel()}${campaignPanel}<section class="evaluation-panel"><div class="panel-head"><h2>评估批次</h2><span>REAL MODELS ONLY</span></div><div class="evaluation-campaigns">${campaignRows}</div></section><section class="evaluation-panel"><div class="panel-head"><h2>单次结果与全链路</h2><span>${runs.length} RUNS</span></div><div class="evaluation-runs">${runRows}</div></section><section class="evaluation-panel live-boundary"><div><p class="eyebrow">PHASE 2 · RTSP</p><h2>直播采集边界</h2><p>已建立 live session / capture segment 契约；当前没有经人工 activation 的 RTSP 源和 30 分钟性能回执，因此只能标记“尚未验证实时分析”，不会宣称达到 5 FPS 或 P95 ≤ 2 秒。</p></div><span class="status-pill">REALTIME ANALYSIS · UNVERIFIED</span></section>`;
+  setRouteContent(content,{mount:scheduleEvaluationPoll,announcement:"测试与评估"});
+}
+
+function scheduleEvaluationPoll(){
+  clearTimeout(state.evaluationPollTimer);if(document.hidden||location.pathname!=="/app/evaluation"||state.evaluationPollInFlight)return;
+  const active=(state.evaluationDashboard?.runs||[]).some(item=>["QUEUED","RUNNING"].includes(item.state));if(!active)return;
+  state.evaluationPollTimer=setTimeout(async()=>{state.evaluationPollTimer=null;state.evaluationPollInFlight=true;try{const next=await api("/api/m8/evaluation/dashboard"),fingerprint=JSON.stringify(next),changed=fingerprint!==state.evaluationFingerprint;state.evaluationDashboard=next;state.evaluationFingerprint=fingerprint;if(location.pathname==="/app/evaluation"&&changed)renderEvaluation();}catch(error){toast(`评估队列同步失败：${error.message}`,"error");}finally{state.evaluationPollInFlight=false;scheduleEvaluationPoll();}},1500);
 }
 
 async function attachVideo() {
@@ -298,9 +367,12 @@ function paintWorkspaceFrame(video) {
   svg.innerHTML=record?(record.detections||[]).map(detection=>{const b=detection.bbox;return `<g><rect class="evidence-bbox" x="${b.x1}" y="${b.y1}" width="${b.x2-b.x1}" height="${b.y2-b.y1}"/><text class="evidence-track" x="${b.x1+8}" y="${Math.max(18,b.y1-8)}">ANONYMOUS TRACK</text>${(detection.keypoints||[]).map(point=>`<circle class="evidence-keypoint" cx="${point.x}" cy="${point.y}" r="5"/>`).join("")}</g>`;}).join(""):"";
 }
 
-function attachEvidenceWorkspace() {
+async function attachEvidenceWorkspace() {
   const video=document.getElementById("evidence-source-video");attachWorkspaceImages();if(!video)return;
-  const saved=state.videoPositions.get("evidence-source-video")||0;video.src=state.evidenceWorkspace.media_url;
+  const mediaUrl=state.evidenceWorkspace?.media_url;if(!mediaUrl)return;
+  if(state.evidenceVideoSource!==mediaUrl){if(state.evidenceVideoUrl)URL.revokeObjectURL(state.evidenceVideoUrl);state.evidenceVideoUrl=null;state.evidenceVideoPromise=null;state.evidenceVideoSource=mediaUrl;}
+  try{if(!state.evidenceVideoUrl){if(!state.evidenceVideoPromise){state.evidenceVideoPromise=api(mediaUrl,{binary:true,headers:{Range:"bytes=0-"}}).then(blob=>{if(state.evidenceVideoSource!==mediaUrl)return null;state.evidenceVideoUrl=URL.createObjectURL(blob);return state.evidenceVideoUrl;});}await state.evidenceVideoPromise;}if(!video.isConnected||!state.evidenceVideoUrl)return;video.src=state.evidenceVideoUrl;}catch(error){state.evidenceVideoPromise=null;toast(`案件录像读取失败：${error.message}`,"error");return;}
+  const saved=state.videoPositions.get("evidence-source-video")||0;
   video.addEventListener("loadedmetadata",()=>{video.currentTime=Math.min(saved,Number.isFinite(video.duration)?video.duration:saved);paintWorkspaceFrame(video);},{once:true});
   const update=()=>{if(!video.isConnected)return;state.videoPositions.set("evidence-source-video",video.currentTime);paintWorkspaceFrame(video);if("requestVideoFrameCallback" in video)video.requestVideoFrameCallback(update);};
   if("requestVideoFrameCallback" in video)video.requestVideoFrameCallback(update);else video.addEventListener("timeupdate",()=>paintWorkspaceFrame(video));
@@ -333,9 +405,10 @@ function patchRunUi(){patchShell();const run=state.run;const running=run?.state=
 async function refreshAfterRun(run){const [cases,notifications,conversations,projection]=await Promise.all([optional("/api/m8/cases",[]),optional("/api/m8/notifications",[]),optional("/api/m8/notification-conversations",[]),optional("/api/m8/campuses/campus-demo/operations-projection",null)]);Object.assign(state,{cases,notifications,conversations,projection});if(location.pathname==="/app/monitor"){const candidates=document.getElementById("monitor-candidates"),devices=document.getElementById("monitor-devices"),count=document.querySelector("[data-candidate-count]"),failure=document.getElementById("monitor-failure");if(candidates)candidates.innerHTML=monitorCandidatesMarkup();if(devices)devices.innerHTML=monitorDevicesMarkup();if(count)count.textContent=`${state.cases.filter(item=>!terminalCase(item.status)).length} CASES`;if(failure)failure.innerHTML=monitorFailureMarkup();}patchShell();toast(run.state==="SUCCEEDED"?(run.case_id?"识别已完成，候选案件入口已出现":"识别已完成，未建立可行动风险"):runFailureExplanation(run),run.state==="SUCCEEDED"?"success":"error");}
 
 function caseTitle(item) { const command=caseCommand(item); return command?.risk_level==="EMERGENCY"?"烟雾与高温联动紧急事件":"护目镜缺失候选事件"; }
+function evaluationRunForCase(caseId){return (state.evaluationDashboard?.runs||[]).find(item=>item.case_id===caseId);}
 function caseList(items=state.cases) {
   if(!items.length)return empty("暂无可见案件","标准现场保持无活动案件；可由运维角色启动演示场景。")
-  return `<div class="list">${items.map(item=>{const authority=caseAuthority(item);return `<a class="list-item" href="/app/cases/${item.case_id}"><div><h3>${caseTitle(item)}</h3><p>${esc(authority.location_id)} · ${short(item.case_id)} · V${item.case_version}</p></div><div class="status"><span class="badge ${authority.risk_level==="EMERGENCY"?"risk":""}">${esc(authority.risk_level)}</span><p>${esc(label(item.status))} →</p></div></a>`}).join("")}</div>`;
+  return `<div class="list">${items.map(item=>{const authority=caseAuthority(item),evaluation=evaluationRunForCase(item.case_id);return `<a class="list-item" href="/app/cases/${item.case_id}"><div><h3>${caseTitle(item)} ${evaluation?'<span class="badge evaluation">EVALUATION / 全真模拟</span>':""}</h3><p>${esc(authority.location_id)} · ${short(item.case_id)} · V${item.case_version}</p></div><div class="status"><span class="badge ${authority.risk_level==="EMERGENCY"?"risk":""}">${esc(authority.risk_level)}</span><p>${esc(label(item.status))} →</p></div></a>`}).join("")}</div>`;
 }
 
 function caseFilterProjection() {
@@ -358,10 +431,22 @@ function patchCasesFilter(filter,{historyMode="push"}={}) {
   const region=document.querySelector("[data-case-list-region]");if(!region)return false;region.classList.remove("is-updating");document.querySelector("[data-case-list-title]").textContent=`${filters.find(x=>x[0]===filter)?.[1]||"全部"}卷宗`;document.querySelector("[data-case-list-count]").textContent=`${items.length} CASES`;document.querySelector("[data-case-list]").innerHTML=caseList(items);requestAnimationFrame(()=>region.classList.add("is-updating"));return true;
 }
 
-function flow(status) {
-  const names=["检测触发","证据采集","AI 初审","复核会审","程序守门","人工确认","通知送达","结案归档"];
-  const current=status==="PENDING_VERIFICATION"||status==="EVIDENCE_REQUESTED"?5:status==="CONFIRMED"||status==="APPEALED"?6:7;
-  return `<div class="case-flow-8" aria-label="案件流程">${names.map((name,index)=>`${index?`<span class="case-flow-join ${index<current?"is-complete":""}"></span>`:""}<span class="case-flow-node ${index<current?"is-complete":index===current?"is-current":""}" style="--flow-index:${index}"><i>${index<current?"✓":index+1}</i>${name}</span>`).join("")}</div>`;
+function flow(status,hearing=null,hasHearingSource=false,preparation=null) {
+  const names=["检测触发","证据采集","AI 初审",preparation?"会审前补证":"复核会审","程序守门","人工确认","通知送达","结案归档"];
+  let current=status==="PENDING_VERIFICATION"||status==="EVIDENCE_REQUESTED"?5:status==="CONFIRMED"||status==="APPEALED"?6:7;
+  let skippedHearing=false,skippedL5=false;
+  if(preparation){
+    if(preparation.state==="COMPLETED"){
+      current=5;skippedHearing=true;skippedL5=true;
+      names[3]="补证不可改善";
+    }else current=3;
+  }
+  if(hasHearingSource&&hearing){
+    const adjudicationComplete=hearing.l5_status==="PASSED"&&["COMPLETED","NOT_ELIGIBLE"].includes(hearing.eligibility);
+    skippedHearing=adjudicationComplete&&hearing.eligibility==="NOT_ELIGIBLE"&&!hearing.hearing_session;
+    if(!preparation&&!adjudicationComplete)current=hearing.hearing_session?4:3;
+  }
+  return `<div class="case-flow-8" aria-label="案件流程">${names.map((name,index)=>{const skipped=skippedHearing&&index===3||skippedL5&&index===4,complete=index<current&&!skipped;const title=preparation&&index===3?' title="客观证据不足，未创建三方会审 session"':skipped?' title="该步骤未执行"':"";return `${index?`<span class="case-flow-join ${complete?"is-complete":""}"></span>`:""}<span class="case-flow-node ${skipped?"is-skipped":complete?"is-complete":index===current?"is-current":""}" style="--flow-index:${index}"${title}><i>${skipped?"—":complete?"✓":index+1}</i>${name}${skipped?`<small>${preparation?"未执行":"快速路径跳过"}</small>`:""}</span>`;}).join("")}</div>`;
 }
 
 function caseActions(item) {
@@ -375,12 +460,70 @@ function caseActions(item) {
   return `<div class="field"><label for="case-reason">人工处置说明</label><textarea id="case-reason">已复核现有证据与现场来源，按演示流程记录本次人工决定。</textarea></div><div class="form-actions">${buttons.map(([action,text,kind])=>`<button class="button ${kind}" type="button" data-transition="${action}" data-case="${item.case_id}">${text}</button>`).join("")}</div><p class="help">提交前后端将再次校验角色、案件版本和显式人工确认。</p>`;
 }
 
+function hearingRef(ref){return `<span class="hearing-ref"><b>${esc(ref.kind)}</b><code>${esc(short(ref.artifact_id))}</code></span>`;}
+function hearingArgument(item){return `<li><p>${esc(item.claim)}</p><div class="hearing-refs">${(item.evidence_refs||[]).map(hearingRef).join("")||"<span>无引用</span>"}</div><small>UNCERTAINTY ${esc(item.uncertainty)}</small></li>`;}
+function hearingRoleCard(output){
+  const payload=output.payload||{},roleName={PROSECUTOR:"控方",DEFENDER:"辩方",JUDGE:"裁决方"}[output.role]||output.role;
+  const argumentsMarkup=(payload.arguments||[]).length?`<ol class="hearing-arguments">${payload.arguments.map(hearingArgument).join("")}</ol>`:"";
+  const responses=(payload.judge_responses||[]).map(item=>`<li><b>${esc(item.disposition)}</b><p>${esc(item.response_summary)}</p><small>DEFENSE ARGUMENT ${short(item.defense_argument_id)}</small></li>`).join("");
+  const outcome=payload.outcome?.outcome_type==="FINAL"?`<div class="hearing-outcome"><span>FINAL VERDICT PROPOSAL</span><strong>${esc(payload.outcome.decision)}</strong><p>${esc(payload.outcome.rationale_summary)}</p></div>`:payload.outcome?.request?`<div class="hearing-outcome"><span>ACQUISITION REQUEST</span><strong>${esc(payload.outcome.request.action)}</strong><p>${esc(payload.outcome.request.reason_summary)}</p></div>`:"";
+  return `<article class="hearing-role"><header><div><p class="eyebrow">${esc(output.role)} · ROUND ${esc(output.round_index)}</p><h3>${roleName}</h3></div><span class="badge">STRUCTURED</span></header>${payload.case_summary?`<p>${esc(payload.case_summary)}</p>`:""}${argumentsMarkup}${responses?`<ul class="hearing-responses">${responses}</ul>`:""}${outcome}</article>`;
+}
+function hearingPreparationMarkup(preparation){
+  if(!preparation)return "";
+  const completed=preparation.state==="COMPLETED",clear=(preparation.clear_crop_ids||[]).length,required=preparation.required_clear_count;
+  const title=completed?"补证不可改善 · 已转人工复核":"客观证据不足 · 正在检查真实补证能力";
+  const body=completed?`现有事件全部候选帧已按同一观测阈值检查，仍只有 ${clear} / ${required} 张清晰帧；结果 ${esc(preparation.outcome_code||"EVIDENCE_MISSING")}。没有创建会审 session，也没有调用控方、辩方或裁决方。`:`当前只有 ${clear} / ${required} 张清晰帧。系统先解析绑定视频和可用工具；在形成合法新证据前不会启动三方会审。`;
+  return `<section class="prehearing-state ${completed?"is-terminal":"is-running"}"><div><p class="eyebrow">M8 PRE-HEARING EVIDENCE GATE</p><h3>${title}</h3><p>${body}</p></div><dl><div><dt>清晰证据</dt><dd>${clear} / ${required}</dd></div><div><dt>三方调用</dt><dd>${esc(preparation.hearing_role_call_count)} 次</dd></div><div><dt>状态</dt><dd>${esc(preparation.state)}</dd></div><div><dt>Authority</dt><dd>${short(preparation.preparation_id)}</dd></div></dl></section>`;
+}
+function riskAssessmentMarkup(){
+  const view=state.riskAssessment;if(!view)return "";const quality=view.evidence_quality||{},risk=view.event_risk||{},shadow=quality.mode==="SHADOW"||risk.mode==="SHADOW";
+  const qualityValue=quality.mode==="SHADOW"?`${(Number(quality.quality_probability)*100).toFixed(1)}% · ${quality.sufficient?"充分":"不足"}`:`不适用 · ${esc(quality.reason_code||"ARTIFACT_UNAVAILABLE")}`;
+  const riskValue=risk.mode==="SHADOW"?`${(Number(risk.calibrated_probability)*100).toFixed(1)}%`:`尚未建立统计概率 · ${esc(risk.reason_code||"ARTIFACT_UNAVAILABLE")}`;
+  return `<section class="risk-assessment-state"><div><p class="eyebrow">NON-LLM CALIBRATION · ${esc(risk.mode)}</p><h3>${shadow?"影子评估，不参与裁决":"尚未建立可适用的统计概率"}</h3><p>只使用内容绑定的本地检测与时序特征；不读取 Qwen probability、帧弱标签或控辩裁 confidence。</p></div><dl><div><dt>证据质量</dt><dd>${qualityValue}</dd></div><div><dt>EventRisk</dt><dd>${riskValue}</dd></div><div><dt>路由权威</dt><dd>否</dd></div><div><dt>Run</dt><dd>${short(view.run_id)}</dd></div></dl></section>`;
+}
+function persistedAcquisitionMarkup(item){
+  const redetection=item.redetection_outcome,series=item.track_confidence_series;
+  const detail=redetection?`${redetection.detections?.length||0} 个真实检测${item.status==="SUCCEEDED_EMPTY"?" · 合法空结果":""}`:series?`${series.observed_count} / ${series.points?.length||0} 帧有检测 · 均值 ${Number(series.mean_score).toFixed(3)}`:item.raw_receipt?`RAW ${short(item.raw_receipt.raw_response_sha256)}`:"已持久化工具结果";
+  const failure=item.failure_code?` · ${esc(item.failure_code)}`:"";
+  return `<article><b>V2 RESULT · ${esc(item.action)}</b><p>${esc(item.status)} · ${esc(item.m4_representability)}${failure}</p><small>${esc(detail)} · RECEIPT ${short(item.result_id)}</small></article>`;
+}
+function hearingDossier(caseId){
+  const run=state.caseRun||state.run;
+  if(!run||run.case_id!==caseId)return empty("运行产物尚不可见","当前案件没有可读取的场景运行投影。");
+  if(!run.hearing_case_id)return empty("未绑定会审来源","该运营案件没有持久化的 M4 Case 绑定，页面不会猜测或创建第二套会审状态。");
+  const view=state.hearingView;
+  if(!view)return `<div class="hearing-state"><p class="eyebrow">SERVICE-CROPPED VIEW</p><h2>当前角色暂不可读取会审 authority</h2><p>学生与运维不读取会审内容；领导仅可读取已经完成或转人工复核的结果。安全负责人可查看资格并显式启动。</p></div>`;
+  const preparation=state.hearingPreparation;
+  const eligible=!preparation&&["ELIGIBLE_ESCALATED","ELIGIBLE_REWORK_REQUIRED"].includes(view.eligibility);
+  const fastPathComplete=!view.hearing_session&&["READY_FOR_ALERT_POLICY","CLOSED"].includes(view.case_status)&&view.l5_status==="PASSED";
+  const objectiveHumanReview=!view.hearing_session&&view.eligibility==="HUMAN_REVIEW";
+  const noSessionTitle=eligible?"尚未建立会审 session":fastPathComplete?"快速路径已完成 · 不符合会审条件":objectiveHumanReview?"客观证据不足 · 未执行三方会审":"不符合会审条件";
+  const fastPathBody=view.case_status==="CLOSED"?`初审为 ${esc(view.screening_decision)}，L5 程序审查已通过，告警策略闭环已完成；该清晰案例无需三方会审，M8 人工案件状态仍独立处理。`:`初审为 ${esc(view.screening_decision)}，L5 程序审查已通过并进入 READY_FOR_ALERT_POLICY；该清晰案例无需三方会审，后续仍由告警策略与 M8 人工流程处理。`;
+  const noSessionBody=eligible?"只有安全负责人显式操作才会开始；打开页签不会改变 M4 或 M8 状态。":fastPathComplete?fastPathBody:objectiveHumanReview?"证据质量门已阻止控辩裁围绕缺失像素生成更多文字；人工可决定补拍、提醒或关闭案件，系统不会替人猜测画面。":`当前初审为 ${esc(view.screening_decision)}、冻结状态为 ${esc(view.case_status)}；明确终态不会为展示被强迫进入会审。`;
+  const modelLabel=view.model_mode==="OPENAI_COMPATIBLE_QWEN"?"显式真实 Qwen 会审":"离线合成会审";
+  const safetyAction=role()==="SAFETY_OFFICER"&&eligible?`<button class="button ${view.model_mode==="OPENAI_COMPATIBLE_QWEN"?"alarm":"primary"}" type="button" data-hearing-start="${esc(view.model_mode)}" data-hearing-case="${esc(caseId)}">启动${modelLabel}</button>`:"";
+  const providers=(view.provider_selections||[]).map(item=>`<span>${esc(item.role)} · ${esc(item.provider)} / ${esc(item.model)}</span>`).join("");
+  const roleOutputs=(view.role_outputs||[]).map(hearingRoleCard).join("");
+  const references=[...(view.cited_evidence_refs||[]),...(view.cited_precedent_refs||[])];
+  const acquisitionItems=(view.rounds||[]).filter(item=>item.acquisition_request||item.tool_execution_receipt).map(item=>({round:item.round_index,request:item.acquisition_request,receipt:item.tool_execution_receipt,source:"ROUND"}));
+  const checkpointRequest=view.checkpoint?.acquisition_request,checkpointReceipt=view.checkpoint?.tool_execution_receipt;
+  if((checkpointRequest||checkpointReceipt)&&!acquisitionItems.some(item=>item.request?.request_id===checkpointRequest?.request_id))acquisitionItems.push({round:checkpointRequest?.round_index||view.checkpoint?.judge_cycle,request:checkpointRequest,receipt:checkpointReceipt,source:"CHECKPOINT"});
+  const acquisitions=[...acquisitionItems.map(item=>{const payload=item.request?.request_payload||item.request;return `<article><b>${esc(item.source)} · ROUND ${esc(item.round||"—")}</b><p>${item.request?`${esc(payload?.action)} · ${esc(payload?.reason_summary)}`:"无补证请求"}</p><small>${item.receipt?`EXECUTION ${esc(item.receipt.status||item.receipt.outcome||"RECORDED")}`:`${view.checkpoint?.human_review_reason?`未执行 · ${esc(view.checkpoint.human_review_reason)}`:"未执行补证"}`}</small></article>`;}),...(state.hearingAcquisitions||[]).map(persistedAcquisitionMarkup)].join("");
+  const acquisitionCount=acquisitionItems.filter(item=>item.request).length+(state.hearingAcquisitions||[]).length;
+  const failures=(view.typed_failures||[]).map(item=>`<article class="hearing-failure"><b>${esc(item.reason_code||item.failure_code||"TYPED_FAILURE")}</b><p>${esc(item.role)} · ROUND ${esc(item.request?.round_index||"—")}</p><small>AUTHORITY ${short(item.authority_id)}</small></article>`).join("");
+  const reviews=(view.procedural_reviews||[]).map(item=>`<article><b>${item.passed?"PASSED":"FAILED"}</b><p>${(item.defects||[]).length?`${item.defects.length} 个类型化缺陷`:"未发现程序缺陷"}</p><small>${short(item.review_id)}</small></article>`).join("");
+  const verdict=view.final_verdict?`<section class="hearing-verdict"><div><p class="eyebrow">FINAL VERDICT · M4 AUTHORITY</p><h2>${esc(view.final_verdict.decision)}</h2><p>${esc(view.final_verdict.rationale_summary)}</p></div><dl><div><dt>建议提醒级别</dt><dd>${esc(view.final_verdict.recommended_alert_level)}</dd></div><div><dt>L5 程序审查</dt><dd>${esc(view.l5_status)}</dd></div><div><dt>裁决 ID</dt><dd>${short(view.final_verdict.verdict_id)}</dd></div></dl></section>`:"";
+  const terminalWithoutVerdict=!view.final_verdict&&["HUMAN_REVIEW","BACKLOGGED"].includes(view.eligibility)?`<div class="hearing-state"><p class="eyebrow">NO FORCED VERDICT · ${view.hearing_session?"M4":"M8 PRE-HEARING"} AUTHORITY</p><h3>${view.eligibility==="HUMAN_REVIEW"?"已转人工复核":"会审已进入待重试队列"}</h3><p>${view.checkpoint?.human_review_reason?`原因：${esc(view.checkpoint.human_review_reason)}。`:objectiveHumanReview?"客观证据仍不足，当前没有可发布的实质裁决。":"当前没有可发布的最终裁决。"}${view.hearing_session?"系统保留三方原始响应和结构化输出，没有为了展示而生成虚假 Final Verdict；":"系统没有创建三方会审记录；"}L5 显示的是已持久化的程序审查状态。</p></div>`:"";
+  return `<section class="hearing-dossier"><header class="hearing-status"><div><p class="eyebrow">M4 HEARING · ${esc(view.model_mode)}</p><h2>${esc(view.eligibility)}</h2><p>冻结案件状态 ${esc(view.case_status)} · 正式案件 ${short(caseId)} · Revision ${view.case_revision}</p></div>${safetyAction}</header>${hearingPreparationMarkup(preparation)}${view.model_mode==="OFFLINE_FIXTURE"?`<div class="synthetic-banner"><b>DEMO / SYNTHETIC HEARING INPUT</b><span>离线三角色输出仅用于展示程序闭环，不是事实或处分依据。</span></div>`:""}<div class="hearing-providers">${providers}</div>${!view.hearing_session?`<div class="hearing-state"><h3>${noSessionTitle}</h3><p>${noSessionBody}</p></div>`:""}${roleOutputs?`<div class="hearing-role-grid">${roleOutputs}</div>`:""}${verdict}${terminalWithoutVerdict}<div class="hearing-detail-grid"><section><div class="panel-head"><h3>证据与先例引用</h3><span>${references.length} REFS</span></div><div class="hearing-refs">${references.map(hearingRef).join("")||"尚无会审引用"}</div></section><section><div class="panel-head"><h3>补证请求 / 执行</h3><span>${acquisitionCount} RECORDS</span></div>${acquisitions||"<p class='help'>尚无补证记录。</p>"}</section><section><div class="panel-head"><h3>类型化失败</h3><span>${(view.typed_failures||[]).length} FAILURES</span></div>${failures||"<p class='help'>没有持久化的模型调用失败。</p>"}</section><section><div class="panel-head"><h3>L5 程序审查</h3><span>${esc(view.l5_status)}</span></div>${reviews||"<p class='help'>程序审查尚未运行。</p>"}</section></div></section>`;
+}
+
 function caseRecognitionDossier(caseId,section="hearing") {
-  const run=state.run;
+  const run=state.caseRun||state.run;
   if(!run||run.case_id!==caseId)return empty("运行产物尚不可见","当前案件没有可读取的场景运行投影。");
   const components=(run.model_components||[]).map(item=>`<article class="dossier-source"><span>${esc(item.component)} · ${esc(item.source)}</span><strong>${esc(item.model)}</strong><small>${esc(item.provider)} · ${esc(item.revision)} · MANIFEST ${short(item.manifest_id)}</small></article>`).join("");
-  if(section==="evidence")return evidenceWorkspaceMarkup();
-  return `<div class="hearing-grid"><article class="hearing-card"><p class="eyebrow">机器初审 · WEAK LABEL</p><strong class="dossier-decision">${esc(run.screening_decision||"尚未生成")}</strong><p>${esc(run.screening_summary||"结构化初审尚未生成。")}</p><small>机器输出不是事实或处分依据</small></article><article class="hearing-card"><p class="eyebrow">反证检查</p><strong>当前投影无独立反证 authority</strong><p>不把缺少独立反证引用误写为“已经证明不存在反证”。</p></article><article class="hearing-card"><p class="eyebrow">STRICT_CAUSAL 规则守门</p><strong>${esc(run.rule_judgment||"尚未生成")}</strong><p>后续合规不会抹除较早风险；规则只投影风险，不替人定责。</p></article><article class="hearing-card"><p class="eyebrow">人工复核</p><strong>${run.case_status&&run.case_status!=="PENDING_VERIFICATION"?"已有人工作出状态变更":"等待安全负责人确认"}</strong><p>处置动作集中在“处理”页签并再次校验版本。</p></article></div><div class="panel" style="margin-top:20px"><p class="eyebrow">MODEL / FIXTURE PROVENANCE</p>${components||empty("暂无模型来源","本场景没有模型调用。")}${run.raw_response_ref?`<p class="help mono">RAW · ${esc(run.raw_response_ref)}</p>`:""}</div>`;
+  if(section==="evidence")return evidenceWorkspaceMarkup()+riskAssessmentMarkup();
+  return hearingDossier(caseId)+riskAssessmentMarkup()+`<div class="panel hearing-screening-source"><p class="eyebrow">SCREENING / RUN PROVENANCE</p>${components||empty("暂无模型来源","本场景没有模型调用。")}${run.raw_response_ref?`<p class="help mono">RAW · ${esc(run.raw_response_ref)}</p>`:""}</div>`;
 }
 
 function evidenceWorkspaceMarkup() {
@@ -392,7 +535,7 @@ function evidenceWorkspaceMarkup() {
   const video=workspace.media_url?`<div class="evidence-video"><video id="evidence-source-video" controls muted playsinline preload="metadata"></video><svg id="evidence-overlay" aria-hidden="true"></svg><span class="source-badge">SIMULATED · RECORDED VIDEO</span><span id="evidence-frame-counter" class="frame-counter">FRAME — / ${workspace.video_profile.frame_count}</span></div>`:`<div class="evidence-restricted"><b>案件依据已脱敏</b><p>当前角色不能查看原始录像、人物框或匿名轨迹；可查看本人案件的裁剪依据与处理结论。</p></div>`;
   const folders=workspace.evidence.map(item=>item.access==="SEALED_LOCAL"?`<button class="evidence-file sealed" type="button" data-workspace-card="${item.evidence_id}" data-evidence-card="${item.evidence_id}"><span class="evidence-lock">封</span><i>${esc(item.role)}</i><b>本地封存件</b><small>FULL REDACTION · LOCAL ONLY<br>未送云端 · FRAME ${item.frame_index}</small></button>`:`<button class="evidence-file ${item.evidence_id===selected?"is-selected":""}" type="button" data-workspace-card="${item.evidence_id}" data-evidence-card="${item.evidence_id}"><span class="evidence-thumb"><span class="spinner"></span><img data-workspace-evidence="${item.evidence_id}" alt="帧 ${item.frame_index} 眼部区域送审裁剪" hidden></span><i>${esc(item.role)}</i><b>送审证据 ${String(cloud.indexOf(item)+1).padStart(2,"0")}</b><small>FRAME ${item.frame_index} · ${esc(item.integrity)}</small></button>`).join("");
   const selectedItem=workspace.evidence.find(item=>item.evidence_id===selected);const cropMain=selectedItem?selectedItem.access==="SEALED_LOCAL"?`<div class="sealed-main"><span>LOCAL SEALED</span><h3>全量脱敏证据</h3><p>该产物按 FULL_REDACTION 生成，只用于证明隐私处理已执行，不作为黑色图片展示，也从未送往云端。</p></div>`:`<div class="crop-main"><span class="spinner"></span><img data-workspace-evidence="${selectedItem.evidence_id}" alt="选中的送审证据" hidden><div><b>FRAME ${selectedItem.frame_index}</b><p>${selectedItem.width}×${selectedItem.height} · ${esc(selectedItem.privacy_policy)}</p><button class="button quiet" type="button" data-evidence-locate="${selectedItem.evidence_id}">回到录像定位</button></div></div>`:empty("选择证据夹","选择一份送审裁剪或本地封存件查看来源链。");
-  const screening=workspace.screening?`<article class="vlm-receipt"><p class="eyebrow">${esc(workspace.screening.source)} · WEAK LABEL</p><h3>${esc(workspace.screening.decision)}</h3><p>${esc(workspace.screening.summary)}</p><dl><div><dt>提供方 / 模型</dt><dd>${esc(workspace.screening.provider)} · ${esc(workspace.screening.model)}</dd></div><div><dt>送审输入</dt><dd>${workspace.screening.input_evidence_ids.map(short).join(" · ")}</dd></div><div><dt>模型清单</dt><dd>${short(workspace.screening.manifest_id)}</dd></div><div><dt>原始响应</dt><dd>${esc(workspace.screening.raw_response_ref)}</dd></div></dl><a class="button primary" href="?tab=hearing">进入会审 →</a></article>`:empty("初审尚未生成","没有结构化 authority 时不展示猜测的模型结论。");
+  const screening=workspace.screening?`<article class="vlm-receipt"><p class="eyebrow">${esc(workspace.screening.source)} · WEAK LABEL</p><h3>${esc(workspace.screening.decision)}</h3><p>${esc(workspace.screening.summary)}</p><div class="uncalibrated-notice"><b>模型自报 · 未校准</b><span>初审中的概率或 confidence 仅保留在审计原文，不是 LabCourt 的统计风险概率。</span></div><dl><div><dt>提供方 / 模型</dt><dd>${esc(workspace.screening.provider)} · ${esc(workspace.screening.model)}</dd></div><div><dt>送审输入</dt><dd>${workspace.screening.input_evidence_ids.map(short).join(" · ")}</dd></div><div><dt>模型清单</dt><dd>${short(workspace.screening.manifest_id)}</dd></div><div><dt>原始响应</dt><dd>${esc(workspace.screening.raw_response_ref)}</dd></div></dl><a class="button primary" href="?tab=hearing">进入会审 →</a></article>`:empty("初审尚未生成","没有结构化 authority 时不展示猜测的模型结论。");
   const sources=`<aside class="evidence-provenance"><p class="eyebrow">SOURCE CHAIN</p><ol><li><b>H.264 原始录像</b><span>${workspace.video_profile.width}×${workspace.video_profile.height} · ${workspace.video_profile.frame_count} 帧</span></li><li><b>Grounding DINO + ViTPose</b><span>真实人物框、匿名轨迹与关键点</span></li><li><b>隐私变换</b><span>${cloud.length} 份送审裁剪 · ${sealed.length} 份本地封存</span></li><li><b>Qwen 结构化初审</b><span>${workspace.screening?`${workspace.screening.source} · ${workspace.screening.decision}`:"尚未生成"}</span></li></ol><p class="help">预约关联，非视觉身份识别。机器输出是弱标签，不直接作为处分依据。</p></aside>`;
   return `<section class="evidence-workbench" data-stage="${stage}"><nav class="evidence-stage-nav" role="tablist" aria-label="识别证据流程">${nav}</nav><div class="evidence-workbench__grid"><div class="evidence-workbench__main"><section data-evidence-video ${["crops","vlm"].includes(stage)?"hidden":""}>${video}<div class="evidence-caption" data-evidence-caption="replay" ${stage!=="replay"?"hidden":""}><b>原始画面回放</b><span>浏览器兼容 H.264 · 支持播放、拖动和 Range</span></div><div class="evidence-caption" data-evidence-caption="localization" ${stage!=="localization"?"hidden":""}><b>真实人物定位</b><span>按播放时钟映射 frame bundle；不插值，不显示虚假准确率</span></div></section><section data-evidence-view="crops" ${stage!=="crops"?"hidden":""}>${cropMain}</section><section data-evidence-view="vlm" ${stage!=="vlm"?"hidden":""}>${screening}</section></div>${sources}</div><div class="evidence-folder-head"><div><p class="eyebrow">EVIDENCE FOLDER</p><h2>送审证据夹与本地封存件</h2></div><span>${cloud.length} CLOUD ALLOWED · ${sealed.length} SEALED LOCAL</span></div><div class="evidence-folder">${folders}</div></section>`;
 }
@@ -402,7 +545,15 @@ async function renderCaseDetail(caseId) {
   const authority=caseAuthority(item),command=caseCommand(item),triggers=command.trigger_authorities||[];
   const related=state.notifications.filter(n=>notificationPlan(n)?.case_id===caseId);
   const tab=new URL(location.href).searchParams.get("tab")||"overview";const allowed=["overview","evidence","hearing","handling"];const activeTab=allowed.includes(tab)?tab:"overview";
-  const run=state.run?.case_id===caseId?state.run:null;state.evidenceWorkspace=run?await optional(`/api/m8/demo/scenario-runs/${run.run_id}/evidence-workspace`,null):null;
+  const evaluation=evaluationRunForCase(caseId);let run=state.run?.case_id===caseId?state.run:null;if(!run&&evaluation)run=await optional(`/api/m8/demo/scenario-runs/${evaluation.run_id}`,null);state.caseRun=run;state.evidenceWorkspace=run?await optional(`/api/m8/demo/scenario-runs/${run.run_id}/evidence-workspace`,null):null;
+  if(run?.hearing_case_id){
+    [state.hearingView,state.hearingPreparation,state.hearingAcquisitions]=await Promise.all([
+      optional(`/api/m8/runs/${run.run_id}/cases/${caseId}/hearing`,null),
+      optional(`/api/m8/runs/${run.run_id}/cases/${caseId}/hearing-preparation`,null),
+      optional(`/api/m8/runs/${run.run_id}/cases/${caseId}/hearing-acquisitions`,[]),
+    ]);
+  }else{state.hearingView=null;state.hearingPreparation=null;state.hearingAcquisitions=[];}
+  state.riskAssessment=evaluation?await optional(`/api/m8/evaluation/runs/${evaluation.run_id}/risk-assessment`,null):null;
   const conversationSummary=state.conversations.find(value=>value.case_id===caseId),hasMessage=related.some(value=>["CASE_UPDATED","APPEAL_OUTCOME"].includes(notificationPlan(value)?.purpose));
   const notifyAction=role()==="SAFETY_OFFICER"&&item.status==="CONFIRMED"&&authority.subject_actor_id?(hasMessage?`<a class="button" href="/app/notifications/${item.case_id}">查看会话</a><button class="button quiet" type="button" data-confirm-dispatch="CASE_UPDATED" data-case="${item.case_id}">再次发送</button>`:`<button class="button" type="button" data-dispatch="CASE_UPDATED" data-case="${item.case_id}">发送学生消息</button>`):"";
   const hasOutcome=related.some(value=>notificationPlan(value)?.purpose==="APPEAL_OUTCOME");const outcomeAction=role()==="SAFETY_OFFICER"&&item.status==="APPEAL_RESOLVED"?(hasOutcome?`<a class="button" href="/app/notifications/${item.case_id}">查看处理结果会话</a>`:`<button class="button" type="button" data-dispatch="APPEAL_OUTCOME" data-case="${item.case_id}">发送申诉结果</button>`):"";
@@ -410,7 +561,7 @@ async function renderCaseDetail(caseId) {
   const handling=`<div class="processing-layout"><section class="panel"><div class="panel-head"><h2>处置工作台</h2><span>HUMAN CONFIRMATION</span></div>${caseActions(item)}</section><aside><div class="panel-head"><h2>审计时间线</h2><span>STATE MACHINE</span></div><div class="case-timeline"><article class="timeline-event is-complete"><b>案件建立</b><p>${label("PENDING_VERIFICATION")} · V1</p></article><article class="timeline-event is-current"><b>当前状态</b><p>${esc(label(item.status))} · V${item.case_version}</p></article></div></aside></div><section class="case-conversation-summary"><div class="panel-head"><h2>案件会话</h2><span>${conversationSummary?`${conversationSummary.notification_count} 通知 · ${conversationSummary.reply_count} 回复`:"尚未建立"}</span></div>${conversationSummary?`<a class="conversation-inline" href="/app/notifications/${caseId}"><div><b>${esc(conversationSummary.latest_title)}</b><p>${esc(conversationSummary.latest_progress)}</p></div><span>查看完整会话 →</span></a>`:empty("尚无案件会话","发送学生消息后，双方会在同一条时间线查看说明、申诉和处理结果。")}</section>`;
   const panels={overview,evidence:caseRecognitionDossier(caseId,"evidence"),hearing:caseRecognitionDossier(caseId,"hearing"),handling};
   const tabs=[["overview","概览"],["evidence","证据"],["hearing","会审"],["handling","处理"]];
-  const content=`${pageHead(authority.risk_level,caseTitle(item),`${authority.location_id} · 案件 ${short(item.case_id)} · ${authority.subject_actor_id?"预约关联，非视觉身份识别":"未关联个人身份"}`,`${notifyAction}${outcomeAction}<a class="button quiet" href="/app/cases">返回列表</a>`)}${flow(item.status)}<nav class="case-tabs" role="tablist" aria-label="案件卷宗内容">${tabs.map(([key,text])=>`<a class="case-tab" role="tab" data-case-tab="${key}" aria-selected="${activeTab===key}" tabindex="${activeTab===key?0:-1}" href="?tab=${key}">${text}${key==="evidence"?`<span class="case-tab-count">${state.run?.case_id===caseId?state.run.evidence?.length||0:0}</span>`:""}</a>`).join("")}</nav><section class="case-panel is-active" role="tabpanel" data-case-panel="${activeTab}">${panels[activeTab]}</section>`;
+  const kicker=`${authority.risk_level}${evaluation?" · EVALUATION / 全真模拟":""}`;const content=`${pageHead(kicker,caseTitle(item),`${authority.location_id} · 案件 ${short(item.case_id)} · ${authority.subject_actor_id?"预约关联，非视觉身份识别":"未关联个人身份"}`,`${notifyAction}${outcomeAction}<a class="button quiet" href="/app/cases">返回列表</a>`)}${flow(item.status,state.hearingView,Boolean(run?.hearing_case_id),state.hearingPreparation)}<nav class="case-tabs" role="tablist" aria-label="案件卷宗内容">${tabs.map(([key,text])=>`<a class="case-tab" role="tab" data-case-tab="${key}" aria-selected="${activeTab===key}" tabindex="${activeTab===key?0:-1}" href="?tab=${key}">${text}${key==="evidence"?`<span class="case-tab-count">${run?.evidence?.length||0}</span>`:""}</a>`).join("")}</nav><section class="case-panel is-active" role="tabpanel" data-case-panel="${activeTab}">${panels[activeTab]}</section>`;
   state.caseDetail={caseId,panels,tabs};
   setRouteContent(content,{mount:()=>{if(activeTab==="evidence")attachEvidenceWorkspace();},announcement:`${caseTitle(item)} · ${tabs.find(x=>x[0]===activeTab)[1]}`});
 }
@@ -592,7 +743,7 @@ async function renderRoute({restore=null}={}) {
     if(path==="/app/settings"){[state.users,state.rules]=await Promise.all([optional("/api/m8/users",null,{signal:controller.signal}),optional("/api/m8/rules",null,{signal:controller.signal})]);}
     if(path==="/app/knowledge")state.knowledgeCatalog=await api("/api/m8/knowledge/catalogs/campus-safety-knowledge",{signal:controller.signal});
     if(routeId!==state.routeSequence||controller.signal.aborted)return;
-    if(path==="/app/monitor")renderMonitor();else if(path==="/app/cases")renderCases();else if(path.startsWith("/app/cases/"))await renderCaseDetail(decodeURIComponent(path.split("/").pop()));else if(path==="/app/map")renderMap();else if(path==="/app/notifications")renderNotifications();else if(path.startsWith("/app/notifications/"))await renderNotificationConversation(decodeURIComponent(path.split("/").pop()));else if(path==="/app/knowledge")await renderKnowledge();else if(path==="/app/agent")await renderAgent();else if(path==="/app/profile")renderProfile();else if(path==="/app/settings")renderSettings();else{await navigateTo("/app/monitor",{replace:true});return;}
+    if(path==="/app/monitor")renderMonitor();else if(path==="/app/cases")renderCases();else if(path.startsWith("/app/cases/"))await renderCaseDetail(decodeURIComponent(path.split("/").pop()));else if(path==="/app/evaluation")renderEvaluation();else if(path==="/app/map")renderMap();else if(path==="/app/notifications")renderNotifications();else if(path.startsWith("/app/notifications/"))await renderNotificationConversation(decodeURIComponent(path.split("/").pop()));else if(path==="/app/knowledge")await renderKnowledge();else if(path==="/app/agent")await renderAgent();else if(path==="/app/profile")renderProfile();else if(path==="/app/settings")renderSettings();else{await navigateTo("/app/monitor",{replace:true});return;}
     state.currentRoute=`${path}${location.search}`;if(restore){state.videoPositions.set("recorded-video",restore.videoTime||0);state.videoPositions.set("evidence-source-video",restore.evidenceVideoTime||0);requestAnimationFrame(()=>scrollTo(restore.scrollX||0,restore.scrollY||0));}if(state.run?.state==="RUNNING")schedulePoll();
   } catch(error){if(error.name!=="AbortError"&&routeId===state.routeSequence)errorPage(error)}
 }
@@ -661,6 +812,47 @@ async function handleClick(event) {
     if(target.dataset.location){patchMapSelection({location:target.dataset.location});return;}
     if(target.dataset.knowledgeType){patchKnowledgeFilter(target.dataset.knowledgeType);return;}
     if(target.dataset.knowledgeDoc){await selectKnowledgeDocument(target.dataset.knowledgeDoc);return;}
+    if(target.dataset.hearingStart){
+      const view=state.hearingView;if(!view)throw new Error("HEARING_VIEW_NOT_AVAILABLE");
+      const platformCaseId=target.dataset.hearingCase;if(!platformCaseId)throw new Error("HEARING_CASE_NOT_AVAILABLE");
+      const real=view.model_mode==="OPENAI_COMPATIBLE_QWEN";
+      if(real&&!confirm("即将调用真实 Qwen 三角色会审，可能产生外部网络请求与费用。不会静默回退到 Fixture。是否继续？"))return;
+      if(real&&!confirm("二次确认：仅对当前已绑定的 M4 灰区案件发起真实 Qwen 会审。确认显式启动？"))return;
+      target.disabled=true;target.setAttribute("aria-busy","true");
+      state.hearingView=await api(`/api/m8/runs/${view.run_id}/cases/${platformCaseId}/hearing`,{method:"POST",body:{run_id:view.run_id,case_id:platformCaseId,source_status:view.case_status,source_screening_id:view.screening_id,source_evidence_pack_id:view.current_evidence_pack_id,source_evidence_pack_version:view.current_evidence_pack_version,model_mode:view.model_mode,explicit_start:true,request_manifest_id:view.request_manifest_id}});
+      await renderCaseDetail(platformCaseId);toast(real?"真实 Qwen 会审已按当前 M4 authority 完成或记录类型化状态":"离线合成会审已按当前 M4 authority 完成");return;
+    }
+    if(target.hasAttribute("data-calibration-dataset")){
+      target.disabled=true;target.setAttribute("aria-busy","true");
+      await api("/api/m8/evaluation/calibration/datasets",{method:"POST",body:{explicit_human_confirmation:true}});
+      state.calibrationDashboard=await api("/api/m8/evaluation/calibration");renderEvaluation();toast("当前 HUMAN_CONFIRMED 标签已封存为不可变校准数据集");return;
+    }
+    if(target.dataset.calibrationFit){
+      target.disabled=true;target.setAttribute("aria-busy","true");
+      const result=await api("/api/m8/evaluation/calibration/fits",{method:"POST",body:{dataset_manifest_id:target.dataset.calibrationFit,explicit_human_confirmation:true}});
+      state.calibrationDashboard=await api("/api/m8/evaluation/calibration");renderEvaluation();toast(result.status==="SHADOW_READY"?"离线影子拟合完成；结果不参与裁决":"样本或检测观测不足，未发布统计概率",result.status==="SHADOW_READY"?"success":"error");return;
+    }
+    if(target.dataset.evaluationStart){
+      const campaignId=target.dataset.evaluationStart;
+      if(state.evaluationStartInFlight)return;
+      if(state.evaluationStartConfirm!==campaignId){
+        state.evaluationStartConfirm=campaignId;state.evaluationStartMessage=null;renderEvaluation();return;
+      }
+      state.evaluationStartConfirm=null;state.evaluationStartInFlight=campaignId;state.evaluationStartMessage=null;
+      target.disabled=true;target.setAttribute("aria-busy","true");target.textContent="正在创建持久化队列…";
+      try{
+        const started=await api(`/api/m8/evaluation/campaigns/${campaignId}/start`,{method:"POST",body:{explicit_human_confirmation:true}});
+        state.evaluationDashboard=await api("/api/m8/evaluation/dashboard");
+        state.evaluationStartMessage={campaignId,tone:"success",text:`已入队 ${started.run_ids.length} 个真实运行 · ${localDateTime(started.started_at)}`};
+        toast("真实评估批次已进入持久化 FIFO 队列");
+      }catch(error){
+        state.evaluationStartMessage={campaignId,tone:"error",text:`启动失败：${error.message}`};
+        toast(`启动失败：${error.message}`,"error");
+      }finally{
+        state.evaluationStartInFlight=null;renderEvaluation();
+      }
+      return;
+    }
     if(target.dataset.scenario){target.disabled=true;target.setAttribute("aria-busy","true");const payload={scenario_kind:target.dataset.scenario,explicit_human_confirmation:true};if(target.dataset.scenario==="PPE_GOGGLES_MISSING")payload.recognition_mode=target.dataset.mode||"FULL_MODEL";if(target.dataset.retry)payload.retry_of_run_id=target.dataset.retry;state.run=await api("/api/m8/demo/scenario-runs",{method:"POST",body:payload});patchRunUi();schedulePoll();toast(payload.recognition_mode==="FULL_MODEL"?"真实识别已启动，进度将在本页连续更新":"演示模式已明确启动，并创建了独立运行记录");return;}
     if(target.dataset.transition){target.disabled=true;await transitionCase(target.dataset.case,target.dataset.transition);await refresh("案件状态已由服务端状态机更新");return;}
     if(target.dataset.dispatch){target.disabled=true;await api(`/api/m8/cases/${target.dataset.case}/notification-dispatches`,{method:"POST",body:{kind:target.dataset.dispatch,explicit_human_confirmation:true}});await refresh("新通知卡已通过本地模拟通道送达");return;}
@@ -696,13 +888,13 @@ document.addEventListener("click",event=>{
   const raw=link.getAttribute("href");if(!raw||raw.startsWith("#"))return;const url=new URL(link.href,location.href);if(url.origin!==location.origin)return;event.preventDefault();if(link.dataset.caseTab&&url.pathname===location.pathname){patchCaseTab(link.dataset.caseTab);return;}navigateTo(url);
 },{capture:true});
 document.addEventListener("click",handleClick);
-document.addEventListener("submit",event=>{const form=event.target;if(form.matches("[data-login-form]")){event.preventDefault();form.querySelector("[data-login]")?.click();}else if(form.matches("[data-knowledge-form]")){event.preventDefault();form.querySelector("[data-action=knowledge-query]")?.click();}else if(form.matches("[data-agent-form]")){event.preventDefault();form.querySelector("[data-action=agent-query]")?.click();}});
+document.addEventListener("submit",async event=>{const form=event.target;if(form.matches("[data-login-form]")){event.preventDefault();form.querySelector("[data-login]")?.click();}else if(form.matches("[data-knowledge-form]")){event.preventDefault();form.querySelector("[data-action=knowledge-query]")?.click();}else if(form.matches("[data-agent-form]")){event.preventDefault();form.querySelector("[data-action=agent-query]")?.click();}else if(form.matches("[data-evaluation-upload]")){event.preventDefault();const file=form.elements.file.files?.[0];if(!file)return;const data=new FormData();data.append("file",file,file.name);const button=form.querySelector("button");button.disabled=true;button.setAttribute("aria-busy","true");try{await api("/api/m8/evaluation/media/uploads",{method:"POST",body:data});state.evaluationDashboard=await api("/api/m8/evaluation/dashboard");renderEvaluation();toast("真实 MP4 已探测并按 SHA-256 发布");}catch(error){button.disabled=false;button.removeAttribute("aria-busy");toast(error.message,"error");}}else if(form.matches("[data-evaluation-import]")){event.preventDefault();const paths=form.elements.paths.value.split(/\r?\n/).map(item=>item.trim()).filter(Boolean).sort();try{await api("/api/m8/evaluation/media/imports",{method:"POST",body:{relative_paths:[...new Set(paths)],explicit_human_confirmation:true}});state.evaluationDashboard=await api("/api/m8/evaluation/dashboard");renderEvaluation();toast("受控目录媒体已导入");}catch(error){toast(error.message,"error");}}else if(form.matches("[data-evaluation-campaign]")){event.preventDefault();const asset_ids=[...form.querySelectorAll('input[name="asset"]:checked')].map(item=>item.value).sort();if(!asset_ids.length){toast("请至少选择一个媒体资产","error");return;}try{await api("/api/m8/evaluation/campaigns",{method:"POST",body:{title:form.elements.title.value.trim(),asset_ids,repetitions:Number(form.elements.repetitions.value),execution_profile:"REAL_MODELS",notification_delivery:"LIVE_SANDBOX",explicit_human_confirmation:true}});state.evaluationDashboard=await api("/api/m8/evaluation/dashboard");renderEvaluation();toast("评估批次草稿已创建");}catch(error){toast(error.message,"error");}}else if(form.matches("[data-evaluation-truth]")){event.preventDefault();const asset=state.evaluationDashboard.media.find(item=>item.asset_id===form.elements.asset.value),prior=state.evaluationDashboard.ground_truth.find(item=>item.asset_id===form.elements.asset.value);if(!asset)return;const revision=(prior?.revision||0)+1,reviewed_at=new Date().toISOString(),payload={asset_id:asset.asset_id,revision,violation_type:"PPE_GOGGLES_MISSING",evidence_class:"ABSENCE",intervals:[{start_frame:Number(form.elements.start.value),end_frame_exclusive:Number(form.elements.end.value),ppe_state:form.elements.ppe.value}],expected_route:form.elements.route.value,review_state:"HUMAN_CONFIRMED",reviewer_actor_id:state.session.authority.actor_id,reviewed_at,label_manifest_id:await hashManifest(`m8-evaluation-label:${asset.asset_id}:${revision}:${reviewed_at}`),machine_output_is_ground_truth:false};try{await api(`/api/m8/evaluation/media/${asset.asset_id}/ground-truth`,{method:"PUT",body:payload});state.evaluationDashboard=await api("/api/m8/evaluation/dashboard");renderEvaluation();toast("人工真值新版本已封存");}catch(error){toast(error.message,"error");}}});
 document.addEventListener("input",event=>{if(event.target.id!=="knowledge-search")return;state.knowledgeSearch=event.target.value;patchKnowledgeDocumentList();});
 document.addEventListener("keydown",event=>{const tab=event.target.closest('[role="tab"][data-case-tab]');if(!tab||!["ArrowLeft","ArrowRight"].includes(event.key))return;const tabs=[...tab.parentElement.querySelectorAll('[role="tab"][data-case-tab]')],next=tabs[(tabs.indexOf(tab)+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length];event.preventDefault();patchCaseTab(next.dataset.caseTab,{historyMode:"replace",focus:true});});
 document.addEventListener("keydown",event=>{const tab=event.target.closest('[role="tab"][data-evidence-stage]');if(!tab||!["ArrowLeft","ArrowRight"].includes(event.key))return;const tabs=[...tab.parentElement.querySelectorAll('[role="tab"][data-evidence-stage]')],next=tabs[(tabs.indexOf(tab)+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length];event.preventDefault();patchEvidenceStage(next.dataset.evidenceStage,null,{historyMode:"replace",focus:true});});
 document.addEventListener("keydown",event=>{if(event.key==="Escape"&&state.confirmationOpen){event.preventDefault();closeAgentConfirmation();return;}if(event.target.id==="agent-query"&&event.key==="Enter"&&(event.ctrlKey||event.metaKey)){event.preventDefault();document.querySelector("[data-action=agent-query]")?.click();}});
 addEventListener("popstate",event=>{const priorPath=state.currentRoute.split("?")[0],path=location.pathname;if(path===priorPath){const query=new URL(location.href).searchParams;if(path==="/app/cases"&&patchCasesFilter((query.get("filter")||"ALL").toUpperCase(),{historyMode:null}))return;if(path==="/app/settings"&&patchSettingsSection(query.get("section")||"models",{historyMode:null}))return;if(path==="/app/map"&&patchMapSelection({floor:query.get("floor")||locations().find(item=>item.kind==="FLOOR")?.location_id,location:query.get("location"),historyMode:null}))return;if(path==="/app/knowledge"){const type=query.get("type")||"ALL",doc=query.get("doc")||knowledgeDocuments()[0]?.logical_document_id;if(patchKnowledgeFilter(type,{historyMode:null})&&doc){selectKnowledgeDocument(doc,{historyMode:null});return;}}if(path.startsWith("/app/cases/")&&query.get("tab")==="evidence"&&patchEvidenceStage(query.get("stage")||"replay",query.get("evidence"),{historyMode:null}))return;if(path.startsWith("/app/cases/")&&patchCaseTab(query.get("tab")||"overview",{historyMode:null}))return;}renderRoute({restore:event.state?.labcourt?.ui||null});});
-document.addEventListener("visibilitychange",()=>{document.body.classList.toggle("is-page-hidden",document.hidden);if(document.hidden){clearTimeout(state.pollTimer);persistEntry();}else if(state.run?.state==="RUNNING")schedulePoll();});
+document.addEventListener("visibilitychange",()=>{document.body.classList.toggle("is-page-hidden",document.hidden);if(document.hidden){clearTimeout(state.pollTimer);clearTimeout(state.evaluationPollTimer);persistEntry();}else if(state.run?.state==="RUNNING")schedulePoll();else if(location.pathname==="/app/evaluation")scheduleEvaluationPoll();});
 addEventListener("scroll",()=>{if(!state.scrollSaveFrame)state.scrollSaveFrame=requestAnimationFrame(()=>{state.scrollSaveFrame=0;if(location.pathname.startsWith("/app/"))persistEntry();});},{passive:true});
 if(!history.state?.labcourt)history.replaceState({labcourt:{key:crypto.randomUUID(),ui:null}},"",location.href);
 renderRoute({restore:history.state?.labcourt?.ui||null});

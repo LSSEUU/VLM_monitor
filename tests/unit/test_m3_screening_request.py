@@ -371,7 +371,10 @@ def _prompt_json(text: str, name: str) -> object:
 
 def test_production_catalog_uses_frozen_bundle_and_exact_exported_schema() -> None:
     manifest = _manifest()
-    catalog = build_screening_prompt_catalog(manifest)
+    current_manifest = manifest.model_copy(
+        update={"prompt_bundle_sha256": FROZEN_M3_PROMPT_BUNDLE_SHA256}
+    )
+    catalog = build_screening_prompt_catalog(current_manifest)
     expected_schema = canonical_json(
         json.loads(expected_schema_files()["screening-model-payload.schema.json"])
     )
@@ -383,13 +386,16 @@ def test_production_catalog_uses_frozen_bundle_and_exact_exported_schema() -> No
         for definition in PROMPT_DEFINITIONS
     } == {expected_schema_sha}
 
-    legacy_manifest = manifest.model_copy(
+    legacy_catalog = build_screening_prompt_catalog(manifest)
+    assert legacy_catalog.bundle_sha256 == manifest.prompt_bundle_sha256
+
+    citation_manifest = manifest.model_copy(
         update={"prompt_bundle_sha256": CITATION_REQUIRED_M3_PROMPT_BUNDLE_SHA256}
     )
-    legacy_catalog = build_screening_prompt_catalog(legacy_manifest)
-    assert legacy_catalog.bundle_sha256 == CITATION_REQUIRED_M3_PROMPT_BUNDLE_SHA256
+    citation_catalog = build_screening_prompt_catalog(citation_manifest)
+    assert citation_catalog.bundle_sha256 == CITATION_REQUIRED_M3_PROMPT_BUNDLE_SHA256
     assert {
-        legacy_catalog.manifest(definition.prompt_id).output_schema_sha256
+        citation_catalog.manifest(definition.prompt_id).output_schema_sha256
         for definition in PROMPT_DEFINITIONS
     } == {expected_schema_sha}
 

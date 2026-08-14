@@ -1,0 +1,138 @@
+{
+  "$defs": {
+    "M8EvaluationCampaignState": {
+      "enum": [
+        "DRAFT",
+        "QUEUED",
+        "RUNNING",
+        "AWAITING_HUMAN",
+        "COMPLETED",
+        "PARTIAL_FAILED"
+      ],
+      "title": "M8EvaluationCampaignState",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-evaluation-campaign-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset_ids": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Asset Ids",
+      "type": "array"
+    },
+    "campaign_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "campaign_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Campaign Manifest Id",
+      "type": "string"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by_actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Created By Actor Id",
+      "type": "string"
+    },
+    "model_profile_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Profile Sha256",
+      "type": "string"
+    },
+    "repetitions": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "revision": {
+      "exclusiveMinimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "run_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "type": "string"
+      },
+      "maxItems": 1000,
+      "title": "Run Ids",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m8-evaluation-campaign-v1",
+      "default": "m8-evaluation-campaign-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "state": {
+      "$ref": "#/$defs/M8EvaluationCampaignState"
+    },
+    "title": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "campaign_id",
+    "revision",
+    "title",
+    "asset_ids",
+    "repetitions",
+    "state",
+    "created_by_actor_id",
+    "created_at",
+    "config_sha256",
+    "model_profile_sha256",
+    "campaign_manifest_id"
+  ],
+  "title": "M8EvaluationCampaignV1",
+  "type": "object"
+}

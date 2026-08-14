@@ -1,0 +1,141 @@
+{
+  "$defs": {
+    "BBoxXYXY": {
+      "additionalProperties": false,
+      "description": "Integer `[x1, y1, x2, y2)` bounding box.",
+      "properties": {
+        "x1": {
+          "minimum": 0,
+          "title": "X1",
+          "type": "integer"
+        },
+        "x2": {
+          "exclusiveMinimum": 0,
+          "title": "X2",
+          "type": "integer"
+        },
+        "y1": {
+          "minimum": 0,
+          "title": "Y1",
+          "type": "integer"
+        },
+        "y2": {
+          "exclusiveMinimum": 0,
+          "title": "Y2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBoxXYXY",
+      "type": "object"
+    },
+    "M8RedetectionCandidateV1": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/BBoxXYXY"
+        },
+        "label": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "label",
+        "bbox",
+        "score"
+      ],
+      "title": "M8RedetectionCandidateV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-redetection-outcome-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Strict raw detector result.  Empty success is intentionally legal here.",
+  "properties": {
+    "crop_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Crop Id",
+      "type": "string"
+    },
+    "crop_media_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Crop Media Sha256",
+      "type": "string"
+    },
+    "detections": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8RedetectionCandidateV1"
+      },
+      "maxItems": 512,
+      "title": "Detections",
+      "type": "array"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "enum": [
+            "IMAGE_INVALID",
+            "INFERENCE_FAILED",
+            "REQUEST_INVALID",
+            "MODEL_UNAVAILABLE"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Manifest Id",
+      "type": "string"
+    },
+    "request_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-redetection-outcome-v1",
+      "default": "m8-redetection-outcome-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "SUCCEEDED",
+        "FAILED"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request_id",
+    "crop_id",
+    "crop_media_sha256",
+    "model_manifest_id",
+    "status"
+  ],
+  "title": "M8RedetectionOutcomeV1",
+  "type": "object"
+}

@@ -23,6 +23,7 @@ from labcourt.application.m8_platform_demo_api import (
     assemble_m8_platform_demo_api,
 )
 from labcourt.contracts.canonical import canonical_json
+from labcourt.contracts.enums import CropSource, MediaAccess, MediaAvailability
 from labcourt.contracts.m8_access_cases import (
     M8ActorRole,
     M8AuthorityReference,
@@ -30,6 +31,7 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalRiskLevel,
 )
+from labcourt.contracts.m8_evaluation import M8EvaluationRunState
 from labcourt.contracts.m8_platform_demo import (
     M8PlatformEvidenceViewV1,
     M8PlatformRecognitionMode,
@@ -41,7 +43,8 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformVideoProfileV1,
 )
 from labcourt.contracts.pilot_ui import PilotUiJobStatus
-from labcourt.services.m8_operations_api import M8ApiServiceError
+from labcourt.services.m8_operations_api import M8ApiServiceError, M8ApiServiceFailureCode
+from labcourt.services.m8_platform_demo import M8PlatformDemoService
 from labcourt.services.pilot_progress import PilotProgressUpdate
 
 
@@ -109,8 +112,56 @@ def test_platform_pilot_config_keeps_real_screening_budget() -> None:
     assert real.screening.provider_profile == "pilot-screening"
     assert real.screening.timeout_seconds == 60.0
     assert real.providers["pilot-screening"].timeout_seconds == 60.0
+    for config in (real, fixture):
+        assert (
+            config.perception.observability.clear_frame_threshold
+            == config.procedural_gate.absence_clear_frame_threshold
+        )
+        assert (
+            config.absence.minimum_consistent_clear_frames
+            == config.procedural_gate.minimum_absence_clear_frames
+        )
+    assert all(
+        real.providers[profile].provider == "openai-compatible"
+        and "qwen" in real.providers[profile].model.lower()
+        for profile in (
+            real.hearing.prosecutor_profile,
+            real.hearing.defender_profile,
+            real.hearing.judge_profile,
+        )
+    )
     assert fixture.screening.provider_profile == "platform-fixture-screening"
     assert fixture.screening.timeout_seconds == 15.0
+    assert all(
+        fixture.providers[profile].provider == "fake"
+        for profile in (
+            fixture.hearing.prosecutor_profile,
+            fixture.hearing.defender_profile,
+            fixture.hearing.judge_profile,
+        )
+    )
+
+
+def test_external_screening_routes_body_fallback_local_media_to_human_review() -> None:
+    root = Path(__file__).parents[2]
+    service = SimpleNamespace(config=_pilot_config(root, fixture=False))
+    source_pack = SimpleNamespace(
+        crops=(
+            SimpleNamespace(
+                availability=MediaAvailability.AVAILABLE,
+                source=CropSource.ANCHOR_FOCUS,
+                privacy_receipt=SimpleNamespace(media_access=MediaAccess.LOCAL_ONLY),
+            ),
+        )
+    )
+    assert (
+        M8PlatformDemoService._screening_failure_code(
+            "RESPONSE_INTEGRITY_FAILURE",
+            source_pack=source_pack,
+            service=service,
+        )
+        == "SCREENING_MEDIA_LOCAL_ONLY"
+    )
 
 
 def test_platform_knowledge_document_rejects_hash_and_utf8_integrity_failures(
@@ -479,6 +530,43 @@ def test_platform_fixture_fallback_is_explicit_and_preserves_failed_model_run(
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_hearing_case_mapping_recovers_from_persisted_run_after_reassembly(
+    tmp_path: Path,
+    socket_enabled: None,
+) -> None:
+    assembly = _assembly(tmp_path)
+    platform = assembly.server.platform_service
+    stages = tuple(
+        M8PlatformScenarioStageV1(
+            stage=stage,
+            state=M8PlatformStageState.PENDING,
+            summary="尚未生成",
+        )
+        for stage in M8PlatformScenarioStage
+    )
+    run = M8PlatformScenarioRunV1(
+        run_id="evaluation-hearing-case-map",
+        scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
+        state="RUNNING",
+        stages=stages,
+        case_id="platform-case-persisted",
+        hearing_case_id="m4-case-persisted",
+        case_status="PENDING_VERIFICATION",
+        recognition_mode=M8PlatformRecognitionMode.FULL_MODEL,
+    )
+    platform._write_run(run)
+    assembly.server.server_close()
+
+    reopened = _assembly(tmp_path)
+    try:
+        resolver = reopened.server.platform_service.resolve_hearing_case_id
+        assert resolver(run.run_id, run.case_id) == run.hearing_case_id
+        with pytest.raises(M8ApiServiceError, match="RESOURCE_NOT_FOUND"):
+            resolver(run.run_id, run.hearing_case_id)
+    finally:
+        reopened.server.server_close()
 
 
 def test_platform_projects_truthful_hot_progress_and_failure_stage(
@@ -1057,3 +1145,25 @@ def test_platform_reset_archives_session_and_restores_empty_baseline(
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_platform_reset_rejects_active_evaluation_run(
+    tmp_path: Path,
+    socket_enabled: None,
+    monkeypatch,
+) -> None:
+    assembly = _assembly(tmp_path)
+    platform = assembly.server.platform_service
+    token = assembly.server.platform_role_tokens[M8ActorRole.OPERATIONS]
+    principal = assembly.server.api_authenticator.authenticate(f"Bearer {token}")
+    monkeypatch.setattr(
+        "labcourt.services.m8_platform_demo.SQLiteM8EvaluationRepository",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            list_runs=lambda: (SimpleNamespace(state=M8EvaluationRunState.QUEUED),)
+        ),
+    )
+
+    with pytest.raises(M8ApiServiceError) as captured:
+        platform.reset(principal)
+    assert captured.value.reason_code == M8ApiServiceFailureCode.CONCURRENT_MODIFICATION
+    assembly.server.server_close()

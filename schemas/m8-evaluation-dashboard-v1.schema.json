@@ -1,0 +1,916 @@
+{
+  "$defs": {
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "M8EvaluationActualRoute": {
+      "enum": [
+        "NO_CANDIDATE",
+        "FAST_VERDICT",
+        "HEARING_REQUIRED",
+        "HUMAN_REVIEW",
+        "PROVIDER_FAILURE",
+        "TECHNICAL_FAILURE"
+      ],
+      "title": "M8EvaluationActualRoute",
+      "type": "string"
+    },
+    "M8EvaluationCampaignState": {
+      "enum": [
+        "DRAFT",
+        "QUEUED",
+        "RUNNING",
+        "AWAITING_HUMAN",
+        "COMPLETED",
+        "PARTIAL_FAILED"
+      ],
+      "title": "M8EvaluationCampaignState",
+      "type": "string"
+    },
+    "M8EvaluationCampaignV1": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_ids": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Asset Ids",
+          "type": "array"
+        },
+        "campaign_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Campaign Id",
+          "type": "string"
+        },
+        "campaign_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Campaign Manifest Id",
+          "type": "string"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by_actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Created By Actor Id",
+          "type": "string"
+        },
+        "model_profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Profile Sha256",
+          "type": "string"
+        },
+        "repetitions": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Repetitions",
+          "type": "integer"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "run_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Run Ids",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "m8-evaluation-campaign-v1",
+          "default": "m8-evaluation-campaign-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "state": {
+          "$ref": "#/$defs/M8EvaluationCampaignState"
+        },
+        "title": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "campaign_id",
+        "revision",
+        "title",
+        "asset_ids",
+        "repetitions",
+        "state",
+        "created_by_actor_id",
+        "created_at",
+        "config_sha256",
+        "model_profile_sha256",
+        "campaign_manifest_id"
+      ],
+      "title": "M8EvaluationCampaignV1",
+      "type": "object"
+    },
+    "M8EvaluationDeliveryState": {
+      "enum": [
+        "NOT_APPLICABLE",
+        "PENDING_POLICY",
+        "ACTIVATION_REQUIRED",
+        "QUEUED",
+        "SENT",
+        "FAILED"
+      ],
+      "title": "M8EvaluationDeliveryState",
+      "type": "string"
+    },
+    "M8EvaluationExpectedRoute": {
+      "enum": [
+        "NO_CANDIDATE",
+        "FAST_VERDICT",
+        "HEARING",
+        "HUMAN_REVIEW"
+      ],
+      "title": "M8EvaluationExpectedRoute",
+      "type": "string"
+    },
+    "M8EvaluationGroundTruthV1": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "expected_route": {
+          "$ref": "#/$defs/M8EvaluationExpectedRoute"
+        },
+        "ground_truth_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "readOnly": true,
+          "title": "Ground Truth Id",
+          "type": "string"
+        },
+        "intervals": {
+          "items": {
+            "$ref": "#/$defs/M8EvaluationLabelIntervalV1"
+          },
+          "maxItems": 2000,
+          "minItems": 1,
+          "title": "Intervals",
+          "type": "array"
+        },
+        "label_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Label Manifest Id",
+          "type": "string"
+        },
+        "machine_output_is_ground_truth": {
+          "const": false,
+          "default": false,
+          "title": "Machine Output Is Ground Truth",
+          "type": "boolean"
+        },
+        "review_state": {
+          "$ref": "#/$defs/M8EvaluationReviewState"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "reviewer_actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Reviewer Actor Id",
+          "type": "string"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "m8-evaluation-ground-truth-v1",
+          "default": "m8-evaluation-ground-truth-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "violation_type": {
+          "$ref": "#/$defs/ViolationType"
+        }
+      },
+      "required": [
+        "asset_id",
+        "revision",
+        "violation_type",
+        "evidence_class",
+        "intervals",
+        "expected_route",
+        "review_state",
+        "reviewer_actor_id",
+        "label_manifest_id",
+        "ground_truth_id"
+      ],
+      "title": "M8EvaluationGroundTruthV1",
+      "type": "object"
+    },
+    "M8EvaluationLabelIntervalV1": {
+      "additionalProperties": false,
+      "properties": {
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "ppe_state": {
+          "$ref": "#/$defs/M8EvaluationPpeState"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_frame",
+        "end_frame_exclusive",
+        "ppe_state"
+      ],
+      "title": "M8EvaluationLabelIntervalV1",
+      "type": "object"
+    },
+    "M8EvaluationMediaAssetV1": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "codec": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Codec",
+          "type": "string"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "duration_millis": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Millis",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Den",
+          "type": "integer"
+        },
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "frame_count": {
+          "exclusiveMinimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 32768,
+          "title": "Height",
+          "type": "integer"
+        },
+        "imported_at": {
+          "format": "date-time",
+          "title": "Imported At",
+          "type": "string"
+        },
+        "imported_by_actor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Imported By Actor Id",
+          "type": "string"
+        },
+        "machine_output_is_ground_truth": {
+          "const": false,
+          "default": false,
+          "title": "Machine Output Is Ground Truth",
+          "type": "boolean"
+        },
+        "media_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Manifest Id",
+          "type": "string"
+        },
+        "media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Sha256",
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/$defs/M8EvaluationMediaOrigin"
+        },
+        "relative_path": {
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-evaluation-media-asset-v1",
+          "default": "m8-evaluation-media-asset-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "size_bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 1073741824,
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "maximum": 32768,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "asset_id",
+        "display_name",
+        "media_sha256",
+        "size_bytes",
+        "relative_path",
+        "origin",
+        "codec",
+        "width",
+        "height",
+        "fps_num",
+        "fps_den",
+        "frame_count",
+        "duration_millis",
+        "imported_by_actor_id",
+        "imported_at",
+        "media_manifest_id"
+      ],
+      "title": "M8EvaluationMediaAssetV1",
+      "type": "object"
+    },
+    "M8EvaluationMediaOrigin": {
+      "enum": [
+        "WEB_UPLOAD",
+        "SERVER_DIRECTORY",
+        "LIVE_CAPTURE_SEGMENT"
+      ],
+      "title": "M8EvaluationMediaOrigin",
+      "type": "string"
+    },
+    "M8EvaluationPpeState": {
+      "enum": [
+        "WORN",
+        "NOT_WORN",
+        "UNCLEAR"
+      ],
+      "title": "M8EvaluationPpeState",
+      "type": "string"
+    },
+    "M8EvaluationReviewState": {
+      "enum": [
+        "DRAFT",
+        "HUMAN_CONFIRMED"
+      ],
+      "title": "M8EvaluationReviewState",
+      "type": "string"
+    },
+    "M8EvaluationRunSourceKind": {
+      "enum": [
+        "RECORDED_ASSET",
+        "LIVE_CAPTURE_SEGMENT"
+      ],
+      "title": "M8EvaluationRunSourceKind",
+      "type": "string"
+    },
+    "M8EvaluationRunState": {
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "AWAITING_HEARING",
+        "SUCCEEDED",
+        "FAILED"
+      ],
+      "title": "M8EvaluationRunState",
+      "type": "string"
+    },
+    "M8EvaluationRunV1": {
+      "additionalProperties": false,
+      "properties": {
+        "accuracy_metrics_eligible": {
+          "title": "Accuracy Metrics Eligible",
+          "type": "boolean"
+        },
+        "active_stage": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active Stage"
+        },
+        "actual_route": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8EvaluationActualRoute"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "campaign_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Campaign Id",
+          "type": "string"
+        },
+        "case_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Case Id"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "delivery_state": {
+          "$ref": "#/$defs/M8EvaluationDeliveryState"
+        },
+        "failure_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Code"
+        },
+        "ground_truth_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ground Truth Id"
+        },
+        "hearing_case_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hearing Case Id"
+        },
+        "hearing_eligibility": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8HearingEligibility"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "l5_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/M8HearingL5Status"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "m4_case_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaseStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "model_profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Profile Sha256",
+          "type": "string"
+        },
+        "notification_id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notification Id"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "provider_receipt_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Provider Receipt Refs",
+          "type": "array"
+        },
+        "queued_at": {
+          "format": "date-time",
+          "title": "Queued At",
+          "type": "string"
+        },
+        "repetition": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "revision": {
+          "exclusiveMinimum": 0,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "route_reason_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Route Reason Code"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "run_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Run Manifest Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-evaluation-run-v1",
+          "default": "m8-evaluation-run-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/M8RunSourceRefV1"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "state": {
+          "$ref": "#/$defs/M8EvaluationRunState"
+        }
+      },
+      "required": [
+        "run_id",
+        "revision",
+        "campaign_id",
+        "source",
+        "ordinal",
+        "repetition",
+        "state",
+        "accuracy_metrics_eligible",
+        "delivery_state",
+        "queued_at",
+        "config_sha256",
+        "model_profile_sha256",
+        "run_manifest_id"
+      ],
+      "title": "M8EvaluationRunV1",
+      "type": "object"
+    },
+    "M8HearingEligibility": {
+      "enum": [
+        "ELIGIBLE_ESCALATED",
+        "ELIGIBLE_REWORK_REQUIRED",
+        "IN_PROGRESS",
+        "BACKLOGGED",
+        "COMPLETED",
+        "HUMAN_REVIEW",
+        "NOT_ELIGIBLE"
+      ],
+      "title": "M8HearingEligibility",
+      "type": "string"
+    },
+    "M8HearingL5Status": {
+      "enum": [
+        "NOT_RUN",
+        "PASSED",
+        "FAILED"
+      ],
+      "title": "M8HearingL5Status",
+      "type": "string"
+    },
+    "M8RunSourceRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "capture_segment_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capture Segment Id"
+        },
+        "frame_count": {
+          "exclusiveMinimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Sha256",
+          "type": "string"
+        },
+        "relative_path": {
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-run-source-ref-v1",
+          "default": "m8-run-source-ref-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/M8EvaluationRunSourceKind"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "source_kind",
+        "asset_id",
+        "media_sha256",
+        "relative_path",
+        "frame_count",
+        "source_manifest_id"
+      ],
+      "title": "M8RunSourceRefV1",
+      "type": "object"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-evaluation-dashboard-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "campaigns": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8EvaluationCampaignV1"
+      },
+      "maxItems": 100,
+      "title": "Campaigns",
+      "type": "array"
+    },
+    "fixture_fallback_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Fixture Fallback Permitted",
+      "type": "boolean"
+    },
+    "ground_truth": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8EvaluationGroundTruthV1"
+      },
+      "maxItems": 100,
+      "title": "Ground Truth",
+      "type": "array"
+    },
+    "import_roots": {
+      "default": [
+        "inputs",
+        "evaluation-import"
+      ],
+      "items": {
+        "enum": [
+          "inputs",
+          "evaluation-import"
+        ],
+        "type": "string"
+      },
+      "title": "Import Roots",
+      "type": "array"
+    },
+    "media": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8EvaluationMediaAssetV1"
+      },
+      "maxItems": 100,
+      "title": "Media",
+      "type": "array"
+    },
+    "real_models_required": {
+      "const": true,
+      "default": true,
+      "title": "Real Models Required",
+      "type": "boolean"
+    },
+    "runs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M8EvaluationRunV1"
+      },
+      "maxItems": 1000,
+      "title": "Runs",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m8-evaluation-dashboard-v1",
+      "default": "m8-evaluation-dashboard-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "title": "M8EvaluationDashboardV1",
+  "type": "object"
+}

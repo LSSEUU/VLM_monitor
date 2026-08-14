@@ -10,10 +10,15 @@ import shutil
 import sqlite3
 import threading
 import uuid
-from contextlib import suppress
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from labcourt.adapters.m8_acquisition_outcomes import (
+    PersistedM8AcquisitionOutcomeRepository,
+)
+from labcourt.adapters.m8_grounding_dino_redetection import M8GroundingDinoRedetector
 from labcourt.adapters.m8_offline_notification_channel import (
     DeterministicOfflineNotificationChannel,
 )
@@ -21,13 +26,23 @@ from labcourt.adapters.m8_platform_pilot_fixture import (
     DeterministicRecordedPpePerceptionTransport,
     DeterministicRecordedPpeScreeningTransport,
 )
+from labcourt.adapters.m8_run_source import PersistedM8RecordedRunSourceResolver
+from labcourt.adapters.recorded_run_acquisition import (
+    RecordedRunFrameAcquisitionExecutor,
+)
 from labcourt.adapters.simulated_sensors import DeterministicSimulatedSensorAdapter
+from labcourt.adapters.storage.sqlite_m8_evaluation_repository import (
+    SQLiteM8EvaluationRepository,
+)
 from labcourt.adapters.storage.sqlite_m8_inventory_repository import SQLiteM8InventoryRepository
 from labcourt.adapters.storage.sqlite_m8_notification_repository import (
     SQLiteM8NotificationRepository,
 )
 from labcourt.adapters.storage.sqlite_m8_operations_repository import (
     SQLiteM8OperationsRepository,
+)
+from labcourt.adapters.storage.sqlite_m8_prehearing_repository import (
+    SQLiteM8PreHearingRepository,
 )
 from labcourt.adapters.storage.sqlite_m8_sensor_persistence_repository import (
     SQLiteM8SensorPersistenceRepository,
@@ -48,6 +63,12 @@ from labcourt.application.m8_platform_bootstrap import (
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.cases import Case
 from labcourt.contracts.detections import FrameBundle
+from labcourt.contracts.enums import (
+    CropSource,
+    ExecutionLocation,
+    MediaAccess,
+    MediaAvailability,
+)
 from labcourt.contracts.evidence import EvidencePack
 from labcourt.contracts.m8_access_cases import (
     M8ActorRole,
@@ -57,12 +78,15 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseStatus,
     M8OperationalRiskLevel,
 )
+from labcourt.contracts.m8_acquisition_v2 import M8HearingAcquisitionResultV2
 from labcourt.contracts.m8_api import M8ApiKnowledgeQueryRequestV1, M8ApiPrincipalV1
+from labcourt.contracts.m8_evaluation import M8EvaluationRunState, M8RunSourceRefV1
 from labcourt.contracts.m8_feishu_platform import (
     M8FeishuPlatformStatusV1,
     M8FeishuTestCardCheckReceiptV1,
     M8FeishuTestCardCheckRequestV1,
 )
+from labcourt.contracts.m8_hearing_api import M8HearingModelMode
 from labcourt.contracts.m8_knowledge_projection import M8KnowledgeQueryProjectionV1
 from labcourt.contracts.m8_notification_cards import (
     M8NotificationWorkflowManifestAuthorityV1,
@@ -116,6 +140,7 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformStageState,
     M8PlatformVideoProfileV1,
 )
+from labcourt.contracts.m8_prehearing import M8PreHearingPreparationV1
 from labcourt.contracts.m8_sensor_signals import (
     M8SensorAdapterCapabilityAuthorityV1,
     M8SensorPollRequestV1,
@@ -129,6 +154,8 @@ from labcourt.contracts.pilot_ui import PilotUiJobStartRequest
 from labcourt.contracts.projection_generation import ProjectionCurrentPointer
 from labcourt.exceptions import EvidenceMissing
 from labcourt.services.m8_feishu_platform import M8FeishuPlatformService
+from labcourt.services.m8_hearing_api import M4HearingApiRuntime
+from labcourt.services.m8_hearing_runtime import open_m8_hearing_runtime
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_knowledge_projection import M8KnowledgeProjectionService
 from labcourt.services.m8_notification_api import M8NotificationApiService
@@ -342,6 +369,144 @@ class M8PlatformDemoService:
                 pass
         return run
 
+    @contextmanager
+    def open_hearing_runtime(self, run_id: str) -> Iterator[M4HearingApiRuntime]:
+        """Resolve one persisted Pilot run without keeping process-local hearing state."""
+
+        try:
+            run = self._read_run_snapshot(run_id)
+        except (OSError, ValueError):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
+        if (
+            run.scenario_kind != M8PlatformScenarioKind.PPE_GOGGLES_MISSING
+            or run.hearing_case_id is None
+        ):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        service = self._pilot_service_for(run)
+        config = service.config
+        profiles = tuple(
+            config.providers[name]
+            for name in (
+                config.hearing.prosecutor_profile,
+                config.hearing.defender_profile,
+                config.hearing.judge_profile,
+            )
+        )
+        qwen_mode = all(
+            profile.provider == "openai-compatible" and "qwen" in profile.model.lower()
+            for profile in profiles
+        )
+        model_mode = (
+            M8HearingModelMode.OPENAI_COMPATIBLE_QWEN
+            if qwen_mode
+            else M8HearingModelMode.OFFLINE_FIXTURE
+        )
+        workspace_root = self.project_root / config.run.workspace
+        database = workspace_root / run_id / config.storage.database_filename
+        source_resolver = PersistedM8RecordedRunSourceResolver(
+            project_root=self.project_root,
+            source_state_root=self.artifact_root,
+        )
+        outcome_repository = self._acquisition_outcome_repository(run_id)
+        redetector = M8GroundingDinoRedetector(project_root=self.project_root)
+        with open_m8_hearing_runtime(
+            config=config,
+            run_id=run_id,
+            workspace_root=workspace_root,
+            database_path=database,
+            location_by_zone={zone.zone_id: PLATFORM_LOCATION_ID for zone in config.zones},
+            model_mode=model_mode,
+            synthetic_demo_fixture=(model_mode == M8HearingModelMode.OFFLINE_FIXTURE),
+            environment=os.environ if qwen_mode else None,
+            acquisition_executor_factory=(
+                (
+                    lambda _workspace, manifest: RecordedRunFrameAcquisitionExecutor(
+                        project_root=self.project_root,
+                        manifest=manifest,
+                        max_input_bytes=config.storage.max_media_bytes,
+                        max_frame_pixels=config.storage.max_image_pixels,
+                        source_resolver=source_resolver,
+                        workspace=_workspace,
+                        max_media_bytes=config.storage.max_media_bytes,
+                        redetector=redetector,
+                        outcome_repository=outcome_repository,
+                    )
+                )
+                if qwen_mode
+                else None
+            ),
+        ) as runtime:
+            yield runtime
+
+    def resolve_hearing_case_id(self, run_id: str, platform_case_id: str) -> str:
+        """Resolve the persisted operational Case boundary to its frozen M4 source."""
+
+        try:
+            run = self._read_run_snapshot(run_id)
+        except (OSError, ValueError):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
+        if run.case_id != platform_case_id or run.hearing_case_id is None:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        return run.hearing_case_id
+
+    def hearing_acquisitions(
+        self,
+        run_id: str,
+        source_case_id: str,
+    ) -> tuple[M8HearingAcquisitionResultV2, ...]:
+        """List immutable tool results for one persisted run/M4 Case pair."""
+
+        self._read_run_snapshot(run_id)
+        return self._acquisition_outcome_repository(run_id).list_for_case(
+            run_id,
+            source_case_id,
+        )
+
+    def _acquisition_outcome_repository(
+        self,
+        run_id: str,
+    ) -> PersistedM8AcquisitionOutcomeRepository:
+        run = self._read_run_snapshot(run_id)
+        config = self._pilot_service_for(run).config
+        return PersistedM8AcquisitionOutcomeRepository(
+            workspace_root=(self.project_root / config.run.workspace),
+            max_document_bytes=config.storage.max_media_bytes,
+        )
+
+    def prehearing_preparation(
+        self,
+        run_id: str,
+        source_case_id: str,
+    ) -> M8PreHearingPreparationV1 | None:
+        """Read one persisted gate without mutating the frozen M4 Case."""
+
+        return self._prehearing_repository(run_id).load_for_case(
+            run_id,
+            source_case_id,
+        )
+
+    def route_prehearing(
+        self,
+        run_id: str,
+        source_case_id: str,
+    ) -> M8PreHearingPreparationV1 | None:
+        """Apply the deterministic gate before any M4 role call can start."""
+
+        with self.open_hearing_runtime(run_id) as runtime:
+            repository = self._prehearing_repository(run_id)
+            return runtime.prehearing_coordinator(repository).route(run_id, source_case_id)
+
+    def _prehearing_repository(self, run_id: str) -> SQLiteM8PreHearingRepository:
+        # M8 additive authorities live in the platform database.  The frozen
+        # M4 Case/EvidencePack remains in the run database opened by the
+        # hearing runtime; sharing the M8 migration ledger with that database
+        # would mix two independent schema histories.
+        self._read_run_snapshot(run_id)
+        return SQLiteM8PreHearingRepository.initialize(
+            self.database_path,
+            _BUSY_TIMEOUT_MS,
+        )
+
     def model_readiness(self, principal: M8ApiPrincipalV1) -> M8PlatformModelReadinessV1:
         self._actor(principal)
         config = self.model_pilot_service.config
@@ -529,7 +694,11 @@ class M8PlatformDemoService:
             stages=stages,
             video_profile=run.video_profile,
             media_url=(
-                "/api/m8/demo/public-media/recorded-video"
+                (
+                    f"/api/m8/demo/scenario-runs/{run.run_id}/source-video"
+                    if self._is_evaluation_run(run.run_id)
+                    else "/api/m8/demo/public-media/recorded-video"
+                )
                 if view_scope == M8PlatformEvidenceViewScope.FULL_PIPELINE
                 else None
             ),
@@ -765,6 +934,17 @@ class M8PlatformDemoService:
                 for jobs in (self.fixture_pilot_jobs, self.model_pilot_jobs)
             ):
                 raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
+            evaluation = SQLiteM8EvaluationRepository(
+                self.database_path,
+                _BUSY_TIMEOUT_MS,
+                platform_manifest("labcourt-platform-sqlite-repository-v1"),
+            )
+            active_evaluation_states = {
+                M8EvaluationRunState.QUEUED,
+                M8EvaluationRunState.RUNNING,
+            }
+            if any(run.state in active_evaluation_states for run in evaluation.list_runs()):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
             old = load_m8_platform_bootstrap(self.artifact_root)
             new_session = f"session-{uuid.uuid4().hex[:16]}"
             staging = self.artifact_root / f".reset-{new_session}"
@@ -924,6 +1104,10 @@ class M8PlatformDemoService:
         self,
         recognition_mode: M8PlatformRecognitionMode,
         retry_of_run_id: str | None,
+        *,
+        source_relative_path: str | None = None,
+        requested_run_id: str | None = None,
+        source_ref: M8RunSourceRefV1 | None = None,
     ) -> M8PlatformScenarioRunV1:
         service = (
             self.model_pilot_service
@@ -937,12 +1121,30 @@ class M8PlatformDemoService:
         )
         dashboard = service.dashboard()
         video = next(
-            (item for item in dashboard.videos if item.display_name == "goggles-missing.mp4"),
+            (
+                item
+                for item in dashboard.videos
+                if (
+                    item.relative_path == source_relative_path
+                    if source_relative_path is not None
+                    else item.display_name == "goggles-missing.mp4"
+                )
+            ),
             None,
         )
         if video is None:
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
-        run_id = f"platform-ppe-{uuid.uuid4().hex[:12]}"
+        run_id = requested_run_id or f"platform-ppe-{uuid.uuid4().hex[:12]}"
+        if source_ref is not None:
+            if source_ref.run_id != run_id or source_ref.relative_path != video.relative_path:
+                raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
+            inspected = service.video_source(video.video_id)
+            if (
+                inspected.expected_sha256 != source_ref.media_sha256
+                or inspected.relative_path != source_ref.relative_path
+            ):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
+            self._write_run_source(source_ref)
         jobs.start(PilotUiJobStartRequest(video_id=video.video_id, run_id=run_id, resume=True))
         run = M8PlatformScenarioRunV1(
             run_id=run_id,
@@ -959,6 +1161,52 @@ class M8PlatformDemoService:
         )
         self._write_run(run)
         return run
+
+    def start_evaluation_scenario(
+        self,
+        source: M8RunSourceRefV1,
+    ) -> M8PlatformScenarioRunV1:
+        """Start one exact, content-bound real-model run for the evaluation queue."""
+
+        if not isinstance(source, M8RunSourceRefV1):
+            raise TypeError("evaluation scenario requires a typed run source")
+        if not self._operation_lock.acquire(blocking=False):
+            raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
+        try:
+            if any(
+                jobs.snapshot().state == "RUNNING"
+                for jobs in (self.fixture_pilot_jobs, self.model_pilot_jobs)
+            ):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
+            return self._start_ppe(
+                M8PlatformRecognitionMode.FULL_MODEL,
+                None,
+                source_relative_path=source.relative_path,
+                requested_run_id=source.run_id,
+                source_ref=source,
+            )
+        finally:
+            self._operation_lock.release()
+
+    def refresh_evaluation_scenario(self, run_id: str) -> M8PlatformScenarioRunV1:
+        """Refresh one persisted evaluation run without relying on the current-run pointer."""
+
+        with self._operation_lock:
+            try:
+                run = self._read_run_snapshot(run_id)
+            except (OSError, ValueError):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
+            if run.state == "RUNNING":
+                run = self._refresh_ppe(run)
+            if run.case_id is not None:
+                try:
+                    current_case = self._operations().get_current_operational_case(run.case_id)
+                except EvidenceMissing:
+                    current_case = None
+                if current_case is not None and current_case.status != run.case_status:
+                    run = run.model_copy(update={"case_status": current_case.status})
+                    self._write_run(run)
+            return run
 
     def _refresh_ppe(self, run: M8PlatformScenarioRunV1) -> M8PlatformScenarioRunV1:
         if run.scenario_kind != M8PlatformScenarioKind.PPE_GOGGLES_MISSING:
@@ -1216,6 +1464,11 @@ class M8PlatformDemoService:
         source_case, source_pack, stream, raw_ref = self._pilot_ppe_authorities(run)
         if source_case.case_id != pilot_case.case_id:
             raise ValueError("Pilot dashboard Case conflicts with its typed projection")
+        prehearing = None
+        if source_case.screening_results[-1].decision.value == "ESCALATE":
+            prehearing = self.route_prehearing(run.run_id, source_case.case_id)
+            if prehearing is not None:
+                source_case, source_pack, stream, raw_ref = self._pilot_ppe_authorities(run)
         evidence = tuple(
             M8PlatformEvidenceViewV1(
                 evidence_id=item.crop_id,
@@ -1285,12 +1538,17 @@ class M8PlatformDemoService:
             platform_manifest("platform-case-authority-v1"),
             platform_manifest("platform-case-audit-v1"),
         )
-        notification = self._notify_case(
-            case_id=case.case_id,
-            target_actor_id="safety-officer-demo",
-            purpose=M8NotificationPurpose.CASE_ACTION_REQUIRED,
-            audience=M8NotificationAudienceKind.SAFETY_RESPONDER,
-            inbound_response_supported=False,
+        evaluation_run = self._is_evaluation_run(run.run_id)
+        notification = (
+            None
+            if evaluation_run
+            else self._notify_case(
+                case_id=case.case_id,
+                target_actor_id="safety-officer-demo",
+                purpose=M8NotificationPurpose.CASE_ACTION_REQUIRED,
+                audience=M8NotificationAudienceKind.SAFETY_RESPONDER,
+                inbound_response_supported=False,
+            )
         )
         stages = (
             self._stage(
@@ -1319,13 +1577,26 @@ class M8PlatformDemoService:
             ),
             self._stage(
                 M8PlatformScenarioStage.CASE,
-                "一般风险案件已由规则投影建立",
+                (
+                    "客观证据不足且无新增清晰帧，案件已转人工复核"
+                    if prehearing is not None
+                    else "一般风险案件已由规则投影建立"
+                ),
                 (case.case_id,),
             ),
-            self._stage(
-                M8PlatformScenarioStage.NOTIFICATION,
-                "安全负责人本地模拟通知已送达",
-                (notification.notification_id,),
+            (
+                M8PlatformScenarioStageV1(
+                    stage=M8PlatformScenarioStage.NOTIFICATION,
+                    state=M8PlatformStageState.PENDING,
+                    summary="评估案件等待现有 Feishu activation-gated outbox 显式投递",
+                    authority_refs=(),
+                )
+                if evaluation_run
+                else self._stage(
+                    M8PlatformScenarioStage.NOTIFICATION,
+                    "安全负责人本地模拟通知已送达",
+                    (notification.notification_id,),  # type: ignore[union-attr]
+                )
             ),
         )
         completed = M8PlatformScenarioRunV1(
@@ -1334,12 +1605,13 @@ class M8PlatformDemoService:
             state="SUCCEEDED",
             stages=self._preserve_perception_progress(stages, run),
             case_id=case.case_id,
+            hearing_case_id=source_case.case_id,
             case_status=case.status,
-            notification_id=notification.notification_id,
+            notification_id=(notification.notification_id if notification else None),
             recognition_mode=run.recognition_mode,
             retry_of_run_id=run.retry_of_run_id,
             model_components=self._model_components(run, manifest),
-            outcome="ACTIONABLE_RISK",
+            outcome=("HUMAN_REVIEW_REQUIRED" if prehearing is not None else "ACTIONABLE_RISK"),
             evidence=evidence,
             video_profile=M8PlatformVideoProfileV1(
                 input_file_sha256=stream.input_file_sha256,
@@ -1380,7 +1652,11 @@ class M8PlatformDemoService:
             return self._finalize_ppe(run) if persist else run
 
         reason_code = self._screening_attention_reason(source_case)
-        failure_code = self._screening_failure_code(reason_code)
+        failure_code = self._screening_failure_code(
+            reason_code,
+            source_pack=source_pack,
+            service=service,
+        )
         pilot_case = dashboard.cases[0] if dashboard.cases else None
         evidence = tuple(
             M8PlatformEvidenceViewV1(
@@ -1431,23 +1707,49 @@ class M8PlatformDemoService:
             ),
             run,
         )
-        failed = M8PlatformScenarioRunV1(
+        human_review_required = failure_code == "SCREENING_MEDIA_LOCAL_ONLY"
+        projected = M8PlatformScenarioRunV1(
             run_id=run.run_id,
             scenario_kind=run.scenario_kind,
-            state="FAILED",
-            failure_code=failure_code,
-            stages=stages,
+            state="SUCCEEDED" if human_review_required else "FAILED",
+            failure_code=None if human_review_required else failure_code,
+            stages=(
+                tuple(
+                    item.model_copy(
+                        update={
+                            "state": M8PlatformStageState.COMPLETE,
+                            "summary": (
+                                "证据仅限本地处理，已停止云端初审并转人工复核"
+                                if item.stage == M8PlatformScenarioStage.SCREENING
+                                else (
+                                    "未自动建案，等待安全负责人本地人工复核"
+                                    if item.stage == M8PlatformScenarioStage.CASE
+                                    else (
+                                        "人工复核前不发送告警"
+                                        if item.stage == M8PlatformScenarioStage.NOTIFICATION
+                                        else item.summary
+                                    )
+                                )
+                            ),
+                        }
+                    )
+                    for item in stages
+                )
+                if human_review_required
+                else stages
+            ),
             recognition_mode=run.recognition_mode,
             retry_of_run_id=run.retry_of_run_id,
             model_components=self._model_components(run, manifest),
+            outcome="HUMAN_REVIEW_REQUIRED" if human_review_required else None,
             evidence=evidence,
             video_profile=self._video_profile(stream),
             perception_preview_url=(f"/api/m8/demo/scenario-runs/{run.run_id}/perception-preview"),
             model_or_fixture_id=manifest.models["screening"].model,
         )
         if persist:
-            self._write_run(failed)
-        return failed
+            self._write_run(projected)
+        return projected
 
     @staticmethod
     def _screening_attention_reason(source_case: Case) -> str | None:
@@ -1460,9 +1762,38 @@ class M8PlatformDemoService:
         return None
 
     @staticmethod
-    def _screening_failure_code(reason_code: str | None) -> str:
+    def _screening_failure_code(
+        reason_code: str | None,
+        *,
+        source_pack: EvidencePack | None = None,
+        service: PilotUiService | None = None,
+    ) -> str:
         """Expose the controlled screening outcome without provider secrets."""
 
+        if (
+            reason_code == "RESPONSE_INTEGRITY_FAILURE"
+            and source_pack is not None
+            and service is not None
+        ):
+            profile = service.config.providers[service.config.screening.provider_profile]
+            available_non_panorama = tuple(
+                crop
+                for crop in source_pack.crops
+                if crop.availability == MediaAvailability.AVAILABLE
+                and crop.source != CropSource.PANORAMA
+            )
+            if (
+                profile.execution_location == ExecutionLocation.EXTERNAL
+                and available_non_panorama
+                and all(
+                    crop.privacy_receipt.media_access != MediaAccess.CLOUD_ALLOWED
+                    for crop in available_non_panorama
+                )
+            ):
+                return "SCREENING_MEDIA_LOCAL_ONLY"
+
+        if reason_code is None:
+            return "SCREENING_ATTENTION_REQUIRED"
         return {
             "PROVIDER_UNAVAILABLE": "SCREENING_PROVIDER_UNAVAILABLE",
             "MODEL_OUTPUT_INVALID": "SCREENING_RESPONSE_INVALID",
@@ -2107,32 +2438,37 @@ class M8PlatformDemoService:
                         )
                     )
 
-        for audit in operations.list_operational_case_audit(case_id):
-            intent = audit.transition_intent
+        for case_audit in operations.list_operational_case_audit(case_id):
+            intent = case_audit.transition_intent
             if intent is None or intent.command.actor_authority.role != M8ActorRole.SAFETY_OFFICER:
                 continue
-            command = intent.command
-            if command.action.value not in {"CONFIRM", "REJECT", "RESOLVE", "RESOLVE_APPEAL"}:
+            case_command = intent.command
+            if case_command.action.value not in {
+                "CONFIRM",
+                "REJECT",
+                "RESOLVE",
+                "RESOLVE_APPEAL",
+            }:
                 continue
             decision = (
-                f"申诉结论：{command.appeal_resolution.value}"
-                if command.appeal_resolution is not None
-                else f"案件操作：{command.action.value}"
+                f"申诉结论：{case_command.appeal_resolution.value}"
+                if case_command.appeal_resolution is not None
+                else f"案件操作：{case_command.action.value}"
             )
             event_rows.append(
                 (
-                    20 if command.action.value == "RESOLVE_APPEAL" else 5,
+                    20 if case_command.action.value == "RESOLVE_APPEAL" else 5,
                     None,
-                    command.command_id,
+                    case_command.command_id,
                     {
-                        "event_id": command.command_id,
+                        "event_id": case_command.command_id,
                         "kind": M8NotificationConversationEventKind.SAFETY_DECISION,
                         "sender": "SAFETY_OFFICER",
                         "title": decision,
-                        "body": command.reason_summary,
+                        "body": case_command.reason_summary,
                         "occurred_at": None,
-                        "authority_id": command.command_id,
-                        "status": command.target_status.value,
+                        "authority_id": case_command.command_id,
+                        "status": case_command.target_status.value,
                     },
                 )
             )
@@ -2210,19 +2546,20 @@ class M8PlatformDemoService:
                             )
                         )
                         if item.status == M8NotificationStatus.DELIVERED
-                        and item.audit_event.notification_authority.plan.target
-                        .inbound_response_supported
+                        and (
+                            item.audit_event.notification_authority.plan.target.inbound_response_supported
+                        )
                     ),
                     None,
                 )
                 if reply_target is not None:
-                    for kind in (
+                    for action_kind in (
                         M8NotificationConversationActionKind.SUBMIT_EXPLANATION,
                         M8NotificationConversationActionKind.SUBMIT_APPEAL,
                     ):
                         actions.append(
                             M8NotificationConversationActionV1(
-                                action=kind,
+                                action=action_kind,
                                 current_case_version=current_case.case_version,
                                 target_notification_id=reply_target.notification_id,
                             )
@@ -2346,6 +2683,39 @@ class M8PlatformDemoService:
             snapshots.mkdir(parents=True, exist_ok=True)
             self._replace_text_atomically(snapshots / f"{run.run_id}.json", body)
 
+    def _write_run_source(self, source: M8RunSourceRefV1) -> None:
+        snapshots = self.artifact_root / "scenario-runs"
+        snapshots.mkdir(parents=True, exist_ok=True)
+        body = canonical_json(source.model_dump(mode="json", exclude_computed_fields=True))
+        self._replace_text_atomically(snapshots / f"{source.run_id}.source.json", body)
+
+    def _is_evaluation_run(self, run_id: str) -> bool:
+        return (self.artifact_root / "scenario-runs" / f"{run_id}.source.json").is_file()
+
+    def _run_input_relative_path(self, run_id: str) -> str:
+        source_path = self.artifact_root / "scenario-runs" / f"{run_id}.source.json"
+        if source_path.is_file():
+            try:
+                source = M8RunSourceRefV1.model_validate_json(source_path.read_bytes())
+                media_path = (self.project_root / source.relative_path).absolute()
+                media_path.relative_to(self.project_root)
+                if not media_path.is_file():
+                    raise OSError("evaluation run media is absent")
+                hasher = hashlib.sha256()
+                with media_path.open("rb") as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        hasher.update(chunk)
+                digest = hasher.hexdigest()
+                if digest != source.media_sha256:
+                    raise ValueError("evaluation run media hash changed")
+                return source.relative_path
+            except (OSError, TypeError, ValueError):
+                raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from None
+        try:
+            return self.input_media_path.relative_to(self.project_root).as_posix()
+        except ValueError:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.INTERNAL_FAILURE) from None
+
     @staticmethod
     def _replace_text_atomically(path: Path, body: str) -> None:
         temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
@@ -2360,6 +2730,25 @@ class M8PlatformDemoService:
         return M8PlatformScenarioRunV1.model_validate_json(
             (self.artifact_root / "scenario-runs" / f"{run_id}.json").read_bytes()
         )
+
+    def scenario_source_video(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+    ) -> PilotUiVideoSource:
+        actor = self._actor(principal)
+        if actor.role not in {M8ActorRole.OPERATIONS, M8ActorRole.SAFETY_OFFICER}:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
+        run = self._read_run_snapshot(run_id)
+        service = self._pilot_service_for(run)
+        relative_path = self._run_input_relative_path(run_id)
+        video = next(
+            (item for item in service.dashboard().videos if item.relative_path == relative_path),
+            None,
+        )
+        if video is None:
+            raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
+        return service.video_source(video.video_id)
 
     def _pilot_service_for(self, run: M8PlatformScenarioRunV1) -> PilotUiService:
         return (
@@ -2500,14 +2889,30 @@ class M8PlatformDemoService:
             / f"{summary.case_id}.json"
         )
         source_case = Case.model_validate_json(case_path.read_bytes())
-        packs = tuple(
+        source_packs = tuple(
             pack for pack in source_case.evidence_packs if pack.pack_id == summary.pack_id
         )
-        if source_case.event.event_id != summary.event_id or len(packs) != 1:
+        if source_case.event.event_id != summary.event_id or len(source_packs) != 1:
             raise ValueError("Pilot projection is missing event or evidence authority")
+        if not source_case.evidence_packs:
+            raise ValueError("Pilot projection has no evidence authority")
+        # A2 binds the immutable P1 origin, but a pre-hearing preparation may
+        # subsequently publish P2 and S2.  Keep P1 in history while projecting
+        # the current authority; otherwise the platform and hearing fence would
+        # silently reopen the obsolete pack after a restart.
+        current_pack = source_case.evidence_packs[-1]
+        if source_case.screening_results:
+            current_screening = source_case.screening_results[-1]
+            if (
+                current_screening.evidence_pack_id != current_pack.pack_id
+                or current_screening.evidence_pack_version != current_pack.version
+            ):
+                raise ValueError(
+                    "Pilot current evidence pack requires a matching current screening"
+                )
         return (
             source_case,
-            packs[0],
+            current_pack,
             manifest.streams[0],
             manifest,
         )

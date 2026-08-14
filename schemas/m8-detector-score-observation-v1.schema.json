@@ -1,0 +1,282 @@
+{
+  "$defs": {
+    "M8EvidenceFeatureReason": {
+      "enum": [
+        "PERSON_DETECTION_MISSING",
+        "PERSON_AMBIGUOUS",
+        "TRACK_UNAVAILABLE"
+      ],
+      "title": "M8EvidenceFeatureReason",
+      "type": "string"
+    },
+    "M8EvidenceFeatureStatus": {
+      "enum": [
+        "AVAILABLE",
+        "NOT_APPLICABLE"
+      ],
+      "title": "M8EvidenceFeatureStatus",
+      "type": "string"
+    },
+    "M8EvidenceQualityFeaturesV1": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "frontality": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Frontality",
+          "type": "number"
+        },
+        "inverse_occlusion": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Inverse Occlusion",
+          "type": "number"
+        },
+        "keypoint_visibility": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Keypoint Visibility",
+          "type": "number"
+        },
+        "person_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Person Score",
+          "type": "number"
+        },
+        "schema_version": {
+          "const": "m8-evidence-quality-features-v1",
+          "default": "m8-evidence-quality-features-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sharpness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sharpness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "person_score",
+        "keypoint_visibility",
+        "frontality",
+        "sharpness",
+        "exposure",
+        "inverse_occlusion"
+      ],
+      "title": "M8EvidenceQualityFeaturesV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-detector-score-observation-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "authoritative_score_threshold": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Authoritative Score Threshold",
+      "type": "number"
+    },
+    "authority_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authority Config Sha256",
+      "type": "string"
+    },
+    "collection_config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Collection Config Sha256",
+      "type": "string"
+    },
+    "collection_floor": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Collection Floor",
+      "type": "number"
+    },
+    "collection_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Collection Manifest Id",
+      "type": "string"
+    },
+    "dataset_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dataset Manifest Id",
+      "type": "string"
+    },
+    "detector_model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Detector Model Manifest Id",
+      "type": "string"
+    },
+    "evidence_clear_threshold": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Evidence Clear Threshold",
+      "type": "number"
+    },
+    "evidence_feature_reason": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8EvidenceFeatureReason"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "evidence_feature_status": {
+      "$ref": "#/$defs/M8EvidenceFeatureStatus"
+    },
+    "evidence_features": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8EvidenceQualityFeaturesV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "frame_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Frame Content Sha256",
+      "type": "string"
+    },
+    "frame_index": {
+      "minimum": 0,
+      "title": "Frame Index",
+      "type": "integer"
+    },
+    "goggles_detected": {
+      "title": "Goggles Detected",
+      "type": "boolean"
+    },
+    "llm_output_used": {
+      "const": false,
+      "default": false,
+      "title": "Llm Output Used",
+      "type": "boolean"
+    },
+    "observability_score": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observability Score"
+    },
+    "observation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "postprocessed_goggles_score": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Postprocessed Goggles Score"
+    },
+    "raw_response_ref": {
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "raw_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Response Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-detector-score-observation-v1",
+      "default": "m8-detector-score-observation-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "score_semantics": {
+      "const": "GROUNDING_DINO_POSTPROCESSED_SCORE_V1",
+      "default": "GROUNDING_DINO_POSTPROCESSED_SCORE_V1",
+      "title": "Score Semantics",
+      "type": "string"
+    },
+    "source_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Manifest Id",
+      "type": "string"
+    },
+    "track_ref": {
+      "anyOf": [
+        {
+          "maxLength": 194,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Track Ref"
+    },
+    "worker_request_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Worker Request Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "observation_id",
+    "run_id",
+    "dataset_manifest_id",
+    "asset_id",
+    "frame_index",
+    "frame_content_sha256",
+    "worker_request_id",
+    "raw_response_ref",
+    "raw_response_sha256",
+    "detector_model_manifest_id",
+    "source_manifest_id",
+    "collection_manifest_id",
+    "authority_config_sha256",
+    "collection_config_sha256",
+    "collection_floor",
+    "authoritative_score_threshold",
+    "evidence_clear_threshold",
+    "goggles_detected",
+    "evidence_feature_status"
+  ],
+  "title": "M8DetectorScoreObservationV1",
+  "type": "object"
+}

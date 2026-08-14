@@ -346,15 +346,19 @@ class HearingRoleCallService:
             inspection,
             repair_request_id=repair.request.request_id,
         )
-        self._append_parse(primary_request, first.receipt, None)
         primary_closure = HearingCallClosure(
             request=primary.request,
             response=primary.response,
             parse_receipt=first.receipt,
             usage=primary.usage,
         )
+        # SQLite binds a REPAIR_REQUIRED receipt to the exact repair call
+        # claim.  Complete or recover that fenced call before committing the
+        # primary parse receipt; a crash at either boundary is provider-safe
+        # because both calls are recovered by their immutable request IDs.
         self._register(repair)
         repaired = self._controlled_call(repair.request, context.backlog_lease)
+        self._append_parse(primary_request, first.receipt, None)
         repaired_inspection = self._inspect(repaired)
         final = finalize_hearing_parse(repaired_inspection)
         if final.payload is None:

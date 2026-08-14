@@ -1,0 +1,203 @@
+{
+  "$defs": {
+    "M8PlattScalerV1": {
+      "additionalProperties": false,
+      "properties": {
+        "intercept": {
+          "title": "Intercept",
+          "type": "number"
+        },
+        "iterations": {
+          "exclusiveMinimum": 0,
+          "title": "Iterations",
+          "type": "integer"
+        },
+        "learning_rate": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "schema_version": {
+          "const": "m8-platt-scaler-v1",
+          "default": "m8-platt-scaler-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "slope": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Slope",
+          "type": "number"
+        }
+      },
+      "required": [
+        "slope",
+        "intercept",
+        "iterations",
+        "learning_rate"
+      ],
+      "title": "M8PlattScalerV1",
+      "type": "object"
+    },
+    "M8RegularizedLogisticModelV1": {
+      "additionalProperties": false,
+      "properties": {
+        "coefficients": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Coefficients",
+          "type": "array"
+        },
+        "feature_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Feature Names",
+          "type": "array"
+        },
+        "intercept": {
+          "title": "Intercept",
+          "type": "number"
+        },
+        "iterations": {
+          "exclusiveMinimum": 0,
+          "title": "Iterations",
+          "type": "integer"
+        },
+        "l2_strength": {
+          "exclusiveMinimum": 0,
+          "title": "L2 Strength",
+          "type": "number"
+        },
+        "learning_rate": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "schema_version": {
+          "const": "m8-regularized-logistic-model-v1",
+          "default": "m8-regularized-logistic-model-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feature_names",
+        "coefficients",
+        "intercept",
+        "l2_strength",
+        "iterations",
+        "learning_rate"
+      ],
+      "title": "M8RegularizedLogisticModelV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-calibration-artifact-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dataset_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dataset Manifest Id",
+      "type": "string"
+    },
+    "detector_model_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Detector Model Manifest Id",
+      "type": "string"
+    },
+    "event_risk_model": {
+      "$ref": "#/$defs/M8RegularizedLogisticModelV1"
+    },
+    "event_risk_platt": {
+      "$ref": "#/$defs/M8PlattScalerV1"
+    },
+    "evidence_quality_model": {
+      "$ref": "#/$defs/M8RegularizedLogisticModelV1"
+    },
+    "evidence_quality_platt": {
+      "$ref": "#/$defs/M8PlattScalerV1"
+    },
+    "evidence_quality_threshold": {
+      "exclusiveMaximum": 1,
+      "exclusiveMinimum": 0,
+      "title": "Evidence Quality Threshold",
+      "type": "number"
+    },
+    "feature_schema_version": {
+      "const": "M8_NON_LLM_CALIBRATION_FEATURES_V1",
+      "default": "M8_NON_LLM_CALIBRATION_FEATURES_V1",
+      "title": "Feature Schema Version",
+      "type": "string"
+    },
+    "llm_features_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Llm Features Permitted",
+      "type": "boolean"
+    },
+    "mode": {
+      "const": "SHADOW",
+      "default": "SHADOW",
+      "title": "Mode",
+      "type": "string"
+    },
+    "model_profile_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Profile Sha256",
+      "type": "string"
+    },
+    "parameter_encoding": {
+      "const": "CANONICAL_JSON_NO_PICKLE",
+      "default": "CANONICAL_JSON_NO_PICKLE",
+      "title": "Parameter Encoding",
+      "type": "string"
+    },
+    "routing_authority": {
+      "const": false,
+      "default": false,
+      "title": "Routing Authority",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "m8-calibration-artifact-v1",
+      "default": "m8-calibration-artifact-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "dataset_manifest_id",
+    "detector_model_manifest_id",
+    "config_sha256",
+    "model_profile_sha256",
+    "evidence_quality_model",
+    "evidence_quality_platt",
+    "event_risk_model",
+    "event_risk_platt",
+    "evidence_quality_threshold",
+    "created_at"
+  ],
+  "title": "M8CalibrationArtifactV1",
+  "type": "object"
+}

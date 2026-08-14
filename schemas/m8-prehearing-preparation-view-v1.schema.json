@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "M8PreHearingOutcomeCode": {
+      "description": "Typed, non-model outcomes produced before an M4 session exists.",
+      "enum": [
+        "NO_NOVEL_CLEAR_FRAME"
+      ],
+      "title": "M8PreHearingOutcomeCode",
+      "type": "string"
+    },
+    "M8PreHearingPreparationState": {
+      "description": "Append-only lifecycle of one objective-evidence gate decision.",
+      "enum": [
+        "PENDING",
+        "COMPLETED"
+      ],
+      "title": "M8PreHearingPreparationState",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-prehearing-preparation-view-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Platform-case projection that keeps the frozen M4 case ID private.",
+  "properties": {
+    "candidate_crop_ids": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Candidate Crop Ids",
+      "type": "array"
+    },
+    "case_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "clear_crop_ids": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Clear Crop Ids",
+      "type": "array"
+    },
+    "clear_threshold": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Clear Threshold",
+      "type": "number"
+    },
+    "evidence_failure_code": {
+      "anyOf": [
+        {
+          "const": "EVIDENCE_MISSING",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evidence Failure Code"
+    },
+    "hearing_role_call_count": {
+      "const": 0,
+      "default": 0,
+      "title": "Hearing Role Call Count",
+      "type": "integer"
+    },
+    "outcome_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8PreHearingOutcomeCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "preparation_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Preparation Id",
+      "type": "string"
+    },
+    "required_clear_count": {
+      "exclusiveMinimum": 0,
+      "title": "Required Clear Count",
+      "type": "integer"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-prehearing-preparation-view-v1",
+      "default": "m8-prehearing-preparation-view-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_evidence_pack_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Evidence Pack Id",
+      "type": "string"
+    },
+    "source_evidence_pack_version": {
+      "exclusiveMinimum": 0,
+      "title": "Source Evidence Pack Version",
+      "type": "integer"
+    },
+    "state": {
+      "$ref": "#/$defs/M8PreHearingPreparationState"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "preparation_id",
+    "source_evidence_pack_id",
+    "source_evidence_pack_version",
+    "candidate_crop_ids",
+    "clear_crop_ids",
+    "clear_threshold",
+    "required_clear_count",
+    "state"
+  ],
+  "title": "M8PreHearingPreparationViewV1",
+  "type": "object"
+}

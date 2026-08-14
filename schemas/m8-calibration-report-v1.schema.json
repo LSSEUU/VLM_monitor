@@ -1,0 +1,303 @@
+{
+  "$defs": {
+    "M8BinaryCalibrationMetricsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "accuracy": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Accuracy",
+          "type": "number"
+        },
+        "bootstrap_iterations": {
+          "exclusiveMinimum": 0,
+          "title": "Bootstrap Iterations",
+          "type": "integer"
+        },
+        "brier_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Brier Score",
+          "type": "number"
+        },
+        "confidence_intervals": {
+          "items": {
+            "$ref": "#/$defs/M8MetricConfidenceIntervalV1"
+          },
+          "title": "Confidence Intervals",
+          "type": "array"
+        },
+        "decision_threshold": {
+          "exclusiveMaximum": 1,
+          "exclusiveMinimum": 0,
+          "title": "Decision Threshold",
+          "type": "number"
+        },
+        "expected_calibration_error": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Expected Calibration Error",
+          "type": "number"
+        },
+        "false_negative": {
+          "minimum": 0,
+          "title": "False Negative",
+          "type": "integer"
+        },
+        "false_positive": {
+          "minimum": 0,
+          "title": "False Positive",
+          "type": "integer"
+        },
+        "false_positive_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "False Positive Rate",
+          "type": "number"
+        },
+        "log_loss": {
+          "minimum": 0,
+          "title": "Log Loss",
+          "type": "number"
+        },
+        "negative_count": {
+          "exclusiveMinimum": 0,
+          "title": "Negative Count",
+          "type": "integer"
+        },
+        "positive_count": {
+          "exclusiveMinimum": 0,
+          "title": "Positive Count",
+          "type": "integer"
+        },
+        "recall": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Recall",
+          "type": "number"
+        },
+        "reliability_bins": {
+          "items": {
+            "$ref": "#/$defs/M8ReliabilityBinV1"
+          },
+          "title": "Reliability Bins",
+          "type": "array"
+        },
+        "sample_count": {
+          "exclusiveMinimum": 0,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "true_negative": {
+          "minimum": 0,
+          "title": "True Negative",
+          "type": "integer"
+        },
+        "true_positive": {
+          "minimum": 0,
+          "title": "True Positive",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_count",
+        "positive_count",
+        "negative_count",
+        "true_positive",
+        "true_negative",
+        "false_positive",
+        "false_negative",
+        "decision_threshold",
+        "accuracy",
+        "recall",
+        "false_positive_rate",
+        "brier_score",
+        "log_loss",
+        "expected_calibration_error",
+        "reliability_bins",
+        "confidence_intervals",
+        "bootstrap_iterations"
+      ],
+      "title": "M8BinaryCalibrationMetricsV1",
+      "type": "object"
+    },
+    "M8CalibrationMetricName": {
+      "enum": [
+        "ACCURACY",
+        "RECALL",
+        "FALSE_POSITIVE_RATE",
+        "BRIER_SCORE",
+        "LOG_LOSS",
+        "ECE"
+      ],
+      "title": "M8CalibrationMetricName",
+      "type": "string"
+    },
+    "M8MetricConfidenceIntervalV1": {
+      "additionalProperties": false,
+      "properties": {
+        "estimate": {
+          "minimum": 0,
+          "title": "Estimate",
+          "type": "number"
+        },
+        "lower_95": {
+          "minimum": 0,
+          "title": "Lower 95",
+          "type": "number"
+        },
+        "metric": {
+          "$ref": "#/$defs/M8CalibrationMetricName"
+        },
+        "upper_95": {
+          "minimum": 0,
+          "title": "Upper 95",
+          "type": "number"
+        },
+        "valid_bootstrap_samples": {
+          "exclusiveMinimum": 0,
+          "title": "Valid Bootstrap Samples",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "metric",
+        "estimate",
+        "lower_95",
+        "upper_95",
+        "valid_bootstrap_samples"
+      ],
+      "title": "M8MetricConfidenceIntervalV1",
+      "type": "object"
+    },
+    "M8ReliabilityBinV1": {
+      "additionalProperties": false,
+      "properties": {
+        "bin_index": {
+          "exclusiveMaximum": 10,
+          "minimum": 0,
+          "title": "Bin Index",
+          "type": "integer"
+        },
+        "lower_bound": {
+          "exclusiveMaximum": 1,
+          "minimum": 0,
+          "title": "Lower Bound",
+          "type": "number"
+        },
+        "mean_probability": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Probability"
+        },
+        "positive_rate": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Positive Rate"
+        },
+        "sample_count": {
+          "minimum": 0,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "upper_bound": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Upper Bound",
+          "type": "number"
+        }
+      },
+      "required": [
+        "bin_index",
+        "lower_bound",
+        "upper_bound",
+        "sample_count"
+      ],
+      "title": "M8ReliabilityBinV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-calibration-report-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "dataset_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Dataset Manifest Id",
+      "type": "string"
+    },
+    "event_risk_metrics": {
+      "$ref": "#/$defs/M8BinaryCalibrationMetricsV1"
+    },
+    "evidence_quality_metrics": {
+      "$ref": "#/$defs/M8BinaryCalibrationMetricsV1"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "partition": {
+      "const": "SEALED_TEST",
+      "default": "SEALED_TEST",
+      "title": "Partition",
+      "type": "string"
+    },
+    "probability_claim_permitted": {
+      "const": false,
+      "default": false,
+      "title": "Probability Claim Permitted",
+      "type": "boolean"
+    },
+    "report_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-calibration-report-v1",
+      "default": "m8-calibration-report-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sealed_test_used_for_fitting": {
+      "const": false,
+      "default": false,
+      "title": "Sealed Test Used For Fitting",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "report_id",
+    "artifact_id",
+    "dataset_manifest_id",
+    "evidence_quality_metrics",
+    "event_risk_metrics",
+    "generated_at"
+  ],
+  "title": "M8CalibrationReportV1",
+  "type": "object"
+}

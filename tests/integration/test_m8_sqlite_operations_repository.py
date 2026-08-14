@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -134,6 +135,10 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
         12,
         13,
         14,
+        15,
+        16,
+        17,
+        18,
     )
     with sqlite3.connect(database) as connection:
         versions = connection.execute(
@@ -158,6 +163,10 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
         (12, "m8_feishu_url_challenge_audit"),
         (13, "m8_agent_chat"),
         (14, "m8_agent_conversation_removals"),
+        (15, "m8_feishu_live"),
+        (16, "m8_evaluation"),
+        (17, "m8_prehearing"),
+        (18, "m8_calibration"),
     ]
     assert tables == {
         "schema_migrations",
@@ -195,7 +204,74 @@ def test_isolated_m8_migrations_install_only_additive_operations_layout(
         "m8_agent_raw_responses",
         "m8_agent_cache_entries",
         "m8_agent_conversation_removals",
+        "m8_feishu_duty_route_revisions",
+        "m8_feishu_runtime_heartbeats",
+        "m8_feishu_live_inbound_events",
+        "m8_feishu_live_inbound_artifacts",
+        "m8_feishu_inbound_job_events",
+        "m8_feishu_agent_conversation_bindings",
+        "m8_feishu_agent_turn_origins",
+        "m8_feishu_card_action_intents",
+        "m8_feishu_card_action_receipts",
+        "m8_feishu_alert_bridge_receipts",
+        "m8_feishu_reminder_receipts",
+        "m8_feishu_agent_reply_outbox",
+        "m8_feishu_agent_reply_claim_events",
+        "m8_feishu_agent_reply_completions",
+        "m8_evaluation_media_assets",
+        "m8_evaluation_ground_truth_versions",
+        "m8_evaluation_campaign_versions",
+        "m8_evaluation_run_versions",
+        "m8_live_ingest_session_versions",
+        "m8_capture_segments",
+        "m8_prehearing_preparation_versions",
+        "m8_calibration_dataset_manifests",
+        "m8_calibration_artifacts",
+        "m8_calibration_reports",
+        "m8_detector_score_observations",
+        "m8_evidence_quality_assessments",
+        "m8_event_risk_assessments",
     }
+
+
+def test_hearing_authorities_upgrade_an_existing_feishu_live_database(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "labcourt.sqlite3"
+    through_feishu = tmp_path / "migrations-through-feishu"
+    through_feishu.mkdir()
+    for version in range(1, 16):
+        source = next(M8_MIGRATIONS.glob(f"{version:04d}_*.sql"))
+        shutil.copy2(source, through_feishu / source.name)
+
+    assert MigrationRunner(database, BUSY_TIMEOUT_MS, through_feishu).apply_all() == tuple(
+        range(1, 16)
+    )
+    with sqlite3.connect(database) as connection:
+        frozen = connection.execute(
+            "SELECT version, name, sql_sha256 FROM schema_migrations ORDER BY version"
+        ).fetchall()
+
+    assert MigrationRunner(database, BUSY_TIMEOUT_MS, M8_MIGRATIONS).apply_all() == (
+        16,
+        17,
+        18,
+    )
+    with sqlite3.connect(database) as connection:
+        preserved = connection.execute(
+            "SELECT version, name, sql_sha256 FROM schema_migrations "
+            "WHERE version <= 15 ORDER BY version"
+        ).fetchall()
+        additive = connection.execute(
+            "SELECT version, name FROM schema_migrations "
+            "WHERE version >= 16 ORDER BY version"
+        ).fetchall()
+    assert preserved == frozen
+    assert additive == [
+        (16, "m8_evaluation"),
+        (17, "m8_prehearing"),
+        (18, "m8_calibration"),
+    ]
 
 
 def test_repository_persists_idempotent_actor_create_transition_and_audit_chain(

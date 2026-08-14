@@ -1,0 +1,413 @@
+{
+  "$defs": {
+    "CaseStatus": {
+      "enum": [
+        "CANDIDATE",
+        "EVIDENCE_READY",
+        "SCREENED",
+        "ESCALATED",
+        "DELIBERATING",
+        "PROCEDURAL_REVIEW",
+        "READY_FOR_ALERT_POLICY",
+        "REWORK_REQUIRED",
+        "HUMAN_REVIEW",
+        "BACKLOGGED",
+        "CLOSED",
+        "APPEALED",
+        "APPEAL_RESOLVED"
+      ],
+      "title": "CaseStatus",
+      "type": "string"
+    },
+    "M8EvaluationActualRoute": {
+      "enum": [
+        "NO_CANDIDATE",
+        "FAST_VERDICT",
+        "HEARING_REQUIRED",
+        "HUMAN_REVIEW",
+        "PROVIDER_FAILURE",
+        "TECHNICAL_FAILURE"
+      ],
+      "title": "M8EvaluationActualRoute",
+      "type": "string"
+    },
+    "M8EvaluationDeliveryState": {
+      "enum": [
+        "NOT_APPLICABLE",
+        "PENDING_POLICY",
+        "ACTIVATION_REQUIRED",
+        "QUEUED",
+        "SENT",
+        "FAILED"
+      ],
+      "title": "M8EvaluationDeliveryState",
+      "type": "string"
+    },
+    "M8EvaluationRunSourceKind": {
+      "enum": [
+        "RECORDED_ASSET",
+        "LIVE_CAPTURE_SEGMENT"
+      ],
+      "title": "M8EvaluationRunSourceKind",
+      "type": "string"
+    },
+    "M8EvaluationRunState": {
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "AWAITING_HEARING",
+        "SUCCEEDED",
+        "FAILED"
+      ],
+      "title": "M8EvaluationRunState",
+      "type": "string"
+    },
+    "M8HearingEligibility": {
+      "enum": [
+        "ELIGIBLE_ESCALATED",
+        "ELIGIBLE_REWORK_REQUIRED",
+        "IN_PROGRESS",
+        "BACKLOGGED",
+        "COMPLETED",
+        "HUMAN_REVIEW",
+        "NOT_ELIGIBLE"
+      ],
+      "title": "M8HearingEligibility",
+      "type": "string"
+    },
+    "M8HearingL5Status": {
+      "enum": [
+        "NOT_RUN",
+        "PASSED",
+        "FAILED"
+      ],
+      "title": "M8HearingL5Status",
+      "type": "string"
+    },
+    "M8RunSourceRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "capture_segment_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capture Segment Id"
+        },
+        "frame_count": {
+          "exclusiveMinimum": 0,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "media_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Media Sha256",
+          "type": "string"
+        },
+        "relative_path": {
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-run-source-ref-v1",
+          "default": "m8-run-source-ref-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/M8EvaluationRunSourceKind"
+        },
+        "source_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "source_kind",
+        "asset_id",
+        "media_sha256",
+        "relative_path",
+        "frame_count",
+        "source_manifest_id"
+      ],
+      "title": "M8RunSourceRefV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-evaluation-run-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accuracy_metrics_eligible": {
+      "title": "Accuracy Metrics Eligible",
+      "type": "boolean"
+    },
+    "active_stage": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Active Stage"
+    },
+    "actual_route": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8EvaluationActualRoute"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "campaign_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "case_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Case Id"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "delivery_state": {
+      "$ref": "#/$defs/M8EvaluationDeliveryState"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Code"
+    },
+    "ground_truth_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ground Truth Id"
+    },
+    "hearing_case_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hearing Case Id"
+    },
+    "hearing_eligibility": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8HearingEligibility"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "l5_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8HearingL5Status"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "m4_case_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CaseStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "model_profile_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Profile Sha256",
+      "type": "string"
+    },
+    "notification_id": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notification Id"
+    },
+    "ordinal": {
+      "minimum": 0,
+      "title": "Ordinal",
+      "type": "integer"
+    },
+    "provider_receipt_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Provider Receipt Refs",
+      "type": "array"
+    },
+    "queued_at": {
+      "format": "date-time",
+      "title": "Queued At",
+      "type": "string"
+    },
+    "repetition": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Repetition",
+      "type": "integer"
+    },
+    "revision": {
+      "exclusiveMinimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "route_reason_code": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Route Reason Code"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "run_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Run Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-evaluation-run-v1",
+      "default": "m8-evaluation-run-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/M8RunSourceRefV1"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "state": {
+      "$ref": "#/$defs/M8EvaluationRunState"
+    }
+  },
+  "required": [
+    "run_id",
+    "revision",
+    "campaign_id",
+    "source",
+    "ordinal",
+    "repetition",
+    "state",
+    "accuracy_metrics_eligible",
+    "delivery_state",
+    "queued_at",
+    "config_sha256",
+    "model_profile_sha256",
+    "run_manifest_id"
+  ],
+  "title": "M8EvaluationRunV1",
+  "type": "object"
+}

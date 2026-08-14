@@ -9,7 +9,7 @@ from typing import NoReturn, TypeVar
 
 from pydantic import ValidationError
 
-from labcourt.application.hearing_request import FROZEN_M4_PROMPT_BUNDLE_SHA256
+from labcourt.application.hearing_request import SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
 from labcourt.application.hearing_situation import (
     HearingSituationBuildError,
     build_hearing_situation_text,
@@ -507,7 +507,7 @@ def _rebuild_hearing(
         or metadata.max_total_output_tokens != config.hearing.max_total_output_tokens
         or metadata.max_judge_cycles
         != 1 + metadata.max_acquisition_rounds + metadata.max_rework_rounds
-        or metadata.hearing_prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+        or metadata.hearing_prompt_bundle_sha256 not in SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
         or metadata.prosecutor_model_manifest_id != manifest.models["prosecutor"].model_manifest_id
         or metadata.defender_model_manifest_id != manifest.models["defender"].model_manifest_id
         or metadata.judge_model_manifest_id != manifest.models["judge"].model_manifest_id

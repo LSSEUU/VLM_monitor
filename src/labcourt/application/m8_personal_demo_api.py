@@ -91,6 +91,7 @@ class M8PersonalDemoApiAssembly:
     server: M8ApiHttpServer
     profile: M8PersonalDemoApiProfileV1
     knowledge_receipt: M8PersonalDemoKnowledgeReceiptV1
+    operations_repository: SQLiteM8OperationsRepository
 
     def local_access_document(self) -> dict[str, object]:
         document: dict[str, object] = {
@@ -213,6 +214,7 @@ def assemble_m8_personal_demo_api(
         server=server,
         profile=profile,
         knowledge_receipt=knowledge_receipt,
+        operations_repository=operations,
     )
 
 

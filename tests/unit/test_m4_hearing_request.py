@@ -10,13 +10,17 @@ from types import ModuleType
 
 import pytest
 
-from labcourt.adapters.hearing_prompt_renderer import HearingJinjaPromptCatalog
+from labcourt.adapters.hearing_prompt_renderer import (
+    M8_HEARING_PROMPT_V2_DEFINITIONS,
+    HearingJinjaPromptCatalog,
+)
 from labcourt.application.hearing_model_parser import (
     finalize_hearing_parse,
     inspect_hearing_response,
 )
 from labcourt.application.hearing_request import (
     FROZEN_M4_PROMPT_BUNDLE_SHA256,
+    M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
     HearingBudgetUsage,
     HearingRequestGeneration,
     HearingRequestPreparationError,
@@ -28,15 +32,37 @@ from labcourt.application.hearing_request import (
 from labcourt.config_loader import load_config
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.config import AppConfig
+from labcourt.contracts.detections import Keypoint
 from labcourt.contracts.enums import (
     AcquisitionAction,
+    AnchorType,
     ArgumentStance,
     ArtifactKind,
+    AssociationMethod,
+    CropSource,
     ExecutionLocation,
+    MediaAccess,
+    MediaAvailability,
+    MediaType,
+    ObservationSource,
+    PpeType,
+    PrivacyPolicy,
+    PrivacyReasonCode,
     ProviderTransport,
     VlmRole,
 )
-from labcourt.contracts.evidence import EvidencePack, EvidencePackDraft
+from labcourt.contracts.events import CandidateEvent, derive_case_id
+from labcourt.contracts.evidence import (
+    Crop,
+    EvidencePack,
+    EvidencePackDraft,
+    ObservabilityComponents,
+    ObservabilityScore,
+    ObservationSufficiencyInput,
+    PrivacyReceipt,
+    TrackSummary,
+)
+from labcourt.contracts.geometry import BBoxXYXY
 from labcourt.contracts.hearing import (
     DefenderModelPayload,
     HearingCycleScope,
@@ -85,7 +111,11 @@ def _ref(kind: ArtifactKind, label: str) -> ArtifactRef:
     return ArtifactRef(kind=kind, artifact_id=_sha(label))
 
 
-def _catalog(*, changed_judge_schema: bool = False) -> HearingJinjaPromptCatalog:
+def _catalog(
+    *,
+    changed_judge_schema: bool = False,
+    m8_v2: bool = False,
+) -> HearingJinjaPromptCatalog:
     schemas = expected_schema_files()
     documents = {
         "hearing_prosecutor_v1": canonical_json(
@@ -98,6 +128,11 @@ def _catalog(*, changed_judge_schema: bool = False) -> HearingJinjaPromptCatalog
     }
     if changed_judge_schema:
         documents["hearing_judge_v1"] = canonical_json({"type": "array"})
+    if m8_v2:
+        return HearingJinjaPromptCatalog(
+            output_schema_json_by_prompt=documents,
+            definitions=M8_HEARING_PROMPT_V2_DEFINITIONS,
+        )
     return HearingJinjaPromptCatalog(output_schema_json_by_prompt=documents)
 
 
@@ -117,6 +152,95 @@ def _closed_pack(manifest: RunManifest) -> EvidencePack:
         manifest_id=manifest.manifest_id,
     )
     return evidence_helpers._close(draft)
+
+
+def _closed_absence_pack(manifest: RunManifest) -> EvidencePack:
+    payload = json.loads(
+        (ROOT / "tests/fixtures/m2/candidate-event-absence-strict.json").read_text(encoding="utf-8")
+    )
+    payload.pop("event_id", None)
+    payload["manifest_id"] = manifest.manifest_id
+    event = CandidateEvent.model_validate(payload)
+    temporal: list[Crop] = []
+    for frame_index in (0, 75, 149):
+        frame_id = f"{event.camera_id}:{event.stream_id}:{frame_index}"
+        frame_ref = ArtifactRef(kind=ArtifactKind.FRAME, artifact_id=frame_id)
+        media_sha = _sha(f"absence-media-{frame_index}")
+        preserved = BBoxXYXY(x1=10, y1=10, x2=90, y2=55)
+        temporal.append(
+            Crop(
+                frame_id=frame_id,
+                source=CropSource.ANCHOR_FOCUS,
+                bbox=BBoxXYXY(x1=0, y1=0, x2=100, y2=100),
+                source_refs=(frame_ref,),
+                local_path=f"{evidence_helpers.RUN_ID}/frames/{media_sha}.png",
+                availability=MediaAvailability.AVAILABLE,
+                source_media_sha256=_sha(f"absence-source-{frame_index}"),
+                pixel_sha256=_sha(f"absence-pixel-{frame_index}"),
+                media_sha256=media_sha,
+                output_width=100,
+                output_height=100,
+                size_bytes=1_024,
+                media_type=MediaType.IMAGE_PNG,
+                encoding_version="png-v1",
+                privacy_receipt=PrivacyReceipt(
+                    policy=PrivacyPolicy.PPE_PRESERVING_REDACTION,
+                    transform_version="privacy-v1",
+                    media_access=MediaAccess.LOCAL_ONLY,
+                    reason_code=PrivacyReasonCode.PPE_REGION_PRESERVED,
+                    input_refs=(frame_ref,),
+                    ppe_type=PpeType.GOGGLES,
+                    anchor_type=AnchorType.HEAD,
+                    preserved_regions=(preserved,),
+                    keypoints=(Keypoint(name="nose", x=50.0, y=40.0, score=0.9),),
+                    anchor_bbox=preserved,
+                    association_method=AssociationMethod.KEYPOINT,
+                    fill_rgb=(0, 0, 0),
+                ),
+                observability=ObservabilityScore(
+                    total=0.9,
+                    components=ObservabilityComponents(
+                        person_confidence=0.9,
+                        keypoint_visibility=0.9,
+                        frontality=0.9,
+                        sharpness=0.9,
+                        exposure=0.9,
+                        non_occlusion=0.9,
+                    ),
+                    source=ObservationSource.PRECOMPUTED_FIXTURE,
+                ),
+                primary_track_ref=event.primary_track_ref,
+                tags={"zone_id": event.zone_id},
+            )
+        )
+    crops = tuple(temporal)
+    return evidence_helpers._close(
+        EvidencePackDraft(
+            run_id=evidence_helpers.RUN_ID,
+            case_id=derive_case_id(event.event_id),
+            version=1,
+            event=event,
+            key_frame_ids=tuple(
+                f"{event.camera_id}:{event.stream_id}:{index}" for index in (0, 75, 149, 150, 151)
+            ),
+            temporal_crops=crops,
+            objective_facts=event.objective_facts,
+            track_summary=TrackSummary(
+                primary_track_ref=event.primary_track_ref,
+                start_frame=0,
+                end_frame_exclusive=152,
+                observed_frame_count=151,
+            ),
+            confirmation_record=event.confirmation,
+            observation_sufficiency_input=ObservationSufficiencyInput(
+                clear_crop_ids=tuple(sorted(crop.crop_id for crop in crops)),
+                clear_threshold=0.65,
+                required_clear_count=2,
+                selected_by_observability=True,
+            ),
+            manifest_id=manifest.manifest_id,
+        )
+    )
 
 
 def _retrieval(
@@ -188,6 +312,7 @@ class Scenario:
 
 def _scenario(
     *,
+    absence: bool = False,
     external_prosecutor: bool = False,
     max_input_pixels: int | None = None,
     max_prompt_bytes: int | None = None,
@@ -235,7 +360,7 @@ def _scenario(
             "models": models,
         }
     )
-    pack = _closed_pack(manifest)
+    pack = _closed_absence_pack(manifest) if absence else _closed_pack(manifest)
     session = HearingSession(
         run_id=pack.run_id,
         case_id=pack.case_id,
@@ -426,6 +551,49 @@ def test_three_roles_bind_exact_profiles_upstreams_and_one_crop() -> None:
     )
 
 
+def test_m8_v2_context_advertises_real_acquisition_capabilities_without_mutating_v1() -> None:
+    frozen = _scenario()
+    frozen_context = json.loads(
+        _prepare(frozen, VlmRole.PROSECUTOR).canonical_inputs.hearing_context_json
+    )
+    assert frozen_context["schema_version"] == "m4-hearing-prompt-context-v1"
+    assert "acquisition_capabilities" not in frozen_context
+
+    session = frozen.session.model_copy(
+        update={
+            "hearing_prompt_bundle_sha256": M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
+        }
+    )
+    retrieval = _retrieval(
+        session,
+        frozen.pack,
+        frozen.config,
+        frozen.manifest,
+    )
+    current = Scenario(
+        config=frozen.config,
+        manifest=frozen.manifest,
+        pack=frozen.pack,
+        authority=frozen.authority,
+        session=session,
+        retrieval=retrieval,
+        scope=_scope(session, retrieval),
+        catalog=_catalog(m8_v2=True),
+    )
+
+    current_context = json.loads(
+        _prepare(current, VlmRole.PROSECUTOR).canonical_inputs.hearing_context_json
+    )
+    assert current_context["schema_version"] == "m8-hearing-prompt-context-v2"
+    assert current_context["acquisition_capabilities"] == {
+        "OTHER_CAMERA_SAME_TIME": "TOOL_UNAVAILABLE",
+        "RECROP": "AVAILABLE",
+        "REDETECT_HIGH_RES": "AVAILABLE",
+        "REQUEST_MORE_FRAMES": "AVAILABLE",
+        "TRACK_CONFIDENCE_CURVE": "AVAILABLE",
+    }
+
+
 def test_one_crop_per_role_fits_all_five_cycles_inside_twenty_image_budget() -> None:
     scenario = _scenario()
     required = 3 * scenario.session.max_total_judge_cycles
@@ -443,6 +611,49 @@ def test_one_crop_per_role_fits_all_five_cycles_inside_twenty_image_budget() -> 
             scenario,
             VlmRole.PROSECUTOR,
             budget_usage=HearingBudgetUsage(reserved_images=scenario.session.max_total_images),
+        ),
+    )
+
+
+def test_absence_roles_receive_every_authoritative_clear_crop_and_full_budget() -> None:
+    scenario = _scenario(absence=True)
+    prosecutor = _prepare(scenario, VlmRole.PROSECUTOR)
+    prosecutor_output = _role_output(scenario, prosecutor)
+    defender = _prepare(
+        scenario,
+        VlmRole.DEFENDER,
+        grant=prosecutor.hearing_grant,
+        budget_usage=HearingBudgetUsage(reserved_images=3),
+        prosecutor_output=prosecutor_output,
+    )
+    defender_output = _role_output(
+        scenario,
+        defender,
+        prosecutor_output_id=prosecutor_output.output_id,
+    )
+    judge = _prepare(
+        scenario,
+        VlmRole.JUDGE,
+        grant=defender.hearing_grant,
+        budget_usage=HearingBudgetUsage(reserved_images=6),
+        prosecutor_output=prosecutor_output,
+        defender_output=defender_output,
+    )
+
+    assert scenario.pack.observation_sufficiency_input is not None
+    expected = set(scenario.pack.observation_sufficiency_input.clear_crop_ids)
+    for prepared in (prosecutor, defender, judge):
+        assert len(prepared.request.media) == 3
+        assert prepared.request.budget.max_images == 3
+        assert prepared.request.budget.max_input_pixels == 30_000
+        assert {item.crop_id for item in prepared.request.media} == expected
+
+    _assert_code(
+        HearingRequestPreparationErrorCode.IMAGE_BUDGET_EXHAUSTED,
+        lambda: _prepare(
+            scenario,
+            VlmRole.PROSECUTOR,
+            budget_usage=HearingBudgetUsage(reserved_images=18),
         ),
     )
 
@@ -692,8 +903,8 @@ def test_canonical_primary_request_identity_is_golden() -> None:
         == prepared.canonical_inputs.hearing_context_json
     )
     assert prepared.request.hearing_context_sha256 == (
-        "1c8efb859a51b391dea1f8b60ed7522d4adcf4b4bd67f8c64152de1de070078d"
+        "bfbe701292c527dbdf181537931ccc86aa251def8e607943d94fd733b860a75f"
     )
     assert prepared.request.request_id == (
-        "515ca26120a46795c57e26991c008a5ab4622c6c3865dd365ccbfe13164bff5b"
+        "0543fcdbdf1231405e37770387cc2ac2bf81037c43d0c06c6f8d54cda50a30bb"
     )

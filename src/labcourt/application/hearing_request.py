@@ -27,6 +27,7 @@ from labcourt.contracts.config import AppConfig, VlmProviderProfile
 from labcourt.contracts.enums import (
     ArtifactKind,
     CropSource,
+    EvidenceClass,
     ExecutionLocation,
     MediaAccess,
     MediaAvailability,
@@ -69,7 +70,20 @@ from labcourt.ports.prompts import (
 )
 
 FROZEN_M4_PROMPT_BUNDLE_SHA256: Final = (
+    "97457a7e57710ed3e0a99bcd87b33629487115417f6dcdd24bb4fa65d1495c68"
+)
+LEGACY_M4_PROMPT_BUNDLE_SHA256: Final = (
     "0b7d777f01abe5bc74fc511f7a10a03dbdd3365c9b6b8f784cc32995fd5fb8a8"
+)
+M8_HEARING_PROMPT_V2_BUNDLE_SHA256: Final = (
+    "17a728278384e0eb9665094675e33165b8f3843d5fb2194b630f0cf61d2b68f6"
+)
+SUPPORTED_M4_PROMPT_BUNDLE_SHA256S: Final = frozenset(
+    {
+        FROZEN_M4_PROMPT_BUNDLE_SHA256,
+        LEGACY_M4_PROMPT_BUNDLE_SHA256,
+        M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
+    }
 )
 
 HEARING_PROSECUTOR_PROMPT_ID: Final = "hearing_prosecutor_v1"
@@ -411,8 +425,8 @@ def _validate_run_session_authority(
         _fail(HearingRequestPreparationErrorCode.SESSION_AUTHORITY_MISMATCH)
 
     if (
-        catalog.bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
-        or session.hearing_prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+        catalog.bundle_sha256 not in SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
+        or session.hearing_prompt_bundle_sha256 != catalog.bundle_sha256
     ):
         _fail(HearingRequestPreparationErrorCode.PROMPT_BUNDLE_MISMATCH)
 
@@ -508,11 +522,11 @@ def _eligible_crop(
     return True
 
 
-def _select_crop(
+def _select_crops(
     authority: EvidenceAuthority,
     role_authority: _RoleAuthority,
     run_manifest: RunManifest,
-) -> Crop:
+) -> tuple[Crop, ...]:
     pack = authority.pack
     available_canonical = tuple(
         crop
@@ -548,6 +562,24 @@ def _select_crop(
     if not eligible:
         _fail(HearingRequestPreparationErrorCode.PRIVACY_POLICY_VIOLATION)
 
+    if pack.event.evidence_class == EvidenceClass.ABSENCE:
+        sufficiency = pack.observation_sufficiency_input
+        if sufficiency is None:
+            _fail(HearingRequestPreparationErrorCode.EVIDENCE_AUTHORITY_MISMATCH)
+        decisive_ids = set(sufficiency.clear_crop_ids)
+        if not decisive_ids:
+            decisive_ids = set(sufficiency.unclear_crop_ids)
+        canonical_ids = {crop.crop_id for crop in available_canonical}
+        if not decisive_ids.issubset(canonical_ids):
+            _fail(HearingRequestPreparationErrorCode.MEDIA_UNAVAILABLE)
+        compatible_ids = {crop.crop_id for crop in manifest_compatible}
+        if not decisive_ids.issubset(compatible_ids):
+            _fail(HearingRequestPreparationErrorCode.RUN_MANIFEST_MISMATCH)
+        eligible_by_id = {crop.crop_id: crop for crop in eligible}
+        if not decisive_ids.issubset(eligible_by_id):
+            _fail(HearingRequestPreparationErrorCode.PRIVACY_POLICY_VIOLATION)
+        return tuple(eligible_by_id[crop_id] for crop_id in sorted(decisive_ids))
+
     new_crop_ids: set[str] = set()
     if authority.receipts:
         latest = authority.receipts[-1]
@@ -561,7 +593,7 @@ def _select_crop(
                 if ref.kind == ArtifactKind.CROP
             }
     newly_acquired = tuple(crop for crop in eligible if crop.crop_id in new_crop_ids)
-    return newly_acquired[0] if newly_acquired else eligible[0]
+    return ((newly_acquired[0] if newly_acquired else eligible[0]),)
 
 
 def _validate_grant(grant: HearingEvidenceGrant | None) -> None:
@@ -743,9 +775,25 @@ def _hearing_context(
 ) -> str:
     selected_ids = {item.crop_id for item in disclosure.media}
     selected_crops = tuple(crop for crop in pack.crops if crop.crop_id in selected_ids)
+    context_version = (
+        "m8-hearing-prompt-context-v2"
+        if session.hearing_prompt_bundle_sha256 == M8_HEARING_PROMPT_V2_BUNDLE_SHA256
+        else "m4-hearing-prompt-context-v1"
+    )
+    acquisition_capabilities = (
+        {
+            "REQUEST_MORE_FRAMES": "AVAILABLE",
+            "RECROP": "AVAILABLE",
+            "REDETECT_HIGH_RES": "AVAILABLE",
+            "TRACK_CONFIDENCE_CURVE": "AVAILABLE",
+            "OTHER_CAMERA_SAME_TIME": "TOOL_UNAVAILABLE",
+        }
+        if context_version == "m8-hearing-prompt-context-v2"
+        else None
+    )
     return canonical_json(
         {
-            "schema_version": "m4-hearing-prompt-context-v1",
+            "schema_version": context_version,
             "role": role.value,
             "session": {
                 "session_id": session.session_id,
@@ -801,6 +849,11 @@ def _hearing_context(
                     else None
                 ),
             },
+            **(
+                {"acquisition_capabilities": acquisition_capabilities}
+                if acquisition_capabilities is not None
+                else {}
+            ),
         }
     )
 
@@ -808,6 +861,7 @@ def _hearing_context(
 def _call_budget(
     *,
     primary: bool,
+    selected_images: int,
     selected_pixels: int,
     budget_usage: HearingBudgetUsage,
     session: HearingSession,
@@ -818,6 +872,7 @@ def _call_budget(
     try:
         limits = derive_hearing_call_budget_limits(
             primary=primary,
+            selected_images=selected_images,
             selected_pixels=selected_pixels,
             reserved_images=budget_usage.reserved_images,
             accounted_output_tokens=budget_usage.accounted_output_tokens,
@@ -860,7 +915,8 @@ def _render(
         variables=inputs.variables_for(rendered_role),
     )
     if (
-        rendered.manifest.prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+        rendered.manifest.prompt_bundle_sha256 != catalog.bundle_sha256
+        or catalog.bundle_sha256 not in SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
         or rendered.manifest.role != rendered_role
     ):
         _fail(HearingRequestPreparationErrorCode.PROMPT_BUNDLE_MISMATCH)
@@ -927,11 +983,11 @@ def prepare_primary_hearing_request(
     )
     _validate_evidence_authority(evidence_pack, evidence_authority)
     _validate_grant(hearing_grant)
-    selected_crop = _select_crop(evidence_authority, role_authority, run_manifest)
+    selected_crops = _select_crops(evidence_authority, role_authority, run_manifest)
     try:
         disclosure = derive_role_disclosure(
             evidence_authority,
-            (selected_crop.crop_id,),
+            tuple(sorted(crop.crop_id for crop in selected_crops)),
         )
         next_grant = extend_hearing_evidence_grant(hearing_grant, disclosure)
     except EvidenceDisclosureError:
@@ -965,7 +1021,8 @@ def prepare_primary_hearing_request(
     )
     budget = _call_budget(
         primary=True,
-        selected_pixels=selected_crop.output_width * selected_crop.output_height,
+        selected_images=len(selected_crops),
+        selected_pixels=sum(crop.output_width * crop.output_height for crop in selected_crops),
         budget_usage=budget_usage,
         session=session,
         config=config,
@@ -1005,7 +1062,7 @@ def prepare_primary_hearing_request(
         model_manifest_id=role_authority.model_manifest.model_manifest_id,
         execution_location=role_authority.profile.execution_location,
         prompt_manifest=rendered.manifest,
-        hearing_prompt_bundle_sha256=FROZEN_M4_PROMPT_BUNDLE_SHA256,
+        hearing_prompt_bundle_sha256=session.hearing_prompt_bundle_sha256,
         rendered_prompt_sha256=rendered.rendered_prompt_sha256,
         hearing_context_sha256=_document_sha256(inputs.hearing_context_json),
         media=disclosure.media,
@@ -1265,9 +1322,9 @@ def _validate_repair_authorities(
     ):
         _fail(HearingRequestPreparationErrorCode.MODEL_MANIFEST_MISMATCH)
     if (
-        session.hearing_prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
-        or catalog.bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
-        or request.hearing_prompt_bundle_sha256 != FROZEN_M4_PROMPT_BUNDLE_SHA256
+        session.hearing_prompt_bundle_sha256 != catalog.bundle_sha256
+        or catalog.bundle_sha256 not in SUPPORTED_M4_PROMPT_BUNDLE_SHA256S
+        or request.hearing_prompt_bundle_sha256 != catalog.bundle_sha256
     ):
         _fail(HearingRequestPreparationErrorCode.PROMPT_BUNDLE_MISMATCH)
     prompt_id = _ROLE_PROMPT_IDS[request.role]
@@ -1343,6 +1400,7 @@ def prepare_hearing_repair_request(
     )
     budget = _call_budget(
         primary=False,
+        selected_images=0,
         selected_pixels=0,
         budget_usage=budget_usage,
         session=session,
@@ -1426,6 +1484,9 @@ __all__ = [
     "HEARING_DEFENDER_PROMPT_ID",
     "HEARING_JUDGE_PROMPT_ID",
     "HEARING_PROSECUTOR_PROMPT_ID",
+    "LEGACY_M4_PROMPT_BUNDLE_SHA256",
+    "M8_HEARING_PROMPT_V2_BUNDLE_SHA256",
+    "SUPPORTED_M4_PROMPT_BUNDLE_SHA256S",
     "HearingBudgetUsage",
     "HearingCanonicalInputs",
     "HearingRequestGeneration",

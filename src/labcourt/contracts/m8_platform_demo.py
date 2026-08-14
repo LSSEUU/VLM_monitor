@@ -390,8 +390,16 @@ class M8PlatformEvidenceWorkspaceV1(FrozenContractModel):
     @field_validator("media_url")
     @classmethod
     def validate_source_url(cls, value: str | None) -> str | None:
-        if value is not None and value != "/api/m8/demo/public-media/recorded-video":
-            raise ValueError("M8 evidence source replay must use the fixed H.264 media route")
+        if value is None or value == "/api/m8/demo/public-media/recorded-video":
+            return value
+        prefix = "/api/m8/demo/scenario-runs/"
+        suffix = "/source-video"
+        if not value.startswith(prefix) or not value.endswith(suffix):
+            raise ValueError("M8 evidence source replay must use a same-origin H.264 route")
+        run_id = value[len(prefix) : -len(suffix)]
+        require_portable_run_id(run_id, "M8 evidence source replay run")
+        if "/" in run_id or "\\" in value or ".." in value:
+            raise ValueError("M8 evidence source replay route is not controlled")
         return value
 
     @model_validator(mode="after")
@@ -552,12 +560,17 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
     state: Literal["RUNNING", "SUCCEEDED", "FAILED"]
     stages: tuple[M8PlatformScenarioStageV1, ...] = Field(min_length=6, max_length=6)
     case_id: ReferenceToken | None = None
+    hearing_case_id: ReferenceToken | None = None
     case_status: M8OperationalCaseStatus | None = None
     notification_id: ReferenceToken | None = None
     recognition_mode: M8PlatformRecognitionMode | None = None
     retry_of_run_id: ReferenceToken | None = None
     model_components: tuple[M8PlatformModelComponentV1, ...] = Field(default=(), max_length=2)
-    outcome: Literal["ACTIONABLE_RISK", "NO_ACTIONABLE_RISK_ESTABLISHED"] | None = None
+    outcome: Literal[
+        "ACTIONABLE_RISK",
+        "NO_ACTIONABLE_RISK_ESTABLISHED",
+        "HUMAN_REVIEW_REQUIRED",
+    ] | None = None
     evidence: tuple[M8PlatformEvidenceViewV1, ...] = Field(default=(), max_length=24)
     video_profile: M8PlatformVideoProfileV1 | None = None
     perception_preview_url: str | None = None
@@ -600,6 +613,8 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
             raise ValueError("M8 platform failed scenario requires exactly one failure code")
         if (self.case_id is None) != (self.case_status is None):
             raise ValueError("M8 platform scenario Case projection must be complete")
+        if self.hearing_case_id is not None and self.case_id is None:
+            raise ValueError("M8 platform hearing source requires an operational Case")
         is_ppe = self.scenario_kind == M8PlatformScenarioKind.PPE_GOGGLES_MISSING
         if is_ppe != (self.recognition_mode is not None):
             raise ValueError("PPE runs require an explicit recognition mode")
@@ -616,6 +631,18 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
             value is not None for value in (self.case_id, self.notification_id)
         ):
             raise ValueError("no-action PPE run cannot create a Case or notification")
+        if self.outcome == "HUMAN_REVIEW_REQUIRED" and any(
+            value is not None
+            for value in (
+                self.case_id,
+                self.notification_id,
+                self.raw_response_ref,
+                self.screening_decision,
+            )
+        ):
+            raise ValueError(
+                "human-review PPE routing cannot claim a Case, provider response, or decision"
+            )
         if (
             self.state == "SUCCEEDED"
             and is_ppe
@@ -624,6 +651,7 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
                 value is None
                 for value in (
                     self.video_profile,
+                    self.hearing_case_id,
                     self.perception_preview_url,
                     self.screening_decision,
                     self.screening_summary,

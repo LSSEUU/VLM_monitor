@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "VlmRole": {
+      "enum": [
+        "SCREENING",
+        "STRUCTURE_REPAIR",
+        "PROSECUTOR",
+        "DEFENDER",
+        "JUDGE"
+      ],
+      "title": "VlmRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-qwen-hearing-provider-receipt-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Secret-free linkage from one provider envelope to frozen M4 authority.",
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "estimated_cost_cny": {
+      "minimum": 0,
+      "title": "Estimated Cost Cny",
+      "type": "number"
+    },
+    "input_tokens": {
+      "minimum": 0,
+      "title": "Input Tokens",
+      "type": "integer"
+    },
+    "labcourt_response_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Labcourt Response Id",
+      "type": "string"
+    },
+    "latency_ms": {
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "output_tokens": {
+      "minimum": 0,
+      "title": "Output Tokens",
+      "type": "integer"
+    },
+    "provider_profile": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Provider Profile",
+      "type": "string"
+    },
+    "provider_response_id": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Provider Response Id",
+      "type": "string"
+    },
+    "raw_response_ref": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "title": "Raw Response Ref",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/VlmRole"
+    },
+    "schema_version": {
+      "const": "m8-qwen-hearing-provider-receipt-v1",
+      "default": "m8-qwen-hearing-provider-receipt-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "role",
+    "provider_profile",
+    "provider_response_id",
+    "labcourt_response_id",
+    "raw_response_ref",
+    "content_sha256",
+    "input_tokens",
+    "output_tokens",
+    "latency_ms",
+    "estimated_cost_cny"
+  ],
+  "title": "M8QwenHearingProviderReceiptV1",
+  "type": "object"
+}

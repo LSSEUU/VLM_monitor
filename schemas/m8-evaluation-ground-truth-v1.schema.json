@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "EvidenceClass": {
+      "enum": [
+        "PRESENCE",
+        "ABSENCE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "M8EvaluationExpectedRoute": {
+      "enum": [
+        "NO_CANDIDATE",
+        "FAST_VERDICT",
+        "HEARING",
+        "HUMAN_REVIEW"
+      ],
+      "title": "M8EvaluationExpectedRoute",
+      "type": "string"
+    },
+    "M8EvaluationLabelIntervalV1": {
+      "additionalProperties": false,
+      "properties": {
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "ppe_state": {
+          "$ref": "#/$defs/M8EvaluationPpeState"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_frame",
+        "end_frame_exclusive",
+        "ppe_state"
+      ],
+      "title": "M8EvaluationLabelIntervalV1",
+      "type": "object"
+    },
+    "M8EvaluationPpeState": {
+      "enum": [
+        "WORN",
+        "NOT_WORN",
+        "UNCLEAR"
+      ],
+      "title": "M8EvaluationPpeState",
+      "type": "string"
+    },
+    "M8EvaluationReviewState": {
+      "enum": [
+        "DRAFT",
+        "HUMAN_CONFIRMED"
+      ],
+      "title": "M8EvaluationReviewState",
+      "type": "string"
+    },
+    "ViolationType": {
+      "enum": [
+        "PPE_GOGGLES_MISSING",
+        "PPE_GLOVES_MISSING",
+        "PPE_LAB_COAT_MISSING",
+        "REAGENT_CONTAINER_OPEN",
+        "FOOD_OR_DRINK_IN_LAB",
+        "SINGLE_PERSON_HAZARDOUS_OPERATION",
+        "FUME_HOOD_SASH_TOO_HIGH",
+        "UNATTENDED_HEATING",
+        "SMOKE_ABNORMAL",
+        "OPEN_FLAME"
+      ],
+      "title": "ViolationType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-evaluation-ground-truth-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "asset_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "evidence_class": {
+      "$ref": "#/$defs/EvidenceClass"
+    },
+    "expected_route": {
+      "$ref": "#/$defs/M8EvaluationExpectedRoute"
+    },
+    "ground_truth_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "readOnly": true,
+      "title": "Ground Truth Id",
+      "type": "string"
+    },
+    "intervals": {
+      "items": {
+        "$ref": "#/$defs/M8EvaluationLabelIntervalV1"
+      },
+      "maxItems": 2000,
+      "minItems": 1,
+      "title": "Intervals",
+      "type": "array"
+    },
+    "label_manifest_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Label Manifest Id",
+      "type": "string"
+    },
+    "machine_output_is_ground_truth": {
+      "const": false,
+      "default": false,
+      "title": "Machine Output Is Ground Truth",
+      "type": "boolean"
+    },
+    "review_state": {
+      "$ref": "#/$defs/M8EvaluationReviewState"
+    },
+    "reviewed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reviewed At"
+    },
+    "reviewer_actor_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Reviewer Actor Id",
+      "type": "string"
+    },
+    "revision": {
+      "exclusiveMinimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "m8-evaluation-ground-truth-v1",
+      "default": "m8-evaluation-ground-truth-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "violation_type": {
+      "$ref": "#/$defs/ViolationType"
+    }
+  },
+  "required": [
+    "asset_id",
+    "revision",
+    "violation_type",
+    "evidence_class",
+    "intervals",
+    "expected_route",
+    "review_state",
+    "reviewer_actor_id",
+    "label_manifest_id",
+    "ground_truth_id"
+  ],
+  "title": "M8EvaluationGroundTruthV1",
+  "type": "object"
+}

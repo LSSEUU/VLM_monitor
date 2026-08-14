@@ -1,0 +1,32 @@
+{
+  "$id": "https://schemas.labcourt.local/v2/m8-evaluation-media-import-request-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "explicit_human_confirmation": {
+      "const": true,
+      "title": "Explicit Human Confirmation",
+      "type": "boolean"
+    },
+    "relative_paths": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 100,
+      "title": "Relative Paths",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "m8-evaluation-media-import-request-v1",
+      "default": "m8-evaluation-media-import-request-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "explicit_human_confirmation"
+  ],
+  "title": "M8EvaluationMediaImportRequestV1",
+  "type": "object"
+}

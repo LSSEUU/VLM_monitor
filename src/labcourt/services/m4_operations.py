@@ -23,7 +23,12 @@ from labcourt.adapters.acquisition_fake import (
 from labcourt.adapters.fake_precedent_embeddings import (
     DeterministicFakePrecedentEmbeddingProvider,
 )
-from labcourt.adapters.hearing_prompt_renderer import HearingJinjaPromptCatalog
+from labcourt.adapters.hearing_prompt_renderer import (
+    HEARING_PROMPT_DEFINITIONS,
+    LEGACY_HEARING_PROMPT_DEFINITIONS,
+    M8_HEARING_PROMPT_V2_DEFINITIONS,
+    HearingJinjaPromptCatalog,
+)
 from labcourt.adapters.storage.hearing_model_response_store import (
     SecureHearingModelResponseStore,
 )
@@ -46,6 +51,11 @@ from labcourt.application.hearing_precedent_retrieval import (
 )
 from labcourt.application.hearing_procedural_review import (
     DeterministicHearingProceduralReviewVerifier,
+)
+from labcourt.application.hearing_request import (
+    FROZEN_M4_PROMPT_BUNDLE_SHA256,
+    LEGACY_M4_PROMPT_BUNDLE_SHA256,
+    M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
 )
 from labcourt.application.hearing_role_call import HearingRoleCallService
 from labcourt.application.m5_hearing_precedent_bridge import (
@@ -156,7 +166,9 @@ def _fixture_mapping(bundle: M4FakeVLMFixtureBundle) -> Mapping[str, FakeVLMFixt
     return MappingProxyType(mapped)
 
 
-def build_hearing_prompt_catalog() -> HearingJinjaPromptCatalog:
+def build_hearing_prompt_catalog(
+    bundle_sha256: str = FROZEN_M4_PROMPT_BUNDLE_SHA256,
+) -> HearingJinjaPromptCatalog:
     """Build the checked-in, independent M4 prompt/schema authority."""
 
     schemas = expected_schema_files()
@@ -169,7 +181,18 @@ def build_hearing_prompt_catalog() -> HearingJinjaPromptCatalog:
         ),
         "hearing_judge_v1": canonical_json(json.loads(schemas["judge-model-payload.schema.json"])),
     }
-    return HearingJinjaPromptCatalog(output_schema_json_by_prompt=documents)
+    definitions = {
+        FROZEN_M4_PROMPT_BUNDLE_SHA256: HEARING_PROMPT_DEFINITIONS,
+        LEGACY_M4_PROMPT_BUNDLE_SHA256: LEGACY_HEARING_PROMPT_DEFINITIONS,
+        M8_HEARING_PROMPT_V2_BUNDLE_SHA256: M8_HEARING_PROMPT_V2_DEFINITIONS,
+    }.get(bundle_sha256)
+    if definitions is None:
+        raise ValueError("unsupported M4 hearing prompt bundle")
+    return HearingJinjaPromptCatalog(
+        output_schema_json_by_prompt=documents,
+        expected_bundle_sha256=bundle_sha256,
+        definitions=definitions,
+    )
 
 
 def _fake_acquisition_executor(

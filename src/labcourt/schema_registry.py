@@ -278,6 +278,12 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalCaseTransitionCommandV1,
 )
+from labcourt.contracts.m8_acquisition_v2 import (
+    M8HearingAcquisitionResultV2,
+    M8HearingAcquisitionResultViewV2,
+    M8RedetectionOutcomeV1,
+    M8TrackConfidenceSeriesV1,
+)
 from labcourt.contracts.m8_adapter_commissioning import (
     M8AdapterActivationIntentV1,
     M8AdapterReadinessAssessmentV1,
@@ -308,11 +314,41 @@ from labcourt.contracts.m8_api import (
     M8ApiKnowledgeQueryRequestV1,
     M8ApiPrincipalV1,
 )
+from labcourt.contracts.m8_calibration import (
+    M8CalibrationArtifactV1,
+    M8CalibrationDatasetManifestV1,
+    M8CalibrationFitResultV1,
+    M8CalibrationReportV1,
+    M8DetectorScoreObservationV1,
+    M8EventRiskAssessmentV1,
+    M8EvidenceQualityAssessmentV1,
+)
+from labcourt.contracts.m8_calibration_api import (
+    M8CalibrationDashboardV1,
+    M8CalibrationDatasetCreateRequestV1,
+    M8CalibrationFitRequestV1,
+    M8RunRiskAssessmentViewV1,
+)
 from labcourt.contracts.m8_case_persistence import (
     M8ActorAuthorityCommitReceiptV1,
     M8OperationalCaseAuditEventV1,
     M8OperationalCaseAuthorityV1,
     M8OperationalCaseCommitReceiptV1,
+)
+from labcourt.contracts.m8_evaluation import (
+    M8CaptureSegmentV1,
+    M8EvaluationCampaignCreateRequestV1,
+    M8EvaluationCampaignStartRequestV1,
+    M8EvaluationCampaignV1,
+    M8EvaluationDashboardV1,
+    M8EvaluationGroundTruthImportRequestV1,
+    M8EvaluationGroundTruthV1,
+    M8EvaluationMediaAssetV1,
+    M8EvaluationMediaImportRequestV1,
+    M8EvaluationRunV1,
+    M8LiveIngestSessionV1,
+    M8LiveIngestStartRequestV1,
+    M8RunSourceRefV1,
 )
 from labcourt.contracts.m8_feishu_activation import (
     M8FeishuSandboxActivationCommitReceiptV1,
@@ -346,7 +382,6 @@ from labcourt.contracts.m8_feishu_inbound_reply import (
     M8FeishuInboundReplyCommitReceiptV1,
     M8FeishuInboundReplyCorrelationAuthorityV1,
 )
-from labcourt.contracts.m8_feishu_local_demo import M8FeishuLocalDemoConfigV1
 from labcourt.contracts.m8_feishu_live import (
     M8FeishuAgentReplyCompletionV1,
     M8FeishuAgentReplyEnvelopeV1,
@@ -365,6 +400,7 @@ from labcourt.contracts.m8_feishu_live import (
     M8FeishuRuntimeStatusV2,
     M8FeishuTestCardDispatchRequestV1,
 )
+from labcourt.contracts.m8_feishu_local_demo import M8FeishuLocalDemoConfigV1
 from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuCardDispatchPreflightV1,
@@ -386,6 +422,11 @@ from labcourt.contracts.m8_feishu_platform import (
 from labcourt.contracts.m8_feishu_transport import (
     M8FeishuSandboxSendReceiptV1,
     M8FeishuTokenAcquisitionReceiptV1,
+)
+from labcourt.contracts.m8_hearing_api import (
+    M8HearingProviderSelectionV1,
+    M8HearingStartRequestV1,
+    M8HearingViewV1,
 )
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
@@ -491,12 +532,22 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformScenarioRunV1,
     M8PlatformScenarioStartRequestV1,
 )
+from labcourt.contracts.m8_prehearing import (
+    M8PreHearingEvidencePreparationV1,
+    M8PreHearingPreparationViewV1,
+)
 from labcourt.contracts.m8_projection_views import M8OperationsProjectionViewV1
 from labcourt.contracts.m8_projections import (
     M8OperationsProjectionV1,
     M8ProjectionMapNodeV1,
     M8ProjectionOverviewV1,
     M8ProjectionSourceV1,
+)
+from labcourt.contracts.m8_qwen_hearing_demo import (
+    M8QwenHearingDemoAttemptReceiptV1,
+    M8QwenHearingDemoEvidenceV1,
+    M8QwenHearingDemoPreparationV1,
+    M8QwenHearingProviderReceiptV1,
 )
 from labcourt.contracts.m8_sensor_persistence import (
     M8SensorPollCacheCommitReceiptV1,
@@ -818,6 +869,30 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-api-error-response-v1": M8ApiErrorResponseV1,
     "m8-api-knowledge-query-request-v1": M8ApiKnowledgeQueryRequestV1,
     "m8-api-principal-v1": M8ApiPrincipalV1,
+    "m8-hearing-acquisition-result-v2": M8HearingAcquisitionResultV2,
+    "m8-hearing-acquisition-result-view-v2": M8HearingAcquisitionResultViewV2,
+    "m8-hearing-provider-selection-v1": M8HearingProviderSelectionV1,
+    "m8-hearing-start-request-v1": M8HearingStartRequestV1,
+    "m8-hearing-view-v1": M8HearingViewV1,
+    "m8-prehearing-preparation-v1": M8PreHearingEvidencePreparationV1,
+    "m8-prehearing-preparation-view-v1": M8PreHearingPreparationViewV1,
+    "m8-redetection-outcome-v1": M8RedetectionOutcomeV1,
+    "m8-track-confidence-series-v1": M8TrackConfidenceSeriesV1,
+    "m8-calibration-artifact-v1": M8CalibrationArtifactV1,
+    "m8-calibration-dashboard-v1": M8CalibrationDashboardV1,
+    "m8-calibration-dataset-create-request-v1": M8CalibrationDatasetCreateRequestV1,
+    "m8-calibration-dataset-manifest-v1": M8CalibrationDatasetManifestV1,
+    "m8-calibration-fit-request-v1": M8CalibrationFitRequestV1,
+    "m8-calibration-fit-result-v1": M8CalibrationFitResultV1,
+    "m8-calibration-report-v1": M8CalibrationReportV1,
+    "m8-detector-score-observation-v1": M8DetectorScoreObservationV1,
+    "m8-event-risk-assessment-v1": M8EventRiskAssessmentV1,
+    "m8-evidence-quality-assessment-v1": M8EvidenceQualityAssessmentV1,
+    "m8-run-risk-assessment-view-v1": M8RunRiskAssessmentViewV1,
+    "m8-qwen-hearing-demo-attempt-receipt-v1": M8QwenHearingDemoAttemptReceiptV1,
+    "m8-qwen-hearing-demo-evidence-v1": M8QwenHearingDemoEvidenceV1,
+    "m8-qwen-hearing-demo-preparation-v1": M8QwenHearingDemoPreparationV1,
+    "m8-qwen-hearing-provider-receipt-v1": M8QwenHearingProviderReceiptV1,
     "m8-campus-location": M8CampusLocation,
     "m8-campus-topology-authority-v1": M8CampusTopologyAuthorityV1,
     "m8-campus-topology-commit-receipt-v1": M8CampusTopologyCommitReceiptV1,
@@ -940,6 +1015,19 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-notification-template-authority-v1": M8NotificationTemplateAuthorityV1,
     "m8-notification-transition-command-v1": M8NotificationTransitionCommandV1,
     "m8-notification-workflow-manifest-authority-v1": (M8NotificationWorkflowManifestAuthorityV1),
+    "m8-capture-segment-v1": M8CaptureSegmentV1,
+    "m8-evaluation-campaign-create-request-v1": M8EvaluationCampaignCreateRequestV1,
+    "m8-evaluation-campaign-start-request-v1": M8EvaluationCampaignStartRequestV1,
+    "m8-evaluation-campaign-v1": M8EvaluationCampaignV1,
+    "m8-evaluation-dashboard-v1": M8EvaluationDashboardV1,
+    "m8-evaluation-ground-truth-import-request-v1": (M8EvaluationGroundTruthImportRequestV1),
+    "m8-evaluation-ground-truth-v1": M8EvaluationGroundTruthV1,
+    "m8-evaluation-media-asset-v1": M8EvaluationMediaAssetV1,
+    "m8-evaluation-media-import-request-v1": M8EvaluationMediaImportRequestV1,
+    "m8-evaluation-run-v1": M8EvaluationRunV1,
+    "m8-live-ingest-session-v1": M8LiveIngestSessionV1,
+    "m8-live-ingest-start-request-v1": M8LiveIngestStartRequestV1,
+    "m8-run-source-ref-v1": M8RunSourceRefV1,
     "m8-offline-notification-card-v1": M8OfflineNotificationCardV1,
     "m8-operational-case-create-command-v1": M8OperationalCaseCreateCommandV1,
     "m8-operational-case-transition-command-v1": M8OperationalCaseTransitionCommandV1,
@@ -1099,6 +1187,13 @@ SCHEMA_VALIDATION_MODELS = {
     "m8-feishu-test-card-dispatch-request-v1",
     "m8-platform-reset-request-v1",
     "m8-platform-scenario-start-request-v1",
+    "m8-evaluation-campaign-create-request-v1",
+    "m8-evaluation-campaign-start-request-v1",
+    "m8-calibration-dataset-create-request-v1",
+    "m8-calibration-fit-request-v1",
+    "m8-evaluation-ground-truth-import-request-v1",
+    "m8-evaluation-media-import-request-v1",
+    "m8-live-ingest-start-request-v1",
     "prosecutor-model-payload",
     "screening-model-payload",
 }

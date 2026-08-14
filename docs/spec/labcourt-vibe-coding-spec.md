@@ -1124,11 +1124,16 @@ L2 只判断清晰度与数量，不判断“戴/未戴”。
 
 对 `frame_observations` 聚合：
 
-- 清晰帧数为 0 → `ESCALATE`。
+- 清晰帧数小于 K → `ESCALATE`,并在 M8 组装中进入会审前证据准备门;不得直接创建三角色 session。
 - 任一清晰帧为 `WORN` 且位于涉嫌违规区间 → `NOT_ESTABLISHED`。
 - 所有清晰帧均 `NOT_WORN`，且数量 >= K → `ESTABLISHED`。
 - 其余 → `ESCALATE`。
 - 阈值后纠正帧为 `WORN` 不自动推翻涉嫌区间，但必须写入“已纠正”上下文。
+
+M8 会审前准备门只读取 `ObservationSufficiencyInput.clear_crop_ids` 和
+`required_clear_count`,不读取 provider 概率或自由文本。它最多发布一个新的普通 M2 pack 并重跑一次
+L3;无新清晰证据、工具不可用或再次不足时转 `HUMAN_REVIEW`。已有 hearing session、
+`REWORK_REQUIRED` 和历史 run 不受它改写。
 
 ### 11.4 快审判决构造
 
@@ -1217,6 +1222,19 @@ REDETECT_HIGH_RES
 - 输出 Detection 绑定新的 model manifest。
 - 若发现 PPE，仅作为反证交给角色与程序审查。
 - 不允许模型服务修改原始 Detection。
+- 真实零检测不得伪造 Detection。当冻结 M4 v1 无法表达空输出时,由内容绑定的 M8 增量结果记录
+  `SUCCEEDED_EMPTY / V1_UNREPRESENTABLE`,案件转人工,不得将“未检出”当成“证明缺失”。
+- 完整逐帧置信曲线以类型化 M8 series 保存;冻结 M4 只消费可验证的聚合 `ObjectiveFact`。
+
+### 12.6 非大模型概率校准边界
+
+- `ObservabilityScore` 只表示证据质量,不得称为违规概率,也不得在 L1 候选触发前做召回压制。
+- 违规风险特征只能来自内容绑定的本地检测分数、恢复记录、时序覆盖和轨迹连续性。
+- 禁止把 `ScreeningModelPayload.violation_probability`、帧弱标签或控辩裁 confidence 作为校准输入。
+- v1 采用正则逻辑回归与 held-out Platt scaling;无 raw logits 时禁止声称 temperature scaling。
+- 数据按录制会话/资产/摄像头/日期分组切分,相邻帧不得跨 development/calibration/sealed-test。
+- 模型、配置、特征 schema、数据快照或适用域不匹配时返回 `NOT_APPLICABLE`,不回退到 VLM 自报分数。
+- 未通过封存测试和人工激活的工件只能以 `SHADOW` 运行,不改变 M3/M4/L5/告警路由。
 
 ---
 

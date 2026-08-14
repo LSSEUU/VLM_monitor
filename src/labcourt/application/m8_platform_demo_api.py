@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from labcourt.adapters.m8_calibration_observation import (
+    EvaluationCalibrationAssetResolver,
+    RealM8CalibrationWorkerTransportFactory,
+)
 from labcourt.adapters.m8_hashed_bearer_authenticator import M8HashedBearerAuthenticator
 from labcourt.adapters.m8_qwen_agent import build_m8_qwen_agent_runtime
 from labcourt.adapters.storage.sqlite_m8_adapter_commissioning_repository import (
@@ -14,6 +18,12 @@ from labcourt.adapters.storage.sqlite_m8_adapter_commissioning_repository import
 )
 from labcourt.adapters.storage.sqlite_m8_agent_conversation_repository import (
     SQLiteM8AgentConversationRepository,
+)
+from labcourt.adapters.storage.sqlite_m8_calibration_repository import (
+    SQLiteM8CalibrationRepository,
+)
+from labcourt.adapters.storage.sqlite_m8_evaluation_repository import (
+    SQLiteM8EvaluationRepository,
 )
 from labcourt.adapters.storage.sqlite_m8_feishu_activation_repository import (
     SQLiteM8FeishuActivationRepository,
@@ -59,9 +69,16 @@ from labcourt.m8_platform_server import M8PlatformHttpServer, build_m8_platform_
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
 from labcourt.services.m8_agent_chat import M8AgentChatService
 from labcourt.services.m8_agent_tools import M8PlatformAgentToolService
+from labcourt.services.m8_calibration import M8CalibrationService
+from labcourt.services.m8_calibration_api import M8CalibrationApiService
+from labcourt.services.m8_calibration_observation import (
+    M8CalibrationObservationService,
+)
 from labcourt.services.m8_case_memory import M8ScopedOperationalCaseMemoryAdapter
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
+from labcourt.services.m8_evaluation import M8EvaluationService
 from labcourt.services.m8_feishu_platform import M8FeishuPlatformService
+from labcourt.services.m8_hearing_api import M8HearingApiService
 from labcourt.services.m8_knowledge_api import M8KnowledgeApiService
 from labcourt.services.m8_knowledge_projection import M8KnowledgeProjectionService
 from labcourt.services.m8_notification_api import M8NotificationApiService
@@ -70,6 +87,7 @@ from labcourt.services.m8_operations_projection import M8OperationsProjectionSer
 from labcourt.services.m8_platform_agent import M8PlatformAgentService
 from labcourt.services.m8_platform_demo import M8PlatformDemoService
 from labcourt.services.m8_projection_api import M8ProjectionApiService
+from labcourt.services.m8_qwen_hearing_demo import build_m8_qwen_hearing_demo_config
 from labcourt.services.m8_recorded_media_api import M8RecordedMediaApiService
 from labcourt.services.m8_rule_config_api import M8RuleConfigApiService
 from labcourt.services.m8_user_permission_api import M8UserPermissionApiService
@@ -115,9 +133,18 @@ def _pilot_config(project_root: Path, *, fixture: bool) -> AppConfig:
     pilot = load_config(project_root / "configs/pilot.yaml")
     payload = demo.model_dump(mode="python", exclude_computed_fields=True)
     pilot_payload = pilot.model_dump(mode="python", exclude_computed_fields=True)
-    payload["zones"] = pilot_payload["zones"]
-    payload["pilot"] = pilot_payload["pilot"]
-    payload["perception"] = pilot_payload["perception"]
+    # These sections form one decision authority.  Mixing the Pilot
+    # observability threshold with the Demo procedural gate makes a valid
+    # absence fast verdict fail L5 and incorrectly become hearing-eligible.
+    for section in (
+        "zones",
+        "pilot",
+        "perception",
+        "absence",
+        "presence",
+        "procedural_gate",
+    ):
+        payload[section] = pilot_payload[section]
     if fixture:
         screening = dict(payload["screening"])
         providers = dict(payload["providers"])
@@ -147,7 +174,8 @@ def _pilot_config(project_root: Path, *, fixture: bool) -> AppConfig:
         payload["providers"] = providers
         screening["provider_profile"] = "pilot-screening"
     payload["screening"] = screening
-    return AppConfig.model_validate(payload)
+    config = AppConfig.model_validate(payload)
+    return config if fixture else build_m8_qwen_hearing_demo_config(config)
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,6 +185,7 @@ class M8PlatformDemoApiAssembly:
     artifact_root: Path
     input_media_path: Path
     feishu_live: M8FeishuLiveAssembly
+    evaluation_service: M8EvaluationService
 
     def local_access_document(self) -> dict[str, object]:
         receipt = load_m8_platform_bootstrap(self.artifact_root)
@@ -189,6 +218,14 @@ def assemble_m8_platform_demo_api(
     else:
         load_m8_platform_bootstrap(database.parent)
     repository_manifest_id = platform_manifest("labcourt-platform-sqlite-repository-v1")
+    evaluation_repository = SQLiteM8EvaluationRepository.initialize(
+        database, _BUSY_TIMEOUT_MS, repository_manifest_id
+    )
+    calibration_repository = SQLiteM8CalibrationRepository.initialize(
+        database,
+        _BUSY_TIMEOUT_MS,
+        platform_manifest("platform-calibration-repository-v1"),
+    )
     inventory = SQLiteM8InventoryRepository(database, _BUSY_TIMEOUT_MS, repository_manifest_id)
     operations = SQLiteM8OperationsRepository(database, _BUSY_TIMEOUT_MS, repository_manifest_id)
     sensors = SQLiteM8SensorPersistenceRepository(
@@ -346,6 +383,29 @@ def assemble_m8_platform_demo_api(
         principal_for_actor=principal_for_actor,
         clock=clock,
     )
+    evaluation_service = M8EvaluationService(
+        project_root=root,
+        repository=evaluation_repository,
+        operations_repository=operations,
+        platform_service=platform_service,
+    )
+    calibration_observation_service = M8CalibrationObservationService(
+        config=model_pilot_service.config,
+        repository=calibration_repository,
+        asset_resolver=EvaluationCalibrationAssetResolver(
+            project_root=root,
+            config=model_pilot_service.config,
+            asset_lookup=evaluation_repository.get_media,
+        ),
+        worker_transport_factory=RealM8CalibrationWorkerTransportFactory(root),
+    )
+    calibration_service = M8CalibrationApiService(
+        operations_repository=operations,
+        evaluation_service=evaluation_service,
+        repository=calibration_repository,
+        calibration_service=M8CalibrationService(),
+        observation_service=calibration_observation_service,
+    )
     catalog = inventory.get_current_source_catalog(PLATFORM_CAMPUS_ID)
     smoke_policy = build_offline_smoke_demo_bundle(
         source_catalog_id=catalog.catalog.catalog_id,
@@ -376,9 +436,20 @@ def assemble_m8_platform_demo_api(
             operations, tuple(sorted(_ROLE_ACTORS.values()))
         ),
         rule_config_service=M8RuleConfigApiService(operations, smoke_policy),
+        hearing_service=M8HearingApiService(
+            operations,
+            {},
+            runtime_resolver=platform_service.open_hearing_runtime,
+            case_id_resolver=platform_service.resolve_hearing_case_id,
+            prehearing_resolver=platform_service.prehearing_preparation,
+            prehearing_router=platform_service.route_prehearing,
+            acquisition_resolver=platform_service.hearing_acquisitions,
+        ),
         platform_service=platform_service,
         agent_chat_service=agent_chat,
         feishu_live_service=feishu_live.api,
+        evaluation_service=evaluation_service,
+        calibration_service=calibration_service,
         role_tokens=M8_PLATFORM_ROLE_TOKENS,
     )
     assembly = M8PlatformDemoApiAssembly(
@@ -387,6 +458,7 @@ def assemble_m8_platform_demo_api(
         artifact_root=database.parent,
         input_media_path=input_media_path.absolute(),
         feishu_live=feishu_live,
+        evaluation_service=evaluation_service,
     )
     assembly.write_local_access()
     return assembly

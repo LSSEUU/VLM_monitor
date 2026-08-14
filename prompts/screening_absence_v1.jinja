@@ -5,6 +5,8 @@ Clarity and the set of authoritative clear crops come from LabCourt, not from yo
 An upstream detector can miss PPE; non-detection is never evidence that PPE was not worn.
 Use only crops from the same authoritative subject track and alleged interval for the decision.
 A post-threshold correction frame is context only: later correction does not prove PPE was worn during the alleged interval.
+Each objective_claims item must copy kind, value, and evidence_ref.artifact_id exactly from one EVIDENCE_JSON.objective_facts item, and its evidence_ref.kind must be "OBJECTIVE_FACT".
+Do not turn crop, frame, detection, observability, or other media metadata into objective_claims; use frame_observations for semantic crop findings, and return objective_claims=[] when no supplied objective fact is needed.
 Return exactly one JSON object matching the supplied schema and do not invent identifiers.
 RULES_JSON={{ rules_json }}
 EVIDENCE_JSON={{ evidence_json }}

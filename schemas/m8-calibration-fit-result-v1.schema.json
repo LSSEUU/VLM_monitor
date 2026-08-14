@@ -1,0 +1,727 @@
+{
+  "$defs": {
+    "M8BinaryCalibrationMetricsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "accuracy": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Accuracy",
+          "type": "number"
+        },
+        "bootstrap_iterations": {
+          "exclusiveMinimum": 0,
+          "title": "Bootstrap Iterations",
+          "type": "integer"
+        },
+        "brier_score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Brier Score",
+          "type": "number"
+        },
+        "confidence_intervals": {
+          "items": {
+            "$ref": "#/$defs/M8MetricConfidenceIntervalV1"
+          },
+          "title": "Confidence Intervals",
+          "type": "array"
+        },
+        "decision_threshold": {
+          "exclusiveMaximum": 1,
+          "exclusiveMinimum": 0,
+          "title": "Decision Threshold",
+          "type": "number"
+        },
+        "expected_calibration_error": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Expected Calibration Error",
+          "type": "number"
+        },
+        "false_negative": {
+          "minimum": 0,
+          "title": "False Negative",
+          "type": "integer"
+        },
+        "false_positive": {
+          "minimum": 0,
+          "title": "False Positive",
+          "type": "integer"
+        },
+        "false_positive_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "False Positive Rate",
+          "type": "number"
+        },
+        "log_loss": {
+          "minimum": 0,
+          "title": "Log Loss",
+          "type": "number"
+        },
+        "negative_count": {
+          "exclusiveMinimum": 0,
+          "title": "Negative Count",
+          "type": "integer"
+        },
+        "positive_count": {
+          "exclusiveMinimum": 0,
+          "title": "Positive Count",
+          "type": "integer"
+        },
+        "recall": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Recall",
+          "type": "number"
+        },
+        "reliability_bins": {
+          "items": {
+            "$ref": "#/$defs/M8ReliabilityBinV1"
+          },
+          "title": "Reliability Bins",
+          "type": "array"
+        },
+        "sample_count": {
+          "exclusiveMinimum": 0,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "true_negative": {
+          "minimum": 0,
+          "title": "True Negative",
+          "type": "integer"
+        },
+        "true_positive": {
+          "minimum": 0,
+          "title": "True Positive",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_count",
+        "positive_count",
+        "negative_count",
+        "true_positive",
+        "true_negative",
+        "false_positive",
+        "false_negative",
+        "decision_threshold",
+        "accuracy",
+        "recall",
+        "false_positive_rate",
+        "brier_score",
+        "log_loss",
+        "expected_calibration_error",
+        "reliability_bins",
+        "confidence_intervals",
+        "bootstrap_iterations"
+      ],
+      "title": "M8BinaryCalibrationMetricsV1",
+      "type": "object"
+    },
+    "M8CalibrationArtifactV1": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "config_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Config Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Dataset Manifest Id",
+          "type": "string"
+        },
+        "detector_model_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Detector Model Manifest Id",
+          "type": "string"
+        },
+        "event_risk_model": {
+          "$ref": "#/$defs/M8RegularizedLogisticModelV1"
+        },
+        "event_risk_platt": {
+          "$ref": "#/$defs/M8PlattScalerV1"
+        },
+        "evidence_quality_model": {
+          "$ref": "#/$defs/M8RegularizedLogisticModelV1"
+        },
+        "evidence_quality_platt": {
+          "$ref": "#/$defs/M8PlattScalerV1"
+        },
+        "evidence_quality_threshold": {
+          "exclusiveMaximum": 1,
+          "exclusiveMinimum": 0,
+          "title": "Evidence Quality Threshold",
+          "type": "number"
+        },
+        "feature_schema_version": {
+          "const": "M8_NON_LLM_CALIBRATION_FEATURES_V1",
+          "default": "M8_NON_LLM_CALIBRATION_FEATURES_V1",
+          "title": "Feature Schema Version",
+          "type": "string"
+        },
+        "llm_features_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Llm Features Permitted",
+          "type": "boolean"
+        },
+        "mode": {
+          "const": "SHADOW",
+          "default": "SHADOW",
+          "title": "Mode",
+          "type": "string"
+        },
+        "model_profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Profile Sha256",
+          "type": "string"
+        },
+        "parameter_encoding": {
+          "const": "CANONICAL_JSON_NO_PICKLE",
+          "default": "CANONICAL_JSON_NO_PICKLE",
+          "title": "Parameter Encoding",
+          "type": "string"
+        },
+        "routing_authority": {
+          "const": false,
+          "default": false,
+          "title": "Routing Authority",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-calibration-artifact-v1",
+          "default": "m8-calibration-artifact-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "dataset_manifest_id",
+        "detector_model_manifest_id",
+        "config_sha256",
+        "model_profile_sha256",
+        "evidence_quality_model",
+        "evidence_quality_platt",
+        "event_risk_model",
+        "event_risk_platt",
+        "evidence_quality_threshold",
+        "created_at"
+      ],
+      "title": "M8CalibrationArtifactV1",
+      "type": "object"
+    },
+    "M8CalibrationDatasetEntryV1": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "end_frame_exclusive": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame Exclusive",
+          "type": "integer"
+        },
+        "ground_truth_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Ground Truth Id",
+          "type": "string"
+        },
+        "ground_truth_revision": {
+          "exclusiveMinimum": 0,
+          "title": "Ground Truth Revision",
+          "type": "integer"
+        },
+        "group_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Group Id",
+          "type": "string"
+        },
+        "human_confirmed": {
+          "const": true,
+          "default": true,
+          "title": "Human Confirmed",
+          "type": "boolean"
+        },
+        "interval_index": {
+          "minimum": 0,
+          "title": "Interval Index",
+          "type": "integer"
+        },
+        "machine_output_is_ground_truth": {
+          "const": false,
+          "default": false,
+          "title": "Machine Output Is Ground Truth",
+          "type": "boolean"
+        },
+        "partition": {
+          "$ref": "#/$defs/M8CalibrationPartition"
+        },
+        "ppe_state": {
+          "$ref": "#/$defs/M8EvaluationPpeState"
+        },
+        "sample_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sample Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-calibration-dataset-entry-v1",
+          "default": "m8-calibration-dataset-entry-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_id",
+        "asset_id",
+        "ground_truth_id",
+        "ground_truth_revision",
+        "interval_index",
+        "start_frame",
+        "end_frame_exclusive",
+        "ppe_state",
+        "group_id",
+        "partition"
+      ],
+      "title": "M8CalibrationDatasetEntryV1",
+      "type": "object"
+    },
+    "M8CalibrationDatasetManifestV1": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Dataset Manifest Id",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/M8CalibrationDatasetEntryV1"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "machine_output_is_ground_truth": {
+          "const": false,
+          "default": false,
+          "title": "Machine Output Is Ground Truth",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "m8-calibration-dataset-manifest-v1",
+          "default": "m8-calibration-dataset-manifest-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "split_policy": {
+          "const": "SHA256_GROUP_60_20_20_V1",
+          "default": "SHA256_GROUP_60_20_20_V1",
+          "title": "Split Policy",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_manifest_id",
+        "entries",
+        "created_at"
+      ],
+      "title": "M8CalibrationDatasetManifestV1",
+      "type": "object"
+    },
+    "M8CalibrationFitStatus": {
+      "enum": [
+        "SHADOW_READY",
+        "INSUFFICIENT_DATA"
+      ],
+      "title": "M8CalibrationFitStatus",
+      "type": "string"
+    },
+    "M8CalibrationMetricName": {
+      "enum": [
+        "ACCURACY",
+        "RECALL",
+        "FALSE_POSITIVE_RATE",
+        "BRIER_SCORE",
+        "LOG_LOSS",
+        "ECE"
+      ],
+      "title": "M8CalibrationMetricName",
+      "type": "string"
+    },
+    "M8CalibrationPartition": {
+      "enum": [
+        "DEVELOPMENT",
+        "CALIBRATION",
+        "SEALED_TEST"
+      ],
+      "title": "M8CalibrationPartition",
+      "type": "string"
+    },
+    "M8CalibrationReasonCode": {
+      "enum": [
+        "INSUFFICIENT_DATA",
+        "ARTIFACT_UNAVAILABLE",
+        "CONFIG_MISMATCH",
+        "MODEL_PROFILE_MISMATCH",
+        "DETECTOR_MODEL_MISMATCH",
+        "FEATURE_SCHEMA_MISMATCH",
+        "EVIDENCE_INSUFFICIENT"
+      ],
+      "title": "M8CalibrationReasonCode",
+      "type": "string"
+    },
+    "M8CalibrationReportV1": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "dataset_manifest_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Dataset Manifest Id",
+          "type": "string"
+        },
+        "event_risk_metrics": {
+          "$ref": "#/$defs/M8BinaryCalibrationMetricsV1"
+        },
+        "evidence_quality_metrics": {
+          "$ref": "#/$defs/M8BinaryCalibrationMetricsV1"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "partition": {
+          "const": "SEALED_TEST",
+          "default": "SEALED_TEST",
+          "title": "Partition",
+          "type": "string"
+        },
+        "probability_claim_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Probability Claim Permitted",
+          "type": "boolean"
+        },
+        "report_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "m8-calibration-report-v1",
+          "default": "m8-calibration-report-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sealed_test_used_for_fitting": {
+          "const": false,
+          "default": false,
+          "title": "Sealed Test Used For Fitting",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "report_id",
+        "artifact_id",
+        "dataset_manifest_id",
+        "evidence_quality_metrics",
+        "event_risk_metrics",
+        "generated_at"
+      ],
+      "title": "M8CalibrationReportV1",
+      "type": "object"
+    },
+    "M8EvaluationPpeState": {
+      "enum": [
+        "WORN",
+        "NOT_WORN",
+        "UNCLEAR"
+      ],
+      "title": "M8EvaluationPpeState",
+      "type": "string"
+    },
+    "M8MetricConfidenceIntervalV1": {
+      "additionalProperties": false,
+      "properties": {
+        "estimate": {
+          "minimum": 0,
+          "title": "Estimate",
+          "type": "number"
+        },
+        "lower_95": {
+          "minimum": 0,
+          "title": "Lower 95",
+          "type": "number"
+        },
+        "metric": {
+          "$ref": "#/$defs/M8CalibrationMetricName"
+        },
+        "upper_95": {
+          "minimum": 0,
+          "title": "Upper 95",
+          "type": "number"
+        },
+        "valid_bootstrap_samples": {
+          "exclusiveMinimum": 0,
+          "title": "Valid Bootstrap Samples",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "metric",
+        "estimate",
+        "lower_95",
+        "upper_95",
+        "valid_bootstrap_samples"
+      ],
+      "title": "M8MetricConfidenceIntervalV1",
+      "type": "object"
+    },
+    "M8PlattScalerV1": {
+      "additionalProperties": false,
+      "properties": {
+        "intercept": {
+          "title": "Intercept",
+          "type": "number"
+        },
+        "iterations": {
+          "exclusiveMinimum": 0,
+          "title": "Iterations",
+          "type": "integer"
+        },
+        "learning_rate": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "schema_version": {
+          "const": "m8-platt-scaler-v1",
+          "default": "m8-platt-scaler-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "slope": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Slope",
+          "type": "number"
+        }
+      },
+      "required": [
+        "slope",
+        "intercept",
+        "iterations",
+        "learning_rate"
+      ],
+      "title": "M8PlattScalerV1",
+      "type": "object"
+    },
+    "M8RegularizedLogisticModelV1": {
+      "additionalProperties": false,
+      "properties": {
+        "coefficients": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Coefficients",
+          "type": "array"
+        },
+        "feature_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Feature Names",
+          "type": "array"
+        },
+        "intercept": {
+          "title": "Intercept",
+          "type": "number"
+        },
+        "iterations": {
+          "exclusiveMinimum": 0,
+          "title": "Iterations",
+          "type": "integer"
+        },
+        "l2_strength": {
+          "exclusiveMinimum": 0,
+          "title": "L2 Strength",
+          "type": "number"
+        },
+        "learning_rate": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "schema_version": {
+          "const": "m8-regularized-logistic-model-v1",
+          "default": "m8-regularized-logistic-model-v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feature_names",
+        "coefficients",
+        "intercept",
+        "l2_strength",
+        "iterations",
+        "learning_rate"
+      ],
+      "title": "M8RegularizedLogisticModelV1",
+      "type": "object"
+    },
+    "M8ReliabilityBinV1": {
+      "additionalProperties": false,
+      "properties": {
+        "bin_index": {
+          "exclusiveMaximum": 10,
+          "minimum": 0,
+          "title": "Bin Index",
+          "type": "integer"
+        },
+        "lower_bound": {
+          "exclusiveMaximum": 1,
+          "minimum": 0,
+          "title": "Lower Bound",
+          "type": "number"
+        },
+        "mean_probability": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Probability"
+        },
+        "positive_rate": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Positive Rate"
+        },
+        "sample_count": {
+          "minimum": 0,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "upper_bound": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Upper Bound",
+          "type": "number"
+        }
+      },
+      "required": [
+        "bin_index",
+        "lower_bound",
+        "upper_bound",
+        "sample_count"
+      ],
+      "title": "M8ReliabilityBinV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-calibration-fit-result-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8CalibrationArtifactV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "dataset_manifest": {
+      "$ref": "#/$defs/M8CalibrationDatasetManifestV1"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8CalibrationReasonCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "report": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8CalibrationReportV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": "m8-calibration-fit-result-v1",
+      "default": "m8-calibration-fit-result-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/M8CalibrationFitStatus"
+    }
+  },
+  "required": [
+    "status",
+    "dataset_manifest"
+  ],
+  "title": "M8CalibrationFitResultV1",
+  "type": "object"
+}
