@@ -45,10 +45,17 @@ from labcourt.application.m8_platform_demo_api import _pilot_config
 from labcourt.application.procedural_review import DeterministicProceduralReviewVerifier
 from labcourt.config_loader import load_config
 from labcourt.contracts.enums import (
+    AcquisitionAction,
     CaseStatus,
     MediaAccess,
     PrivacyReasonCode,
     VlmRole,
+)
+from labcourt.contracts.m8_acquisition_v2 import (
+    M8AcquisitionFailureCode,
+    M8AcquisitionM4Representability,
+    M8AcquisitionOutcomeStatus,
+    M8HearingAcquisitionResultV2,
 )
 from labcourt.contracts.m8_hearing_api import (
     M8HearingEligibility,
@@ -58,7 +65,12 @@ from labcourt.contracts.m8_hearing_api import (
     M8HearingStartRequestV1,
     M8HearingViewV1,
 )
+from labcourt.contracts.m8_prehearing import (
+    M8PreHearingPreparationState,
+    M8PreHearingPreparationV1,
+)
 from labcourt.contracts.manifests import RunManifest
+from labcourt.contracts.verdicts import ProceduralReview
 from labcourt.ports.pixels import rgb8_pixel_sha256
 from labcourt.services.m8_hearing_api import M4HearingApiRuntime, M8HearingApiService
 from labcourt.services.m8_hearing_runtime import open_m8_hearing_runtime
@@ -98,6 +110,7 @@ from tests.integration.test_m8_api_server import (
     _request as _http_request,
 )
 from tests.unit.test_m4_hearing_prompt_renderer import _hearing_schema_documents
+from tests.unit.test_m8_prehearing import _coordinator as _prehearing_coordinator
 
 pytest_plugins = ("tests.integration.test_m8_api_server",)
 
@@ -320,6 +333,61 @@ class _IneligibleRuntime:
     def start(self, _request: M8HearingStartRequestV1) -> M8HearingViewV1:
         self.started = True
         raise AssertionError("ineligible runtime must not be started")
+
+
+class _EligibleRuntime:
+    run_id = RUN_ID
+
+    def __init__(self, config, manifest: RunManifest, case_id: str) -> None:
+        self.start_requests: list[M8HearingStartRequestV1] = []
+        self.role_call_count = 0
+        self._view = M8HearingViewV1(
+            run_id=RUN_ID,
+            case_id=case_id,
+            case_location_id="room-chem-301",
+            model_mode=M8HearingModelMode.OFFLINE_FIXTURE,
+            provider_selections=_provider_selections(config, manifest),
+            case_revision=3,
+            case_status=CaseStatus.ESCALATED,
+            eligibility=M8HearingEligibility.ELIGIBLE_ESCALATED,
+            request_manifest_id=manifest.manifest_id,
+            screening_id="a" * 64,
+            screening_decision="ESCALATE",
+            current_evidence_pack_id="b" * 64,
+            current_evidence_pack_version=1,
+            l5_status=M8HearingL5Status.NOT_RUN,
+        )
+
+    def view(self, case_id: str) -> M8HearingViewV1:
+        assert case_id == self._view.case_id
+        return self._view
+
+    def start(self, request: M8HearingStartRequestV1) -> M8HearingViewV1:
+        assert request.case_id == self._view.case_id
+        self.start_requests.append(request)
+        self.role_call_count += 3
+        return self._view
+
+
+def _insufficient_preparation(case_id: str) -> M8PreHearingPreparationV1:
+    pending = M8PreHearingPreparationV1(
+        revision=1,
+        run_id=RUN_ID,
+        case_id=case_id,
+        source_case_revision=3,
+        source_screening_id="a" * 64,
+        source_screening_version=1,
+        source_evidence_pack_id="b" * 64,
+        source_evidence_pack_version=1,
+        manifest_id=_manifest().manifest_id,
+        candidate_crop_ids=("c" * 64, "d" * 64, "e" * 64),
+        clear_crop_ids=("c" * 64,),
+        clear_threshold=0.65,
+        required_clear_count=2,
+        selection_policy_version="prehearing-top-m-observability-v1",
+        state=M8PreHearingPreparationState.PENDING,
+    )
+    return pending.complete_no_novel_clear_frame(4)
 
 
 def test_authenticated_api_runs_offline_hearing_and_recovers_terminal_projection(
@@ -600,9 +668,11 @@ def test_ineligible_case_refuses_start_and_crops_non_safety_roles(api_server) ->
         operations,
         {RUN_ID: runtime},
         case_id_resolver=(
-            lambda run_id, case_id: runtime._view.case_id
-            if (run_id, case_id) == (RUN_ID, platform_case_id)
-            else "unmapped-case"
+            lambda run_id, case_id: (
+                runtime._view.case_id
+                if (run_id, case_id) == (RUN_ID, platform_case_id)
+                else "unmapped-case"
+            )
         ),
     )
     path = f"/api/m8/runs/{RUN_ID}/cases/{platform_case_id}/hearing"
@@ -614,6 +684,8 @@ def test_ineligible_case_refuses_start_and_crops_non_safety_roles(api_server) ->
         token=TOKENS["safety"],
     )
     assert safety_status == 200
+    assert safety_view["case_id"] == platform_case_id
+    assert runtime._view.case_id not in json.dumps(safety_view, sort_keys=True)
     assert safety_view["eligibility"] == M8HearingEligibility.NOT_ELIGIBLE.value
 
     request = M8HearingStartRequestV1(
@@ -641,6 +713,328 @@ def test_ineligible_case_refuses_start_and_crops_non_safety_roles(api_server) ->
         cropped_status, cropped = _http_request(server, "GET", path, token=token)
         assert cropped_status == 403
         assert cropped["reason_code"] == "FORBIDDEN"
+
+
+def test_fast_path_l5_projection_maps_formal_case_without_rewriting_review(
+    api_server,
+) -> None:
+    config = load_config(ROOT / "configs" / "demo.yaml")
+    manifest = _manifest()
+    runtime = _IneligibleRuntime(config, manifest)
+    internal_case_id = runtime._view.case_id
+    review = ProceduralReview(
+        run_id=RUN_ID,
+        case_id=internal_case_id,
+        version=1,
+        evidence_pack_id=runtime._view.current_evidence_pack_id,
+        evidence_pack_version=runtime._view.current_evidence_pack_version,
+        reviewed_verdict_id="c" * 64,
+        reviewed_verdict_version=1,
+        reviewed_verdict_sha256="d" * 64,
+        gate_version="procedural-gate-v1",
+        manifest_id="e" * 64,
+    )
+    runtime._view = runtime._view.model_copy(
+        update={
+            "case_status": CaseStatus.CLOSED,
+            "procedural_reviews": (review,),
+            "l5_status": M8HearingL5Status.PASSED,
+        }
+    )
+    server, _operational_case, operations = api_server
+    platform_case_id = "platform-fast-terminal-case"
+    service = M8HearingApiService(
+        operations,
+        {RUN_ID: runtime},
+        case_id_resolver=lambda _run_id, _case_id: internal_case_id,
+    )
+    safety = server.api_authenticator.authenticate(f"Bearer {TOKENS['safety']}")
+
+    projected = service.status(safety, RUN_ID, platform_case_id)
+
+    assert projected.case_id == platform_case_id
+    assert projected.eligibility == M8HearingEligibility.NOT_ELIGIBLE
+    assert projected.hearing_session is None
+    assert projected.l5_status == M8HearingL5Status.PASSED
+    assert projected.procedural_reviews[0].case_id == internal_case_id
+
+
+def test_prehearing_public_view_hides_internal_case_and_insufficient_gate_blocks_roles(
+    api_server,
+) -> None:
+    config = load_config(ROOT / "configs" / "demo.yaml")
+    manifest = _manifest()
+    internal_case_id = "internal-m4-insufficient-case"
+    platform_case_id = "platform-formal-insufficient-case"
+    runtime = _EligibleRuntime(config, manifest, internal_case_id)
+    preparation = _insufficient_preparation(internal_case_id)
+    resolver_calls: list[tuple[str, str]] = []
+    router_calls: list[tuple[str, str]] = []
+
+    def resolve_case_id(run_id: str, case_id: str) -> str:
+        assert (run_id, case_id) == (RUN_ID, platform_case_id)
+        return internal_case_id
+
+    def resolve_preparation(
+        run_id: str,
+        case_id: str,
+    ) -> M8PreHearingPreparationV1:
+        resolver_calls.append((run_id, case_id))
+        return preparation
+
+    def route_preparation(
+        run_id: str,
+        case_id: str,
+    ) -> M8PreHearingPreparationV1:
+        router_calls.append((run_id, case_id))
+        return preparation
+
+    server, _operational_case, operations = api_server
+    server.hearing_service = M8HearingApiService(
+        operations,
+        {RUN_ID: runtime},
+        case_id_resolver=resolve_case_id,
+        prehearing_resolver=resolve_preparation,
+        prehearing_router=route_preparation,
+    )
+    base_path = f"/api/m8/runs/{RUN_ID}/cases/{platform_case_id}"
+
+    hearing_status, hearing = _http_request(
+        server,
+        "GET",
+        f"{base_path}/hearing",
+        token=TOKENS["safety"],
+    )
+    assert hearing_status == 200
+    assert hearing["case_id"] == platform_case_id
+    assert internal_case_id not in json.dumps(hearing, sort_keys=True)
+
+    preparation_status, public_preparation = _http_request(
+        server,
+        "GET",
+        f"{base_path}/hearing-preparation",
+        token=TOKENS["safety"],
+    )
+    assert preparation_status == 200
+    assert public_preparation["case_id"] == platform_case_id
+    assert public_preparation["preparation_id"] == preparation.preparation_id
+    assert public_preparation["hearing_role_call_count"] == 0
+    assert internal_case_id not in json.dumps(public_preparation, sort_keys=True)
+    assert resolver_calls == [(RUN_ID, internal_case_id)]
+
+    request = M8HearingStartRequestV1(
+        run_id=RUN_ID,
+        case_id=platform_case_id,
+        source_status=CaseStatus.ESCALATED,
+        source_screening_id=runtime._view.screening_id,
+        source_evidence_pack_id=runtime._view.current_evidence_pack_id,
+        source_evidence_pack_version=runtime._view.current_evidence_pack_version,
+        model_mode=runtime._view.model_mode,
+        request_manifest_id=runtime._view.request_manifest_id,
+    )
+    post_status, rejected = _http_request(
+        server,
+        "POST",
+        f"{base_path}/hearing",
+        token=TOKENS["safety"],
+        payload=request.model_dump(mode="json"),
+    )
+    assert post_status == 400
+    assert rejected["reason_code"] == "INVALID_REQUEST"
+    assert router_calls == [(RUN_ID, internal_case_id)]
+    assert runtime.start_requests == []
+    assert runtime.role_call_count == 0
+
+
+def test_sufficient_prehearing_gate_keeps_formal_case_eligible_and_starts_m4(
+    api_server,
+) -> None:
+    config = load_config(ROOT / "configs" / "demo.yaml")
+    manifest = _manifest()
+    prehearing, evidence, preparations, sessions = _prehearing_coordinator(sufficient=True)
+    internal_case_id = evidence.snapshot.case.case_id
+    platform_case_id = "platform-formal-sufficient-case"
+    runtime = _EligibleRuntime(config, manifest, internal_case_id)
+    gate_calls: list[tuple[str, str]] = []
+
+    def sufficient_gate(
+        run_id: str,
+        case_id: str,
+    ) -> M8PreHearingPreparationV1 | None:
+        gate_calls.append((run_id, case_id))
+        return prehearing.route(run_id, case_id)
+
+    server, _operational_case, operations = api_server
+    server.hearing_service = M8HearingApiService(
+        operations,
+        {RUN_ID: runtime},
+        case_id_resolver=lambda _run_id, _case_id: internal_case_id,
+        prehearing_router=sufficient_gate,
+    )
+    path = f"/api/m8/runs/{RUN_ID}/cases/{platform_case_id}/hearing"
+
+    get_status, eligible = _http_request(
+        server,
+        "GET",
+        path,
+        token=TOKENS["safety"],
+    )
+    assert get_status == 200
+    assert eligible["case_id"] == platform_case_id
+    assert eligible["eligibility"] == M8HearingEligibility.ELIGIBLE_ESCALATED.value
+
+    request = M8HearingStartRequestV1(
+        run_id=RUN_ID,
+        case_id=platform_case_id,
+        source_status=CaseStatus.ESCALATED,
+        source_screening_id=runtime._view.screening_id,
+        source_evidence_pack_id=runtime._view.current_evidence_pack_id,
+        source_evidence_pack_version=runtime._view.current_evidence_pack_version,
+        model_mode=runtime._view.model_mode,
+        request_manifest_id=runtime._view.request_manifest_id,
+    )
+    post_status, started = _http_request(
+        server,
+        "POST",
+        path,
+        token=TOKENS["safety"],
+        payload=request.model_dump(mode="json"),
+    )
+    assert post_status == 200
+    assert started["case_id"] == platform_case_id
+    assert started["eligibility"] == M8HearingEligibility.ELIGIBLE_ESCALATED.value
+    assert gate_calls == [(RUN_ID, internal_case_id)]
+    assert evidence.snapshot.case.status == CaseStatus.ESCALATED
+    assert preparations.current is None
+    assert sessions.calls == 0
+    assert len(runtime.start_requests) == 1
+    assert runtime.start_requests[0].case_id == internal_case_id
+
+
+def test_hearing_acquisitions_map_formal_case_hide_internal_id_and_crop_roles(
+    api_server,
+) -> None:
+    config = load_config(ROOT / "configs" / "demo.yaml")
+    manifest = _manifest()
+    internal_case_id = "internal-m4-acquisition-case"
+    platform_case_id = "platform-formal-acquisition-case"
+    runtime = _IneligibleRuntime(config, manifest)
+    runtime._view = runtime._view.model_copy(
+        update={
+            "case_id": internal_case_id,
+            "eligibility": M8HearingEligibility.COMPLETED,
+        }
+    )
+    result = M8HearingAcquisitionResultV2(
+        run_id=RUN_ID,
+        case_id=internal_case_id,
+        acquisition_request_id="f" * 64,
+        action=AcquisitionAction.OTHER_CAMERA_SAME_TIME,
+        status=M8AcquisitionOutcomeStatus.UNAVAILABLE,
+        m4_representability=M8AcquisitionM4Representability.V1_UNREPRESENTABLE,
+        failure_code=M8AcquisitionFailureCode.OTHER_CAMERA_UNAVAILABLE,
+    )
+    case_resolver_calls: list[tuple[str, str]] = []
+    acquisition_resolver_calls: list[tuple[str, str]] = []
+
+    def resolve_case_id(run_id: str, case_id: str) -> str:
+        case_resolver_calls.append((run_id, case_id))
+        assert (run_id, case_id) == (RUN_ID, platform_case_id)
+        return internal_case_id
+
+    def resolve_acquisitions(
+        run_id: str,
+        case_id: str,
+    ) -> tuple[M8HearingAcquisitionResultV2, ...]:
+        acquisition_resolver_calls.append((run_id, case_id))
+        assert (run_id, case_id) == (RUN_ID, internal_case_id)
+        return (result,)
+
+    server, _operational_case, operations = api_server
+    server.hearing_service = M8HearingApiService(
+        operations,
+        {RUN_ID: runtime},
+        case_id_resolver=resolve_case_id,
+        acquisition_resolver=resolve_acquisitions,
+    )
+    path = f"/api/m8/runs/{RUN_ID}/cases/{platform_case_id}/hearing-acquisitions"
+
+    safety_status, safety_results = _http_request(
+        server,
+        "GET",
+        path,
+        token=TOKENS["safety"],
+    )
+    assert safety_status == 200
+    assert isinstance(safety_results, list)
+    assert len(safety_results) == 1
+    assert safety_results[0]["case_id"] == platform_case_id
+    assert safety_results[0]["result_id"] == result.result_id
+    assert internal_case_id not in json.dumps(safety_results, sort_keys=True)
+
+    leader_status, leader_results = _http_request(
+        server,
+        "GET",
+        path,
+        token=TOKENS["leader"],
+    )
+    assert leader_status == 200
+    assert leader_results == safety_results
+
+    for role in ("student", "operations"):
+        cropped_status, cropped = _http_request(
+            server,
+            "GET",
+            path,
+            token=TOKENS[role],
+        )
+        assert cropped_status == 403
+        assert cropped["reason_code"] == "FORBIDDEN"
+
+    assert case_resolver_calls == [
+        (RUN_ID, platform_case_id),
+        (RUN_ID, platform_case_id),
+        (RUN_ID, platform_case_id),
+        (RUN_ID, platform_case_id),
+    ]
+    assert acquisition_resolver_calls == [
+        (RUN_ID, internal_case_id),
+        (RUN_ID, internal_case_id),
+    ]
+
+
+def test_hearing_acquisitions_without_results_returns_empty_list(api_server) -> None:
+    config = load_config(ROOT / "configs" / "demo.yaml")
+    manifest = _manifest()
+    internal_case_id = "internal-m4-acquisition-empty-case"
+    platform_case_id = "platform-formal-acquisition-empty-case"
+    runtime = _EligibleRuntime(config, manifest, internal_case_id)
+    acquisition_resolver_calls: list[tuple[str, str]] = []
+
+    def resolve_acquisitions(
+        run_id: str,
+        case_id: str,
+    ) -> tuple[M8HearingAcquisitionResultV2, ...]:
+        acquisition_resolver_calls.append((run_id, case_id))
+        return ()
+
+    server, _operational_case, operations = api_server
+    server.hearing_service = M8HearingApiService(
+        operations,
+        {RUN_ID: runtime},
+        case_id_resolver=lambda _run_id, _case_id: internal_case_id,
+        acquisition_resolver=resolve_acquisitions,
+    )
+    status, results = _http_request(
+        server,
+        "GET",
+        f"/api/m8/runs/{RUN_ID}/cases/{platform_case_id}/hearing-acquisitions",
+        token=TOKENS["safety"],
+    )
+
+    assert status == 200
+    assert results == []
+    assert acquisition_resolver_calls == [(RUN_ID, internal_case_id)]
 
 
 def test_persisted_runtime_resolver_closes_offline_demo_and_recovers_after_reopen(
@@ -737,6 +1131,9 @@ def test_persisted_runtime_resolver_closes_offline_demo_and_recovers_after_reope
     )
     assert posted.eligibility == M8HearingEligibility.COMPLETED
     assert posted.l5_status == M8HearingL5Status.PASSED
+    assert posted.case_id == platform_case_id
+    assert posted.hearing_session is not None
+    assert posted.hearing_session.case_id == pack.case_id
     assert [item.role for item in posted.role_outputs] == [
         VlmRole.PROSECUTOR,
         VlmRole.DEFENDER,

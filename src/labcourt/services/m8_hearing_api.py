@@ -8,6 +8,7 @@ from typing import TypeVar
 
 from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
 from labcourt.application.hearing_coordinator import HearingCoordinator
+from labcourt.application.m8_prehearing import M8PreHearingCoordinator
 from labcourt.contracts.enums import ArtifactKind, CaseStatus, ScreeningDecision, VlmRole
 from labcourt.contracts.hearing import (
     DefenderModelPayload,
@@ -26,6 +27,10 @@ from labcourt.contracts.m8_access_cases import (
     M8ActorScopeKind,
     M8Capability,
 )
+from labcourt.contracts.m8_acquisition_v2 import (
+    M8HearingAcquisitionResultV2,
+    M8HearingAcquisitionResultViewV2,
+)
 from labcourt.contracts.m8_api import M8ApiPrincipalV1
 from labcourt.contracts.m8_hearing_api import (
     M8HearingEligibility,
@@ -34,6 +39,10 @@ from labcourt.contracts.m8_hearing_api import (
     M8HearingProviderSelectionV1,
     M8HearingStartRequestV1,
     M8HearingViewV1,
+)
+from labcourt.contracts.m8_prehearing import (
+    M8PreHearingPreparationV1,
+    M8PreHearingPreparationViewV1,
 )
 from labcourt.contracts.storage import ArtifactRef
 from labcourt.contracts.verdicts import Verdict
@@ -47,6 +56,7 @@ from labcourt.ports.evidence_repository import EvidenceRepository
 from labcourt.ports.hearing_repository import HearingRepository
 from labcourt.ports.m8_hearing_api import M8HearingRuntime, M8HearingSessionLocator
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
+from labcourt.ports.m8_prehearing import M8PreHearingRepository
 from labcourt.services.m8_operations_api import M8ApiServiceError, M8ApiServiceFailureCode
 
 _ROLE_RANK = {VlmRole.PROSECUTOR: 0, VlmRole.DEFENDER: 1, VlmRole.JUDGE: 2}
@@ -134,6 +144,18 @@ class M4HearingApiRuntime:
 
     def view(self, case_id: str) -> M8HearingViewV1:
         return self._project(case_id, start_request_id=None)
+
+    def prehearing_coordinator(
+        self,
+        repository: M8PreHearingRepository,
+    ) -> M8PreHearingCoordinator:
+        """Bind the additive M8 gate to this runtime's persisted M4 authorities."""
+
+        return M8PreHearingCoordinator(
+            evidence_repository=self._evidence,
+            preparation_repository=repository,
+            session_locator=self._sessions,
+        )
 
     def _project(self, case_id: str, *, start_request_id: str | None) -> M8HearingViewV1:
         snapshot = self._evidence.load_case(self._run_id, case_id)
@@ -225,6 +247,11 @@ class M4HearingApiRuntime:
         decision: ScreeningDecision,
         session: HearingSession | None,
     ) -> M8HearingEligibility:
+        # Objective insufficiency may enter typed human review before any M4
+        # session exists.  Project the persisted Case truth instead of making
+        # the UI infer that a hearing occurred.
+        if status == CaseStatus.HUMAN_REVIEW:
+            return M8HearingEligibility.HUMAN_REVIEW
         if session is None:
             if status == CaseStatus.ESCALATED and decision == ScreeningDecision.ESCALATE:
                 return M8HearingEligibility.ELIGIBLE_ESCALATED
@@ -235,8 +262,6 @@ class M4HearingApiRuntime:
             return M8HearingEligibility.BACKLOGGED
         if status == CaseStatus.READY_FOR_ALERT_POLICY:
             return M8HearingEligibility.COMPLETED
-        if status == CaseStatus.HUMAN_REVIEW:
-            return M8HearingEligibility.HUMAN_REVIEW
         if status in {CaseStatus.DELIBERATING, CaseStatus.REWORK_REQUIRED}:
             return M8HearingEligibility.IN_PROGRESS
         return M8HearingEligibility.NOT_ELIGIBLE
@@ -331,6 +356,11 @@ class M8HearingApiService:
         start_enabled: bool = True,
         runtime_resolver: Callable[[str], AbstractContextManager[M8HearingRuntime]] | None = None,
         case_id_resolver: Callable[[str, str], str] | None = None,
+        prehearing_resolver: (Callable[[str, str], M8PreHearingPreparationV1 | None] | None) = None,
+        prehearing_router: (Callable[[str, str], M8PreHearingPreparationV1 | None] | None) = None,
+        acquisition_resolver: (
+            Callable[[str, str], tuple[M8HearingAcquisitionResultV2, ...]] | None
+        ) = None,
     ) -> None:
         if not isinstance(start_enabled, bool):
             raise TypeError("start_enabled must be a bool")
@@ -339,6 +369,9 @@ class M8HearingApiService:
         self._start_enabled = start_enabled
         self._runtime_resolver = runtime_resolver
         self._case_id_resolver = case_id_resolver
+        self._prehearing_resolver = prehearing_resolver
+        self._prehearing_router = prehearing_router
+        self._acquisition_resolver = acquisition_resolver
         if any(run_id != runtime.run_id for run_id, runtime in self._runtimes.items()):
             raise ValueError("M8 hearing runtime map conflicts with runtime run IDs")
 
@@ -366,6 +399,10 @@ class M8HearingApiService:
             source_case_id = self._source_case_id(run_id, case_id)
             view = runtime.view(source_case_id)
             self._authorize(principal, view, start=True)
+            if self._prehearing_router is not None:
+                preparation = self._prehearing_router(run_id, source_case_id)
+                if preparation is not None:
+                    raise M8ApiServiceError(M8ApiServiceFailureCode.INVALID_REQUEST)
             if view.hearing_session is None and view.eligibility not in {
                 M8HearingEligibility.ELIGIBLE_ESCALATED,
                 M8HearingEligibility.ELIGIBLE_REWORK_REQUIRED,
@@ -376,7 +413,8 @@ class M8HearingApiService:
                 if source_case_id == case_id
                 else request.model_copy(update={"case_id": source_case_id})
             )
-            return runtime.start(source_request)
+            started = runtime.start(source_request)
+            return self._platform_case_view(started, case_id)
 
     def status(
         self,
@@ -395,7 +433,73 @@ class M8HearingApiService:
         with self._runtime(run_id) as runtime:
             view = runtime.view(self._source_case_id(run_id, case_id))
             self._authorize(principal, view, start=False)
+            return self._platform_case_view(view, case_id)
+
+    def preparation(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+        case_id: str,
+    ) -> M8PreHearingPreparationViewV1 | None:
+        """Read the persisted objective-evidence gate under hearing permissions."""
+
+        return self._call(lambda: self._preparation(principal, run_id, case_id))
+
+    def _preparation(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+        case_id: str,
+    ) -> M8PreHearingPreparationViewV1 | None:
+        if self._prehearing_resolver is None:
+            return None
+        with self._runtime(run_id) as runtime:
+            source_case_id = self._source_case_id(run_id, case_id)
+            view = runtime.view(source_case_id)
+            self._authorize(principal, view, start=False)
+            preparation = self._prehearing_resolver(run_id, source_case_id)
+            if preparation is None:
+                return None
+            return M8PreHearingPreparationViewV1.project(
+                preparation,
+                platform_case_id=case_id,
+            )
+
+    def acquisitions(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+        case_id: str,
+    ) -> tuple[M8HearingAcquisitionResultViewV2, ...]:
+        """Read persisted v2 tool results under the same cropped hearing access."""
+
+        return self._call(lambda: self._acquisitions(principal, run_id, case_id))
+
+    def _acquisitions(
+        self,
+        principal: M8ApiPrincipalV1,
+        run_id: str,
+        case_id: str,
+    ) -> tuple[M8HearingAcquisitionResultViewV2, ...]:
+        if self._acquisition_resolver is None:
+            return ()
+        with self._runtime(run_id) as runtime:
+            source_case_id = self._source_case_id(run_id, case_id)
+            view = runtime.view(source_case_id)
+            self._authorize(principal, view, start=False)
+            return tuple(
+                M8HearingAcquisitionResultViewV2.project(
+                    result,
+                    platform_case_id=case_id,
+                )
+                for result in self._acquisition_resolver(run_id, source_case_id)
+            )
+
+    @staticmethod
+    def _platform_case_view(view: M8HearingViewV1, case_id: str) -> M8HearingViewV1:
+        if view.case_id == case_id:
             return view
+        return view.model_copy(update={"case_id": case_id})
 
     def _source_case_id(self, run_id: str, platform_case_id: str) -> str:
         if self._case_id_resolver is None:

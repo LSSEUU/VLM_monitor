@@ -16,7 +16,9 @@ try {
         "LABCOURT_SCREENING_ENDPOINT",
         "LABCOURT_SCREENING_API_KEY",
         "LABCOURT_SCREENING_MODEL",
-        "LABCOURT_SCREENING_REVISION"
+        "LABCOURT_SCREENING_REVISION",
+        "LABCOURT_QWEN_ENDPOINT",
+        "LABCOURT_QWEN_API_KEY"
     )) {
         if (-not [Environment]::GetEnvironmentVariable($name, "Process")) {
             $userValue = [Environment]::GetEnvironmentVariable($name, "User")

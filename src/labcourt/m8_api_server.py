@@ -228,6 +228,52 @@ class M8ApiRequestHandler(BaseHTTPRequestHandler):
                 len(segments) == 7
                 and segments[:3] == ("api", "m8", "runs")
                 and segments[4] == "cases"
+                and segments[6] == "hearing-acquisitions"
+            ):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                hearing_service = self.server.hearing_service
+                if hearing_service is None:
+                    self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+                    return
+                acquisitions = hearing_service.acquisitions(
+                    principal,
+                    segments[3],
+                    segments[5],
+                )
+                self._json(
+                    HTTPStatus.OK,
+                    [item.model_dump(mode="json") for item in acquisitions],
+                )
+                return
+            if (
+                len(segments) == 7
+                and segments[:3] == ("api", "m8", "runs")
+                and segments[4] == "cases"
+                and segments[6] == "hearing-preparation"
+            ):
+                if urlsplit(self.path).query:
+                    self._error(HTTPStatus.BAD_REQUEST, M8ApiErrorReason.INVALID_REQUEST)
+                    return
+                hearing_service = self.server.hearing_service
+                if hearing_service is None:
+                    self._error(HTTPStatus.NOT_FOUND, M8ApiErrorReason.RESOURCE_NOT_FOUND)
+                    return
+                preparation = hearing_service.preparation(
+                    principal,
+                    segments[3],
+                    segments[5],
+                )
+                self._json(
+                    HTTPStatus.OK,
+                    preparation.model_dump(mode="json") if preparation is not None else None,
+                )
+                return
+            if (
+                len(segments) == 7
+                and segments[:3] == ("api", "m8", "runs")
+                and segments[4] == "cases"
                 and segments[6] == "hearing"
             ):
                 if urlsplit(self.path).query:

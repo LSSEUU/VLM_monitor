@@ -15,6 +15,10 @@ from labcourt.adapters.storage.secure_workspace import SecureWorkspace
 from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
 from labcourt.contracts.m8_access_cases import M8ActorRole
 from labcourt.contracts.m8_api import M8ApiErrorReason
+from labcourt.contracts.m8_calibration_api import (
+    M8CalibrationDatasetCreateRequestV1,
+    M8CalibrationFitRequestV1,
+)
 from labcourt.contracts.m8_evaluation import (
     MAX_M8_EVALUATION_MEDIA_BYTES,
     M8EvaluationCampaignCreateRequestV1,
@@ -36,6 +40,7 @@ from labcourt.contracts.m8_platform_demo import (
 from labcourt.exceptions import ContractViolation
 from labcourt.m8_api_server import M8ApiHttpServer, M8ApiRequestHandler
 from labcourt.ports.m8_api_authentication import M8AuthenticationError
+from labcourt.services.m8_calibration_api import M8CalibrationApiService
 from labcourt.services.m8_evaluation import M8EvaluationService
 from labcourt.services.m8_operations_api import M8ApiServiceError
 from labcourt.services.m8_platform_demo import M8PlatformDemoService
@@ -83,6 +88,7 @@ _MAX_MULTIPART_OVERHEAD_BYTES = 1024 * 1024
 class M8PlatformHttpServer(M8ApiHttpServer):
     platform_service: M8PlatformDemoService
     evaluation_service: M8EvaluationService
+    calibration_service: M8CalibrationApiService
     platform_role_tokens: dict[M8ActorRole, str]
 
     def server_close(self) -> None:
@@ -130,6 +136,20 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 dashboard = self.server.evaluation_service.dashboard(principal)
                 self._json(HTTPStatus.OK, dashboard.model_dump(mode="json"))
                 return
+            if segments == ("api", "m8", "evaluation", "calibration"):
+                calibration_dashboard = self.server.calibration_service.dashboard(principal)
+                self._json(HTTPStatus.OK, calibration_dashboard.model_dump(mode="json"))
+                return
+            if len(segments) == 6 and segments[:5] == (
+                "api",
+                "m8",
+                "evaluation",
+                "calibration",
+                "reports",
+            ):
+                report = self.server.calibration_service.report(principal, segments[5])
+                self._json(HTTPStatus.OK, report.model_dump(mode="json"))
+                return
             if segments == ("api", "m8", "evaluation", "media"):
                 media = self.server.evaluation_service.media(principal)
                 self._json(
@@ -161,6 +181,14 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
             ):
                 evaluation_run = self.server.evaluation_service.run(principal, segments[4])
                 self._json(HTTPStatus.OK, evaluation_run.model_dump(mode="json"))
+                return
+            if (
+                len(segments) == 6
+                and segments[:4] == ("api", "m8", "evaluation", "runs")
+                and segments[5] == "risk-assessment"
+            ):
+                assessment = self.server.calibration_service.risk_assessment(principal, segments[4])
+                self._json(HTTPStatus.OK, assessment.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 7
@@ -218,9 +246,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 "demo",
                 "scenario-runs",
             ):
-                scenario_run = self.server.platform_service.scenario_run(
-                    principal, segments[4]
-                )
+                scenario_run = self.server.platform_service.scenario_run(principal, segments[4])
                 self._json(HTTPStatus.OK, scenario_run.model_dump(mode="json"))
                 return
             if (
@@ -246,9 +272,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 and segments[:4] == ("api", "m8", "demo", "scenario-runs")
                 and segments[5] == "source-video"
             ):
-                source = self.server.platform_service.scenario_source_video(
-                    principal, segments[4]
-                )
+                source = self.server.platform_service.scenario_source_video(principal, segments[4])
                 self._pilot_video(source)
                 return
         except M8AuthenticationError as error:
@@ -313,9 +337,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 media_import_request = M8EvaluationMediaImportRequestV1.model_validate_json(
                     self._evaluation_json_body()
                 )
-                media = self.server.evaluation_service.import_media(
-                    principal, media_import_request
-                )
+                media = self.server.evaluation_service.import_media(principal, media_import_request)
                 self._json(
                     HTTPStatus.CREATED,
                     tuple(item.model_dump(mode="json") for item in media),
@@ -342,17 +364,35 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 )
                 self._json(HTTPStatus.CREATED, campaign.model_dump(mode="json"))
                 return
+            if segments == ("api", "m8", "evaluation", "calibration", "datasets"):
+                calibration_dataset_request = (
+                    M8CalibrationDatasetCreateRequestV1.model_validate_json(
+                        self._evaluation_json_body()
+                    )
+                )
+                manifest = self.server.calibration_service.create_dataset(
+                    principal,
+                    calibration_dataset_request,
+                )
+                self._json(HTTPStatus.CREATED, manifest.model_dump(mode="json"))
+                return
+            if segments == ("api", "m8", "evaluation", "calibration", "fits"):
+                calibration_fit_request = M8CalibrationFitRequestV1.model_validate_json(
+                    self._evaluation_json_body()
+                )
+                calibration_fit_result = self.server.calibration_service.fit(
+                    principal,
+                    calibration_fit_request,
+                )
+                self._json(HTTPStatus.OK, calibration_fit_result.model_dump(mode="json"))
+                return
             if (
                 len(segments) == 6
                 and segments[:4] == ("api", "m8", "evaluation", "campaigns")
                 and segments[5] == "start"
             ):
-                M8EvaluationCampaignStartRequestV1.model_validate_json(
-                    self._evaluation_json_body()
-                )
-                campaign = self.server.evaluation_service.start_campaign(
-                    principal, segments[4]
-                )
+                M8EvaluationCampaignStartRequestV1.model_validate_json(self._evaluation_json_body())
+                campaign = self.server.evaluation_service.start_campaign(principal, segments[4])
                 self._json(HTTPStatus.ACCEPTED, campaign.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "demo", "reset"):
@@ -361,9 +401,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 self._json(HTTPStatus.OK, result.model_dump(mode="json"))
                 return
             if segments == ("api", "m8", "agent", "queries"):
-                agent_request = M8PlatformAgentQueryRequestV1.model_validate_json(
-                    self._json_body()
-                )
+                agent_request = M8PlatformAgentQueryRequestV1.model_validate_json(self._json_body())
                 agent_response = self.server.platform_service.agent_query(
                     principal, agent_request.query
                 )
@@ -437,9 +475,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 and segments[:4] == ("api", "m8", "evaluation", "media")
                 and segments[5:] == ("ground-truth",)
             ):
-                truth = M8EvaluationGroundTruthV1.model_validate_json(
-                    self._evaluation_json_body()
-                )
+                truth = M8EvaluationGroundTruthV1.model_validate_json(self._evaluation_json_body())
                 published = self.server.evaluation_service.put_ground_truth(
                     principal, segments[4], truth
                 )
@@ -637,6 +673,7 @@ def build_m8_platform_server(
     *,
     platform_service: M8PlatformDemoService,
     evaluation_service: M8EvaluationService,
+    calibration_service: M8CalibrationApiService,
     role_tokens: dict[M8ActorRole, str],
     **kwargs: Any,
 ) -> M8PlatformHttpServer:
@@ -647,6 +684,7 @@ def build_m8_platform_server(
     server.RequestHandlerClass = M8PlatformRequestHandler
     server.platform_service = platform_service
     server.evaluation_service = evaluation_service
+    server.calibration_service = calibration_service
     server.platform_role_tokens = dict(role_tokens)
     return server
 

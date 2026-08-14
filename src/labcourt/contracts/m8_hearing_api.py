@@ -373,7 +373,6 @@ class M8HearingViewV1(FrozenContractModel):
             session_id = self.hearing_session.session_id
             if (
                 self.hearing_session.run_id != self.run_id
-                or self.hearing_session.case_id != self.case_id
                 or any(item.hearing_session_id != session_id for item in self.rounds)
                 or any(item.hearing_session_id != session_id for item in self.role_outputs)
                 or any(item.hearing_session_id != session_id for item in self.model_responses)
@@ -427,16 +426,29 @@ class M8HearingViewV1(FrozenContractModel):
         ):
             raise ValueError("M8 hearing tool projection conflicts with its rounds")
 
+        # ``case_id`` is the formal M8 projection identity.  A persisted M4 hearing can
+        # predate that projection and therefore retain a different immutable Case ID.
+        # Keep every nested M4 authority on its original identity instead of rewriting
+        # content-addressed session, Verdict, and L5 hashes for presentation.
+        if self.hearing_session is not None:
+            authority_case_id = self.hearing_session.case_id
+        elif self.procedural_reviews:
+            # L3 fast-path Verdicts have L5 history without an L4 session.  The
+            # review still binds the immutable M4 Case identity behind the M8
+            # operational projection.
+            authority_case_id = self.procedural_reviews[0].case_id
+        else:
+            authority_case_id = self.case_id
         review_versions = tuple(item.version for item in self.procedural_reviews)
         if review_versions != tuple(sorted(set(review_versions))) or any(
-            item.run_id != self.run_id or item.case_id != self.case_id
+            item.run_id != self.run_id or item.case_id != authority_case_id
             for item in self.procedural_reviews
         ):
             raise ValueError("M8 hearing L5 reviews must be one stable Case history")
         if self.final_verdict is not None and (
             self.hearing_session is None
             or self.final_verdict.run_id != self.run_id
-            or self.final_verdict.case_id != self.case_id
+            or self.final_verdict.case_id != authority_case_id
             or not self.procedural_reviews
             or self.procedural_reviews[-1].reviewed_verdict_id != self.final_verdict.verdict_id
         ):

@@ -7,9 +7,16 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from labcourt.adapters.m8_calibration_observation import (
+    EvaluationCalibrationAssetResolver,
+    RealM8CalibrationWorkerTransportFactory,
+)
 from labcourt.adapters.m8_hashed_bearer_authenticator import M8HashedBearerAuthenticator
 from labcourt.adapters.storage.sqlite_m8_adapter_commissioning_repository import (
     SQLiteM8AdapterCommissioningRepository,
+)
+from labcourt.adapters.storage.sqlite_m8_calibration_repository import (
+    SQLiteM8CalibrationRepository,
 )
 from labcourt.adapters.storage.sqlite_m8_evaluation_repository import (
     SQLiteM8EvaluationRepository,
@@ -44,6 +51,11 @@ from labcourt.contracts.m8_api import (
 )
 from labcourt.m8_platform_server import M8PlatformHttpServer, build_m8_platform_server
 from labcourt.services.m8_adapter_commissioning import M8AdapterReadinessService
+from labcourt.services.m8_calibration import M8CalibrationService
+from labcourt.services.m8_calibration_api import M8CalibrationApiService
+from labcourt.services.m8_calibration_observation import (
+    M8CalibrationObservationService,
+)
 from labcourt.services.m8_commissioning_api import M8CommissioningApiService
 from labcourt.services.m8_evaluation import M8EvaluationService
 from labcourt.services.m8_hearing_api import M8HearingApiService
@@ -186,12 +198,13 @@ def assemble_m8_platform_demo_api(
     evaluation_repository = SQLiteM8EvaluationRepository.initialize(
         database, _BUSY_TIMEOUT_MS, repository_manifest_id
     )
-    inventory = SQLiteM8InventoryRepository(
-        database, _BUSY_TIMEOUT_MS, repository_manifest_id
+    calibration_repository = SQLiteM8CalibrationRepository.initialize(
+        database,
+        _BUSY_TIMEOUT_MS,
+        platform_manifest("platform-calibration-repository-v1"),
     )
-    operations = SQLiteM8OperationsRepository(
-        database, _BUSY_TIMEOUT_MS, repository_manifest_id
-    )
+    inventory = SQLiteM8InventoryRepository(database, _BUSY_TIMEOUT_MS, repository_manifest_id)
+    operations = SQLiteM8OperationsRepository(database, _BUSY_TIMEOUT_MS, repository_manifest_id)
     sensors = SQLiteM8SensorPersistenceRepository(
         database, _BUSY_TIMEOUT_MS, repository_manifest_id
     )
@@ -254,6 +267,23 @@ def assemble_m8_platform_demo_api(
         operations_repository=operations,
         platform_service=platform_service,
     )
+    calibration_observation_service = M8CalibrationObservationService(
+        config=model_pilot_service.config,
+        repository=calibration_repository,
+        asset_resolver=EvaluationCalibrationAssetResolver(
+            project_root=root,
+            config=model_pilot_service.config,
+            asset_lookup=evaluation_repository.get_media,
+        ),
+        worker_transport_factory=RealM8CalibrationWorkerTransportFactory(root),
+    )
+    calibration_service = M8CalibrationApiService(
+        operations_repository=operations,
+        evaluation_service=evaluation_service,
+        repository=calibration_repository,
+        calibration_service=M8CalibrationService(),
+        observation_service=calibration_observation_service,
+    )
     catalog = inventory.get_current_source_catalog(PLATFORM_CAMPUS_ID)
     smoke_policy = build_offline_smoke_demo_bundle(
         source_catalog_id=catalog.catalog.catalog_id,
@@ -293,9 +323,13 @@ def assemble_m8_platform_demo_api(
             {},
             runtime_resolver=platform_service.open_hearing_runtime,
             case_id_resolver=platform_service.resolve_hearing_case_id,
+            prehearing_resolver=platform_service.prehearing_preparation,
+            prehearing_router=platform_service.route_prehearing,
+            acquisition_resolver=platform_service.hearing_acquisitions,
         ),
         platform_service=platform_service,
         evaluation_service=evaluation_service,
+        calibration_service=calibration_service,
         role_tokens=M8_PLATFORM_ROLE_TOKENS,
     )
     assembly = M8PlatformDemoApiAssembly(
