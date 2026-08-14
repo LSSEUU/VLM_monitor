@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+import threading
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
 
+from labcourt.adapters.storage.sqlite_authority import SQLiteAuthorityError
 from labcourt.adapters.storage.sqlite_m8_evaluation_repository import (
     SQLiteM8EvaluationRepository,
 )
@@ -504,3 +506,36 @@ def test_legacy_run_without_additive_m4_projection_remains_canonical(tmp_path) -
     assert loaded.hearing_eligibility is None
     assert loaded.l5_status is None
     assert loaded.route_reason_code is None
+
+
+def test_evaluation_worker_retries_transient_windows_authority_open_failure(tmp_path) -> None:
+    retried = threading.Event()
+
+    class _TransientRepository:
+        def __init__(self) -> None:
+            self.list_calls = 0
+
+        def list_runs(self):
+            self.list_calls += 1
+            if self.list_calls == 1:
+                return ()
+            if self.list_calls == 2:
+                raise SQLiteAuthorityError("WINDOWS_AUTHORITY_OPEN_FAILED")
+            retried.set()
+            return ()
+
+    config = SimpleNamespace(model_dump=lambda **_kwargs: {"profile": "real"})
+    service = M8EvaluationService(
+        project_root=tmp_path,
+        repository=_TransientRepository(),
+        operations_repository=SimpleNamespace(),
+        platform_service=SimpleNamespace(
+            model_pilot_service=SimpleNamespace(config=config),
+        ),
+    )
+    try:
+        assert retried.wait(timeout=2.0)
+        assert service._thread is not None
+        assert service._thread.is_alive()
+    finally:
+        service.close()
