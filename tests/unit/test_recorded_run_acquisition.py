@@ -32,9 +32,10 @@ class _Session:
         self._position = 0
 
     def metadata(self) -> DecoderMetadata:
+        first = self._frames[0]
         return DecoderMetadata(
-            width=2.0,
-            height=1.0,
+            width=float(first.width),
+            height=float(first.height),
             frame_count=float(len(self._frames)),
             fps=30.0,
             backend="FAKE",
@@ -74,7 +75,13 @@ class _Backend:
         return _Session(self._frames)
 
 
-def _manifest(input_sha256: str, frame_count: int) -> RunManifest:
+def _manifest(
+    input_sha256: str,
+    frame_count: int,
+    *,
+    width: int = 2,
+    height: int = 1,
+) -> RunManifest:
     base = RunManifest.model_validate_json(
         (ROOT / "tests/fixtures/m2/run-manifest-fake.json").read_text(encoding="utf-8")
     )
@@ -88,8 +95,8 @@ def _manifest(input_sha256: str, frame_count: int) -> RunManifest:
         timing_authority="TRUSTED_SIDECAR",
         timing_evidence_type="TRUSTED_SIDECAR_JSON",
         timing_evidence_sha256="b" * 64,
-        width=2,
-        height=1,
+        width=width,
+        height=height,
         frame_count=frame_count,
         decoder="fake-sequential-decoder",
         decoder_version="fake-module-7",
@@ -121,10 +128,9 @@ def test_recorded_executor_returns_hash_bound_frames_and_rejects_other_tools(
     video = b"sealed-recorded-video"
     inputs = tmp_path / "inputs"
     inputs.mkdir()
-    (inputs / "demo.bin").write_bytes(video)
+    (inputs / "demo.mp4").write_bytes(video)
     frames = tuple(
-        BGR8Frame(width=2, height=1, pixels=bytes((3, 2, 1, 6, 5, 4)))
-        for _ in range(100)
+        BGR8Frame(width=2, height=1, pixels=bytes((3, 2, 1, 6, 5, 4))) for _ in range(100)
     )
     manifest = _manifest(hashlib.sha256(video).hexdigest(), len(frames))
     pack = _closed_pack(manifest)
@@ -144,7 +150,7 @@ def test_recorded_executor_returns_hash_bound_frames_and_rejects_other_tools(
     )
     executor = RecordedRunFrameAcquisitionExecutor(
         project_root=tmp_path,
-        input_relative_path="inputs/demo.bin",
+        input_relative_path="inputs/demo.mp4",
         manifest=manifest,
         max_input_bytes=1_024,
         max_frame_pixels=2,
@@ -193,6 +199,5 @@ def test_recorded_executor_returns_hash_bound_frames_and_rejects_other_tools(
     with pytest.raises(HearingAcquisitionExecutorError) as overlap_error:
         executor.execute(overlap, authority, idempotency_key=overlap.request_id)
     assert (
-        overlap_error.value.reason_code
-        == HearingAcquisitionExecutorFailureCode.AUTHORITY_MISMATCH
+        overlap_error.value.reason_code == HearingAcquisitionExecutorFailureCode.AUTHORITY_MISMATCH
     )

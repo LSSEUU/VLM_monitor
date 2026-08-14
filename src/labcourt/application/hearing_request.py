@@ -75,8 +75,15 @@ FROZEN_M4_PROMPT_BUNDLE_SHA256: Final = (
 LEGACY_M4_PROMPT_BUNDLE_SHA256: Final = (
     "0b7d777f01abe5bc74fc511f7a10a03dbdd3365c9b6b8f784cc32995fd5fb8a8"
 )
+M8_HEARING_PROMPT_V2_BUNDLE_SHA256: Final = (
+    "17a728278384e0eb9665094675e33165b8f3843d5fb2194b630f0cf61d2b68f6"
+)
 SUPPORTED_M4_PROMPT_BUNDLE_SHA256S: Final = frozenset(
-    {FROZEN_M4_PROMPT_BUNDLE_SHA256, LEGACY_M4_PROMPT_BUNDLE_SHA256}
+    {
+        FROZEN_M4_PROMPT_BUNDLE_SHA256,
+        LEGACY_M4_PROMPT_BUNDLE_SHA256,
+        M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
+    }
 )
 
 HEARING_PROSECUTOR_PROMPT_ID: Final = "hearing_prosecutor_v1"
@@ -768,9 +775,25 @@ def _hearing_context(
 ) -> str:
     selected_ids = {item.crop_id for item in disclosure.media}
     selected_crops = tuple(crop for crop in pack.crops if crop.crop_id in selected_ids)
+    context_version = (
+        "m8-hearing-prompt-context-v2"
+        if session.hearing_prompt_bundle_sha256 == M8_HEARING_PROMPT_V2_BUNDLE_SHA256
+        else "m4-hearing-prompt-context-v1"
+    )
+    acquisition_capabilities = (
+        {
+            "REQUEST_MORE_FRAMES": "AVAILABLE",
+            "RECROP": "AVAILABLE",
+            "REDETECT_HIGH_RES": "AVAILABLE",
+            "TRACK_CONFIDENCE_CURVE": "AVAILABLE",
+            "OTHER_CAMERA_SAME_TIME": "TOOL_UNAVAILABLE",
+        }
+        if context_version == "m8-hearing-prompt-context-v2"
+        else None
+    )
     return canonical_json(
         {
-            "schema_version": "m4-hearing-prompt-context-v1",
+            "schema_version": context_version,
             "role": role.value,
             "session": {
                 "session_id": session.session_id,
@@ -826,6 +849,11 @@ def _hearing_context(
                     else None
                 ),
             },
+            **(
+                {"acquisition_capabilities": acquisition_capabilities}
+                if acquisition_capabilities is not None
+                else {}
+            ),
         }
     )
 
@@ -994,9 +1022,7 @@ def prepare_primary_hearing_request(
     budget = _call_budget(
         primary=True,
         selected_images=len(selected_crops),
-        selected_pixels=sum(
-            crop.output_width * crop.output_height for crop in selected_crops
-        ),
+        selected_pixels=sum(crop.output_width * crop.output_height for crop in selected_crops),
         budget_usage=budget_usage,
         session=session,
         config=config,
@@ -1459,6 +1485,7 @@ __all__ = [
     "HEARING_JUDGE_PROMPT_ID",
     "HEARING_PROSECUTOR_PROMPT_ID",
     "LEGACY_M4_PROMPT_BUNDLE_SHA256",
+    "M8_HEARING_PROMPT_V2_BUNDLE_SHA256",
     "SUPPORTED_M4_PROMPT_BUNDLE_SHA256S",
     "HearingBudgetUsage",
     "HearingCanonicalInputs",

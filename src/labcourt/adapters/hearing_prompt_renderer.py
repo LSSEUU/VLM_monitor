@@ -74,6 +74,16 @@ HEARING_PROMPT_DEFINITIONS: Final = (
     ),
 )
 
+M8_HEARING_PROMPT_V2_DEFINITIONS: Final = tuple(
+    PromptDefinition(
+        prompt_id=definition.prompt_id,
+        filename=f"m8_v2/{definition.filename}",
+        role=definition.role,
+        variable_names=definition.variable_names,
+    )
+    for definition in HEARING_PROMPT_DEFINITIONS
+)
+
 LEGACY_HEARING_PROMPT_DEFINITIONS: Final = tuple(
     PromptDefinition(
         prompt_id=definition.prompt_id,
@@ -213,5 +223,6 @@ class HearingJinjaPromptCatalog(PromptCatalog):
 __all__ = [
     "HEARING_PROMPT_DEFINITIONS",
     "LEGACY_HEARING_PROMPT_DEFINITIONS",
+    "M8_HEARING_PROMPT_V2_DEFINITIONS",
     "HearingJinjaPromptCatalog",
 ]

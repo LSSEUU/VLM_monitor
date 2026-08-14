@@ -10,13 +10,17 @@ from types import ModuleType
 
 import pytest
 
-from labcourt.adapters.hearing_prompt_renderer import HearingJinjaPromptCatalog
+from labcourt.adapters.hearing_prompt_renderer import (
+    M8_HEARING_PROMPT_V2_DEFINITIONS,
+    HearingJinjaPromptCatalog,
+)
 from labcourt.application.hearing_model_parser import (
     finalize_hearing_parse,
     inspect_hearing_response,
 )
 from labcourt.application.hearing_request import (
     FROZEN_M4_PROMPT_BUNDLE_SHA256,
+    M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
     HearingBudgetUsage,
     HearingRequestGeneration,
     HearingRequestPreparationError,
@@ -107,7 +111,11 @@ def _ref(kind: ArtifactKind, label: str) -> ArtifactRef:
     return ArtifactRef(kind=kind, artifact_id=_sha(label))
 
 
-def _catalog(*, changed_judge_schema: bool = False) -> HearingJinjaPromptCatalog:
+def _catalog(
+    *,
+    changed_judge_schema: bool = False,
+    m8_v2: bool = False,
+) -> HearingJinjaPromptCatalog:
     schemas = expected_schema_files()
     documents = {
         "hearing_prosecutor_v1": canonical_json(
@@ -120,6 +128,11 @@ def _catalog(*, changed_judge_schema: bool = False) -> HearingJinjaPromptCatalog
     }
     if changed_judge_schema:
         documents["hearing_judge_v1"] = canonical_json({"type": "array"})
+    if m8_v2:
+        return HearingJinjaPromptCatalog(
+            output_schema_json_by_prompt=documents,
+            definitions=M8_HEARING_PROMPT_V2_DEFINITIONS,
+        )
     return HearingJinjaPromptCatalog(output_schema_json_by_prompt=documents)
 
 
@@ -143,9 +156,7 @@ def _closed_pack(manifest: RunManifest) -> EvidencePack:
 
 def _closed_absence_pack(manifest: RunManifest) -> EvidencePack:
     payload = json.loads(
-        (ROOT / "tests/fixtures/m2/candidate-event-absence-strict.json").read_text(
-            encoding="utf-8"
-        )
+        (ROOT / "tests/fixtures/m2/candidate-event-absence-strict.json").read_text(encoding="utf-8")
     )
     payload.pop("event_id", None)
     payload["manifest_id"] = manifest.manifest_id
@@ -210,8 +221,7 @@ def _closed_absence_pack(manifest: RunManifest) -> EvidencePack:
             version=1,
             event=event,
             key_frame_ids=tuple(
-                f"{event.camera_id}:{event.stream_id}:{index}"
-                for index in (0, 75, 149, 150, 151)
+                f"{event.camera_id}:{event.stream_id}:{index}" for index in (0, 75, 149, 150, 151)
             ),
             temporal_crops=crops,
             objective_facts=event.objective_facts,
@@ -539,6 +549,49 @@ def test_three_roles_bind_exact_profiles_upstreams_and_one_crop() -> None:
     assert judge.canonical_inputs.defender_output_json == canonical_json(
         defender_output.model_dump(mode="json")
     )
+
+
+def test_m8_v2_context_advertises_real_acquisition_capabilities_without_mutating_v1() -> None:
+    frozen = _scenario()
+    frozen_context = json.loads(
+        _prepare(frozen, VlmRole.PROSECUTOR).canonical_inputs.hearing_context_json
+    )
+    assert frozen_context["schema_version"] == "m4-hearing-prompt-context-v1"
+    assert "acquisition_capabilities" not in frozen_context
+
+    session = frozen.session.model_copy(
+        update={
+            "hearing_prompt_bundle_sha256": M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
+        }
+    )
+    retrieval = _retrieval(
+        session,
+        frozen.pack,
+        frozen.config,
+        frozen.manifest,
+    )
+    current = Scenario(
+        config=frozen.config,
+        manifest=frozen.manifest,
+        pack=frozen.pack,
+        authority=frozen.authority,
+        session=session,
+        retrieval=retrieval,
+        scope=_scope(session, retrieval),
+        catalog=_catalog(m8_v2=True),
+    )
+
+    current_context = json.loads(
+        _prepare(current, VlmRole.PROSECUTOR).canonical_inputs.hearing_context_json
+    )
+    assert current_context["schema_version"] == "m8-hearing-prompt-context-v2"
+    assert current_context["acquisition_capabilities"] == {
+        "OTHER_CAMERA_SAME_TIME": "TOOL_UNAVAILABLE",
+        "RECROP": "AVAILABLE",
+        "REDETECT_HIGH_RES": "AVAILABLE",
+        "REQUEST_MORE_FRAMES": "AVAILABLE",
+        "TRACK_CONFIDENCE_CURVE": "AVAILABLE",
+    }
 
 
 def test_one_crop_per_role_fits_all_five_cycles_inside_twenty_image_budget() -> None:

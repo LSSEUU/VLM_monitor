@@ -26,6 +26,7 @@ from labcourt.adapters.fake_precedent_embeddings import (
 from labcourt.adapters.hearing_prompt_renderer import (
     HEARING_PROMPT_DEFINITIONS,
     LEGACY_HEARING_PROMPT_DEFINITIONS,
+    M8_HEARING_PROMPT_V2_DEFINITIONS,
     HearingJinjaPromptCatalog,
 )
 from labcourt.adapters.storage.hearing_model_response_store import (
@@ -54,6 +55,7 @@ from labcourt.application.hearing_procedural_review import (
 from labcourt.application.hearing_request import (
     FROZEN_M4_PROMPT_BUNDLE_SHA256,
     LEGACY_M4_PROMPT_BUNDLE_SHA256,
+    M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
 )
 from labcourt.application.hearing_role_call import HearingRoleCallService
 from labcourt.application.m5_hearing_precedent_bridge import (
@@ -182,6 +184,7 @@ def build_hearing_prompt_catalog(
     definitions = {
         FROZEN_M4_PROMPT_BUNDLE_SHA256: HEARING_PROMPT_DEFINITIONS,
         LEGACY_M4_PROMPT_BUNDLE_SHA256: LEGACY_HEARING_PROMPT_DEFINITIONS,
+        M8_HEARING_PROMPT_V2_BUNDLE_SHA256: M8_HEARING_PROMPT_V2_DEFINITIONS,
     }.get(bundle_sha256)
     if definitions is None:
         raise ValueError("unsupported M4 hearing prompt bundle")

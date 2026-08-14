@@ -52,7 +52,10 @@ from labcourt.application.hearing_precedent_retrieval import (
 from labcourt.application.hearing_procedural_review import (
     DeterministicHearingProceduralReviewVerifier,
 )
-from labcourt.application.hearing_request import FROZEN_M4_PROMPT_BUNDLE_SHA256
+from labcourt.application.hearing_request import (
+    FROZEN_M4_PROMPT_BUNDLE_SHA256,
+    M8_HEARING_PROMPT_V2_BUNDLE_SHA256,
+)
 from labcourt.application.hearing_role_call import HearingRoleCallService
 from labcourt.application.m5_hearing_precedent_bridge import (
     M5_HEARING_PRECEDENT_BRIDGE_MANIFEST_ID,
@@ -100,7 +103,11 @@ def _utc_now() -> datetime:
     return datetime.now(UTC)
 
 
-def _hearing_prompt_bundle_for_run(database: Path, run_id: str) -> str:
+def _hearing_prompt_bundle_for_run(
+    database: Path,
+    run_id: str,
+    model_mode: M8HearingModelMode,
+) -> str:
     """Reuse a persisted run's single M4 bundle, or select the current bundle."""
 
     connection = sqlite3.connect(database)
@@ -117,7 +124,11 @@ def _hearing_prompt_bundle_for_run(database: Path, run_id: str) -> str:
     finally:
         connection.close()
     if not rows:
-        return FROZEN_M4_PROMPT_BUNDLE_SHA256
+        return (
+            M8_HEARING_PROMPT_V2_BUNDLE_SHA256
+            if model_mode == M8HearingModelMode.OPENAI_COMPATIBLE_QWEN
+            else FROZEN_M4_PROMPT_BUNDLE_SHA256
+        )
     if len(rows) != 1 or not isinstance(rows[0][0], str):
         raise M8HearingRuntimeError(M8HearingRuntimeFailureCode.DEPLOYMENT_UNSUPPORTED)
     return rows[0][0]
@@ -301,7 +312,7 @@ def open_m8_hearing_runtime(
             vlm_client = RoutedHearingVLMClient(role_clients)
 
         catalog = build_hearing_prompt_catalog(
-            _hearing_prompt_bundle_for_run(database, controlled_run_id)
+            _hearing_prompt_bundle_for_run(database, controlled_run_id, model_mode)
         )
         role_calls = HearingRoleCallService(
             repository=hearing_authority,

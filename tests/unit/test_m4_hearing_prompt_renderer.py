@@ -10,6 +10,7 @@ import pytest
 from labcourt.adapters.hearing_prompt_renderer import (
     HEARING_PROMPT_DEFINITIONS,
     LEGACY_HEARING_PROMPT_DEFINITIONS,
+    M8_HEARING_PROMPT_V2_DEFINITIONS,
     HearingJinjaPromptCatalog,
 )
 from labcourt.adapters.jinja_prompt_renderer import JinjaPromptCatalog
@@ -234,3 +235,23 @@ def test_legacy_hearing_prompt_golden_identities_remain_recoverable() -> None:
         "hearing_defender_v1": ("587eafc69139bfde03a519650ba364ccf4d5c0c54d69a0c5c359e53f16384d75"),
         "hearing_judge_v1": ("845681d1245f0e6e12356bc32c03ab1ae191c1a0c2678885364f1c2d21c7c8e6"),
     }
+
+
+def test_m8_v2_hearing_bundle_identity_is_frozen_and_all_roles_render() -> None:
+    catalog = HearingJinjaPromptCatalog(
+        output_schema_json_by_prompt=_hearing_schema_documents(),
+        definitions=M8_HEARING_PROMPT_V2_DEFINITIONS,
+    )
+
+    assert catalog.bundle_sha256 == (
+        "17a728278384e0eb9665094675e33165b8f3843d5fb2194b630f0cf61d2b68f6"
+    )
+    rendered = {
+        prompt_id: catalog.render(prompt_id=prompt_id, variables=_variables(prompt_id))
+        for prompt_id in HEARING_PROMPT_IDS
+    }
+    assert set(rendered) == set(HEARING_PROMPT_IDS)
+    assert all(item.utf8_bytes for item in rendered.values())
+    assert all(
+        item.manifest.prompt_bundle_sha256 == catalog.bundle_sha256 for item in rendered.values()
+    )
