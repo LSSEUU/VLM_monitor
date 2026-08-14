@@ -461,3 +461,19 @@ Windows 端到端入口必须为每次运行创建 fresh ignored authority direc
 启动 hidden API helper。它可编排全部离线步骤，但每个 safety/student 关键动作仍须独立 `APPLY`；不得用
 一键入口代替确认。最终 gate 至少核验 terminal Case、两张 student notification、用户权限、typed rules、
 sensor discovery 与 device health，并写本地 acceptance artifact；默认不得尝试飞书或公网连接。
+
+## 13. M8 多视频评估的会审前门与影子校准
+
+评估 run 必须通过持久化 `M8RunSourceRefV1` 定位不可变 MP4；会审及补证不得读取服务级“当前视频”变量。
+当冻结 M3 产生首个缺席类 `ESCALATE` 时，M8 只依据当前 EvidencePack 的 `clear_crop_ids` 与
+`required_clear_count` 分流：`clear_count < K` 先进入追加写、可恢复的会审前证据准备，且控方、辩方、
+裁决方调用数必须为零；只有证据充分但仍存在语义冲突时，安全负责人才可显式启动冻结 M4 会审。
+
+录制视频补证必须校验 source sidecar、StreamManifest、媒体 SHA、帧范围和当前 EvidencePack。真实重裁切、
+高分辨率重检测和逐帧置信序列使用 M8 增量 authority 保存；空检测是合法结果但不是反证，冻结 M4 v1 无法
+表示时必须标记 `V1_UNREPRESENTABLE` 并转人工。单摄像头的同时刻其他机位固定返回 `TOOL_UNAVAILABLE`。
+
+非大模型校准只消费 `HUMAN_CONFIRMED` 区间和内容绑定的本地检测/时序特征。证据质量、EventRisk 与
+L3/L4 语义裁决是三个独立 authority；Qwen 自报 probability/confidence、弱标签和角色输出不得进入训练。
+本切片只允许 `SHADOW | NOT_APPLICABLE`，不改变 Case、M3/M4、L5 或告警；样本不足时 UI 必须显示
+`INSUFFICIENT_DATA`，不得发布准确率、概率或可靠性结论。

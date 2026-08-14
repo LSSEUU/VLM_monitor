@@ -1,0 +1,130 @@
+{
+  "$defs": {
+    "M8CalibrationAssessmentMode": {
+      "enum": [
+        "SHADOW",
+        "NOT_APPLICABLE"
+      ],
+      "title": "M8CalibrationAssessmentMode",
+      "type": "string"
+    },
+    "M8CalibrationReasonCode": {
+      "enum": [
+        "INSUFFICIENT_DATA",
+        "ARTIFACT_UNAVAILABLE",
+        "CONFIG_MISMATCH",
+        "MODEL_PROFILE_MISMATCH",
+        "DETECTOR_MODEL_MISMATCH",
+        "FEATURE_SCHEMA_MISMATCH",
+        "EVIDENCE_INSUFFICIENT"
+      ],
+      "title": "M8CalibrationReasonCode",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.labcourt.local/v2/m8-event-risk-assessment-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Artifact Id"
+    },
+    "assessment_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Assessment Id",
+      "type": "string"
+    },
+    "asset_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "calibrated_probability": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Calibrated Probability"
+    },
+    "evidence_quality_assessment_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Evidence Quality Assessment Id",
+      "type": "string"
+    },
+    "llm_output_used": {
+      "const": false,
+      "default": false,
+      "title": "Llm Output Used",
+      "type": "boolean"
+    },
+    "mode": {
+      "$ref": "#/$defs/M8CalibrationAssessmentMode"
+    },
+    "raw_event_score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Event Score"
+    },
+    "reason_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/M8CalibrationReasonCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "routing_authority": {
+      "const": false,
+      "default": false,
+      "title": "Routing Authority",
+      "type": "boolean"
+    },
+    "run_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "m8-event-risk-assessment-v1",
+      "default": "m8-event-risk-assessment-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "assessment_id",
+    "run_id",
+    "asset_id",
+    "evidence_quality_assessment_id",
+    "mode"
+  ],
+  "title": "M8EventRiskAssessmentV1",
+  "type": "object"
+}

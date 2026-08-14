@@ -1258,6 +1258,48 @@
       "name": "m8-authority-reference"
     },
     {
+      "file": "m8-calibration-artifact-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration.M8CalibrationArtifactV1",
+      "name": "m8-calibration-artifact-v1"
+    },
+    {
+      "file": "m8-calibration-dashboard-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration_api.M8CalibrationDashboardV1",
+      "name": "m8-calibration-dashboard-v1"
+    },
+    {
+      "file": "m8-calibration-dataset-create-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_calibration_api.M8CalibrationDatasetCreateRequestV1",
+      "name": "m8-calibration-dataset-create-request-v1"
+    },
+    {
+      "file": "m8-calibration-dataset-manifest-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration.M8CalibrationDatasetManifestV1",
+      "name": "m8-calibration-dataset-manifest-v1"
+    },
+    {
+      "file": "m8-calibration-fit-request-v1.schema.json",
+      "mode": "validation",
+      "model": "labcourt.contracts.m8_calibration_api.M8CalibrationFitRequestV1",
+      "name": "m8-calibration-fit-request-v1"
+    },
+    {
+      "file": "m8-calibration-fit-result-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration.M8CalibrationFitResultV1",
+      "name": "m8-calibration-fit-result-v1"
+    },
+    {
+      "file": "m8-calibration-report-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration.M8CalibrationReportV1",
+      "name": "m8-calibration-report-v1"
+    },
+    {
       "file": "m8-campus-location.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_operations.M8CampusLocation",
@@ -1292,6 +1334,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8CommissioningEvidenceCommitReceiptV1",
       "name": "m8-commissioning-evidence-commit-receipt-v1"
+    },
+    {
+      "file": "m8-detector-score-observation-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration.M8DetectorScoreObservationV1",
+      "name": "m8-detector-score-observation-v1"
     },
     {
       "file": "m8-evaluation-campaign-create-request-v1.schema.json",
@@ -1346,6 +1394,18 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_evaluation.M8EvaluationRunV1",
       "name": "m8-evaluation-run-v1"
+    },
+    {
+      "file": "m8-event-risk-assessment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration.M8EventRiskAssessmentV1",
+      "name": "m8-event-risk-assessment-v1"
+    },
+    {
+      "file": "m8-evidence-quality-assessment-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration.M8EvidenceQualityAssessmentV1",
+      "name": "m8-evidence-quality-assessment-v1"
     },
     {
       "file": "m8-feishu-adapter-profile-v1.schema.json",
@@ -1532,6 +1592,18 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_feishu_inbound.M8FeishuWebhookIngressRequestV1",
       "name": "m8-feishu-webhook-ingress-request-v1"
+    },
+    {
+      "file": "m8-hearing-acquisition-result-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_acquisition_v2.M8HearingAcquisitionResultV2",
+      "name": "m8-hearing-acquisition-result-v2"
+    },
+    {
+      "file": "m8-hearing-acquisition-result-view-v2.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_acquisition_v2.M8HearingAcquisitionResultViewV2",
+      "name": "m8-hearing-acquisition-result-view-v2"
     },
     {
       "file": "m8-hearing-provider-selection-v1.schema.json",
@@ -1996,6 +2068,18 @@
       "name": "m8-platform-scenario-start-request-v1"
     },
     {
+      "file": "m8-prehearing-preparation-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_prehearing.M8PreHearingEvidencePreparationV1",
+      "name": "m8-prehearing-preparation-v1"
+    },
+    {
+      "file": "m8-prehearing-preparation-view-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_prehearing.M8PreHearingPreparationViewV1",
+      "name": "m8-prehearing-preparation-view-v1"
+    },
+    {
       "file": "m8-production-adapter-candidate-authority-v1.schema.json",
       "mode": "serialization",
       "model": "labcourt.contracts.m8_adapter_commissioning.M8ProductionAdapterCandidateAuthorityV1",
@@ -2048,6 +2132,18 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_qwen_hearing_demo.M8QwenHearingProviderReceiptV1",
       "name": "m8-qwen-hearing-provider-receipt-v1"
+    },
+    {
+      "file": "m8-redetection-outcome-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_acquisition_v2.M8RedetectionOutcomeV1",
+      "name": "m8-redetection-outcome-v1"
+    },
+    {
+      "file": "m8-run-risk-assessment-view-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_calibration_api.M8RunRiskAssessmentViewV1",
+      "name": "m8-run-risk-assessment-view-v1"
     },
     {
       "file": "m8-run-source-ref-v1.schema.json",
@@ -2108,6 +2204,12 @@
       "mode": "serialization",
       "model": "labcourt.contracts.m8_sensor_signals.M8SimulatedSensorScenarioAuthorityV1",
       "name": "m8-simulated-sensor-scenario-authority-v1"
+    },
+    {
+      "file": "m8-track-confidence-series-v1.schema.json",
+      "mode": "serialization",
+      "model": "labcourt.contracts.m8_acquisition_v2.M8TrackConfidenceSeriesV1",
+      "name": "m8-track-confidence-series-v1"
     },
     {
       "file": "maintenance-recovery-report.schema.json",
