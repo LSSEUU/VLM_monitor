@@ -12,7 +12,7 @@ from labcourt.adapters.storage.sqlite_m8_evaluation_repository import (
 )
 from labcourt.adapters.storage.sqlite_repository import RepositoryIntegrityError
 from labcourt.contracts.canonical import canonical_json
-from labcourt.contracts.enums import EvidenceClass, ViolationType
+from labcourt.contracts.enums import CaseStatus, EvidenceClass, ViolationType
 from labcourt.contracts.m8_evaluation import (
     M8EvaluationActualRoute,
     M8EvaluationCampaignState,
@@ -30,6 +30,7 @@ from labcourt.contracts.m8_evaluation import (
     M8EvaluationRunV1,
     M8RunSourceRefV1,
 )
+from labcourt.contracts.m8_hearing_api import M8HearingEligibility, M8HearingL5Status
 from labcourt.contracts.m8_platform_demo import (
     M8PlatformExecutionSource,
     M8PlatformModelComponentV1,
@@ -39,6 +40,7 @@ from labcourt.contracts.m8_platform_demo import (
     M8PlatformScenarioStage,
     M8PlatformScenarioStageV1,
     M8PlatformStageState,
+    M8PlatformVideoProfileV1,
 )
 from labcourt.services.m8_evaluation import M8EvaluationService
 
@@ -333,6 +335,112 @@ def test_local_only_media_projects_as_completed_human_review_without_provider_ca
     assert validated.route_reason_code == "SCREENING_MEDIA_LOCAL_ONLY"
     assert validated.failure_code is None
     assert validated.provider_receipt_refs == ()
+
+
+def test_completed_prehearing_gate_projects_human_review_with_case_authorities() -> None:
+    source = M8RunSourceRefV1(
+        run_id="evaluation-prehearing-review-01",
+        source_kind=M8EvaluationRunSourceKind.RECORDED_ASSET,
+        asset_id=SHA,
+        media_sha256=SHA,
+        relative_path=f"inputs/evaluation-{SHA}.mp4",
+        frame_count=250,
+        source_manifest_id=MANIFEST,
+    )
+    running = M8EvaluationRunV1(
+        run_id=source.run_id,
+        revision=2,
+        campaign_id="evaluation-campaign-prehearing-review",
+        source=source,
+        ordinal=0,
+        repetition=1,
+        state=M8EvaluationRunState.RUNNING,
+        active_stage="CASE",
+        accuracy_metrics_eligible=False,
+        delivery_state=M8EvaluationDeliveryState.PENDING_POLICY,
+        queued_at=NOW,
+        started_at=NOW,
+        config_sha256=CONFIG,
+        model_profile_sha256=MODEL,
+        run_manifest_id=MANIFEST,
+    )
+    scenario = M8PlatformScenarioRunV1(
+        run_id=source.run_id,
+        scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
+        state="SUCCEEDED",
+        stages=tuple(
+            M8PlatformScenarioStageV1(
+                stage=stage,
+                state=M8PlatformStageState.COMPLETE,
+                summary="complete",
+            )
+            for stage in M8PlatformScenarioStage
+        ),
+        case_id="platform-prehearing-case",
+        hearing_case_id="m4-prehearing-case",
+        case_status="PENDING_VERIFICATION",
+        recognition_mode=M8PlatformRecognitionMode.FULL_MODEL,
+        model_components=tuple(
+            M8PlatformModelComponentV1(
+                component=component,
+                source=M8PlatformExecutionSource.MODEL,
+                provider="real-provider",
+                model="real-model",
+                revision="pinned-revision",
+                manifest_id=MANIFEST,
+            )
+            for component in ("PERCEPTION", "SCREENING")
+        ),
+        outcome="ACTIONABLE_RISK",
+        video_profile=M8PlatformVideoProfileV1(
+            input_file_sha256=SHA,
+            fps_num=25,
+            fps_den=1,
+            frame_count=250,
+            width=640,
+            height=480,
+            duration_millis=10_000,
+        ),
+        perception_preview_url=(
+            f"/api/m8/demo/scenario-runs/{source.run_id}/perception-preview"
+        ),
+        model_or_fixture_id="real-screening-model",
+        raw_response_ref="runs/evaluation-prehearing-review-01/model-response.json",
+        screening_decision="ESCALATE",
+        screening_summary="objective evidence remains insufficient",
+        rule_judgment="GENERAL_RISK",
+    )
+    hearing_view = SimpleNamespace(
+        case_status=CaseStatus.HUMAN_REVIEW,
+        eligibility=M8HearingEligibility.HUMAN_REVIEW,
+        l5_status=M8HearingL5Status.NOT_RUN,
+    )
+
+    class _RuntimeContext:
+        def __enter__(self):
+            return SimpleNamespace(view=lambda _case_id: hearing_view)
+
+        def __exit__(self, *_args):
+            return False
+
+    service = object.__new__(M8EvaluationService)
+    service._clock = lambda: NOW
+    service._platform = SimpleNamespace(
+        prehearing_preparation=lambda _run_id, _case_id: object(),
+        open_hearing_runtime=lambda _run_id: _RuntimeContext(),
+    )
+
+    projected = service._project_scenario(running, scenario)
+    validated = M8EvaluationRunV1.model_validate(projected.model_dump(mode="json"))
+    assert validated.state == M8EvaluationRunState.SUCCEEDED
+    assert validated.actual_route == M8EvaluationActualRoute.HUMAN_REVIEW
+    assert validated.route_reason_code == "NO_NOVEL_CLEAR_FRAME"
+    assert validated.case_id == scenario.case_id
+    assert validated.hearing_case_id == scenario.hearing_case_id
+    assert validated.m4_case_status == CaseStatus.HUMAN_REVIEW
+    assert validated.hearing_eligibility == M8HearingEligibility.HUMAN_REVIEW
+    assert validated.l5_status == M8HearingL5Status.NOT_RUN
+    assert validated.provider_receipt_refs == (scenario.raw_response_ref,)
 
 
 def test_legacy_run_without_additive_m4_projection_remains_canonical(tmp_path) -> None:

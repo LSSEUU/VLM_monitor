@@ -486,37 +486,36 @@ class M8EvaluationService:
     ) -> M8EvaluationRunV1:
         completed_at = self._utc_now()
         receipts = (scenario.raw_response_ref,) if scenario.raw_response_ref else ()
-        if scenario.outcome == "HUMAN_REVIEW_REQUIRED":
-            hearing_case_id = scenario.hearing_case_id
-            prehearing = (
-                self._platform.prehearing_preparation(
-                    running.run_id,
-                    hearing_case_id,
-                )
-                if hearing_case_id is not None
-                else None
+        prehearing = (
+            self._platform.prehearing_preparation(
+                running.run_id,
+                scenario.hearing_case_id,
             )
-            if prehearing is not None:
-                assert hearing_case_id is not None
-                with self._platform.open_hearing_runtime(running.run_id) as runtime:
-                    hearing_view = runtime.view(hearing_case_id)
-                return running.model_copy(
-                    update={
-                        "revision": running.revision + 1,
-                        "state": M8EvaluationRunState.SUCCEEDED,
-                        "active_stage": None,
-                        "actual_route": M8EvaluationActualRoute.HUMAN_REVIEW,
-                        "route_reason_code": "NO_NOVEL_CLEAR_FRAME",
-                        "case_id": scenario.case_id,
-                        "hearing_case_id": scenario.hearing_case_id,
-                        "m4_case_status": hearing_view.case_status,
-                        "hearing_eligibility": hearing_view.eligibility,
-                        "l5_status": hearing_view.l5_status,
-                        "completed_at": completed_at,
-                        "delivery_state": M8EvaluationDeliveryState.NOT_APPLICABLE,
-                        "provider_receipt_refs": receipts,
-                    }
-                )
+            if scenario.hearing_case_id is not None
+            else None
+        )
+        if prehearing is not None:
+            assert scenario.case_id is not None and scenario.hearing_case_id is not None
+            with self._platform.open_hearing_runtime(running.run_id) as runtime:
+                hearing_view = runtime.view(scenario.hearing_case_id)
+            return running.model_copy(
+                update={
+                    "revision": running.revision + 1,
+                    "state": M8EvaluationRunState.SUCCEEDED,
+                    "active_stage": None,
+                    "actual_route": M8EvaluationActualRoute.HUMAN_REVIEW,
+                    "route_reason_code": "NO_NOVEL_CLEAR_FRAME",
+                    "case_id": scenario.case_id,
+                    "hearing_case_id": scenario.hearing_case_id,
+                    "m4_case_status": hearing_view.case_status,
+                    "hearing_eligibility": hearing_view.eligibility,
+                    "l5_status": hearing_view.l5_status,
+                    "completed_at": completed_at,
+                    "delivery_state": M8EvaluationDeliveryState.NOT_APPLICABLE,
+                    "provider_receipt_refs": receipts,
+                }
+            )
+        if scenario.outcome == "HUMAN_REVIEW_REQUIRED":
             return running.model_copy(
                 update={
                     "revision": running.revision + 1,

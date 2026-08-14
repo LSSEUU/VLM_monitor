@@ -1634,7 +1634,7 @@ class M8PlatformDemoService:
             recognition_mode=run.recognition_mode,
             retry_of_run_id=run.retry_of_run_id,
             model_components=self._model_components(run, manifest),
-            outcome=("HUMAN_REVIEW_REQUIRED" if prehearing is not None else "ACTIONABLE_RISK"),
+            outcome="ACTIONABLE_RISK",
             evidence=evidence,
             video_profile=M8PlatformVideoProfileV1(
                 input_file_sha256=stream.input_file_sha256,
