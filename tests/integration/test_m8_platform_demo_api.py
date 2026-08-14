@@ -5,11 +5,13 @@ import http.client
 import json
 import sqlite3
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+import labcourt.services.m8_platform_demo as m8_platform_demo_module
 from labcourt.application.m8_platform_bootstrap import (
     PLATFORM_CAMERA_ID,
     PLATFORM_CAMPUS_ID,
@@ -567,6 +569,76 @@ def test_hearing_case_mapping_recovers_from_persisted_run_after_reassembly(
             resolver(run.run_id, run.hearing_case_id)
     finally:
         reopened.server.server_close()
+
+
+def test_prehearing_runtime_opens_before_platform_case_mapping_without_exposing_it(
+    tmp_path: Path,
+    socket_enabled: None,
+    monkeypatch,
+) -> None:
+    assembly = _assembly(tmp_path)
+    platform = assembly.server.platform_service
+    run = M8PlatformScenarioRunV1(
+        run_id="evaluation-prehearing-before-case-map",
+        scenario_kind=M8PlatformScenarioKind.PPE_GOGGLES_MISSING,
+        state="RUNNING",
+        stages=tuple(
+            M8PlatformScenarioStageV1(
+                stage=stage,
+                state=M8PlatformStageState.PENDING,
+                summary="waiting",
+            )
+            for stage in M8PlatformScenarioStage
+        ),
+        recognition_mode=M8PlatformRecognitionMode.FULL_MODEL,
+    )
+    platform._write_run(run)
+    source_case_id = "m4-case-before-platform-map"
+    route_calls: list[tuple[str, str]] = []
+    repository = object()
+
+    class _Coordinator:
+        @staticmethod
+        def route(run_id: str, case_id: str):
+            route_calls.append((run_id, case_id))
+            return None
+
+    class _Runtime:
+        @staticmethod
+        def prehearing_coordinator(candidate):
+            assert candidate is repository
+            return _Coordinator()
+
+    runtime = _Runtime()
+
+    @contextmanager
+    def fake_runtime(**_kwargs):
+        yield runtime
+
+    monkeypatch.setattr(m8_platform_demo_module, "open_m8_hearing_runtime", fake_runtime)
+    monkeypatch.setattr(
+        m8_platform_demo_module,
+        "PersistedM8RecordedRunSourceResolver",
+        lambda **_kwargs: object(),
+    )
+    monkeypatch.setattr(
+        m8_platform_demo_module,
+        "M8GroundingDinoRedetector",
+        lambda **_kwargs: object(),
+    )
+    monkeypatch.setattr(platform, "_acquisition_outcome_repository", lambda _run_id: object())
+    monkeypatch.setattr(platform, "_prehearing_repository", lambda _run_id: repository)
+
+    assert platform.route_prehearing(run.run_id, source_case_id) is None
+    assert route_calls == [(run.run_id, source_case_id)]
+    with (
+        pytest.raises(M8ApiServiceError, match="RESOURCE_NOT_FOUND"),
+        platform.open_hearing_runtime(run.run_id),
+    ):
+        pass
+    with pytest.raises(M8ApiServiceError, match="RESOURCE_NOT_FOUND"):
+        platform.resolve_hearing_case_id(run.run_id, "unpublished-platform-case")
+    assembly.server.server_close()
 
 
 def test_platform_projects_truthful_hot_progress_and_failure_stage(

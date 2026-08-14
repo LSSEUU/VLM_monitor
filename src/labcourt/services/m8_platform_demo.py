@@ -371,15 +371,35 @@ class M8PlatformDemoService:
 
     @contextmanager
     def open_hearing_runtime(self, run_id: str) -> Iterator[M4HearingApiRuntime]:
-        """Resolve one persisted Pilot run without keeping process-local hearing state."""
+        """Resolve a public hearing runtime only after its Case mapping is published."""
+
+        with self._open_persisted_hearing_runtime(
+            run_id,
+            require_platform_case_mapping=True,
+        ) as runtime:
+            yield runtime
+
+    @contextmanager
+    def _open_persisted_hearing_runtime(
+        self,
+        run_id: str,
+        *,
+        require_platform_case_mapping: bool,
+    ) -> Iterator[M4HearingApiRuntime]:
+        """Resolve one persisted Pilot run without keeping process-local hearing state.
+
+        The pre-hearing gate runs while the completed Pilot authorities are
+        being projected into the operational Case.  That internal path may
+        open the frozen M4 run before the public Case mapping is published;
+        every public hearing path keeps the mapping requirement enabled.
+        """
 
         try:
             run = self._read_run_snapshot(run_id)
         except (OSError, ValueError):
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND) from None
-        if (
-            run.scenario_kind != M8PlatformScenarioKind.PPE_GOGGLES_MISSING
-            or run.hearing_case_id is None
+        if run.scenario_kind != M8PlatformScenarioKind.PPE_GOGGLES_MISSING or (
+            run.hearing_case_id is None and require_platform_case_mapping
         ):
             raise M8ApiServiceError(M8ApiServiceFailureCode.RESOURCE_NOT_FOUND)
         service = self._pilot_service_for(run)
@@ -492,7 +512,10 @@ class M8PlatformDemoService:
     ) -> M8PreHearingPreparationV1 | None:
         """Apply the deterministic gate before any M4 role call can start."""
 
-        with self.open_hearing_runtime(run_id) as runtime:
+        with self._open_persisted_hearing_runtime(
+            run_id,
+            require_platform_case_mapping=False,
+        ) as runtime:
             repository = self._prehearing_repository(run_id)
             return runtime.prehearing_coordinator(repository).route(run_id, source_case_id)
 
