@@ -60,6 +60,7 @@ class DeterministicSyntheticDemoHearingVLMClient:
             evidence_refs=(evidence_ref,),
             uncertainty=0.2,
         )
+        payload: ProsecutorModelPayload | DefenderModelPayload | JudgeModelPayload
         if request.role == VlmRole.PROSECUTOR:
             payload = ProsecutorModelPayload(
                 arguments=(

@@ -3,8 +3,6 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-import cv2
-import numpy as np
 import pytest
 
 from labcourt.adapters.m8_acquisition_outcomes import (
@@ -37,6 +35,9 @@ from labcourt.domain.evidence_authority import derive_evidence_authority
 from tests.unit import test_m4_evidence_authority as evidence_helpers
 from tests.unit.test_m4_evidence_authority import _execution
 from tests.unit.test_m4_hearing_request import ROOT, _closed_pack
+
+cv2 = pytest.importorskip("cv2")
+np = pytest.importorskip("numpy")
 
 
 def _write_real_mp4(path: Path, *, frame_count: int, width: int, height: int) -> None:

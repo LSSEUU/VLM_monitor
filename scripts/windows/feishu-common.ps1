@@ -53,7 +53,7 @@ function Read-LabCourtFeishuConfig {
     Assert-LabCourtFeishuConfigIgnored
     $configPath = Get-LabCourtFeishuConfigPath
     if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
-        throw "Local Feishu config is missing. Run feishu-setup.cmd first."
+        throw "Local Feishu config is missing. Run labcourt.cmd feishu setup first."
     }
 
     $validationOutput = & (Get-LabCourtExecutable) feishu local-config-check --config $configPath --json 2>&1

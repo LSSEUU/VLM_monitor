@@ -1,3 +1,5 @@
+# mypy: disable-error-code="unused-ignore"
+
 """Optional PyCA-backed AES-256-CBC primitive for Feishu encrypted events."""
 
 from __future__ import annotations
@@ -36,8 +38,12 @@ class CryptographyM8FeishuInboundCrypto:
                 "M8 Feishu inbound AES-CBC ciphertext has invalid length"
             )
         try:
-            from cryptography.hazmat.primitives import padding
-            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+            from cryptography.hazmat.primitives import padding  # type: ignore[import-not-found]
+            from cryptography.hazmat.primitives.ciphers import (  # type: ignore[import-not-found]
+                Cipher,
+                algorithms,
+                modes,
+            )
         except ImportError as error:
             raise M8FeishuInboundCryptoError(
                 "M8 Feishu inbound cryptography provider is unavailable"

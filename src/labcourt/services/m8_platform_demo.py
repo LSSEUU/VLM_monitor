@@ -14,6 +14,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 from labcourt.adapters.m8_acquisition_outcomes import (
     PersistedM8AcquisitionOutcomeRepository,
@@ -62,6 +63,7 @@ from labcourt.application.m8_platform_bootstrap import (
 )
 from labcourt.contracts.canonical import canonical_json, sha256_hex
 from labcourt.contracts.cases import Case
+from labcourt.contracts.config import VlmProviderProfile
 from labcourt.contracts.detections import FrameBundle
 from labcourt.contracts.enums import (
     CropSource,
@@ -71,6 +73,7 @@ from labcourt.contracts.enums import (
 )
 from labcourt.contracts.evidence import EvidencePack
 from labcourt.contracts.m8_access_cases import (
+    M8ActorAuthorityV1,
     M8ActorRole,
     M8AuthorityReference,
     M8AuthorityReferenceKind,
@@ -96,6 +99,7 @@ from labcourt.contracts.m8_notification_lifecycle import (
     M8NotificationChannelCapabilityAuthorityV1,
     M8NotificationReplyKind,
 )
+from labcourt.contracts.m8_notification_persistence import M8NotificationCommitReceiptV1
 from labcourt.contracts.m8_notifications import (
     M8NotificationAudienceKind,
     M8NotificationChannelKind,
@@ -150,7 +154,11 @@ from labcourt.contracts.m8_sensor_signals import (
 )
 from labcourt.contracts.manifests import ModelManifest, RunManifest, StreamManifest
 from labcourt.contracts.pilot import PilotA2Report
-from labcourt.contracts.pilot_ui import PilotUiJobStartRequest
+from labcourt.contracts.pilot_a5 import PilotA5RunReport
+from labcourt.contracts.pilot_ui import (
+    PilotUiEvidenceView,
+    PilotUiJobStartRequest,
+)
 from labcourt.contracts.projection_generation import ProjectionCurrentPointer
 from labcourt.exceptions import EvidenceMissing
 from labcourt.services.m8_feishu_platform import M8FeishuPlatformService
@@ -170,6 +178,7 @@ from labcourt.services.pilot_a5 import run_pilot_a5
 from labcourt.services.pilot_operations import build_expected_perception_manifest
 from labcourt.services.pilot_progress import PilotProgressUpdate
 from labcourt.services.pilot_ui import (
+    PilotUiBinaryAsset,
     PilotUiBoundaryError,
     PilotUiJobManager,
     PilotUiService,
@@ -262,7 +271,7 @@ class M8PlatformDemoService:
             build_expected_perception_manifest(fixture_pilot_service.config)
         )
 
-        def runner(**kwargs):
+        def runner(**kwargs: Any) -> PilotA5RunReport:
             return run_pilot_a5(
                 **kwargs,
                 perception_transport=perception,
@@ -587,7 +596,7 @@ class M8PlatformDemoService:
         principal: M8ApiPrincipalV1,
         run_id: str,
         evidence_id: str,
-    ):
+    ) -> PilotUiBinaryAsset:
         actor = self._actor(principal)
         run = self.scenario_run(principal, run_id)
         item = next((value for value in run.evidence if value.evidence_id == evidence_id), None)
@@ -789,7 +798,7 @@ class M8PlatformDemoService:
         kind: str,
         source_case_version: int | None = None,
         source_case_authority_sha256: str | None = None,
-    ):
+    ) -> M8NotificationCommitReceiptV1:
         self._require_role(principal, M8ActorRole.SAFETY_OFFICER)
         operations = self._operations()
         case = operations.get_current_operational_case(case_id)
@@ -824,7 +833,7 @@ class M8PlatformDemoService:
         notification_id: str,
         reply_kind: M8NotificationReplyKind,
         body: str,
-    ):
+    ) -> M8NotificationCommitReceiptV1:
         actor = self._require_role(principal, M8ActorRole.STUDENT)
         notifications = self._notifications()
         current = notifications.get_current_notification(notification_id)
@@ -854,7 +863,7 @@ class M8PlatformDemoService:
         self,
         principal: M8ApiPrincipalV1,
         notification_id: str,
-    ):
+    ) -> M8NotificationCommitReceiptV1:
         actor = self._require_role(principal, M8ActorRole.STUDENT)
         notifications = self._notifications()
         current = notifications.get_current_notification(notification_id)
@@ -2113,7 +2122,7 @@ class M8PlatformDemoService:
         purpose: M8NotificationPurpose,
         audience: M8NotificationAudienceKind,
         inbound_response_supported: bool,
-    ):
+    ) -> M8NotificationCommitReceiptV1:
         operations = self._operations()
         notifications = self._notifications()
         case = operations.get_current_operational_case(case_id)
@@ -2243,7 +2252,7 @@ class M8PlatformDemoService:
     @staticmethod
     def _workspace_evidence_item(
         run: M8PlatformScenarioRunV1,
-        item,
+        item: PilotUiEvidenceView,
         view_scope: M8PlatformEvidenceViewScope,
     ) -> M8PlatformEvidenceItemV1:
         sealed = item.role in {"PANORAMA", "SUBJECT"}
@@ -2307,7 +2316,7 @@ class M8PlatformDemoService:
         )
 
     @staticmethod
-    def _notification_copy(plan) -> tuple[str, str]:
+    def _notification_copy(plan: M8NotificationPlanAuthorityV1) -> tuple[str, str]:
         purpose = plan.purpose
         if purpose == M8NotificationPurpose.APPEAL_OUTCOME:
             return (
@@ -2335,7 +2344,7 @@ class M8PlatformDemoService:
         self,
         principal: M8ApiPrincipalV1,
         case_id: str,
-        visible_notifications,
+        visible_notifications: tuple[M8NotificationCommitReceiptV1, ...],
     ) -> M8NotificationConversationV1:
         actor = self._actor(principal)
         operations = self._operations()
@@ -2647,10 +2656,14 @@ class M8PlatformDemoService:
             actions=tuple(actions),
         )
 
-    def _actor(self, principal: M8ApiPrincipalV1):
+    def _actor(self, principal: M8ApiPrincipalV1) -> M8ActorAuthorityV1:
         return self._operations().get_current_actor_authority(principal.actor_id).authority
 
-    def _require_role(self, principal: M8ApiPrincipalV1, role: M8ActorRole):
+    def _require_role(
+        self,
+        principal: M8ApiPrincipalV1,
+        role: M8ActorRole,
+    ) -> M8ActorAuthorityV1:
         actor = self._actor(principal)
         if actor.role != role:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
@@ -2788,7 +2801,7 @@ class M8PlatformDemoService:
         )
 
     @staticmethod
-    def _model_manifest(component: str, profile) -> ModelManifest:
+    def _model_manifest(component: str, profile: VlmProviderProfile) -> ModelManifest:
         return ModelManifest(
             component=component,
             provider=profile.provider,

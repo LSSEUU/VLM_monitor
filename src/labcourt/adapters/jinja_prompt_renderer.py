@@ -75,19 +75,19 @@ PROMPT_DEFINITIONS: Final = (
 LEGACY_PROMPT_DEFINITIONS: Final = (
     PromptDefinition(
         prompt_id="screening_presence_v1",
-        filename="legacy/screening_presence_v1.jinja",
+        filename="archive/screening_presence_v1.jinja",
         role=VlmRole.SCREENING,
         variable_names=("evidence_json", "output_schema_json", "rules_json"),
     ),
     PromptDefinition(
         prompt_id="screening_absence_v1",
-        filename="legacy/screening_absence_v1.jinja",
+        filename="archive/screening_absence_v1.jinja",
         role=VlmRole.SCREENING,
         variable_names=("evidence_json", "output_schema_json", "rules_json"),
     ),
     PromptDefinition(
         prompt_id="screening_structure_repair_v1",
-        filename="legacy/screening_structure_repair_v1.jinja",
+        filename="archive/screening_structure_repair_v1.jinja",
         role=VlmRole.STRUCTURE_REPAIR,
         variable_names=(
             "original_response_json",
@@ -100,19 +100,19 @@ LEGACY_PROMPT_DEFINITIONS: Final = (
 CITATION_REQUIRED_PROMPT_DEFINITIONS: Final = (
     PromptDefinition(
         prompt_id="screening_presence_v1",
-        filename="legacy/citation_required/screening_presence_v1.jinja",
+        filename="archive/citation_required/screening_presence_v1.jinja",
         role=VlmRole.SCREENING,
         variable_names=("evidence_json", "output_schema_json", "rules_json"),
     ),
     PromptDefinition(
         prompt_id="screening_absence_v1",
-        filename="legacy/citation_required/screening_absence_v1.jinja",
+        filename="archive/citation_required/screening_absence_v1.jinja",
         role=VlmRole.SCREENING,
         variable_names=("evidence_json", "output_schema_json", "rules_json"),
     ),
     PromptDefinition(
         prompt_id="screening_structure_repair_v1",
-        filename="legacy/screening_structure_repair_v1.jinja",
+        filename="archive/screening_structure_repair_v1.jinja",
         role=VlmRole.STRUCTURE_REPAIR,
         variable_names=(
             "original_response_json",

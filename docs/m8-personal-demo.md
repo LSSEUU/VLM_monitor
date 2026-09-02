@@ -2,7 +2,7 @@
 
 ## 一键初始化
 
-Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`。也可以在 PowerShell 执行：
+Windows 可在仓库根目录执行 `labcourt.cmd demo bootstrap`。也可以在 PowerShell 执行：
 
 ```powershell
 .\.venv\Scripts\labcourt.exe demo bootstrap --json
@@ -34,7 +34,7 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 
 ## 启动角色化本机 API
 
-双击 `labcourt-demo-api.cmd`。脚本先执行一次 bind-and-close 预检，通过后启动
+执行 `labcourt.cmd demo api`。脚本先执行一次 bind-and-close 预检，通过后启动
 `http://127.0.0.1:8877`；保持终端打开，按 `Ctrl+C` 停止。也可以只检查：
 
 ```powershell
@@ -49,7 +49,7 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 
 ## 离线通知路由
 
-在案件仍为初始 `PENDING_VERIFICATION` 时双击 `labcourt-demo-notification.cmd`。它会幂等发布安全负责人
+在案件仍为初始 `PENDING_VERIFICATION` 时执行 `labcourt.cmd demo notification`。它会幂等发布安全负责人
 本地模拟收件目标，把紧急案件的 `CASE_ACTION_REQUIRED` 通知推进到 `QUEUED`，并写入：
 
 - `notification-route-receipt.json`：目标、案件版本、通知版本和排队提交的 typed 摘要；
@@ -58,20 +58,20 @@ Windows 资源管理器中双击仓库根目录的 `labcourt-demo-bootstrap.cmd`
 该路由不读取飞书凭据、不联网、不声称真实送达、不确认案件，也不形成处分。它完成后，安全负责人和领导
 的运营投影会看到该重大案件通知；运维视图仍不暴露案件或通知。
 
-随后可双击 `labcourt-demo-notification-deliver.cmd`。它只消费上述 exact route receipt，经现有离线 fake
+随后可执行 `labcourt.cmd demo notification-deliver`。它只消费上述 exact route receipt，经现有离线 fake
 channel 提交 `QUEUED -> SENT -> DELIVERED`，把卡片、模拟发送响应与模拟送达响应作为 raw artifacts 写入
 SQLite，并生成 `notification-delivery-receipt.json`。进程在 `SENT` 后中断时可从已持久化卡片和 dispatch
 authority 恢复；重复执行不会生成第二次尝试。这里的 `DELIVERED` 仅是本地模拟状态，固定
 `real_delivery_confirmed=false`，不会调用飞书或改变案件。
 
-最后可双击 `labcourt-demo-notification-acknowledge.cmd`。脚本只接受精确的 `APPLY`，随后用当前
+最后可执行 `labcourt.cmd demo notification-acknowledge`。脚本只接受精确的 `APPLY`，随后用当前
 `safety-officer-demo` authority 提交 `DELIVERED -> ACKNOWLEDGED`，并写入
 `notification-acknowledgement-receipt.json`。重复执行返回同一 receipt；运营投影中的未闭环通知数变为 0。
 确认通知只表示安全负责人已看到消息，不会确认、驳回、补证或结案对应案件。
 
 ## 预录视频模拟摄像头
 
-双击 `labcourt-demo-camera.cmd` 会在保留烟雾传感器的前提下发布 source catalog revision 2，增加
+执行 `labcourt.cmd demo camera` 会在保留烟雾传感器的前提下发布 source catalog revision 2，增加
 `camera-recorded-demo-01`。它固定使用 `RECORDED_VIDEO_SIMULATION`、`FRAME_INDEX` 和
 `SIMULATED · RECORDED VIDEO`，运营投影的来源数变为 2、摄像头数变为 1。catalog 换版后，模拟烟雾样本
 会以连续 source sequence 重新绑定当前 catalog，避免运行时投影拼接不同版本。
@@ -83,7 +83,7 @@ authority 恢复；重复执行不会生成第二次尝试。这里的 `DELIVERE
 
 ## Windows 一键启动
 
-双击仓库根目录的 `labcourt-demo-start.cmd`。入口按固定顺序执行：
+执行仓库根目录的 `labcourt.cmd demo start`。入口按固定顺序执行：
 
 1. 幂等验证基础 bootstrap；
 2. 幂等注册预录视频模拟摄像头；
@@ -117,7 +117,7 @@ artifacts 仍保持 conflict-closed，不会被一键入口覆盖。关闭窗口
 
 ## 安全负责人案件处置
 
-保持 API 终端运行，再双击 `labcourt-demo-case-action.cmd`。依次输入动作、人工理由，并输入 `APPLY`。允许的
+保持 API 终端运行，再执行 `labcourt.cmd demo case-action`。依次输入动作、人工理由，并输入 `APPLY`。允许的
 动作及合法源状态为：
 
 - `CONFIRM` / `REJECT` / `REQUEST_EVIDENCE`：从 `PENDING_VERIFICATION` 执行；

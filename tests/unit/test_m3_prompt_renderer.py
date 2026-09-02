@@ -445,8 +445,8 @@ def test_current_prompts_constrain_objective_claim_references(filename: str) -> 
 @pytest.mark.parametrize(
     "filename",
     [
-        "legacy/citation_required/screening_presence_v1.jinja",
-        "legacy/citation_required/screening_absence_v1.jinja",
+        "archive/citation_required/screening_presence_v1.jinja",
+        "archive/citation_required/screening_absence_v1.jinja",
     ],
 )
 def test_legacy_citation_prompts_preserve_formal_citation_instructions(

@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="zh-CN" data-mode="calm">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f1ea">
+<title>实时监控 · LabCourt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/nav.css">
+<style>
+  :root{
+    --bg: oklch(0.965 0.006 85);
+    --surface: oklch(0.99 0.004 85);
+    --fg: oklch(0.22 0.01 60);
+    --muted: oklch(0.42 0.012 60);
+    --border: oklch(0.88 0.006 75);
+    --accent: oklch(0.42 0.09 250);
+    --alarm: oklch(0.50 0.15 28);
+    --alarm-bright: oklch(0.74 0.18 30);
+    --alarm-ink: oklch(0.985 0.02 30);
+    --hud-glass: oklch(0.22 0.012 60 / .72);
+    --scene: oklch(0.70 0.006 70);
+    --font-serif: "Source Serif 4","Noto Serif SC","Songti SC",Georgia,serif;
+    --font-mono: "IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --maxw: 1280px;
+    --rule: 1px solid var(--border);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--fg)}
+  body{font-family:var(--font-serif);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:var(--accent);color:var(--surface)}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:var(--font-mono)}
+
+  .ribbon{background:var(--fg);color:var(--bg);display:flex;justify-content:space-between;gap:16px;padding:6px 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+  .topbar{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 32px;border-bottom:2px solid var(--fg);animation:fade-down .5s ease both;transition:border-color .3s}
+  @keyframes fade-down{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  html[data-mode="alarm"] .topbar{border-bottom-color:var(--alarm)}
+  .topbar .brand{font-family:var(--font-serif);font-weight:600;font-size:18px}
+  .topbar .brand small{font-family:var(--font-mono);font-weight:400;font-size:11px;color:var(--muted);margin-left:8px;letter-spacing:.08em}
+  .crumbs{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+  .crumbs a{color:var(--muted)}
+  .crumbs a:hover{color:var(--fg)}
+  .crumbs b{color:var(--fg);font-weight:400}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .status-pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--muted);border:var(--rule);padding:5px 10px}
+  .status-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  html[data-mode="alarm"] .status-pill{border-color:var(--alarm)}
+  html[data-mode="alarm"] .status-pill::before{background:var(--alarm)}
+  .clock{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+  .clock b{color:var(--fg);font-weight:500}
+  .ghost-btn{appearance:none;background:transparent;border:1px solid var(--fg);color:var(--fg);font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;padding:10px 14px;min-height:44px;cursor:pointer;transition:.2s}
+  .ghost-btn:hover{background:var(--fg);color:var(--bg)}
+  .ghost-btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  html[data-mode="alarm"] .ghost-btn{border-color:var(--alarm)}
+
+  .alarm-banner{display:none;position:sticky;top:54px;z-index:40;background:var(--alarm);color:var(--alarm-ink);align-items:center;gap:18px;flex-wrap:wrap;padding:14px 32px;max-width:var(--maxw);margin:0 auto}
+  html[data-mode="alarm"] .alarm-banner{display:flex;animation:banner-in .4s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes banner-in{from{transform:translateY(-100%);opacity:0}to{transform:none;opacity:1}}
+  .alarm-banner__tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+  .alarm-banner strong{font-family:var(--font-serif);font-weight:600;font-size:18px;display:block;margin-top:2px}
+  .alarm-banner__sig{font-family:var(--font-mono);font-size:12px;opacity:.9}
+  .alarm-banner__actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .alarm-banner__cta{color:var(--alarm-ink);font-family:var(--font-mono);font-size:12px;letter-spacing:.06em;border:1px solid oklch(0.985 0.02 30 / .5);padding:9px 14px;min-height:40px;display:inline-flex;align-items:center;transition:.2s}
+  .alarm-banner__cta:hover{background:var(--alarm-ink);color:var(--alarm)}
+  .alarm-banner__close{background:none;border:0;color:inherit;font-size:22px;line-height:1;cursor:pointer;padding:6px 10px;opacity:.8;min-width:44px;min-height:44px}
+  .alarm-banner__close:hover{opacity:1}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:30px 32px 80px}
+  .page-head h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(30px,3.6vw,40px);line-height:1.3;letter-spacing:0;margin:0 0 12px;animation:wipe-in .65s ease both}
+  @keyframes wipe-in{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+  .page-head .deck{font-size:16px;line-height:1.7;color:var(--muted);max-width:62ch;margin:0 0 24px;animation:rise .5s ease .15s both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);border-top:var(--rule);border-bottom:var(--rule);margin-bottom:30px;animation:rise .5s ease .25s both}
+  .metrics div{padding:16px 20px;border-right:var(--rule)}
+  .metrics div:last-child{border-right:0}
+  .metrics span{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--muted)}
+  .metrics b{display:block;font-family:var(--font-serif);font-weight:600;font-size:24px;line-height:1.2;margin-top:6px}
+  .metrics small{display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:5px}
+
+  .console{display:grid;grid-template-columns:1fr 340px;gap:26px;align-items:start}
+  .panel-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px}
+  .panel-title h2{font-family:var(--font-serif);font-weight:600;font-size:19px}
+  .panel-title span{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+
+  /* 主画面 */
+  .cam{background:var(--surface);border:var(--rule);position:relative;overflow:hidden}
+  .cam__stage{position:relative;aspect-ratio:16/9;background:oklch(0.16 0.012 55);overflow:hidden}
+  .feed-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .scene-svg{position:absolute;inset:0;width:100%;height:100%;color:var(--scene);display:none;background:var(--bg);opacity:0;transition:opacity .35s ease}
+  .scene-svg.is-on{opacity:1}
+  .scene-svg line,.scene-svg rect{shape-rendering:crispEdges}
+  .cam__bar{padding:11px 14px;border-top:var(--rule);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .cam__bar b{font-family:var(--font-serif);font-weight:600;font-size:14px}
+  .cam__bar span{font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+
+  .live-dot{position:absolute;top:10px;right:10px;z-index:6;display:inline-flex;align-items:center;gap:6px;background:var(--hud-glass);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--alarm-ink);border:1px solid rgba(255,255,255,.16);padding:3px 8px;font-family:var(--font-mono);font-size:10px;letter-spacing:.12em}
+  .live-dot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--alarm-bright);animation:live-pulse 1.5s ease-in-out infinite}
+  @keyframes live-pulse{0%,100%{box-shadow:0 0 0 0 oklch(0.74 0.18 30 / .6)}50%{box-shadow:0 0 0 5px oklch(0.74 0.18 30 / 0)}}
+
+  /* 识别标注 */
+  .recog{position:absolute;inset:0;z-index:5;display:none;pointer-events:none}
+  .recog .box{position:absolute;border:1.5px solid oklch(0.96 0.01 90);box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+  .recog .box--alert{border-color:var(--alarm-bright);background:oklch(0.50 0.15 28 / .08);box-shadow:0 0 0 1px oklch(0.50 0.15 28 / .3),0 0 16px oklch(0.50 0.15 28 / .35)}
+  .recog .lbl{position:absolute;top:-19px;left:-2px;display:inline-flex;align-items:center;gap:6px;background:var(--hud-glass);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--alarm-ink);border:1px solid rgba(255,255,255,.16);padding:3px 8px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;white-space:nowrap}
+  .recog .lbl::before{content:"";width:6px;height:6px;border-radius:50%;background:oklch(0.96 0.01 90)}
+  .recog .box--alert .lbl{background:oklch(0.32 0.11 28 / .82);border-color:oklch(0.74 0.18 30 / .55)}
+  .recog .box--alert .lbl::before{background:var(--alarm-bright)}
+  .recog__scan{position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,color-mix(in oklch,var(--alarm-ink) 70%,transparent),transparent);animation:recog-scan 4.5s linear infinite}
+  @keyframes recog-scan{0%{top:-2%;opacity:0}10%{opacity:.8}90%{opacity:.8}100%{top:102%;opacity:0}}
+  html[data-mode="alarm"] .recog__scan{background:linear-gradient(90deg,transparent,var(--alarm-bright),transparent);animation-duration:2.2s}
+
+  /* 切换：canvas 截帧 · 棋盘溶解（硬边、无暗罩、利落） */
+  #frame-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:7;pointer-events:none;opacity:0;transition:opacity .12s ease}
+
+  /* 缩略切换 */
+  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+  .thumb-btn{background:var(--surface);border:var(--rule);padding:0;cursor:pointer;text-align:left;font:inherit;color:inherit;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+  .thumb-btn:hover{border-color:var(--fg)}
+  .thumb-btn.active{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+  .thumb-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .thumb__mini{display:block;aspect-ratio:4/3;background:oklch(0.16 0.012 55);position:relative;overflow:hidden}
+  .thumb__mini video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .thumb__mini svg{position:absolute;inset:0;width:100%;height:100%;color:var(--scene)}
+  .thumb__bar{display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:8px 10px;font-family:var(--font-mono);font-size:10.5px}
+  .thumb__bar b{color:var(--fg);font-weight:500}
+  .thumb__bar span{color:var(--muted)}
+  .cam-foot{margin-top:14px;font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  /* 候选 */
+  .event-panel{display:flex;flex-direction:column;gap:20px}
+  .cand-list{display:flex;flex-direction:column;border-top:var(--rule)}
+  .cand{display:block;padding:14px 4px;border-bottom:var(--rule);transition:padding-left .2s}
+  .cand--link{cursor:pointer}
+  .cand--link:hover{padding-left:10px}
+  .cand--link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .cand__row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .cand__type{font-family:var(--font-serif);font-weight:600;font-size:14.5px}
+  .cand__state{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+  .cand__meta{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+  .cand--link .cand__type::after{content:" →";color:var(--muted);font-weight:400}
+  .cand--link:hover .cand__type::after{color:var(--fg)}
+
+  /* 设备 */
+  .devices{margin-top:34px}
+  .device-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  .dev{background:var(--surface);border:var(--rule);padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .3s}
+  .dev.alert{border-color:var(--alarm)}
+  .dev__head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .dev__name{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--muted)}
+  .dev__tag{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;color:var(--muted);border:var(--rule);padding:1px 5px}
+  .dev__tag.ok{color:var(--fg);border-color:var(--fg)}
+  .dev__val{font-family:var(--font-serif);font-weight:600;font-size:26px;line-height:1;display:flex;align-items:baseline;gap:4px}
+  .dev__val small{font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--muted)}
+  .spark{width:100%;height:32px;display:block}
+  .spark__line{fill:none;stroke:var(--fg);stroke-width:1.4;stroke-linejoin:round}
+  .spark__fill{fill:color-mix(in oklch,var(--fg) 9%,transparent);stroke:none}
+  .dev.alert .spark__line{stroke:var(--alarm)}
+  .dev.alert .spark__fill{fill:color-mix(in oklch,var(--alarm) 12%,transparent)}
+  .dev__foot{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+
+  /* 时间轴（色块版） */
+  .tl{margin-top:34px}
+  .tl-scroll{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding:14px 0 8px;cursor:grab;touch-action:pan-y}
+  .tl-scroll::-webkit-scrollbar{display:none}
+  .tl-scroll:active{cursor:grabbing}
+  .tl-track{position:relative;height:72px;min-width:100%;padding:0 12px;user-select:none}
+  .tl-rail{position:absolute;left:12px;right:12px;top:34px;height:2px;background:var(--border);overflow:hidden}
+  .tl-rail::after{content:"";position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(90deg,transparent,color-mix(in oklch,var(--fg) 40%,transparent),transparent);animation:rail-flow 4.5s linear infinite}
+  @keyframes rail-flow{from{transform:translateX(-100%)}to{transform:translateX(320%)}}
+  /* 周期扫描已移除（仅保留主轨流光） */
+  .tl-minor{position:absolute;top:30px;width:1px;height:6px;background:var(--border)}
+  .tl-anchor{position:absolute;top:46px;transform:translateX(-50%);font-family:var(--font-mono);font-size:10.5px;color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+  .tl-now{position:absolute;top:24px;height:22px;transform:translateX(-50%);width:4px;background:var(--accent);border-radius:2px;animation:now-breathe 2.4s ease-in-out infinite}
+  @keyframes now-breathe{0%,100%{opacity:.6;transform:translateX(-50%) scaleY(1)}50%{opacity:1;transform:translateX(-50%) scaleY(1.06)}}
+  .tl-now__lbl{position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:.08em;white-space:nowrap;background:var(--surface);padding:1px 5px;border-radius:2px}
+
+  .tl-anchor{position:absolute;top:52px;transform:translateX(-50%);font-family:var(--font-mono);font-size:10.5px;color:var(--muted);letter-spacing:.04em;white-space:nowrap}
+  .tl-block{position:absolute;top:24px;height:22px;min-width:20px;background:var(--fg);border:0;cursor:pointer;padding:0 6px;border-radius:3px;transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .tl-block.is-alarm{background:var(--alarm)}
+  .tl-block.is-case{background:var(--fg)}
+  .tl-block.is-candidate{background:var(--surface);border:1.5px solid var(--accent)}
+  .tl-block.is-resolved{background:var(--muted)}
+  .tl-block:hover{transform:translateY(-3px);filter:brightness(1.06)}
+  .tl-block:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .tl-block.active{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--fg)}
+  .tl-block__txt{font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;white-space:nowrap;color:var(--bg);pointer-events:none}
+  .tl-block.is-candidate .tl-block__txt{color:var(--accent)}
+
+  .tl-tip{position:absolute;top:24px;z-index:9;transform:translate(-50%,-130%);background:var(--fg);color:var(--bg);padding:5px 9px;font-family:var(--font-mono);font-size:10.5px;white-space:nowrap;pointer-events:none;display:none}
+  .tl-tip b{font-weight:500}
+  .tl-tip time{display:block;color:oklch(0.70 0.01 70);font-size:9.5px;margin-bottom:1px}
+
+  .tl-detail{margin-top:6px;border:var(--rule);background:var(--surface);padding:16px 18px;min-height:24px}
+  .tl-detail.show > *{animation:detail-in .35s ease both}
+  .tl-detail.show .tl-detail__hint{animation:none}
+  @keyframes detail-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .tl-detail__row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .tl-detail__type{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;color:var(--muted);border:var(--rule);padding:2px 7px}
+  .tl-detail__type.t-alarm{color:var(--fg);border-color:var(--alarm);background:oklch(0.50 0.15 28 / .08)}
+  .tl-detail__time{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+  .tl-detail h3{font-family:var(--font-serif);font-weight:600;font-size:17px;margin:2px 0 4px}
+  .tl-detail p{font-size:14px;color:var(--muted);line-height:1.6;max-width:70ch}
+  .tl-detail__meta{margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+  .tl-detail__meta a{color:var(--fg);border-bottom:1px solid var(--fg);padding-bottom:1px}
+  .tl-detail__meta a:hover{color:var(--accent);border-color:var(--accent)}
+  .tl-detail__hint{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+
+  .foot-note{margin-top:34px;padding-top:16px;border-top:var(--rule);font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  @media (max-width:1000px){
+    .console{grid-template-columns:1fr}
+    .metrics{grid-template-columns:repeat(2,1fr)}
+    .metrics div:nth-child(2){border-right:0}
+    .metrics div:nth-child(-n+2){border-bottom:var(--rule)}
+    .device-grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:640px){
+    .thumbs{grid-template-columns:repeat(2,1fr)}
+    .topbar,.ribbon,main{padding-left:20px;padding-right:20px}
+    .device-grid{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ribbon" role="status">
+  <span>PREVIEW · 演示数据</span>
+  <span>SIMULATED · 不含真实人员</span>
+</div>
+
+<div id="gnav-mount"></div>
+<div class="scope-bar">
+  <nav class="crumbs" aria-label="位置"><a href="monitor.html">监控</a> / <b>海南大学 · 信通楼 · 开放预约实验室</b></nav>
+  <button id="mode-toggle" class="ghost-btn" type="button" aria-pressed="false" data-od-id="alarm-toggle">模拟告警</button>
+</div>
+
+<div class="alarm-banner" role="alert" data-od-id="alarm-banner">
+  <div>
+    <span class="alarm-banner__tag">紧急 · 模拟传感器联动</span>
+    <strong>温度与烟雾信号联动 · 主操作台 CAM-LAB-301-A</strong>
+    <span class="alarm-banner__sig">温度 78.4 °C　·　烟雾 SMK 0.82</span>
+  </div>
+  <div class="alarm-banner__actions">
+    <a class="alarm-banner__cta" href="case-file.html" data-od-id="alarm-goto-case">查看案件详情 →</a>
+    <button class="alarm-banner__close" type="button" id="alarm-dismiss" aria-label="忽略告警">×</button>
+  </div>
+</div>
+
+<main>
+
+  <section class="page-head" data-od-id="mon-head">
+    <h1>实时监控</h1>
+    <p class="deck">以现场态势为主：主画面接入模拟视频，AI 对每路画面做结构化识别并实时标注。不做人脸识别；轨迹仅在单机位、单会话内有效。</p>
+  </section>
+
+  <section class="metrics" aria-label="实时摘要" data-od-id="mon-metrics">
+    <div><span>在线机位</span><b class="mono">04 / 04</b><small>全部在线</small></div>
+    <div><span>传感器</span><b class="mono">12 / 12</b><small>心跳正常</small></div>
+    <div><span>今日候选</span><b class="mono">07</b><small>含 5 条已抑制</small></div>
+    <div><span>待人工确认</span><b class="mono">02</b><small>需关注</small></div>
+  </section>
+
+  <div class="console">
+
+    <section class="camera-workspace" data-od-id="mon-cameras">
+      <div class="panel-title"><h2>实验区实时画面</h2><span>4 路机位 · 3 路接入模拟视频</span></div>
+
+      <article class="cam cam-main" data-od-id="cam-main">
+        <div class="cam__stage" id="main-stage">
+          <span class="live-dot">LIVE</span>
+          <video id="main-video" class="feed-video" src="assets/feed-301a.mp4" autoplay muted loop playsinline></video>
+          <div id="main-recog" class="recog" style="display:block">
+            <div class="box box--alert" style="top:26%;left:30%;width:17%;height:26%"><span class="lbl">PPE · 未佩戴 · 0.84</span></div>
+            <div class="box" style="top:34%;left:14%;width:15%;height:36%"><span class="lbl">轨迹 T-07 · 匿名</span></div>
+            <div class="recog__scan"></div>
+          </div>
+          <svg id="scene-303a" class="scene-svg" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect x="50" y="60" width="200" height="130" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="50" y1="125" x2="250" y2="125" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <canvas id="frame-canvas" width="960" height="540" aria-hidden="true"></canvas>
+        </div>
+        <div class="cam__bar"><b id="main-bar">主操作台</b><span id="main-sub">CAM-LAB-301-A · 2 条匿名轨迹</span></div>
+      </article>
+
+      <div class="thumbs" role="tablist" aria-label="切换机位">
+        <button class="thumb-btn active" data-cam="301a" type="button" role="tab" aria-selected="true">
+          <span class="thumb__mini"><video src="assets/feed-301a.mp4" muted loop playsinline preload="metadata"></video></span>
+          <span class="thumb__bar"><b>301-A 主操作台</b><span>视频</span></span>
+        </button>
+        <button class="thumb-btn" data-cam="301b" type="button" role="tab" aria-selected="false">
+          <span class="thumb__mini"><video src="../../../inputs/goggles-missing.mp4" muted loop playsinline preload="metadata"></video></span>
+          <span class="thumb__bar"><b>301-B 通风橱</b><span>视频</span></span>
+        </button>
+        <button class="thumb-btn" data-cam="302a" type="button" role="tab" aria-selected="false">
+          <span class="thumb__mini"><video src="assets/feed-302a.mp4" muted loop playsinline preload="metadata"></video></span>
+          <span class="thumb__bar"><b>302-A 仪器室</b><span>视频</span></span>
+        </button>
+        <button class="thumb-btn" data-cam="303a" type="button" role="tab" aria-selected="false">
+          <span class="thumb__mini"><svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><rect x="60" y="80" width="180" height="150" fill="none" stroke="currentColor" stroke-width="3"/><line x1="60" y1="155" x2="240" y2="155" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="thumb__bar"><b>303-A 试剂间</b><span>预览</span></span>
+        </button>
+      </div>
+
+      <div class="cam-foot">
+        <span>识别标注为模拟外观，不调用真实模型；不做人脸识别</span>
+        <span>切换主画面为棋盘溶解</span>
+      </div>
+    </section>
+
+    <aside class="event-panel" data-od-id="mon-events">
+      <div>
+        <div class="panel-title"><h2>今日候选</h2><span>3 条 · 最新</span></div>
+        <div class="cand-list">
+          <a class="cand cand--link" href="case-file.html" data-od-id="cand-goggles">
+            <div class="cand__row"><span class="cand__type">护目镜缺失候选</span><span class="cand__state">等待人工确认</span></div>
+            <div class="cand__meta"><span>主操作台 · CAM-301-A</span><span>LC-2026-0810-014</span></div>
+          </a>
+          <div class="cand" data-od-id="cand-coat">
+            <div class="cand__row"><span class="cand__type">实验服闭合候选</span><span class="cand__state">待补充证据</span></div>
+            <div class="cand__meta"><span>仪器分析室 · CAM-302-A</span><span>LC-2026-0810-011</span></div>
+          </div>
+          <div class="cand" data-od-id="cand-gloves">
+            <div class="cand__row"><span class="cand__type">防护手套候选</span><span class="cand__state">AI 不可用积压</span></div>
+            <div class="cand__meta"><span>生物实验区 · CAM-BIO-204-B</span><span>LC-2026-0810-008</span></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <section class="devices" data-od-id="mon-devices">
+    <div class="panel-title"><h2>关联设备</h2><span>开放预约实验室 · 实时与近 60 分钟</span></div>
+    <div class="device-grid">
+      <div class="dev" id="dev-temp">
+        <div class="dev__head"><span class="dev__name">温度 T-02</span><span class="dev__tag ok">正常</span></div>
+        <div class="dev__val"><b class="dev__num">24.1</b><small>°C</small></div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark__fill" points="0,18 14,16 28,20 42,15 56,19 70,14 84,17 100,16 100,30 0,30"/><polyline class="spark__line" points="0,18 14,16 28,20 42,15 56,19 70,14 84,17 100,16"/></svg>
+        <div class="dev__foot"><span>近 60 分钟</span><span>平稳</span></div>
+      </div>
+      <div class="dev" id="dev-smoke">
+        <div class="dev__head"><span class="dev__name">烟雾 SMK-03</span><span class="dev__tag ok">正常</span></div>
+        <div class="dev__val"><b class="dev__num">0.03</b><small>指数</small></div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark__fill" points="0,26 14,25 28,27 42,24 56,26 70,25 84,27 100,25 100,30 0,30"/><polyline class="spark__line" points="0,26 14,25 28,27 42,24 56,26 70,25 84,27 100,25"/></svg>
+        <div class="dev__foot"><span>近 60 分钟</span><span>平稳</span></div>
+      </div>
+      <div class="dev" id="dev-humid">
+        <div class="dev__head"><span class="dev__name">湿度 H-01</span><span class="dev__tag">—</span></div>
+        <div class="dev__val"><b class="dev__num">42</b><small>%</small></div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark__fill" points="0,16 14,18 28,14 42,17 56,15 70,18 84,16 100,17 100,30 0,30"/><polyline class="spark__line" points="0,16 14,18 28,14 42,17 56,15 70,18 84,16 100,17"/></svg>
+        <div class="dev__foot"><span>近 60 分钟</span><span>平稳</span></div>
+      </div>
+      <div class="dev" id="dev-hood">
+        <div class="dev__head"><span class="dev__name">通风橱 FH-01</span><span class="dev__tag ok">运行</span></div>
+        <div class="dev__val"><b class="dev__num">0.8</b><small>m/s</small></div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark__fill" points="0,17 14,15 28,18 42,14 56,16 70,15 84,17 100,15 100,30 0,30"/><polyline class="spark__line" points="0,17 14,15 28,18 42,14 56,16 70,15 84,17 100,15"/></svg>
+        <div class="dev__foot"><span>面风速</span><span>达标</span></div>
+      </div>
+      <div class="dev" id="dev-door">
+        <div class="dev__head"><span class="dev__name">门磁 D-03</span><span class="dev__tag">—</span></div>
+        <div class="dev__val"><b class="dev__num">CLOSED</b></div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline class="spark__line" points="0,15 100,15"/></svg>
+        <div class="dev__foot"><span>状态</span><span>关闭</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tl" data-od-id="mon-timeline" aria-label="今日时间轴">
+    <div class="panel-title"><h2>时间轴 · 今日识别与案件</h2><span>实时 · 可拖拽 · 滚轮缩放（待做）</span></div>
+    <div class="tl-scroll" id="tl-scroll">
+      <div class="tl-track" id="tl-track">
+        <div class="tl-rail" aria-hidden="true"></div>
+        <span class="tl-anchor" style="left:0%">14:00</span>
+        <span class="tl-anchor" style="left:25%">14:30</span>
+        <span class="tl-anchor" style="left:50%">15:00</span>
+        <span class="tl-anchor" style="left:75%">15:30</span>
+        <span class="tl-anchor" style="left:100%">16:00</span>
+        <div class="tl-now" style="left:83.3%"><span class="tl-now__lbl" id="tl-now-lbl">现在 · 15:40:00</span></div>
+        <button class="tl-block" data-ev="ev1" style="left:6.7%;width:42px" aria-label="14:08 识别 T-09 进入风险区"><span class="tl-block__txt">识别</span></button>
+        <button class="tl-block is-candidate" data-ev="ev2" style="left:25.8%;width:48px" aria-label="14:31 护目镜缺失候选"><span class="tl-block__txt">候选</span></button>
+        <button class="tl-block is-case" data-ev="ev3" style="left:35%;width:48px" aria-label="14:42 实验服闭合候选"><span class="tl-block__txt">案件</span></button>
+        <button class="tl-block is-alarm" data-ev="ev4" style="left:52.5%;width:108px" aria-label="15:03 温度烟雾联动告警"><span class="tl-block__txt">告警 · 15:03</span></button>
+        <button class="tl-block is-resolved" data-ev="ev5" style="left:67.5%;width:48px" aria-label="15:21 防护手套候选撤销"><span class="tl-block__txt">化解</span></button>
+        <button class="tl-block is-candidate" data-ev="ev6" style="left:80%;width:48px" aria-label="15:36 护目镜佩戴确认"><span class="tl-block__txt">候选</span></button>
+        <div class="tl-tip" id="tl-tip" role="tooltip"></div>
+      </div>
+    </div>
+    <div class="tl-detail show" id="tl-detail" data-od-id="timeline-detail">
+      <span class="tl-detail__hint">选择时间轴上的色块，查看该事件的详细信息。</span>
+    </div>
+  </section>
+
+  <div class="foot-note">
+    <span>预览 · 页面不发送网络请求，不执行生产告警或纪律动作</span>
+    <span>PREVIEW · LOCAL MOCK</span>
+  </div>
+
+</main>
+
+<script>
+  (function(){
+    var root=document.documentElement;
+    var btn=document.getElementById('mode-toggle');
+    var dismiss=document.getElementById('alarm-dismiss');
+
+    function setMode(alarm){
+      root.setAttribute('data-mode', alarm?'alarm':'calm');
+      btn.setAttribute('aria-pressed', String(alarm));
+      btn.textContent = alarm ? '解除告警' : '模拟告警';
+      ['dev-temp','dev-smoke'].forEach(function(id){
+        var el=document.getElementById(id); if(!el) return;
+        el.classList.toggle('alert', alarm);
+        var num=el.querySelector('.dev__num');
+        if(id==='dev-temp') num.textContent = alarm ? '78.4' : '24.1';
+        if(id==='dev-smoke') num.textContent = alarm ? '0.82' : '0.03';
+      });
+    }
+    btn.addEventListener('click', function(){ setMode(root.getAttribute('data-mode')!=='alarm'); });
+    dismiss.addEventListener('click', function(){ setMode(false); });
+
+    /* ===== 切换：canvas 截帧 · 棋盘溶解（硬边、利落） ===== */
+    var mainVideo=document.getElementById('main-video');
+    var mainRecog=document.getElementById('main-recog');
+    var mainBar=document.getElementById('main-bar');
+    var mainSub=document.getElementById('main-sub');
+    var scene303=document.getElementById('scene-303a');
+    var fc=document.getElementById('frame-canvas');
+    var fctx=fc.getContext('2d');
+    var FW=fc.width, FH=fc.height;
+    var camMeta={
+      '301a':{video:'assets/feed-301a.mp4',bar:'主操作台',sub:'CAM-LAB-301-A · 2 条匿名轨迹'},
+      '301b':{video:'../../../inputs/goggles-missing.mp4',bar:'通风橱',sub:'CAM-LAB-301-B · 无活动'},
+      '302a':{video:'assets/feed-302a.mp4',bar:'仪器分析室',sub:'CAM-LAB-302-A · 1 条匿名轨迹'},
+      '303a':{video:null,bar:'试剂暂存间',sub:'CAM-LAB-303-A · 无活动（抽象预览）'}
+    };
+    var fbT=null,endT=null;
+    function revealTiles(){
+      var cols=9, rows=5, list=[];
+      for(var r=0;r<rows;r++)for(var c=0;c<cols;c++) list.push([c,r]);
+      for(var i=list.length-1;i>0;i--){ var j=(Math.random()*(i+1))|0; var tmp=list[i]; list[i]=list[j]; list[j]=tmp; }
+      var tw=FW/cols, th=FH/rows, idx=0, dur=360, start=performance.now();
+      function step(now){
+        var t=Math.min(1,(now-start)/dur), target=Math.floor(t*list.length);
+        while(idx<target){ var tb=list[idx]; fctx.clearRect(tb[0]*tw, tb[1]*th, tw+1, th+1); idx++; }
+        if(t<1){ requestAnimationFrame(step); }
+        else { while(idx<list.length){ var tb=list[idx]; fctx.clearRect(tb[0]*tw, tb[1]*th, tw+1, th+1); idx++; } fc.style.opacity=0; fctx.clearRect(0,0,FW,FH); }
+      }
+      requestAnimationFrame(step);
+    }
+    function switchVideo(src){
+      mainVideo.style.display='block'; mainRecog.style.display='block';
+      scene303.classList.remove('is-on'); scene303.style.display='none';
+      try{ fctx.drawImage(mainVideo, 0,0, FW, FH); fc.style.opacity=1; }catch(e){ fc.style.opacity=0; }
+      mainVideo.src=src;
+      var started=false;
+      mainVideo.onloadeddata=function(){ if(!started){ started=true; var p=mainVideo.play(); if(p&&p.catch)p.catch(function(){}); setTimeout(revealTiles, 40); } };
+      clearTimeout(fbT); fbT=setTimeout(function(){ if(!started){ started=true; revealTiles(); } }, 450);
+      clearTimeout(endT); endT=setTimeout(function(){ fc.style.opacity=0; fctx.clearRect(0,0,FW,FH); }, 1400);
+    }
+    function switchScene(){
+      mainVideo.style.display='none'; mainRecog.style.display='none';
+      scene303.style.display='block'; void scene303.offsetWidth; scene303.classList.add('is-on');
+    }
+    var thumbs=document.querySelectorAll('.thumb-btn');
+    function selectCam(id){
+      thumbs.forEach(function(t){ var on=t.dataset.cam===id; t.classList.toggle('active',on); t.setAttribute('aria-selected',String(on)); });
+      var m=camMeta[id]; mainBar.textContent=m.bar; mainSub.textContent=m.sub;
+      if(m.video){ switchVideo(m.video); } else { switchScene(); }
+    }
+    thumbs.forEach(function(t){ t.addEventListener('click', function(){ selectCam(t.dataset.cam); }); });
+    thumbs.forEach(function(t){
+      var v=t.querySelector('video'); if(!v) return;
+      t.addEventListener('mouseenter', function(){ var p=v.play(); if(p&&p.catch)p.catch(function(){}); });
+      t.addEventListener('mouseleave', function(){ v.pause(); });
+      t.addEventListener('focus', function(){ var p=v.play(); if(p&&p.catch)p.catch(function(){}); });
+      t.addEventListener('blur', function(){ v.pause(); });
+    });
+
+    /* ===== 时间轴 ===== */
+    var track=document.getElementById('tl-track');
+    for(var i=1;i<24;i++){ var mn=document.createElement('span'); mn.className='tl-minor'; mn.style.left=(i/24*100)+'%'; track.appendChild(mn); }
+
+    var events={
+      ev1:{time:'14:08',type:'识别',tone:'',title:'匿名轨迹进入风险区',desc:'T-09 进入 ZONE-CHEM-01 高风险区，未达立案阈值，仅记录。',cam:'CAM-LAB-301-A'},
+      ev2:{time:'14:31',type:'候选',tone:'',title:'护目镜缺失候选',desc:'T-07 在高风险区驻留约 5.0 秒，三张高可观测裁切标记 NOT_WORN（0.79–0.84）。',cam:'CAM-LAB-301-A',case:'LC-2026-0810-014'},
+      ev3:{time:'14:42',type:'案件',tone:'',title:'实验服闭合候选',desc:'仪器分析室存在遮挡，需补充裁切后再审。',cam:'CAM-LAB-302-A',case:'LC-2026-0810-011'},
+      ev4:{time:'15:03',type:'告警',tone:'alarm',title:'温度与烟雾联动（模拟）',desc:'主操作台 78.4 °C / SMK 0.82 触发可靠信号路径，已派单值班员。VLM 不参与安全底线。',cam:'CAM-LAB-301-A'},
+      ev5:{time:'15:21',type:'化解',tone:'',title:'防护手套候选撤销',desc:'反证成立，人工撤销，未形成问责记录。',cam:'CAM-BIO-204-B'},
+      ev6:{time:'15:36',type:'候选',tone:'',title:'护目镜佩戴确认',desc:'T-12 进入风险区前已补戴，仅实时软提醒，未建案。',cam:'CAM-LAB-302-A'}
+    };
+    var blocks=document.querySelectorAll('.tl-block');
+    var detail=document.getElementById('tl-detail');
+    var tip=document.getElementById('tl-tip');
+    function renderDetail(key){
+      var e=events[key]; if(!e) return;
+      var html='<div class="tl-detail__row"><span class="tl-detail__type'+(e.tone==='alarm'?' t-alarm':'')+'">'+e.type+'</span><span class="tl-detail__time">'+e.time+'</span></div>';
+      html+='<h3>'+e.title+'</h3><p>'+e.desc+'</p>';
+      html+='<div class="tl-detail__meta"><span>'+e.cam+'</span>'+(e.case?'<a href="case-file.html">查看案件 '+e.case+' →</a>':'')+'</div>';
+      detail.classList.remove('show'); detail.innerHTML=html; void detail.offsetWidth; detail.classList.add('show');
+    }
+    blocks.forEach(function(b){
+      b.addEventListener('click', function(){
+        blocks.forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active'); renderDetail(b.dataset.ev);
+      });
+      b.addEventListener('mouseenter', function(){
+        var e=events[b.dataset.ev]; if(!e) return;
+        tip.innerHTML='<time>'+e.time+' · '+e.type+'</time><b>'+e.title+'</b>';
+        tip.style.display='block';
+        var tr=track.getBoundingClientRect(), br=b.getBoundingClientRect();
+        tip.style.left=(br.left - tr.left + br.width/2)+'px';
+      });
+      b.addEventListener('mouseleave', function(){ tip.style.display='none'; });
+    });
+
+    /* 抓取拖拽平移 */
+    var sc=document.getElementById('tl-scroll'); var dragging=false, sx=0, sl=0;
+    sc.addEventListener('pointerdown', function(e){ if(e.target.closest('.tl-block')) return; dragging=true; sx=e.clientX; sl=sc.scrollLeft; sc.setPointerCapture(e.pointerId); });
+    sc.addEventListener('pointermove', function(e){ if(!dragging) return; sc.scrollLeft = sl - (e.clientX - sx); });
+    sc.addEventListener('pointerup', function(){ dragging=false; });
+    sc.addEventListener('pointercancel', function(){ dragging=false; });
+
+    /* now 实时秒 */
+    var nowLbl=document.getElementById('tl-now-lbl');
+    var nowSec=15*3600+40*60+0;
+    function pad(n){return (n<10?'0':'')+n}
+    setInterval(function(){ nowSec++; var h=Math.floor(nowSec/3600), m=Math.floor(nowSec%3600/60), s=nowSec%60; nowLbl.textContent='现在 · '+pad(h)+':'+pad(m)+':'+pad(s); }, 1000);
+
+  })();
+</script>
+<script src="assets/nav.js" defer></script>
+</body>
+</html>

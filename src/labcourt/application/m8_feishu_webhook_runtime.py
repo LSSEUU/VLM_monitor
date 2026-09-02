@@ -1,3 +1,5 @@
+# mypy: disable-error-code="import-not-found, unused-ignore"
+
 """Explicit production assembly for the activation-gated Feishu webhook backend."""
 
 from __future__ import annotations
