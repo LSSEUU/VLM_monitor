@@ -68,6 +68,7 @@ Feishu、真实模型和传感器只通过显式的 preflight、activation 和�
 - [M0–M6 冻结规范](docs/spec/labcourt-vibe-coding-spec.md)
 - [M8 校园运营规范](docs/spec/labcourt-campus-operations-spec.md)
 - [历史资料索引](docs/archive/README.md)
+- [仓库清理报告](docs/repository-cleanup.md)
 - [模型许可证登记](docs/model-license-register.md) · [生产适配器准入](docs/m8-production-adapter-intake.md)
 
 ## 已知限制

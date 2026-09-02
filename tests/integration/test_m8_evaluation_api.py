@@ -6,6 +6,8 @@ import json
 import threading
 from pathlib import Path
 
+import pytest
+
 from labcourt.application.m8_platform_bootstrap import PLATFORM_DATABASE_NAME
 from labcourt.application.m8_platform_demo_api import assemble_m8_platform_demo_api
 from labcourt.contracts.canonical import canonical_json
@@ -61,6 +63,7 @@ def test_evaluation_api_upload_deduplicates_and_enforces_roles(
     socket_enabled: None,
     monkeypatch,
 ) -> None:
+    pytest.importorskip("cv2", reason="requires the optional pinned labcourt[video] dependency")
     root = Path(__file__).parents[2]
     source = root / "inputs/goggles-missing.mp4"
     media = source.read_bytes()

@@ -8,6 +8,10 @@
 uv sync --all-groups --locked
 ```
 
+基础环境足以运行默认离线路径；要连同真实视频、加密 Feishu inbound 和 Feishu
+live provider smoke 一起验证，使用 `uv sync --all-groups --all-extras --locked`。
+缺少对应 extra 时，provider 专属测试会明确跳过，而不是让默认质量门失败。
+
 命令入口优先使用：
 
 ```powershell

@@ -8,6 +8,8 @@ import sqlite3
 import threading
 from pathlib import Path
 
+import pytest
+
 from labcourt.application.m8_feishu_webhook_runtime import (
     build_m8_feishu_webhook_runtime,
 )
@@ -50,6 +52,10 @@ def test_runtime_assembles_current_sqlite_authority_environment_secrets_and_aes(
     socket_enabled: None,
     monkeypatch,
 ) -> None:
+    pytest.importorskip(
+        "cryptography.hazmat.primitives.padding",
+        reason="requires the optional pinned labcourt[feishu-inbound] dependency",
+    )
     del socket_enabled
     with _running_server(tmp_path):
         pass
