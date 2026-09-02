@@ -4,6 +4,7 @@ import pkgutil
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager
 from datetime import datetime
+from pathlib import Path
 from typing import get_type_hints
 
 import pytest
@@ -28,6 +29,7 @@ from labcourt.contracts.backlog import (
     BacklogRetrySuccess,
 )
 from labcourt.contracts.cases import Case
+from labcourt.contracts.config import AppConfig
 from labcourt.contracts.detections import Detection, FrameBundle
 from labcourt.contracts.enums import (
     AcquisitionExecutionMode,
@@ -148,6 +150,11 @@ from labcourt.contracts.m8_access_cases import (
     M8OperationalCaseCreateCommandV1,
     M8OperationalCaseTransitionCommandV1,
 )
+from labcourt.contracts.m8_acquisition_v2 import (
+    M8HearingAcquisitionResultV2,
+    M8RedetectionDetectorRequestV1,
+    M8ResolvedRecordedRunSourceV1,
+)
 from labcourt.contracts.m8_adapter_commissioning import (
     M8AdapterActivationIntentV1,
     M8CommissioningEvidenceAuthorityV1,
@@ -155,7 +162,17 @@ from labcourt.contracts.m8_adapter_commissioning import (
     M8ProductionAdapterCandidateAuthorityV1,
     M8ProductionAdapterCandidateCommitReceiptV1,
 )
+from labcourt.contracts.m8_agent_chat import (
+    M8AgentConversationRemovalReceiptV1,
+    M8AgentConversationSummaryV1,
+    M8AgentConversationTurnV1,
+    M8AgentConversationV1,
+    M8AgentFailureCode,
+    M8AgentModelCallReceiptV1,
+    M8AgentTurnCompletionV1,
+)
 from labcourt.contracts.m8_api import M8ApiPrincipalV1
+from labcourt.contracts.m8_calibration import M8DetectorScoreObservationV1
 from labcourt.contracts.m8_case_persistence import (
     M8ActorAuthorityCommitReceiptV1,
     M8OperationalCaseAuditEventV1,
@@ -188,6 +205,20 @@ from labcourt.contracts.m8_feishu_inbound_reply import (
     M8FeishuInboundReplyCommitReceiptV1,
     M8FeishuInboundReplyCorrelationAuthorityV1,
 )
+from labcourt.contracts.m8_feishu_live import (
+    M8FeishuAgentReplyCompletionV1,
+    M8FeishuAgentReplyEnvelopeV1,
+    M8FeishuAlertBridgeReceiptV1,
+    M8FeishuCardActionIntentV1,
+    M8FeishuCardActionReceiptV1,
+    M8FeishuConversationChannelProjectionV1,
+    M8FeishuDutyRouteV1,
+    M8FeishuInboundEventV1,
+    M8FeishuInboundJobV1,
+    M8FeishuReminderReceiptV1,
+    M8FeishuRuntimeHeartbeatV1,
+    M8FeishuTurnOrigin,
+)
 from labcourt.contracts.m8_feishu_notification import (
     M8FeishuAdapterProfileV1,
     M8FeishuCardDispatchPreflightV1,
@@ -195,6 +226,7 @@ from labcourt.contracts.m8_feishu_notification import (
     M8FeishuRecipientBindingAuthorityV1,
 )
 from labcourt.contracts.m8_feishu_transport import M8FeishuSandboxSendReceiptV1
+from labcourt.contracts.m8_hearing_api import M8HearingStartRequestV1, M8HearingViewV1
 from labcourt.contracts.m8_inventory_persistence import (
     M8CampusTopologyCommitReceiptV1,
     M8OperationalSourceCatalogCommitReceiptV1,
@@ -208,6 +240,7 @@ from labcourt.contracts.m8_knowledge_persistence import (
     M8KnowledgeAnswerCommitReceiptV1,
     M8KnowledgeCatalogCommitReceiptV1,
 )
+from labcourt.contracts.m8_knowledge_projection import M8CaseMemoryProjectionV1
 from labcourt.contracts.m8_notification_dispatch_claims import (
     M8NotificationDispatchCallFenceReceiptV1,
     M8NotificationDispatchClaimReceiptV1,
@@ -236,6 +269,7 @@ from labcourt.contracts.m8_operations import (
     M8CampusTopologyAuthorityV1,
     M8OperationalSourceCatalogAuthorityV1,
 )
+from labcourt.contracts.m8_prehearing import M8PreHearingPreparationV1
 from labcourt.contracts.m8_projections import M8OperationsProjectionV1
 from labcourt.contracts.m8_sensor_persistence import (
     M8SensorPollCacheCommitReceiptV1,
@@ -252,6 +286,13 @@ from labcourt.contracts.manifests import (
     SoftwareComponentManifest,
 )
 from labcourt.contracts.model_response_recovery import ModelResponseRecoveryItem
+from labcourt.contracts.pilot import (
+    PilotPerceptionExecutionManifest,
+    PilotPerceptionFrameReceipt,
+    PilotPerceptionWorkerFailure,
+    PilotPerceptionWorkerRequest,
+    PilotPerceptionWorkerResponse,
+)
 from labcourt.contracts.precedents import Precedent, ScoredPrecedent
 from labcourt.contracts.recovery import RecoveryItemResult
 from labcourt.contracts.screening import (
@@ -470,10 +511,32 @@ from labcourt.ports.m6_upgrade_pending_sample_commitment import (
 from labcourt.ports.m6_upgrade_whole_sample_record_builder import (
     M6UpgradeWholeSampleRecordBuilder,
 )
+from labcourt.ports.m8_acquisition import (
+    M8AcquisitionOutcomeRepository,
+    M8HighResolutionRedetector,
+    M8RecordedRunSourceResolver,
+)
 from labcourt.ports.m8_adapter_commissioning_repository import (
     M8AdapterCommissioningRepository,
 )
+from labcourt.ports.m8_agent_chat import (
+    M8AgentConversationRepository,
+    M8AgentModelClient,
+    M8AgentProviderDelta,
+    M8AgentProviderRequest,
+    M8AgentToolExecution,
+    M8AgentToolExecutor,
+)
 from labcourt.ports.m8_api_authentication import M8RequestAuthenticator
+from labcourt.ports.m8_calibration_observation import (
+    M8CalibrationAssetResolver,
+    M8CalibrationMediaAuthority,
+    M8CalibrationObservationRepository,
+    M8CalibrationRGB8Source,
+    M8CalibrationWorkerTransport,
+    M8CalibrationWorkerTransportFactory,
+)
+from labcourt.ports.m8_case_memory import M8CaseMemoryAdapter
 from labcourt.ports.m8_feishu_activation_repository import M8FeishuActivationRepository
 from labcourt.ports.m8_feishu_challenge_receipts import M8FeishuUrlChallengeReceiptSink
 from labcourt.ports.m8_feishu_http import (
@@ -492,12 +555,19 @@ from labcourt.ports.m8_feishu_inbound_secrets import (
     M8FeishuInboundSecretLease,
     M8FeishuInboundSecretResolver,
 )
+from labcourt.ports.m8_feishu_live import (
+    M8FeishuAgentReplyClaim,
+    M8FeishuInboundEnqueueResult,
+    M8FeishuLiveRepository,
+)
 from labcourt.ports.m8_feishu_notification_adapter import M8FeishuConformanceAdapter
+from labcourt.ports.m8_feishu_personal_demo import M8FeishuPersonalDemoHttpTransport
 from labcourt.ports.m8_feishu_sandbox_sender import M8FeishuSandboxSender
 from labcourt.ports.m8_feishu_secrets import (
     M8FeishuResolvedSecrets,
     M8FeishuSecretResolver,
 )
+from labcourt.ports.m8_hearing_api import M8HearingRuntime, M8HearingSessionLocator
 from labcourt.ports.m8_inventory_repository import M8InventoryRepository
 from labcourt.ports.m8_knowledge import M8KnowledgeRetriever
 from labcourt.ports.m8_knowledge_repository import M8KnowledgeRepository
@@ -507,6 +577,7 @@ from labcourt.ports.m8_notification_dispatch_claim_repository import (
 )
 from labcourt.ports.m8_notification_repository import M8NotificationRepository
 from labcourt.ports.m8_operations_repository import M8OperationsRepository
+from labcourt.ports.m8_prehearing import M8PreHearingRepository
 from labcourt.ports.m8_projection_reader import M8OperationsProjectionReader
 from labcourt.ports.m8_sensor_persistence_repository import M8SensorPersistenceRepository
 from labcourt.ports.m8_sensors import M8SensorAdapter
@@ -565,6 +636,431 @@ from labcourt.ports.vlm import (
 NONE_TYPE = type(None)
 
 EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, object]]]] = {
+    M8RecordedRunSourceResolver: {
+        "project_root": (("self",), {"return": Path}),
+        "resolve": (
+            ("self", "run_id", "manifest", "max_input_bytes"),
+            {
+                "run_id": str,
+                "manifest": RunManifest,
+                "max_input_bytes": int,
+                "return": M8ResolvedRecordedRunSourceV1,
+            },
+        ),
+    },
+    M8HighResolutionRedetector: {
+        "component_manifest_id": (("self",), {"return": str}),
+        "model_manifest_id": (("self",), {"return": str}),
+        "execute": (
+            ("self", "request", "idempotency_key"),
+            {
+                "request": M8RedetectionDetectorRequestV1,
+                "idempotency_key": str,
+                "return": bytes,
+            },
+        ),
+        "recover": (
+            ("self", "request", "idempotency_key"),
+            {
+                "request": M8RedetectionDetectorRequestV1,
+                "idempotency_key": str,
+                "return": bytes | None,
+            },
+        ),
+    },
+    M8AcquisitionOutcomeRepository: {
+        "put": (
+            ("self", "outcome"),
+            {"outcome": M8HearingAcquisitionResultV2, "return": M8HearingAcquisitionResultV2},
+        ),
+        "get": (
+            ("self", "run_id", "request_id"),
+            {
+                "run_id": str,
+                "request_id": str,
+                "return": M8HearingAcquisitionResultV2 | None,
+            },
+        ),
+        "list_for_case": (
+            ("self", "run_id", "case_id"),
+            {
+                "run_id": str,
+                "case_id": str,
+                "return": tuple[M8HearingAcquisitionResultV2, ...],
+            },
+        ),
+    },
+    M8AgentModelClient: {
+        "stream": (
+            ("self", "request"),
+            {"request": M8AgentProviderRequest, "return": Iterator[M8AgentProviderDelta]},
+        ),
+    },
+    M8AgentConversationRepository: {
+        "create_conversation": (
+            ("self", "actor_receipt"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "return": M8AgentConversationSummaryV1,
+            },
+        ),
+        "list_conversations": (
+            ("self", "actor_receipt"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "return": tuple[M8AgentConversationSummaryV1, ...],
+            },
+        ),
+        "get_conversation": (
+            ("self", "actor_receipt", "conversation_id"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "conversation_id": str,
+                "return": M8AgentConversationV1,
+            },
+        ),
+        "remove_conversation": (
+            ("self", "actor_receipt", "conversation_id"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "conversation_id": str,
+                "return": M8AgentConversationRemovalReceiptV1,
+            },
+        ),
+        "begin_turn": (
+            ("self", "actor_receipt", "conversation_id", "query"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "conversation_id": str,
+                "query": str,
+                "return": M8AgentConversationTurnV1,
+            },
+        ),
+        "complete_turn": (
+            ("self", "actor_receipt", "completion", "raw_responses", "cache_key"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "completion": M8AgentTurnCompletionV1,
+                "raw_responses": tuple[tuple[M8AgentModelCallReceiptV1, bytes], ...],
+                "cache_key": str | None,
+                "return": M8AgentConversationTurnV1,
+            },
+        ),
+        "fail_turn": (
+            (
+                "self",
+                "actor_receipt",
+                "conversation_id",
+                "turn_id",
+                "failure_code",
+                "raw_responses",
+            ),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "conversation_id": str,
+                "turn_id": str,
+                "failure_code": M8AgentFailureCode,
+                "raw_responses": tuple[tuple[M8AgentModelCallReceiptV1, bytes], ...],
+                "return": M8AgentConversationTurnV1,
+            },
+        ),
+        "read_cache": (
+            ("self", "actor_receipt", "cache_key"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "cache_key": str,
+                "return": M8AgentTurnCompletionV1 | None,
+            },
+        ),
+        "last_model_call": (
+            ("self", "actor_receipt"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "return": M8AgentModelCallReceiptV1 | None,
+            },
+        ),
+    },
+    M8AgentToolExecutor: {
+        "tool_schemas": (
+            ("self", "actor_receipt"),
+            {
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "return": tuple[Mapping[str, object], ...],
+            },
+        ),
+        "execute": (
+            (
+                "self",
+                "principal",
+                "actor_receipt",
+                "tool_call_id",
+                "tool_name",
+                "arguments_json",
+            ),
+            {
+                "principal": M8ApiPrincipalV1,
+                "actor_receipt": M8ActorAuthorityCommitReceiptV1,
+                "tool_call_id": str,
+                "tool_name": str,
+                "arguments_json": str,
+                "return": M8AgentToolExecution,
+            },
+        ),
+    },
+    M8CalibrationRGB8Source: {
+        "iter_rgb8": (("self",), {"return": Iterator[RGB8Frame]}),
+    },
+    M8CalibrationObservationRepository: {
+        "put_detector_observation": (
+            ("self", "observation"),
+            {
+                "observation": M8DetectorScoreObservationV1,
+                "return": M8DetectorScoreObservationV1,
+            },
+        ),
+        "list_detector_observations": (
+            ("self", "run_id"),
+            {
+                "run_id": str,
+                "return": tuple[M8DetectorScoreObservationV1, ...],
+            },
+        ),
+    },
+    M8CalibrationAssetResolver: {
+        "__call__": (
+            ("self", "asset_id"),
+            {
+                "asset_id": str,
+                "return": AbstractContextManager[M8CalibrationMediaAuthority],
+            },
+        ),
+    },
+    M8CalibrationWorkerTransport: {
+        "manifest": (("self",), {"return": PilotPerceptionExecutionManifest}),
+        "receipts": (("self",), {"return": tuple[PilotPerceptionFrameReceipt, ...]}),
+        "exchange": (
+            ("self", "request"),
+            {
+                "request": PilotPerceptionWorkerRequest,
+                "return": PilotPerceptionWorkerResponse | PilotPerceptionWorkerFailure,
+            },
+        ),
+        "close": (("self",), {"return": NONE_TYPE}),
+    },
+    M8CalibrationWorkerTransportFactory: {
+        "__call__": (
+            ("self", "config", "expected_manifest", "collection_run_id"),
+            {
+                "config": AppConfig,
+                "expected_manifest": PilotPerceptionExecutionManifest,
+                "collection_run_id": str,
+                "return": AbstractContextManager[M8CalibrationWorkerTransport],
+            },
+        ),
+    },
+    M8CaseMemoryAdapter: {
+        "query": (
+            ("self", "principal", "normalized_query", "limit"),
+            {
+                "principal": M8ApiPrincipalV1,
+                "normalized_query": str,
+                "limit": int,
+                "return": M8CaseMemoryProjectionV1,
+            },
+        ),
+    },
+    M8FeishuPersonalDemoHttpTransport: {
+        "acquire_personal_demo_token": (
+            ("self", "app_id", "app_secret", "timeout_ms"),
+            {
+                "app_id": bytes,
+                "app_secret": bytes,
+                "timeout_ms": int,
+                "return": M8FeishuHttpResponse,
+            },
+        ),
+        "send_personal_demo_card": (
+            (
+                "self",
+                "open_id",
+                "tenant_access_token",
+                "provider_uuid",
+                "rendered_card",
+                "timeout_ms",
+            ),
+            {
+                "open_id": bytes,
+                "tenant_access_token": bytes,
+                "provider_uuid": str,
+                "rendered_card": bytes,
+                "timeout_ms": int,
+                "return": M8FeishuHttpResponse,
+            },
+        ),
+    },
+    M8FeishuLiveRepository: {
+        "commit_duty_route": (
+            ("self", "route"),
+            {"route": M8FeishuDutyRouteV1, "return": M8FeishuDutyRouteV1},
+        ),
+        "current_duty_route": (("self",), {"return": M8FeishuDutyRouteV1 | None}),
+        "record_heartbeat": (
+            ("self", "heartbeat"),
+            {"heartbeat": M8FeishuRuntimeHeartbeatV1, "return": M8FeishuRuntimeHeartbeatV1},
+        ),
+        "latest_heartbeat": (
+            ("self", "component"),
+            {"component": str, "return": M8FeishuRuntimeHeartbeatV1 | None},
+        ),
+        "enqueue_inbound": (
+            ("self", "event", "sanitized_event", "message_content"),
+            {
+                "event": M8FeishuInboundEventV1,
+                "sanitized_event": bytes,
+                "message_content": bytes | None,
+                "return": M8FeishuInboundEnqueueResult,
+            },
+        ),
+        "claim_inbound": (
+            ("self", "inbound_event_id"),
+            {
+                "inbound_event_id": str | None,
+                "return": M8FeishuInboundJobV1 | None,
+            },
+        ),
+        "inbound_job": (
+            ("self", "inbound_event_id"),
+            {"inbound_event_id": str, "return": M8FeishuInboundJobV1 | None},
+        ),
+        "commit_inbound_job": (
+            ("self", "job"),
+            {"job": M8FeishuInboundJobV1, "return": M8FeishuInboundJobV1},
+        ),
+        "read_inbound_content": (
+            ("self", "event"),
+            {"event": M8FeishuInboundEventV1, "return": bytes | None},
+        ),
+        "bind_conversation": (
+            ("self", "projection"),
+            {
+                "projection": M8FeishuConversationChannelProjectionV1,
+                "return": M8FeishuConversationChannelProjectionV1,
+            },
+        ),
+        "channel_projection": (
+            ("self", "conversation_id"),
+            {
+                "conversation_id": str,
+                "return": M8FeishuConversationChannelProjectionV1 | None,
+            },
+        ),
+        "actor_channel_projection": (
+            ("self", "actor_id"),
+            {"actor_id": str, "return": M8FeishuConversationChannelProjectionV1 | None},
+        ),
+        "record_turn_origin": (
+            ("self", "conversation_id", "turn_id", "origin"),
+            {
+                "conversation_id": str,
+                "turn_id": str,
+                "origin": M8FeishuTurnOrigin,
+                "return": NONE_TYPE,
+            },
+        ),
+        "commit_card_intent": (
+            ("self", "intent"),
+            {"intent": M8FeishuCardActionIntentV1, "return": M8FeishuCardActionIntentV1},
+        ),
+        "card_intent_for_token": (
+            ("self", "token_sha256"),
+            {"token_sha256": str, "return": M8FeishuCardActionIntentV1 | None},
+        ),
+        "commit_card_receipt": (
+            ("self", "receipt"),
+            {"receipt": M8FeishuCardActionReceiptV1, "return": M8FeishuCardActionReceiptV1},
+        ),
+        "card_receipt": (
+            ("self", "intent_id"),
+            {"intent_id": str, "return": M8FeishuCardActionReceiptV1 | None},
+        ),
+        "commit_alert_bridge": (
+            ("self", "receipt"),
+            {"receipt": M8FeishuAlertBridgeReceiptV1, "return": M8FeishuAlertBridgeReceiptV1},
+        ),
+        "alert_bridge": (
+            ("self", "case_id", "case_version"),
+            {
+                "case_id": str,
+                "case_version": int,
+                "return": M8FeishuAlertBridgeReceiptV1 | None,
+            },
+        ),
+        "commit_reminder": (
+            ("self", "receipt"),
+            {"receipt": M8FeishuReminderReceiptV1, "return": M8FeishuReminderReceiptV1},
+        ),
+        "reminder": (
+            ("self", "dispatch_request_id"),
+            {"dispatch_request_id": str, "return": M8FeishuReminderReceiptV1 | None},
+        ),
+        "enqueue_agent_reply": (
+            ("self", "envelope", "content"),
+            {
+                "envelope": M8FeishuAgentReplyEnvelopeV1,
+                "content": bytes,
+                "return": M8FeishuAgentReplyEnvelopeV1,
+            },
+        ),
+        "claim_agent_reply": (
+            ("self", "worker_token_sha256"),
+            {"worker_token_sha256": str, "return": M8FeishuAgentReplyClaim | None},
+        ),
+        "complete_agent_reply": (
+            ("self", "claim", "completion", "raw_response"),
+            {
+                "claim": M8FeishuAgentReplyClaim,
+                "completion": M8FeishuAgentReplyCompletionV1,
+                "raw_response": bytes,
+                "return": M8FeishuAgentReplyCompletionV1,
+            },
+        ),
+    },
+    M8HearingRuntime: {
+        "run_id": (("self",), {"return": str}),
+        "view": (("self", "case_id"), {"case_id": str, "return": M8HearingViewV1}),
+        "start": (
+            ("self", "request"),
+            {"request": M8HearingStartRequestV1, "return": M8HearingViewV1},
+        ),
+    },
+    M8HearingSessionLocator: {
+        "load_hearing_for_case": (
+            ("self", "run_id", "case_id"),
+            {"run_id": str, "case_id": str, "return": HearingSession | None},
+        ),
+    },
+    M8PreHearingRepository: {
+        "put": (
+            ("self", "preparation", "expected_prior_revision"),
+            {
+                "preparation": M8PreHearingPreparationV1,
+                "expected_prior_revision": int | None,
+                "return": M8PreHearingPreparationV1,
+            },
+        ),
+        "get": (
+            ("self", "preparation_id"),
+            {"preparation_id": str, "return": M8PreHearingPreparationV1},
+        ),
+        "load_for_case": (
+            ("self", "run_id", "case_id"),
+            {
+                "run_id": str,
+                "case_id": str,
+                "return": M8PreHearingPreparationV1 | None,
+            },
+        ),
+    },
     M8FeishuInboundActivationRepository: {
         "commit_inbound_activation": (
             (
@@ -877,6 +1373,13 @@ EXPECTED_METHODS: dict[type[object], dict[str, tuple[tuple[str, ...], dict[str, 
             {
                 "candidate_authority_id": str,
                 "return": M8ProductionAdapterCandidateCommitReceiptV1,
+            },
+        ),
+        "list_candidates": (
+            ("self", "limit"),
+            {
+                "limit": int,
+                "return": tuple[M8ProductionAdapterCandidateCommitReceiptV1, ...],
             },
         ),
         "commit_evidence": (
@@ -3961,7 +4464,8 @@ def test_port_method_names_and_signatures_are_stable(protocol: type[object]) -> 
     actual_method_names = {
         name
         for name, member in protocol.__dict__.items()
-        if (inspect.isfunction(member) or isinstance(member, property)) and not name.startswith("_")
+        if (inspect.isfunction(member) or isinstance(member, property))
+        and (not name.startswith("_") or name == "__call__")
     }
     assert actual_method_names == set(expected), protocol
 
@@ -3982,6 +4486,10 @@ def test_port_method_names_and_signatures_are_stable(protocol: type[object]) -> 
             keyword_only = {"input_tokens", "output_tokens", "latency_ms"}
         elif (protocol, method_name) == (AlertChannel, "capability_authority"):
             keyword_only = {"run_id", "manifest_id", "config_sha256"}
+        elif protocol is M8HighResolutionRedetector and method_name in {"execute", "recover"}:
+            keyword_only = {"idempotency_key"}
+        elif protocol is M8RecordedRunSourceResolver and method_name == "resolve":
+            keyword_only = {"max_input_bytes"}
         else:
             keyword_only = set()
         for name, parameter in signature.parameters.items():
@@ -4061,6 +4569,10 @@ def test_port_method_names_and_signatures_are_stable(protocol: type[object]) -> 
             "observe_m6_gate_source",
         ):
             expected_defaults = {"source_case_revision": None}
+        elif (protocol, method_name) == (M8AgentConversationRepository, "fail_turn"):
+            expected_defaults = {"raw_responses": ()}
+        elif (protocol, method_name) == (M8FeishuLiveRepository, "claim_inbound"):
+            expected_defaults = {"inbound_event_id": None}
         else:
             expected_defaults = {}
         for name, parameter in signature.parameters.items():

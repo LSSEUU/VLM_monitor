@@ -344,7 +344,7 @@ def _replace_trigger_fragment_once(
         (trigger_name,),
     ).fetchone()
     assert row is not None and isinstance(row[0], str)
-    trigger_sql = str(row[0])
+    trigger_sql = str(row[0]).replace("\r\n", "\n")
     assert trigger_sql.count(expected) == 1
     connection.execute(f'DROP TRIGGER "{trigger_name}"')
     connection.execute(trigger_sql.replace(expected, replacement, 1))

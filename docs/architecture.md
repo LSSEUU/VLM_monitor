@@ -30,7 +30,7 @@ CLI / loopback HTTP / 正式 UI
         domain             纯规则、状态机、确定性计算
 ```
 
-`domain/` 不依赖 HTTP、数据库、OpenCV、Torch 或云 SDK。模型、传感器和外部通知只能通过 ports/adapters 接入；默认路径不需要 GPU、网络或真实外部账户。
+`domain/` 不依赖 HTTP、数据库、OpenCV、Torch 或云 SDK。模型、传感器和外部通知只能通过 ports/adapters 接入；默认路径不需要 GPU、网络或真实外部账户。M8 为兼容既有入口，在 `application/` 保留少量显式登记的 composition root；除这些装配文件外，应用层仍只依赖内向层与端口。
 
 正式 M8 平台由 `m8_platform_server.py`、`m8_platform_demo_api.py` 和 `m8_ui_web/` 组成；较小的 loopback API 由 `m8_api_server.py` 提供。`pilot_ui_web/` 是兼容的 M0–M6 pilot 入口，不是正式 M8 UI。`docs/design-reference/labcourt-ops-ui/` 仅为 design-only 预览。
 
