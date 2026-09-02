@@ -403,9 +403,7 @@ def test_completed_prehearing_gate_projects_human_review_with_case_authorities()
             height=480,
             duration_millis=10_000,
         ),
-        perception_preview_url=(
-            f"/api/m8/demo/scenario-runs/{source.run_id}/perception-preview"
-        ),
+        perception_preview_url=(f"/api/m8/demo/scenario-runs/{source.run_id}/perception-preview"),
         model_or_fixture_id="real-screening-model",
         raw_response_ref="runs/evaluation-prehearing-review-01/model-response.json",
         screening_decision="ESCALATE",

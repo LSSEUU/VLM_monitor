@@ -232,9 +232,7 @@ def test_agent_http_api_removes_conversation_from_active_history_but_retains_aud
             "/api/m8/agent/conversations",
             token=token,
         )
-        assert all(
-            item["conversation_id"] != conversation_id for item in json.loads(list_body)
-        )
+        assert all(item["conversation_id"] != conversation_id for item in json.loads(list_body))
         with pytest.raises(HTTPError) as missing:
             _http_json(
                 base_url,
@@ -393,9 +391,7 @@ def test_agent_router_keeps_summary_queries_separate_from_confirmed_actions() ->
     assert router.classify("结合当前案件和知识库, 整理一份处置摘要.") == (
         M8PlatformAgentIntentV2.CASE_QUERY
     )
-    assert router.classify("确认当前待核实案件") == (
-        M8PlatformAgentIntentV2.CASE_TRANSITION_ACTION
-    )
+    assert router.classify("确认当前待核实案件") == (M8PlatformAgentIntentV2.CASE_TRANSITION_ACTION)
 
 
 @pytest.mark.parametrize(

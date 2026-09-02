@@ -226,10 +226,13 @@ def test_inbound_activation_is_restart_safe_revocable_and_reactivatable(
         )
         == revocation
     )
-    assert reopened.get_current_inbound_status(
-        _candidate().candidate_authority_id,
-        BASE_TIME + timedelta(hours=7),
-    ).activation_state == "REVOKED"
+    assert (
+        reopened.get_current_inbound_status(
+            _candidate().candidate_authority_id,
+            BASE_TIME + timedelta(hours=7),
+        ).activation_state
+        == "REVOKED"
+    )
 
     _config_two, _intent_two, _raw_two, second = _activate(
         harness,
@@ -242,13 +245,10 @@ def test_inbound_activation_is_restart_safe_revocable_and_reactivatable(
     with sqlite3.connect(harness.database) as connection:
         with pytest.raises(sqlite3.IntegrityError, match="append-only"):
             connection.execute(
-                "UPDATE m8_feishu_inbound_sandbox_activations "
-                "SET activation_revision = 9"
+                "UPDATE m8_feishu_inbound_sandbox_activations SET activation_revision = 9"
             )
         with pytest.raises(sqlite3.IntegrityError, match="append-only"):
-            connection.execute(
-                "DELETE FROM m8_feishu_inbound_sandbox_activation_revocations"
-            )
+            connection.execute("DELETE FROM m8_feishu_inbound_sandbox_activation_revocations")
 
 
 def test_current_actor_or_commissioning_change_invalidates_ingress(
@@ -326,9 +326,7 @@ def test_repository_rejects_incomplete_inbound_activation_layout(
     harness: _Harness,
 ) -> None:
     with sqlite3.connect(harness.database) as connection:
-        connection.execute(
-            "DROP TRIGGER m8_feishu_inbound_sandbox_activations_no_update"
-        )
+        connection.execute("DROP TRIGGER m8_feishu_inbound_sandbox_activations_no_update")
     with pytest.raises(RepositoryIntegrityError, match="layout is incomplete"):
         SQLiteM8FeishuInboundActivationRepository(
             harness.database,

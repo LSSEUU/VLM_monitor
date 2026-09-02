@@ -244,9 +244,7 @@ def bootstrap_m8_platform_demo(
     operations = SQLiteM8OperationsRepository(
         database_path, _BUSY_TIMEOUT_MS, repository_manifest_id
     )
-    actor_commits = tuple(
-        operations.publish_actor_authority(actor, None) for actor in _actors()
-    )
+    actor_commits = tuple(operations.publish_actor_authority(actor, None) for actor in _actors())
     bootstrap_m8_personal_demo_knowledge(database_path)
     media_receipt = _copy_media(
         input_media_path=input_media_path,

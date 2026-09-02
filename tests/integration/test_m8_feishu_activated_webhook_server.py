@@ -193,9 +193,7 @@ def _running_server(tmp_path: Path) -> Iterator[_Running]:
         runtime_config_ref=config.runtime_config_ref,
         runtime_config_sha256=hashlib.sha256(config_raw).hexdigest(),
         runtime_config_size_bytes=len(config_raw),
-        credential_reference_id=(
-            config.profile.outbound_profile.credential_bundle_reference_id
-        ),
+        credential_reference_id=(config.profile.outbound_profile.credential_bundle_reference_id),
         requested_at=BASE_TIME + timedelta(hours=2),
         activation_manifest_id=SHA_D,
     )
@@ -313,9 +311,7 @@ def test_activated_server_routes_challenge_and_commits_business_event(
         assert len(running.sink.receipts) == 1
         assert event_status == 200
         assert event_body == {}
-        committed = running.inbound_repository.get_by_provider_message_id(
-            "om_student_reply_01"
-        )
+        committed = running.inbound_repository.get_by_provider_message_id("om_student_reply_01")
         assert committed.case_transition_permitted is False
         assert committed.notification_reply_commit_permitted is False
 
@@ -339,9 +335,7 @@ def test_event_headers_and_signature_fail_closed_without_evidence_commit(
         assert bad_status == 400
         assert bad_body == {"error": {"code": "invalid_request"}}
         with pytest.raises(EvidenceMissing):
-            running.inbound_repository.get_by_provider_message_id(
-                "om_student_reply_01"
-            )
+            running.inbound_repository.get_by_provider_message_id("om_student_reply_01")
 
 
 def test_revocation_blocks_running_server_before_decrypt_or_commit(
@@ -369,6 +363,4 @@ def test_revocation_blocks_running_server_before_decrypt_or_commit(
         assert status == 503
         assert body == {"error": {"code": "ingress_inactive"}}
         with pytest.raises(EvidenceMissing):
-            running.inbound_repository.get_by_provider_message_id(
-                "om_student_reply_01"
-            )
+            running.inbound_repository.get_by_provider_message_id("om_student_reply_01")

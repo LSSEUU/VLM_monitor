@@ -302,9 +302,7 @@ class SQLiteM8FeishuInboundRepository:
                 (_row_str(row, "commit_receipt_id"),),
             ).fetchone()
             if commit_row is None:
-                raise RepositoryIntegrityError(
-                    "M8 Feishu inbound raw artifact lacks its commit"
-                )
+                raise RepositoryIntegrityError("M8 Feishu inbound raw artifact lacks its commit")
             receipt = self._load_commit_row(connection, commit_row)
             if reference not in receipt.raw_artifact_refs:
                 raise RepositoryIntegrityError(
@@ -330,12 +328,10 @@ class SQLiteM8FeishuInboundRepository:
             or receipt.commit_receipt_id != _row_str(row, "commit_receipt_id")
             or verified.verification_receipt_id != _row_str(row, "verification_receipt_id")
             or verified.profile.inbound_profile_id != _row_str(row, "inbound_profile_id")
-            or verified.ingress_request.ingress_request_id
-            != _row_str(row, "ingress_request_id")
+            or verified.ingress_request.ingress_request_id != _row_str(row, "ingress_request_id")
             or receipt.provider_message_id != _row_str(row, "provider_message_id")
             or verified.provider_event_id != _row_str(row, "provider_event_id")
-            or verified.provider_parent_message_id
-            != _row_str(row, "provider_parent_message_id")
+            or verified.provider_parent_message_id != _row_str(row, "provider_parent_message_id")
             or _canonical_utc(receipt.committed_at) != _row_str(row, "committed_at")
             or receipt.raw_artifact_inventory_sha256
             != _row_str(row, "raw_artifact_inventory_sha256")
@@ -372,10 +368,8 @@ class SQLiteM8FeishuInboundRepository:
                 or hashlib.sha256(raw).hexdigest() != expected_sha
                 or len(raw) != expected_size
                 or _row_str(raw_row, "commit_receipt_id") != receipt.commit_receipt_id
-                or _row_str(raw_row, "raw_storage_manifest_id")
-                != receipt.raw_storage_manifest_id
-                or _row_str(raw_row, "repository_manifest_id")
-                != receipt.repository_manifest_id
+                or _row_str(raw_row, "raw_storage_manifest_id") != receipt.raw_storage_manifest_id
+                or _row_str(raw_row, "repository_manifest_id") != receipt.repository_manifest_id
             ):
                 raise RepositoryIntegrityError(
                     "M8 Feishu inbound raw inventory conflicts with receipt"
@@ -387,10 +381,9 @@ class SQLiteM8FeishuInboundRepository:
         raw = row["raw_bytes"]
         if not isinstance(raw, bytes):
             raise RepositoryIntegrityError("M8 Feishu inbound raw column must contain bytes")
-        if (
-            len(raw) != _row_int(row, "raw_artifact_size_bytes")
-            or hashlib.sha256(raw).hexdigest() != _row_str(row, "raw_artifact_sha256")
-        ):
+        if len(raw) != _row_int(row, "raw_artifact_size_bytes") or hashlib.sha256(
+            raw
+        ).hexdigest() != _row_str(row, "raw_artifact_sha256"):
             raise RepositoryIntegrityError("M8 Feishu inbound raw artifact is invalid")
         return raw
 

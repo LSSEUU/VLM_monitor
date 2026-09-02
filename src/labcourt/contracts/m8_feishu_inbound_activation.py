@@ -196,9 +196,9 @@ def m8_feishu_inbound_runtime_config_bytes(
 class M8FeishuInboundSandboxActivationCommitReceiptV1(FrozenContractModel):
     """Persisted dual-human authority for sandbox webhook ingress only."""
 
-    schema_version: Literal[
+    schema_version: Literal["m8-feishu-inbound-sandbox-activation-commit-receipt-v1"] = (
         "m8-feishu-inbound-sandbox-activation-commit-receipt-v1"
-    ] = "m8-feishu-inbound-sandbox-activation-commit-receipt-v1"
+    )
     activation_intent: M8AdapterActivationIntentV1
     runtime_config: M8FeishuInboundSandboxRuntimeConfigV1
     current_readiness_assessment: M8AdapterReadinessAssessmentV1
@@ -413,9 +413,9 @@ class M8FeishuInboundSandboxActivationCommitReceiptV1(FrozenContractModel):
 class M8FeishuInboundSandboxActivationRevocationCommitReceiptV1(FrozenContractModel):
     """Append-only one-person kill switch for sandbox webhook ingress."""
 
-    schema_version: Literal[
+    schema_version: Literal["m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1"] = (
         "m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1"
-    ] = "m8-feishu-inbound-sandbox-activation-revocation-commit-receipt-v1"
+    )
     activation_receipt: M8FeishuInboundSandboxActivationCommitReceiptV1
     revoked_by_actor_receipt: M8ActorAuthorityCommitReceiptV1
     reason: M8FeishuInboundRevocationReason
@@ -470,8 +470,7 @@ class M8FeishuInboundSandboxActivationRevocationCommitReceiptV1(FrozenContractMo
             raise ValueError("M8 Feishu inbound revocation cannot predate activation")
         if (
             self.repository_manifest_id != self.activation_receipt.repository_manifest_id
-            or self.repository_manifest_id
-            != self.revoked_by_actor_receipt.repository_manifest_id
+            or self.repository_manifest_id != self.revoked_by_actor_receipt.repository_manifest_id
         ):
             raise ValueError("M8 Feishu inbound revocation authorities cross repositories")
         return self
@@ -526,9 +525,7 @@ class M8FeishuInboundSandboxActivationStatusV1(FrozenContractModel):
         "m8-feishu-inbound-sandbox-activation-status-v1"
     )
     activation_receipt: M8FeishuInboundSandboxActivationCommitReceiptV1
-    revocation_receipt: (
-        M8FeishuInboundSandboxActivationRevocationCommitReceiptV1 | None
-    ) = None
+    revocation_receipt: M8FeishuInboundSandboxActivationRevocationCommitReceiptV1 | None = None
     current_operations_actor_receipt: M8ActorAuthorityCommitReceiptV1
     current_safety_actor_receipt: M8ActorAuthorityCommitReceiptV1
     current_readiness_assessment: M8AdapterReadinessAssessmentV1 | None = None
@@ -609,16 +606,12 @@ class M8FeishuInboundSandboxActivationStatusV1(FrozenContractModel):
     def human_authority_current(self) -> bool:
         activation = self.activation_receipt
         return (
-            self.current_operations_actor_receipt
-            == activation.current_operations_actor_receipt
-            and self.current_safety_actor_receipt
-            == activation.current_safety_actor_receipt
+            self.current_operations_actor_receipt == activation.current_operations_actor_receipt
+            and self.current_safety_actor_receipt == activation.current_safety_actor_receipt
             and self.current_operations_actor_receipt.authority.active
             and self.current_safety_actor_receipt.authority.active
-            and self.current_operations_actor_receipt.authority.role
-            == M8ActorRole.OPERATIONS
-            and self.current_safety_actor_receipt.authority.role
-            == M8ActorRole.SAFETY_OFFICER
+            and self.current_operations_actor_receipt.authority.role == M8ActorRole.OPERATIONS
+            and self.current_safety_actor_receipt.authority.role == M8ActorRole.SAFETY_OFFICER
         )
 
     @computed_field  # type: ignore[prop-decorator]
@@ -627,8 +620,7 @@ class M8FeishuInboundSandboxActivationStatusV1(FrozenContractModel):
         assessment = self.current_readiness_assessment
         return (
             assessment is not None
-            and assessment.readiness
-            == M8CommissioningReadiness.READY_FOR_HUMAN_ACTIVATION
+            and assessment.readiness == M8CommissioningReadiness.READY_FOR_HUMAN_ACTIVATION
             and assessment.evidence_inventory_sha256
             == self.activation_receipt.current_readiness_assessment.evidence_inventory_sha256
         )

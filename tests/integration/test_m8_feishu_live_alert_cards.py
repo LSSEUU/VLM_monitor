@@ -150,9 +150,7 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     )
     server = assembly.server
     operations_token = server.platform_role_tokens[M8ActorRole.OPERATIONS]
-    operations_principal = server.api_authenticator.authenticate(
-        f"Bearer {operations_token}"
-    )
+    operations_principal = server.api_authenticator.authenticate(f"Bearer {operations_token}")
     run = server.platform_service.start_scenario(
         operations_principal, M8PlatformScenarioKind.SMOKE_TEMPERATURE_EMERGENCY
     )
@@ -183,9 +181,7 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
             activation_status_id=platform_status.activation_status_id or ("a" * 64),
             route_revision=1,
             committed_at=now[0],
-            repository_manifest_id=platform_manifest(
-                "platform-feishu-live-repository-v1"
-            ),
+            repository_manifest_id=platform_manifest("platform-feishu-live-repository-v1"),
         )
     )
     action_cards = M8FeishuActionCardService(
@@ -195,9 +191,11 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
         server.api_service,
         operations.get_current_operational_case,
         lambda: platform_status,
-        lambda sender: binding
-        if sender == binding.receive_id_sha256
-        else (_ for _ in ()).throw(ValueError("unknown sender")),
+        lambda sender: (
+            binding
+            if sender == binding.receive_id_sha256
+            else (_ for _ in ()).throw(ValueError("unknown sender"))
+        ),
         operations.get_current_actor_authority,
         lambda: now[0],
         hashlib.sha256(b"demo-feishu-card-token-key").digest(),
@@ -210,9 +208,11 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
         notifications,
         notification_service,
         lambda: platform_status,
-        lambda binding_id: binding
-        if binding_id == binding.binding_authority_id
-        else (_ for _ in ()).throw(ValueError("unknown binding")),
+        lambda binding_id: (
+            binding
+            if binding_id == binding.binding_authority_id
+            else (_ for _ in ()).throw(ValueError("unknown binding"))
+        ),
         lambda: now[0],
         platform_manifest,
     )
@@ -257,9 +257,7 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     elements = initial_card["body"]["elements"]
     assert all(item.get("tag") != "action" for item in elements)
     assert len({item["element_id"] for item in elements if item.get("tag") == "button"}) == 2
-    ack_result = action_cards.execute(
-        _token(initial_card, 1), binding.receive_id_sha256
-    )
+    ack_result = action_cards.execute(_token(initial_card, 1), binding.receive_id_sha256)
     assert ack_result["toast"]["type"] == "success"  # type: ignore[index]
     action_update = ack_result["card"]
     assert isinstance(action_update, dict)
@@ -267,9 +265,7 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     action_card = action_update["data"]
     assert isinstance(action_card, dict)
 
-    confirm_result = action_cards.execute(
-        _token(action_card), binding.receive_id_sha256
-    )
+    confirm_result = action_cards.execute(_token(action_card), binding.receive_id_sha256)
     final_update = confirm_result["card"]
     assert isinstance(final_update, dict)
     assert final_update["type"] == "raw"
@@ -303,8 +299,6 @@ def test_emergency_alert_is_sent_once_then_requires_ack_and_final_confirmation(
     assert resolved_reminder is not None
     assert resolved_reminder.outcome.value == "CANCELLED_CASE_RESOLVED"
 
-    escalation = bridge._create_notification(
-        run.case_id, M8NotificationPurpose.ESCALATION
-    )
+    escalation = bridge._create_notification(run.case_id, M8NotificationPurpose.ESCALATION)
     assert escalation.status == M8NotificationStatus.QUEUED
     assert bridge.assess_reminder(escalation.notification_id) is None

@@ -94,10 +94,14 @@ def test_evaluation_api_upload_deduplicates_and_enforces_roles(
 
         boundary = "labcourt-evaluation-boundary"
         multipart = (
-            f"--{boundary}\r\n"
-            'Content-Disposition: form-data; name="file"; filename="clear-ppe.mp4"\r\n'
-            "Content-Type: video/mp4\r\n\r\n"
-        ).encode("ascii") + media + f"\r\n--{boundary}--\r\n".encode("ascii")
+            (
+                f"--{boundary}\r\n"
+                'Content-Disposition: form-data; name="file"; filename="clear-ppe.mp4"\r\n'
+                "Content-Type: video/mp4\r\n\r\n"
+            ).encode("ascii")
+            + media
+            + f"\r\n--{boundary}--\r\n".encode("ascii")
+        )
         status, asset = _request(
             server.server_port,
             "POST",

@@ -86,9 +86,7 @@ def register_m8_feishu_outbox_commands(feishu: typer.Typer) -> None:
                     database_path=database,
                     notification_id=notification_id,
                     candidate_authority_id=candidate_authority_id,
-                    recipient_binding_authority_id=(
-                        recipient_binding_authority_id
-                    ),
+                    recipient_binding_authority_id=(recipient_binding_authority_id),
                     workflow_document=workflow_document,
                     app_id_env=app_id_env,
                     app_secret_env=app_secret_env,
@@ -107,17 +105,12 @@ def register_m8_feishu_outbox_commands(feishu: typer.Typer) -> None:
                         "mode": "CHECKED",
                         "notification_id": checked.notification_id,
                         "notification_version": checked.notification_version,
-                        "recipient_binding_authority_id": (
-                            checked.recipient_binding_authority_id
-                        ),
+                        "recipient_binding_authority_id": (checked.recipient_binding_authority_id),
                         "secrets_validated": checked.secrets_validated,
                         "workflow_authority_id": checked.workflow_authority_id,
                     },
                     json_output,
-                    (
-                        "Feishu sandbox outbox check passed; no claim or external "
-                        "call was attempted"
-                    ),
+                    ("Feishu sandbox outbox check passed; no claim or external call was attempted"),
                 )
                 return
             receipt = run_m8_feishu_outbox_once(
@@ -211,9 +204,7 @@ def register_m8_feishu_outbox_commands(feishu: typer.Typer) -> None:
                     runtime_config,
                     "outbox runtime config",
                 ),
-                runtime_config_storage_manifest_id=(
-                    runtime_config_storage_manifest_id
-                ),
+                runtime_config_storage_manifest_id=(runtime_config_storage_manifest_id),
                 repository_manifest_id=repository_manifest_id,
                 assessment_manifest_id=assessment_manifest_id,
                 busy_timeout_ms=busy_timeout_ms,
@@ -224,12 +215,8 @@ def register_m8_feishu_outbox_commands(feishu: typer.Typer) -> None:
             "activation_commit_id": receipt.activation_commit_id,
             "activation_revision": receipt.activation_revision,
             "activation_state": receipt.activation_state,
-            "automatic_activation_permitted": (
-                receipt.automatic_activation_permitted
-            ),
-            "production_external_call_permitted": (
-                receipt.production_external_call_permitted
-            ),
+            "automatic_activation_permitted": (receipt.automatic_activation_permitted),
+            "production_external_call_permitted": (receipt.production_external_call_permitted),
             "test_recipient_allowlist_only": receipt.test_recipient_allowlist_only,
         }
         echo_summary(
@@ -300,13 +287,9 @@ def register_m8_feishu_outbox_commands(feishu: typer.Typer) -> None:
         summary = {
             "activation_commit_id": receipt.activation_receipt.activation_commit_id,
             "activation_state": receipt.activation_state,
-            "automatic_reactivation_permitted": (
-                receipt.automatic_reactivation_permitted
-            ),
+            "automatic_reactivation_permitted": (receipt.automatic_reactivation_permitted),
             "revocation_commit_id": receipt.revocation_commit_id,
-            "sandbox_external_call_permitted": (
-                receipt.sandbox_external_call_permitted
-            ),
+            "sandbox_external_call_permitted": (receipt.sandbox_external_call_permitted),
         }
         echo_summary(
             summary,
@@ -352,9 +335,7 @@ def register_m8_feishu_outbox_commands(feishu: typer.Typer) -> None:
             "activation_commit_id": status.activation_receipt.activation_commit_id,
             "activation_state": status.activation_state,
             "recipient_authority_current": status.recipient_authority_current,
-            "sandbox_external_call_permitted": (
-                status.sandbox_external_call_permitted
-            ),
+            "sandbox_external_call_permitted": (status.sandbox_external_call_permitted),
             "test_recipient_allowlist_only": status.test_recipient_allowlist_only,
         }
         echo_summary(

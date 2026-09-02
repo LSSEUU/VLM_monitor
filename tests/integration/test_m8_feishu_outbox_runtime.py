@@ -144,9 +144,7 @@ def _environment() -> dict[str, str]:
 def test_outbox_runtime_resolves_exact_environment_and_commits_one_attempt(
     outbox_runtime_harness: _Harness,  # noqa: F811
 ) -> None:
-    config, binding, queued, workflow_document = _activate_and_queue(
-        outbox_runtime_harness
-    )
+    config, binding, queued, workflow_document = _activate_and_queue(outbox_runtime_harness)
     http = _HttpTransport()
 
     checked = check_m8_feishu_outbox_once(
@@ -176,9 +174,10 @@ def test_outbox_runtime_resolves_exact_environment_and_commits_one_attempt(
             queued.notification_version,
             BASE_TIME + timedelta(hours=4),
         )
-    assert outbox_runtime_harness.notifications.get_current_notification(
-        queued.notification_id
-    ) == queued
+    assert (
+        outbox_runtime_harness.notifications.get_current_notification(queued.notification_id)
+        == queued
+    )
 
     receipt = run_m8_feishu_outbox_once(
         database_path=outbox_runtime_harness.database,
@@ -210,9 +209,7 @@ def test_outbox_runtime_resolves_exact_environment_and_commits_one_attempt(
 def test_outbox_runtime_missing_secret_fails_before_claim_or_http(
     outbox_runtime_harness: _Harness,  # noqa: F811
 ) -> None:
-    config, binding, queued, workflow_document = _activate_and_queue(
-        outbox_runtime_harness
-    )
+    config, binding, queued, workflow_document = _activate_and_queue(outbox_runtime_harness)
     environment = _environment()
     del environment[APP_SECRET_ENV]
     http = _HttpTransport()
@@ -237,8 +234,9 @@ def test_outbox_runtime_missing_secret_fails_before_claim_or_http(
             http_transport=http,
         )
 
-    assert outbox_runtime_harness.notifications.get_current_notification(
-        queued.notification_id
-    ) == queued
+    assert (
+        outbox_runtime_harness.notifications.get_current_notification(queued.notification_id)
+        == queued
+    )
     assert http.token_calls == 0
     assert http.message_calls == 0

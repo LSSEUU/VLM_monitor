@@ -6,9 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal, TypeAlias
 
-PilotProgressStage: TypeAlias = Literal[
-    "VIDEO", "PERCEPTION", "EVIDENCE", "SCREENING", "REPORT"
-]
+PilotProgressStage: TypeAlias = Literal["VIDEO", "PERCEPTION", "EVIDENCE", "SCREENING", "REPORT"]
 PilotProgressState: TypeAlias = Literal["RUNNING", "COMPLETE"]
 PilotProgressUnit: TypeAlias = Literal["FRAME"]
 

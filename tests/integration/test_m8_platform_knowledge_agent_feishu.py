@@ -406,7 +406,4 @@ def test_feishu_platform_exposes_stable_activation_fence_across_assessments() ->
     second = service.status()
 
     assert first.activation_status_id == second.activation_status_id
-    assert (
-        first.activation_status_id
-        == activation.activation_receipt.activation_commit_id
-    )
+    assert first.activation_status_id == activation.activation_receipt.activation_commit_id

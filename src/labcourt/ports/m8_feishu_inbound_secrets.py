@@ -39,9 +39,7 @@ class M8FeishuInboundResolvedSecrets:
         encrypt_key: bytes,
         verification_token: bytes,
     ) -> None:
-        if not all(
-            isinstance(item, bytes) and item for item in (encrypt_key, verification_token)
-        ):
+        if not all(isinstance(item, bytes) and item for item in (encrypt_key, verification_token)):
             raise ValueError("M8 Feishu inbound resolved secrets require non-empty bytes")
         self.inbound_profile_id = inbound_profile_id
         self.encrypt_key_reference_id = encrypt_key_reference_id

@@ -28,9 +28,7 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
     }
     supervise = feishu.commands["live-supervise"]
     assert isinstance(supervise, TyperCommand)
-    supervise_options = {
-        option for parameter in supervise.params for option in parameter.opts
-    }
+    supervise_options = {option for parameter in supervise.params for option in parameter.opts}
     assert {"--output", "--input", "--interval-ms", "--check"} <= supervise_options
     serve = feishu.commands["webhook-serve"]
     assert isinstance(serve, TyperCommand)
@@ -47,9 +45,7 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
 
     activate = feishu.commands["webhook-activate"]
     assert isinstance(activate, TyperCommand)
-    activation_options = {
-        option for parameter in activate.params for option in parameter.opts
-    }
+    activation_options = {option for parameter in activate.params for option in parameter.opts}
     assert {
         "--activation-intent",
         "--runtime-config",
@@ -60,9 +56,7 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
 
     revoke = feishu.commands["webhook-revoke"]
     assert isinstance(revoke, TyperCommand)
-    revocation_options = {
-        option for parameter in revoke.params for option in parameter.opts
-    }
+    revocation_options = {option for parameter in revoke.params for option in parameter.opts}
     assert {
         "--activation-commit-id",
         "--revoker-actor-id",
@@ -101,9 +95,7 @@ def test_feishu_webhook_command_is_explicit_and_documents_check_mode() -> None:
 
     outbox_run = feishu.commands["outbox-run-one"]
     assert isinstance(outbox_run, TyperCommand)
-    outbox_run_options = {
-        option for parameter in outbox_run.params for option in parameter.opts
-    }
+    outbox_run_options = {option for parameter in outbox_run.params for option in parameter.opts}
     assert {
         "--notification-id",
         "--candidate-authority-id",

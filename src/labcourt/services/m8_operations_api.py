@@ -166,9 +166,7 @@ class M8OperationsApiService:
         case_id: str,
         request: M8ApiCaseTransitionRequestV1,
     ) -> M8OperationalCaseCommitReceiptV1:
-        return self.transition_case_with_authority(
-            self.session(principal), case_id, request
-        )
+        return self.transition_case_with_authority(self.session(principal), case_id, request)
 
     def transition_case_with_authority(
         self,
@@ -177,9 +175,7 @@ class M8OperationsApiService:
         request: M8ApiCaseTransitionRequestV1,
     ) -> M8OperationalCaseCommitReceiptV1:
         current = self._call(
-            lambda: self._operations.get_current_actor_authority(
-                actor_receipt.authority.actor_id
-            )
+            lambda: self._operations.get_current_actor_authority(actor_receipt.authority.actor_id)
         )
         if current != actor_receipt or not current.authority.active:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)

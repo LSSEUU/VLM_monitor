@@ -152,9 +152,10 @@ def test_invalid_token_path_method_content_type_and_host_fail_closed(
     socket_enabled: None,
 ) -> None:
     del socket_enabled
-    with _running_server(
-        decrypted=_challenge_bytes(token=b"wrong-verification-token")
-    ) as (server, sink):
+    with _running_server(decrypted=_challenge_bytes(token=b"wrong-verification-token")) as (
+        server,
+        sink,
+    ):
         status, body, _headers = _request(server)
         assert status == 400
         assert body == {"error": {"code": "invalid_request"}}

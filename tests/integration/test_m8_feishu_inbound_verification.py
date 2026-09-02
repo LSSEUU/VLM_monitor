@@ -338,11 +338,7 @@ def test_stale_request_and_crypto_failure_are_typed_without_commit(tmp_path: Pat
     profile = _webhook_profile()
     body = _encrypted_body()
     stale = _ingress(profile, body).model_copy(
-        update={
-            "request_timestamp_seconds": int(
-                (RECEIVED_AT - timedelta(minutes=6)).timestamp()
-            )
-        }
+        update={"request_timestamp_seconds": int((RECEIVED_AT - timedelta(minutes=6)).timestamp())}
     )
     resolver = _SecretResolver()
     crypto = _Crypto(_event_bytes())

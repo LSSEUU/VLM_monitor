@@ -114,12 +114,7 @@ def _require_utc(value: datetime, name: str) -> datetime:
 
 
 def _milliseconds_utc(value: str, name: str) -> datetime:
-    if (
-        not value.isascii()
-        or not value.isdigit()
-        or value.startswith("0")
-        or len(value) > 16
-    ):
+    if not value.isascii() or not value.isdigit() or value.startswith("0") or len(value) > 16:
         raise ContractViolation(f"M8 Feishu inbound {name} is not canonical milliseconds")
     try:
         return datetime.fromtimestamp(int(value) / 1_000, tz=UTC)
@@ -199,8 +194,7 @@ class M8FeishuInboundVerificationService:
             not encrypted_body
             or len(encrypted_body) != ingress_request.encrypted_body_size_bytes
             or len(encrypted_body) > profile.raw_body_max_bytes
-            or hashlib.sha256(encrypted_body).hexdigest()
-            != ingress_request.encrypted_body_sha256
+            or hashlib.sha256(encrypted_body).hexdigest() != ingress_request.encrypted_body_sha256
         ):
             raise ContractViolation("M8 Feishu inbound encrypted request bytes changed")
 
@@ -243,9 +237,7 @@ class M8FeishuInboundVerificationService:
                 provider_message_id=message.message_id,
                 provider_parent_message_id=message.parent_id,
                 provider_root_message_id=message.root_id,
-                app_id_sha256=hashlib.sha256(
-                    event.header.app_id.encode("utf-8")
-                ).hexdigest(),
+                app_id_sha256=hashlib.sha256(event.header.app_id.encode("utf-8")).hexdigest(),
                 tenant_key_sha256=hashlib.sha256(
                     event.header.tenant_key.encode("utf-8")
                 ).hexdigest(),

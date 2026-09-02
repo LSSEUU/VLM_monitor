@@ -74,9 +74,7 @@ class M8FeishuInboundWebhookProfileV1(FrozenContractModel):
     delivery_kind: Literal["HTTPS_WEBHOOK"] = "HTTPS_WEBHOOK"
     event_schema: Literal["2.0"] = "2.0"
     event_type: Literal["im.message.receive_v1"] = "im.message.receive_v1"
-    required_scope: Literal["im:message.p2p_msg:readonly"] = (
-        "im:message.p2p_msg:readonly"
-    )
+    required_scope: Literal["im:message.p2p_msg:readonly"] = "im:message.p2p_msg:readonly"
     allowed_chat_type: Literal["p2p"] = "p2p"
     allowed_sender_type: Literal["user"] = "user"
     allowed_message_type: Literal["text"] = "text"

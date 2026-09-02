@@ -231,9 +231,7 @@ class SQLiteM8EvaluationRepository:
             ).fetchall()
         if len(rows) > MAX_M8_EVALUATION_ASSETS:
             raise RepositoryIntegrityError("M8 evaluation media inventory exceeds its bound")
-        return tuple(
-            _load_document(row, M8EvaluationMediaAssetV1, "asset_json") for row in rows
-        )
+        return tuple(_load_document(row, M8EvaluationMediaAssetV1, "asset_json") for row in rows)
 
     def put_ground_truth(
         self,
@@ -244,19 +242,20 @@ class SQLiteM8EvaluationRepository:
             raise TypeError("M8 evaluation label publication requires typed ground truth")
         raw, digest = _document(truth)
         with self._immediate() as connection:
-            if connection.execute(
-                "SELECT 1 FROM m8_evaluation_media_assets WHERE asset_id = ?",
-                (truth.asset_id,),
-            ).fetchone() is None:
+            if (
+                connection.execute(
+                    "SELECT 1 FROM m8_evaluation_media_assets WHERE asset_id = ?",
+                    (truth.asset_id,),
+                ).fetchone()
+                is None
+            ):
                 raise EvidenceMissing("M8 evaluation label media asset is absent")
             existing = connection.execute(
                 "SELECT * FROM m8_evaluation_ground_truth_versions WHERE ground_truth_id = ?",
                 (truth.ground_truth_id,),
             ).fetchone()
             if existing is not None:
-                loaded = _load_document(
-                    existing, M8EvaluationGroundTruthV1, "ground_truth_json"
-                )
+                loaded = _load_document(existing, M8EvaluationGroundTruthV1, "ground_truth_json")
                 if loaded == truth and (
                     expected_prior_revision == truth.revision - 1
                     or (truth.revision == 1 and expected_prior_revision is None)
@@ -321,8 +320,7 @@ class SQLiteM8EvaluationRepository:
         if len(rows) > MAX_M8_EVALUATION_ASSETS:
             raise RepositoryIntegrityError("M8 evaluation truth inventory exceeds its bound")
         return tuple(
-            _load_document(row, M8EvaluationGroundTruthV1, "ground_truth_json")
-            for row in rows
+            _load_document(row, M8EvaluationGroundTruthV1, "ground_truth_json") for row in rows
         )
 
     def put_campaign(
@@ -520,8 +518,7 @@ class SQLiteM8EvaluationRepository:
     ) -> _ModelT:
         with self._read() as connection:
             row = connection.execute(
-                f"SELECT * FROM {table} WHERE {identity_column} = ? "
-                "ORDER BY revision DESC LIMIT 1",
+                f"SELECT * FROM {table} WHERE {identity_column} = ? ORDER BY revision DESC LIMIT 1",
                 (identity,),
             ).fetchone()
         if row is None:

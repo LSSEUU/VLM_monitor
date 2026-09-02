@@ -924,9 +924,7 @@ SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "m8-feishu-agent-reply-completion-v1": M8FeishuAgentReplyCompletionV1,
     "m8-feishu-agent-reply-envelope-v1": M8FeishuAgentReplyEnvelopeV1,
     "m8-feishu-alert-bridge-receipt-v1": M8FeishuAlertBridgeReceiptV1,
-    "m8-feishu-conversation-channel-projection-v1": (
-        M8FeishuConversationChannelProjectionV1
-    ),
+    "m8-feishu-conversation-channel-projection-v1": (M8FeishuConversationChannelProjectionV1),
     "m8-feishu-duty-route-revision-request-v1": M8FeishuDutyRouteRevisionRequestV1,
     "m8-feishu-duty-route-v1": M8FeishuDutyRouteV1,
     "m8-feishu-inbound-event-v1": M8FeishuInboundEventV1,

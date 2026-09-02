@@ -39,9 +39,7 @@ class M8FeishuPersonalDemoOutcome(StrEnum):
 class M8FeishuPersonalDemoProbeV1(FrozenContractModel):
     """Static, visibly simulated card request with no domain authority."""
 
-    schema_version: Literal["m8-feishu-personal-demo-probe-v1"] = (
-        "m8-feishu-personal-demo-probe-v1"
-    )
+    schema_version: Literal["m8-feishu-personal-demo-probe-v1"] = "m8-feishu-personal-demo-probe-v1"
     display_badge: Literal["PERSONAL DEMO · SIMULATED SAFETY EVENT"] = (
         "PERSONAL DEMO · SIMULATED SAFETY EVENT"
     )
@@ -181,8 +179,7 @@ class M8FeishuPersonalDemoProbeReceiptV1(FrozenContractModel):
         if self.completed_at < self.probe.requested_at:
             raise ValueError("M8 Feishu personal demo completion precedes request")
         token_raw = (
-            self.token_raw_response_ref is not None
-            and self.token_raw_response_sha256 is not None
+            self.token_raw_response_ref is not None and self.token_raw_response_sha256 is not None
         )
         message_raw = (
             self.message_raw_response_ref is not None
@@ -190,9 +187,7 @@ class M8FeishuPersonalDemoProbeReceiptV1(FrozenContractModel):
         )
         if (self.token_raw_response_ref is None) != (self.token_raw_response_sha256 is None):
             raise ValueError("M8 Feishu personal demo token raw reference is incomplete")
-        if (self.message_raw_response_ref is None) != (
-            self.message_raw_response_sha256 is None
-        ):
+        if (self.message_raw_response_ref is None) != (self.message_raw_response_sha256 is None):
             raise ValueError("M8 Feishu personal demo message raw reference is incomplete")
         if self.outcome == M8FeishuPersonalDemoOutcome.CHECKED:
             if any(

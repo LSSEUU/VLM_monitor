@@ -55,11 +55,7 @@ def _require_document(document: bytes, name: str) -> bytes:
 
 
 def _require_utc_time(value: datetime, name: str) -> datetime:
-    if (
-        not isinstance(value, datetime)
-        or value.tzinfo is None
-        or value.utcoffset() != timedelta(0)
-    ):
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != timedelta(0):
         raise ValueError(f"M8 Feishu outbox authority {name} must be aware UTC")
     return value
 

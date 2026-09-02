@@ -284,9 +284,11 @@ def test_feishu_agent_uses_shared_conversation_and_has_no_offline_reply(
     worker = M8FeishuAgentAuthorityWorker(
         assembly.feishu_live.repository,
         server.agent_chat_service,
-        lambda sender: M8FeishuTrustedActorContext(principal, actor, binding)
-        if sender == binding.receive_id_sha256
-        else (_ for _ in ()).throw(ValueError("actor not bound")),
+        lambda sender: (
+            M8FeishuTrustedActorContext(principal, actor, binding)
+            if sender == binding.receive_id_sha256
+            else (_ for _ in ()).throw(ValueError("actor not bound"))
+        ),
         lambda: datetime.now(UTC),
         platform_manifest("platform-feishu-live-repository-v1"),
         platform_manifest("platform-feishu-agent-envelope-test-v1"),
@@ -301,15 +303,11 @@ def test_feishu_agent_uses_shared_conversation_and_has_no_offline_reply(
     assert terminal.state == M8FeishuInboundJobState.FAILED
     assert terminal.failure_code == M8FeishuLiveFailureCode.QWEN_UNAVAILABLE
     assert terminal.conversation_id is not None
-    projection = assembly.feishu_live.repository.channel_projection(
-        terminal.conversation_id
-    )
+    projection = assembly.feishu_live.repository.channel_projection(terminal.conversation_id)
     assert projection is not None
     assert projection.actor_id == principal.actor_id
     assert projection.turn_origins[terminal.turn_id] == "FEISHU"
-    conversation = server.agent_chat_service.conversation(
-        principal, terminal.conversation_id
-    )
+    conversation = server.agent_chat_service.conversation(principal, terminal.conversation_id)
     assert conversation.turns[-1].failure_code.value == "NOT_CONFIGURED"
     reply = assembly.feishu_live.repository.claim_agent_reply("f" * 64)
     assert reply is not None

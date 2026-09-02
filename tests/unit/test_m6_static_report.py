@@ -8,13 +8,13 @@ from html import escape
 from html.parser import HTMLParser
 
 import pytest
+
 from labcourt.application.m6_static_report import (
     M6PrivacySafeStaticReportBundle,
     M6StaticReportBuildError,
     M6StaticReportBuildErrorCode,
     build_m6_privacy_safe_static_report,
 )
-
 from labcourt.contracts.m6_static_report import (
     M6StaticReportEvidenceDisposition,
     M6StaticReportEvidenceItem,

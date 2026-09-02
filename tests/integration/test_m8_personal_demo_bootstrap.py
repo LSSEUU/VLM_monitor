@@ -214,18 +214,11 @@ def test_recorded_camera_registration_is_additive_idempotent_and_replayable(
 def test_recorded_media_binding_preserves_input_and_is_replayable(tmp_path: Path) -> None:
     output = tmp_path / "camera-demo"
     input_media = tmp_path / "authorized-demo.mp4"
-    media_bytes = (
-        b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
-        b"\x00\x00\x00\x08mdat"
-    )
+    media_bytes = b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2\x00\x00\x00\x08mdat"
     input_media.write_bytes(media_bytes)
 
-    first = bind_m8_personal_demo_recorded_media(
-        output / "labcourt.sqlite3", input_media, output
-    )
-    replay = bind_m8_personal_demo_recorded_media(
-        output / "labcourt.sqlite3", input_media, output
-    )
+    first = bind_m8_personal_demo_recorded_media(output / "labcourt.sqlite3", input_media, output)
+    replay = bind_m8_personal_demo_recorded_media(output / "labcourt.sqlite3", input_media, output)
 
     assert replay == first
     assert input_media.read_bytes() == media_bytes
@@ -260,24 +253,15 @@ def test_ppe_weak_label_creates_only_a_replayable_pending_student_case(
 ) -> None:
     output = tmp_path / "ppe-demo"
     input_media = tmp_path / "authorized-ppe.mp4"
-    input_media.write_bytes(
-        b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
-        b"\x00\x00\x00\x08mdat"
-    )
-    binding = bind_m8_personal_demo_recorded_media(
-        output / "labcourt.sqlite3", input_media, output
-    )
+    input_media.write_bytes(b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2\x00\x00\x00\x08mdat")
+    binding = bind_m8_personal_demo_recorded_media(output / "labcourt.sqlite3", input_media, output)
     (output / "camera-media-receipt.json").write_text(
         binding.model_dump_json(indent=2) + "\n",
         encoding="utf-8",
     )
 
-    first = create_m8_personal_demo_ppe_case(
-        output / "labcourt.sqlite3", output, binding
-    )
-    replay = create_m8_personal_demo_ppe_case(
-        output / "labcourt.sqlite3", output, binding
-    )
+    first = create_m8_personal_demo_ppe_case(output / "labcourt.sqlite3", output, binding)
+    replay = create_m8_personal_demo_ppe_case(output / "labcourt.sqlite3", output, binding)
 
     assert replay == first
     assert first.case_status == M8OperationalCaseStatus.PENDING_VERIFICATION

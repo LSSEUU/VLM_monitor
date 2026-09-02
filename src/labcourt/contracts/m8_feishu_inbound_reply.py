@@ -76,9 +76,7 @@ def _verify_computed_claims(
     serialized = instance.model_dump(mode="json")
     for name, (present, claimed) in claims.items():
         if present and canonical_json(claimed) != canonical_json(serialized[name]):
-            raise ValueError(
-                f"serialized {name} conflicts with derived M8 Feishu reply authority"
-            )
+            raise ValueError(f"serialized {name} conflicts with derived M8 Feishu reply authority")
 
 
 class M8FeishuInboundReplyCorrelationAuthorityV1(FrozenContractModel):

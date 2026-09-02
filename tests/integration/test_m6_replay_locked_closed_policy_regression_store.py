@@ -5,6 +5,11 @@ from functools import lru_cache
 from pathlib import Path
 
 import pytest
+
+from labcourt.adapters.storage.m6_regression_execution_source_catalog_store import (
+    M6RegressionExecutionSourceCatalogPublisher,
+    ReadonlyM6RegressionExecutionSourceCatalogStore,
+)
 from labcourt.adapters.storage.m6_replay_locked_closed_policy_regression_store import (
     M6ReplayLockedClosedPolicyRegressionPublicationResult,
     M6ReplayLockedClosedPolicyRegressionPublisher,
@@ -12,11 +17,6 @@ from labcourt.adapters.storage.m6_replay_locked_closed_policy_regression_store i
     M6ReplayLockedClosedPolicyRegressionStoreErrorCode,
     M6StoredReplayLockedClosedPolicyRegressionBundle,
     ReadonlyM6ReplayLockedClosedPolicyRegressionStore,
-)
-
-from labcourt.adapters.storage.m6_regression_execution_source_catalog_store import (
-    M6RegressionExecutionSourceCatalogPublisher,
-    ReadonlyM6RegressionExecutionSourceCatalogStore,
 )
 from labcourt.application.m6_replay_locked_closed_policy_publication import (
     build_m6_replay_locked_closed_policy_publication_bundle,

@@ -5,16 +5,16 @@ import json
 
 import pytest
 from jsonschema import Draft202012Validator
-from labcourt.contracts.m6_static_report_publication import (
-    MAX_M6_PRIVACY_SAFE_STATIC_REPORT_HTML_BYTES,
-    MAX_M6_PRIVACY_SAFE_STATIC_REPORT_MANIFEST_BYTES,
-    M6PrivacySafeStaticReportPublicationSealAuthorityV1,
-)
 from pydantic import ValidationError
 
 from labcourt.contracts.canonical import canonical_json
 from labcourt.contracts.m6_static_report import (
     M6PrivacySafeStaticReportManifestAuthorityV1,
+)
+from labcourt.contracts.m6_static_report_publication import (
+    MAX_M6_PRIVACY_SAFE_STATIC_REPORT_HTML_BYTES,
+    MAX_M6_PRIVACY_SAFE_STATIC_REPORT_MANIFEST_BYTES,
+    M6PrivacySafeStaticReportPublicationSealAuthorityV1,
 )
 from labcourt.schema_export import expected_schema_files
 from tests.contract.test_m6_static_report_contracts import _manifest

@@ -40,8 +40,7 @@ class M8UserPermissionApiService:
         }:
             raise M8ApiServiceError(M8ApiServiceFailureCode.FORBIDDEN)
         return tuple(
-            self._operations.get_current_actor_authority(actor_id)
-            for actor_id in self._actor_ids
+            self._operations.get_current_actor_authority(actor_id) for actor_id in self._actor_ids
         )
 
 

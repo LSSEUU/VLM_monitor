@@ -236,16 +236,16 @@ def test_verified_reply_atomically_transitions_notification_and_restarts(tmp_pat
     assert notifications.get_current_notification(sent.notification_id) == (
         committed.notification_commit
     )
-    assert notifications.read_raw_artifact(
-        committed.correlation_authority.reply.raw_reply_ref
-    ) == CONTENT_BYTES
+    assert (
+        notifications.read_raw_artifact(committed.correlation_authority.reply.raw_reply_ref)
+        == CONTENT_BYTES
+    )
     assert operations.get_current_operational_case(case.case_id) == case
     assert service.correlate_and_commit(inbound_commit.provider_message_id) == committed
 
     reopened = SQLiteM8FeishuInboundReplyRepository(database, BUSY_TIMEOUT_MS, SHA_C)
     assert (
-        reopened.get_reply_by_provider_message_id(inbound_commit.provider_message_id)
-        == committed
+        reopened.get_reply_by_provider_message_id(inbound_commit.provider_message_id) == committed
     )
 
 

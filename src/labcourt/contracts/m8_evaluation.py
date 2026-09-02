@@ -125,9 +125,7 @@ class M8LiveIngestState(StrEnum):
 
 
 class M8EvaluationMediaAssetV1(FrozenContractModel):
-    schema_version: Literal["m8-evaluation-media-asset-v1"] = (
-        "m8-evaluation-media-asset-v1"
-    )
+    schema_version: Literal["m8-evaluation-media-asset-v1"] = "m8-evaluation-media-asset-v1"
     asset_id: Sha256Hex
     display_name: str
     media_sha256: Sha256Hex
@@ -223,9 +221,7 @@ class M8EvaluationLabelIntervalV1(FrozenContractModel):
 
 
 class M8EvaluationGroundTruthV1(FrozenContractModel):
-    schema_version: Literal["m8-evaluation-ground-truth-v1"] = (
-        "m8-evaluation-ground-truth-v1"
-    )
+    schema_version: Literal["m8-evaluation-ground-truth-v1"] = "m8-evaluation-ground-truth-v1"
     asset_id: Sha256Hex
     revision: int = Field(gt=0, strict=True)
     violation_type: ViolationType
@@ -249,9 +245,7 @@ class M8EvaluationGroundTruthV1(FrozenContractModel):
     @field_validator("reviewed_at")
     @classmethod
     def validate_reviewed_at(cls, value: datetime | None) -> datetime | None:
-        return (
-            _require_utc(value, "M8 evaluation reviewed_at") if value is not None else None
-        )
+        return _require_utc(value, "M8 evaluation reviewed_at") if value is not None else None
 
     @model_validator(mode="after")
     def validate_truth(self) -> Self:
@@ -489,11 +483,7 @@ class M8EvaluationRunV1(FrozenContractModel):
     @field_validator("failure_code", "route_reason_code")
     @classmethod
     def validate_reason_code(cls, value: str | None) -> str | None:
-        return (
-            require_reference_token(value, "M8 evaluation reason")
-            if value is not None
-            else None
-        )
+        return require_reference_token(value, "M8 evaluation reason") if value is not None else None
 
     @field_validator("queued_at", "started_at", "completed_at")
     @classmethod
@@ -564,9 +554,7 @@ class M8EvaluationDashboardV1(FrozenContractModel):
 
 
 class M8LiveIngestStartRequestV1(FrozenContractModel):
-    schema_version: Literal["m8-live-ingest-start-request-v1"] = (
-        "m8-live-ingest-start-request-v1"
-    )
+    schema_version: Literal["m8-live-ingest-start-request-v1"] = "m8-live-ingest-start-request-v1"
     candidate_authority_id: Sha256Hex
     source_id: ReferenceToken
     endpoint_environment_variable: str
@@ -640,9 +628,7 @@ class M8LiveIngestSessionV1(FrozenContractModel):
     @classmethod
     def validate_failure(cls, value: str | None) -> str | None:
         return (
-            require_reference_token(value, "M8 live ingest failure")
-            if value is not None
-            else None
+            require_reference_token(value, "M8 live ingest failure") if value is not None else None
         )
 
     @model_validator(mode="after")

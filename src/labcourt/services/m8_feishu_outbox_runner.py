@@ -100,9 +100,7 @@ class M8FeishuSandboxOutboxRunner:
         self._profile = profile
         self._workflow = workflow
         self._clock = clock
-        self._preflight_manifest_id = _validate_sha256(
-            preflight_manifest_id, "preflight manifest"
-        )
+        self._preflight_manifest_id = _validate_sha256(preflight_manifest_id, "preflight manifest")
         self._claim_manifest_id = _validate_sha256(claim_manifest_id, "claim manifest")
         self._call_fence_manifest_id = _validate_sha256(
             call_fence_manifest_id, "call fence manifest"
@@ -121,10 +119,7 @@ class M8FeishuSandboxOutboxRunner:
     ) -> M8FeishuSandboxOutboxRunReceiptV1:
         if not isinstance(recipient_binding, M8FeishuRecipientBindingAuthorityV1):
             raise TypeError("M8 Feishu outbox runner requires a typed recipient binding")
-        if (
-            not isinstance(worker_owner_token, bytes)
-            or not 32 <= len(worker_owner_token) <= 256
-        ):
+        if not isinstance(worker_owner_token, bytes) or not 32 <= len(worker_owner_token) <= 256:
             raise ValueError("M8 Feishu outbox worker token must be 32 through 256 bytes")
 
         before = self._notifications.get_current_notification(notification_id)
@@ -224,9 +219,7 @@ class M8FeishuSandboxOutboxRunner:
             != fence.dispatch_authorization_id
         ):
             raise ConcurrentModification("M8 Feishu send receipt grafts another authority")
-        raw_response = self._sender.read_raw_response(
-            send_receipt.dispatch_result.raw_response_ref
-        )
+        raw_response = self._sender.read_raw_response(send_receipt.dispatch_result.raw_response_ref)
         committed_at = _require_utc(self._clock(), "completion time")
         completion = self._claims.complete_dispatch(
             claim.claim_id,

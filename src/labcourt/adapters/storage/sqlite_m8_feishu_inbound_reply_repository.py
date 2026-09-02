@@ -31,9 +31,7 @@ from .sqlite_m8_notification_repository import (
 )
 from .sqlite_repository import RepositoryIntegrityError, _row_int, _row_str
 
-_PROVIDER_RECEIPT_JSON_PATH = (
-    "$.audit_event.transition_command.dispatch_result.provider_receipt_id"
-)
+_PROVIDER_RECEIPT_JSON_PATH = "$.audit_event.transition_command.dispatch_result.provider_receipt_id"
 _ADAPTER_ID_JSON_PATH = (
     "$.audit_event.transition_command.dispatch_result.request.channel_capability.adapter_id"
 )
@@ -85,9 +83,7 @@ class SQLiteM8FeishuInboundReplyRepository(SQLiteM8NotificationRepository):
                 "ORDER BY version"
             ).fetchall()
         except sqlite3.DatabaseError as error:
-            raise RepositoryIntegrityError(
-                "M8 Feishu reply migration ledger is invalid"
-            ) from error
+            raise RepositoryIntegrityError("M8 Feishu reply migration ledger is invalid") from error
         observed_migrations = tuple(
             (_row_int(row, "version"), _row_str(row, "name")) for row in migrations
         )
@@ -131,8 +127,7 @@ class SQLiteM8FeishuInboundReplyRepository(SQLiteM8NotificationRepository):
         )
         with self._read() as connection:
             row = connection.execute(
-                "SELECT * FROM m8_feishu_inbound_reply_commits "
-                "WHERE provider_message_id = ?",
+                "SELECT * FROM m8_feishu_inbound_reply_commits WHERE provider_message_id = ?",
                 (message_id,),
             ).fetchone()
             if row is None:
@@ -170,8 +165,7 @@ class SQLiteM8FeishuInboundReplyRepository(SQLiteM8NotificationRepository):
         )
         with self._immediate() as connection:
             retry_row = connection.execute(
-                "SELECT * FROM m8_feishu_inbound_reply_commits "
-                "WHERE provider_message_id = ?",
+                "SELECT * FROM m8_feishu_inbound_reply_commits WHERE provider_message_id = ?",
                 (correlation_authority.provider_message_id,),
             ).fetchone()
             if retry_row is not None:
@@ -198,8 +192,7 @@ class SQLiteM8FeishuInboundReplyRepository(SQLiteM8NotificationRepository):
                 connection,
                 correlation_authority.reply_correlation_message_id,
                 (
-                    correlation_authority.inbound_commit.verification_receipt.profile
-                    .outbound_profile.candidate.adapter_id
+                    correlation_authority.inbound_commit.verification_receipt.profile.outbound_profile.candidate.adapter_id
                 ),
             )
             if persisted_chain != correlation_authority.notification_commit_chain:
@@ -356,9 +349,7 @@ class SQLiteM8FeishuInboundReplyRepository(SQLiteM8NotificationRepository):
         try:
             receipt = M8FeishuInboundReplyCommitReceiptV1.model_validate_json(raw_json)
         except ValidationError as error:
-            raise RepositoryIntegrityError(
-                "persisted M8 Feishu reply commit is invalid"
-            ) from error
+            raise RepositoryIntegrityError("persisted M8 Feishu reply commit is invalid") from error
         correlation = receipt.correlation_authority
         command = receipt.notification_commit.audit_event.transition_command
         if command is None or command.reply is None:
@@ -366,18 +357,15 @@ class SQLiteM8FeishuInboundReplyRepository(SQLiteM8NotificationRepository):
         if (
             canonical_json(receipt.model_dump(mode="json")) != raw_json
             or receipt.commit_receipt_id != _row_str(row, "commit_receipt_id")
-            or receipt.provider_message_deduplication_key
-            != _row_str(row, "provider_message_id")
-            or correlation.correlation_authority_id
-            != _row_str(row, "correlation_authority_id")
+            or receipt.provider_message_deduplication_key != _row_str(row, "provider_message_id")
+            or correlation.correlation_authority_id != _row_str(row, "correlation_authority_id")
             or correlation.correlation_authority_document_sha256
             != _row_str(row, "correlation_authority_document_sha256")
             or correlation.inbound_commit.commit_receipt_id
             != _row_str(row, "inbound_commit_receipt_id")
             or correlation.reply_correlation_message_id
             != _row_str(row, "outbound_provider_message_id")
-            or receipt.notification_commit.notification_id
-            != _row_str(row, "notification_id")
+            or receipt.notification_commit.notification_id != _row_str(row, "notification_id")
             or correlation.notification_commit_chain[-1].notification_version
             != _row_int(row, "source_notification_version")
             or receipt.notification_commit.notification_version
@@ -386,8 +374,7 @@ class SQLiteM8FeishuInboundReplyRepository(SQLiteM8NotificationRepository):
             != _row_str(row, "notification_commit_receipt_id")
             or command.reply.reply_authority_id != _row_str(row, "reply_authority_id")
             or receipt.reply_commit_manifest_id != _row_str(row, "reply_commit_manifest_id")
-            or receipt.notification_commit.repository_manifest_id
-            != self._repository_manifest_id
+            or receipt.notification_commit.repository_manifest_id != self._repository_manifest_id
             or _row_str(row, "repository_manifest_id") != self._repository_manifest_id
         ):
             raise RepositoryIntegrityError("M8 Feishu reply commit index conflicts")

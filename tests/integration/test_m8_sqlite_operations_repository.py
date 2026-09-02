@@ -263,8 +263,7 @@ def test_hearing_authorities_upgrade_an_existing_feishu_live_database(
             "WHERE version <= 15 ORDER BY version"
         ).fetchall()
         additive = connection.execute(
-            "SELECT version, name FROM schema_migrations "
-            "WHERE version >= 16 ORDER BY version"
+            "SELECT version, name FROM schema_migrations WHERE version >= 16 ORDER BY version"
         ).fetchall()
     assert preserved == frozen
     assert additive == [

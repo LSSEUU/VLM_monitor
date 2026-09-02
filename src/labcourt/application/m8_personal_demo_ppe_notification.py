@@ -98,9 +98,7 @@ def _student_target() -> M8NotificationTargetAuthorityV1:
     return M8NotificationTargetAuthorityV1(
         actor_id="student-demo",
         identity_provider_id="labcourt-local-fake",
-        external_subject_binding_sha256=_manifest(
-            "labcourt-personal-demo-student-local-message"
-        ),
+        external_subject_binding_sha256=_manifest("labcourt-personal-demo-student-local-message"),
         channel=M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,
         authority_revision=1,
         active=True,
@@ -113,9 +111,7 @@ def _student_outcome_target() -> M8NotificationTargetAuthorityV1:
     return M8NotificationTargetAuthorityV1(
         actor_id="student-demo",
         identity_provider_id="labcourt-local-fake",
-        external_subject_binding_sha256=_manifest(
-            "labcourt-personal-demo-student-local-message"
-        ),
+        external_subject_binding_sha256=_manifest("labcourt-personal-demo-student-local-message"),
         channel=M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,
         authority_revision=2,
         active=True,
@@ -184,9 +180,7 @@ def route_m8_personal_demo_ppe_notification(
             template_version=1,
             locale="zh-CN",
             effective_at=_PLANNED_AT - timedelta(days=1),
-            content_document_sha256=_manifest(
-                "labcourt-personal-demo-ppe-student-card-content-v1"
-            ),
+            content_document_sha256=_manifest("labcourt-personal-demo-ppe-student-card-content-v1"),
             allowed_purposes=(M8NotificationPurpose.CASE_UPDATED,),
             allowed_channels=(M8NotificationChannelKind.LOCAL_OFFLINE_FAKE,),
             manifest_id=_manifest("labcourt-personal-demo-ppe-student-card-template-v1"),
@@ -473,9 +467,7 @@ def route_m8_personal_demo_ppe_outcome_notification(
         notification_commit_receipt_id=current.commit_receipt_id,
         routed_at=_OUTCOME_ROUTED_AT,
         offline_card_id=card.card_id,
-        notification_manifest_id=_manifest(
-            "labcourt-personal-demo-ppe-outcome-routing-receipt-v1"
-        ),
+        notification_manifest_id=_manifest("labcourt-personal-demo-ppe-outcome-routing-receipt-v1"),
     )
     return M8PersonalDemoPpeOutcomeNotificationRun(receipt=receipt, card=card)
 

@@ -56,9 +56,7 @@ class M8RecordedMediaApiService:
         actor = self._actor(principal)
         if actor.role not in {M8ActorRole.OPERATIONS, M8ActorRole.SAFETY_OFFICER}:
             return ()
-        catalog = self._call(
-            lambda: self._inventory.get_current_source_catalog("campus-demo")
-        )
+        catalog = self._call(lambda: self._inventory.get_current_source_catalog("campus-demo"))
         cameras = tuple(
             source
             for source in catalog.catalog.sources
@@ -98,15 +96,11 @@ class M8RecordedMediaApiService:
     ) -> Iterator[M8OpenedRecordedMedia]:
         self._authorize(principal)
         receipt = self._receipt(source_id)
-        catalog = self._call(
-            lambda: self._inventory.get_current_source_catalog("campus-demo")
-        )
+        catalog = self._call(lambda: self._inventory.get_current_source_catalog("campus-demo"))
         if (
             catalog.catalog.catalog_id != receipt.source_catalog_id
             or catalog.commit_receipt_id != receipt.source_catalog_commit_receipt_id
-            or not any(
-                source.source_id == receipt.source_id for source in catalog.catalog.sources
-            )
+            or not any(source.source_id == receipt.source_id for source in catalog.catalog.sources)
         ):
             raise M8ApiServiceError(M8ApiServiceFailureCode.CONCURRENT_MODIFICATION)
 

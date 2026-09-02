@@ -48,12 +48,8 @@ class M8FeishuLocalDemoCredentialsV1(FrozenContractModel):
         plaintext = value.get_secret_value()
         minimum = 32 if info.field_name == "worker_token" else 1
         maximum = 256 if info.field_name == "worker_token" else _MAX_SECRET_CHARS
-        if (
-            not minimum <= len(plaintext) <= maximum
-            or any(
-                character.isspace() or ord(character) < 0x20
-                for character in plaintext
-            )
+        if not minimum <= len(plaintext) <= maximum or any(
+            character.isspace() or ord(character) < 0x20 for character in plaintext
         ):
             raise ValueError("M8 Feishu local demo credentials reject whitespace/control")
         return value
@@ -105,9 +101,7 @@ class M8FeishuLocalDemoRuntimeV1(FrozenContractModel):
 class M8FeishuLocalDemoConfigV1(FrozenContractModel):
     """Strict local file contract; its repr/JSON serialization redacts secret values."""
 
-    schema_version: Literal["m8-feishu-local-demo-config-v1"] = (
-        "m8-feishu-local-demo-config-v1"
-    )
+    schema_version: Literal["m8-feishu-local-demo-config-v1"] = "m8-feishu-local-demo-config-v1"
     display_badge: Literal["PERSONAL DEMO · LOCAL PLAINTEXT CREDENTIALS"] = (
         "PERSONAL DEMO · LOCAL PLAINTEXT CREDENTIALS"
     )
@@ -132,8 +126,7 @@ class M8FeishuLocalDemoConfigV1(FrozenContractModel):
         if any(configured) and not all(configured):
             raise ValueError("M8 Feishu local demo authority bundle is incomplete")
         if all(configured) and (
-            self.credentials.encrypt_key is None
-            or self.credentials.verification_token is None
+            self.credentials.encrypt_key is None or self.credentials.verification_token is None
         ):
             raise ValueError("M8 Feishu local demo webhook credentials are missing")
         return self

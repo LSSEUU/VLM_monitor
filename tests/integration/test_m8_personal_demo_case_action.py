@@ -113,10 +113,7 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
 ) -> None:
     root = tmp_path / "ppe-review"
     media = tmp_path / "ppe-review.mp4"
-    media.write_bytes(
-        b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
-        b"\x00\x00\x00\x08mdat"
-    )
+    media.write_bytes(b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2\x00\x00\x00\x08mdat")
     binding = bind_m8_personal_demo_recorded_media(root / "labcourt.sqlite3", media, root)
     ppe = create_m8_personal_demo_ppe_case(root / "labcourt.sqlite3", root, binding)
     ppe_path = root / "ppe-case-receipt.json"
@@ -155,26 +152,18 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
             "REQUEST_APPEAL",
             "SUBMIT_EXPLANATION",
         }
-        connection = http.client.HTTPConnection(
-            "127.0.0.1", assembly.server.server_port, timeout=3
-        )
+        connection = http.client.HTTPConnection("127.0.0.1", assembly.server.server_port, timeout=3)
         connection.request(
             "GET",
             "/api/m8/notifications",
-            headers={
-                "Authorization": (
-                    f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS['student']}"
-                )
-            },
+            headers={"Authorization": (f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS['student']}")},
         )
         response = connection.getresponse()
         student_notifications = json.loads(response.read())
         connection.close()
         assert response.status == 200
         assert len(student_notifications) == 1
-        assert student_notifications[0]["notification_id"] == (
-            notification.receipt.notification_id
-        )
+        assert student_notifications[0]["notification_id"] == (notification.receipt.notification_id)
 
         delivered = deliver_m8_personal_demo_ppe_notification(
             root / "labcourt.sqlite3",
@@ -262,9 +251,7 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
         )
         assert outcome_delivery.status.value == "DELIVERED"
         assert outcome_delivery.audit_event.transition_command is not None
-        outcome_delivery_receipt = (
-            outcome_delivery.audit_event.transition_command.delivery_receipt
-        )
+        outcome_delivery_receipt = outcome_delivery.audit_event.transition_command.delivery_receipt
         assert outcome_delivery_receipt is not None
         assert outcome_delivery_receipt.real_delivery_confirmed is False
         outcome_acknowledgement = acknowledge_m8_personal_demo_ppe_outcome_notification(
@@ -281,15 +268,11 @@ def test_safety_officer_can_explicitly_target_the_ppe_candidate(
             == outcome_acknowledgement
         )
         assert outcome_acknowledgement.status.value == "ACKNOWLEDGED"
-        connection = http.client.HTTPConnection(
-            "127.0.0.1", assembly.server.server_port, timeout=3
-        )
+        connection = http.client.HTTPConnection("127.0.0.1", assembly.server.server_port, timeout=3)
         connection.request(
             "GET",
             f"/api/m8/cases/{ppe.case_id}",
-            headers={
-                "Authorization": f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS['student']}"
-            },
+            headers={"Authorization": f"Bearer {M8_PERSONAL_DEMO_ROLE_TOKENS['student']}"},
         )
         response = connection.getresponse()
         final_case = json.loads(response.read())

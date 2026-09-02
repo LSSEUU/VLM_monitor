@@ -415,9 +415,11 @@ def test_correlation_rejects_wrong_parent_sender_target_or_actor() -> None:
         authority.model_copy(
             update={
                 "current_target_receipt": authority.current_target_receipt.model_copy(
-                    update={"target": authority.current_target_receipt.target.model_copy(
-                        update={"inbound_response_supported": False}
-                    )}
+                    update={
+                        "target": authority.current_target_receipt.target.model_copy(
+                            update={"inbound_response_supported": False}
+                        )
+                    }
                 )
             }
         )

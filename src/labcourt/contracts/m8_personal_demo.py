@@ -378,9 +378,7 @@ class M8PersonalDemoRecordedMediaReceiptV1(FrozenContractModel):
     mode: Literal[M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION] = (
         M8OperationalSourceMode.RECORDED_VIDEO_SIMULATION
     )
-    display_badge: Literal["SIMULATED · RECORDED VIDEO"] = (
-        "SIMULATED · RECORDED VIDEO"
-    )
+    display_badge: Literal["SIMULATED · RECORDED VIDEO"] = "SIMULATED · RECORDED VIDEO"
     container_signature: Literal["ISO_BMFF_FTYP"] = "ISO_BMFF_FTYP"
     media_attached: Literal[True] = True
     exact_byte_copy: Literal[True] = True
@@ -410,9 +408,7 @@ class M8PersonalDemoRecordedMediaReceiptV1(FrozenContractModel):
             claimed = payload.pop("media_binding_receipt_id", None)
             value = payload
         receipt = handler(value)
-        if present and canonical_json(claimed) != canonical_json(
-            receipt.media_binding_receipt_id
-        ):
+        if present and canonical_json(claimed) != canonical_json(receipt.media_binding_receipt_id):
             raise ValueError("serialized media binding receipt ID conflicts with authority")
         return receipt
 
@@ -462,20 +458,16 @@ class M8PersonalDemoRecordedMediaReceiptV1(FrozenContractModel):
 class M8PersonalDemoCameraViewV1(FrozenContractModel):
     """Discoverable product view over the fixed simulated recorded camera."""
 
-    schema_version: Literal["m8-personal-demo-camera-view-v1"] = (
-        "m8-personal-demo-camera-view-v1"
-    )
+    schema_version: Literal["m8-personal-demo-camera-view-v1"] = "m8-personal-demo-camera-view-v1"
     source_catalog_id: Sha256Hex
     source_catalog_commit_receipt_id: Sha256Hex
     source: M8OperationalSource
-    display_badge: Literal["SIMULATED · RECORDED VIDEO"] = (
-        "SIMULATED · RECORDED VIDEO"
-    )
+    display_badge: Literal["SIMULATED · RECORDED VIDEO"] = "SIMULATED · RECORDED VIDEO"
     media_attached: bool
     media_binding: M8PersonalDemoRecordedMediaReceiptV1 | None = None
-    media_metadata_api_path: Literal[
+    media_metadata_api_path: Literal["/api/m8/cameras/camera-recorded-demo-01/media-metadata"] = (
         "/api/m8/cameras/camera-recorded-demo-01/media-metadata"
-    ] = "/api/m8/cameras/camera-recorded-demo-01/media-metadata"
+    )
     media_api_path: Literal["/api/m8/cameras/camera-recorded-demo-01/media"] = (
         "/api/m8/cameras/camera-recorded-demo-01/media"
     )
@@ -559,9 +551,7 @@ class M8PersonalDemoPpeCaseReceiptV1(FrozenContractModel):
     source_id: Literal["camera-recorded-demo-01"] = "camera-recorded-demo-01"
     location_id: Literal["room-chem-301"] = "room-chem-301"
     subject_actor_id: Literal["student-demo"] = "student-demo"
-    candidate_kind: Literal["GOGGLES_MISSING_CANDIDATE"] = (
-        "GOGGLES_MISSING_CANDIDATE"
-    )
+    candidate_kind: Literal["GOGGLES_MISSING_CANDIDATE"] = "GOGGLES_MISSING_CANDIDATE"
     media_binding_receipt_id: Sha256Hex
     video_event_document_sha256: Sha256Hex
     case_id: Sha256Hex
@@ -570,9 +560,9 @@ class M8PersonalDemoPpeCaseReceiptV1(FrozenContractModel):
         M8OperationalCaseStatus.PENDING_VERIFICATION
     )
     risk_level: Literal[M8OperationalRiskLevel.GENERAL] = M8OperationalRiskLevel.GENERAL
-    display_badge: Literal[
+    display_badge: Literal["SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION"] = (
         "SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION"
-    ] = "SIMULATED · MACHINE WEAK LABEL · PENDING VERIFICATION"
+    )
     input_media_content_claim_verified: Literal[False] = False
     filename_used_as_evidence: Literal[False] = False
     machine_weak_label_is_ground_truth: Literal[False] = False
@@ -664,9 +654,7 @@ class M8PersonalDemoPpeNotificationReceiptV1(FrozenContractModel):
     notification_status: Literal[M8NotificationStatus.QUEUED] = M8NotificationStatus.QUEUED
     routed_at: datetime
     offline_card_id: Sha256Hex
-    display_badge: Literal["SIMULATED · STUDENT MESSAGE CARD"] = (
-        "SIMULATED · STUDENT MESSAGE CARD"
-    )
+    display_badge: Literal["SIMULATED · STUDENT MESSAGE CARD"] = "SIMULATED · STUDENT MESSAGE CARD"
     simulated: Literal[True] = True
     network_used: Literal[False] = False
     model_used: Literal[False] = False
@@ -767,9 +755,7 @@ class M8PersonalDemoPpeOutcomeNotificationReceiptV1(FrozenContractModel):
     notification_status: Literal[M8NotificationStatus.QUEUED] = M8NotificationStatus.QUEUED
     routed_at: datetime
     offline_card_id: Sha256Hex
-    display_badge: Literal["SIMULATED 路 APPEAL OUTCOME CARD"] = (
-        "SIMULATED 路 APPEAL OUTCOME CARD"
-    )
+    display_badge: Literal["SIMULATED 路 APPEAL OUTCOME CARD"] = "SIMULATED 路 APPEAL OUTCOME CARD"
     simulated: Literal[True] = True
     network_used: Literal[False] = False
     model_used: Literal[False] = False

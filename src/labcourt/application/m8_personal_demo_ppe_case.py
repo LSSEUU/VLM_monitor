@@ -96,9 +96,7 @@ def create_m8_personal_demo_ppe_case(
                 ),
             ),
             automation_component_id="m8-personal-demo-ppe-candidate-builder",
-            automation_manifest_id=_manifest(
-                "labcourt-personal-demo-ppe-candidate-builder-v1"
-            ),
+            automation_manifest_id=_manifest("labcourt-personal-demo-ppe-candidate-builder-v1"),
         ),
         "student-demo",
         _manifest("labcourt-personal-demo-case-authority-v1"),
