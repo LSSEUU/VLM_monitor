@@ -5,10 +5,7 @@ from pathlib import Path
 
 def test_live_start_script_imports_user_secrets_and_hides_worker_windows() -> None:
     script = (
-        Path(__file__).parents[2]
-        / "scripts"
-        / "windows"
-        / "labcourt-feishu-live-start.ps1"
+        Path(__file__).parents[2] / "scripts" / "windows" / "labcourt-feishu-live-start.ps1"
     ).read_text(encoding="utf-8")
     for variable in (
         "LABCOURT_FEISHU_APP_ID",

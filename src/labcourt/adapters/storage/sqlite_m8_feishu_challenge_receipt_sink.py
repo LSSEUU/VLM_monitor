@@ -51,11 +51,7 @@ def _validate_sha256(value: str, name: str) -> str:
 
 
 def _require_utc(value: datetime, name: str) -> datetime:
-    if (
-        not isinstance(value, datetime)
-        or value.tzinfo is None
-        or value.utcoffset() != timedelta(0)
-    ):
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != timedelta(0):
         raise ValueError(f"M8 Feishu URL challenge {name} must be timezone-aware UTC")
     return value
 
@@ -142,9 +138,7 @@ class SQLiteM8FeishuUrlChallengeReceiptSink:
         except BaseException as error:
             if connection is not None and connection.in_transaction:
                 connection.rollback()
-            if isinstance(error, sqlite3.OperationalError) and _is_sqlite_concurrency_error(
-                error
-            ):
+            if isinstance(error, sqlite3.OperationalError) and _is_sqlite_concurrency_error(error):
                 raise ConcurrentModification(
                     "M8 Feishu URL challenge SQLite writer lock could not be acquired"
                 ) from error
@@ -165,9 +159,7 @@ class SQLiteM8FeishuUrlChallengeReceiptSink:
                 "M8 Feishu URL challenge migration ledger is invalid"
             ) from error
         if migration is None or _row_str(migration, "name") != "m8_feishu_url_challenge_audit":
-            raise RepositoryIntegrityError(
-                "M8 Feishu URL challenge migration 0012 is absent"
-            )
+            raise RepositoryIntegrityError("M8 Feishu URL challenge migration 0012 is absent")
         observed = {
             _row_str(row, "name")
             for row in connection.execute(
@@ -178,9 +170,7 @@ class SQLiteM8FeishuUrlChallengeReceiptSink:
             ).fetchall()
         }
         if observed != _REQUIRED_OBJECTS:
-            raise RepositoryIntegrityError(
-                "M8 Feishu URL challenge audit layout is incomplete"
-            )
+            raise RepositoryIntegrityError("M8 Feishu URL challenge audit layout is incomplete")
 
     def record_verification(
         self,
@@ -200,13 +190,10 @@ class SQLiteM8FeishuUrlChallengeReceiptSink:
                 existing = self._load_challenge_commit(existing_row)
                 if (
                     existing.verification_receipt == receipt
-                    and existing.commit_manifest_id
-                    == self._challenge_commit_manifest_id
+                    and existing.commit_manifest_id == self._challenge_commit_manifest_id
                 ):
                     return existing
-                raise ConcurrentModification(
-                    "M8 Feishu URL challenge audit retry conflicts"
-                )
+                raise ConcurrentModification("M8 Feishu URL challenge audit retry conflicts")
             committed_at = _require_utc(self._challenge_clock(), "commit time")
             try:
                 commit = M8FeishuUrlChallengeCommitReceiptV1(
@@ -257,17 +244,13 @@ class SQLiteM8FeishuUrlChallengeReceiptSink:
         if (
             canonical_json(receipt.model_dump(mode="json")) != raw
             or receipt.commit_receipt_id != _row_str(row, "commit_receipt_id")
-            or verified.verification_receipt_id
-            != _row_str(row, "verification_receipt_id")
+            or verified.verification_receipt_id != _row_str(row, "verification_receipt_id")
             or verified.profile.inbound_profile_id != _row_str(row, "inbound_profile_id")
-            or verified.ingress_request.ingress_request_id
-            != _row_str(row, "ingress_request_id")
+            or verified.ingress_request.ingress_request_id != _row_str(row, "ingress_request_id")
             or verified.ingress_request.encrypted_body_sha256
             != _row_str(row, "encrypted_body_sha256")
-            or verified.decrypted_challenge_sha256
-            != _row_str(row, "decrypted_challenge_sha256")
-            or verified.response_document_sha256
-            != _row_str(row, "response_document_sha256")
+            or verified.decrypted_challenge_sha256 != _row_str(row, "decrypted_challenge_sha256")
+            or verified.response_document_sha256 != _row_str(row, "response_document_sha256")
             or _canonical_utc(verified.verified_at) != _row_str(row, "verified_at")
             or _canonical_utc(receipt.committed_at) != _row_str(row, "committed_at")
             or receipt.commit_manifest_id != _row_str(row, "commit_manifest_id")

@@ -274,7 +274,7 @@ class M8PlatformEvidenceDetectionV1(FrozenContractModel):
 
     @field_validator("detection_id")
     @classmethod
-    def validate_detection_refs(cls, value: str | None) -> str | None:
+    def validate_detection_refs(cls, value: str) -> str:
         return require_reference_token(value, "M8 evidence detection reference")
 
 
@@ -566,11 +566,14 @@ class M8PlatformScenarioRunV1(FrozenContractModel):
     recognition_mode: M8PlatformRecognitionMode | None = None
     retry_of_run_id: ReferenceToken | None = None
     model_components: tuple[M8PlatformModelComponentV1, ...] = Field(default=(), max_length=2)
-    outcome: Literal[
-        "ACTIONABLE_RISK",
-        "NO_ACTIONABLE_RISK_ESTABLISHED",
-        "HUMAN_REVIEW_REQUIRED",
-    ] | None = None
+    outcome: (
+        Literal[
+            "ACTIONABLE_RISK",
+            "NO_ACTIONABLE_RISK_ESTABLISHED",
+            "HUMAN_REVIEW_REQUIRED",
+        ]
+        | None
+    ) = None
     evidence: tuple[M8PlatformEvidenceViewV1, ...] = Field(default=(), max_length=24)
     video_profile: M8PlatformVideoProfileV1 | None = None
     perception_preview_url: str | None = None

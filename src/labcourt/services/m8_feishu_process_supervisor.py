@@ -7,7 +7,7 @@ import subprocess
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO, Protocol
+from typing import Any, BinaryIO, Protocol, cast
 
 
 class M8FeishuSupervisorAlreadyRunning(RuntimeError):
@@ -125,7 +125,8 @@ class M8FeishuSupervisorLock:
             else:
                 import fcntl
 
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl_api = cast(Any, fcntl)
+                fcntl_api.flock(handle.fileno(), fcntl_api.LOCK_EX | fcntl_api.LOCK_NB)
         except OSError as error:
             handle.close()
             raise M8FeishuSupervisorAlreadyRunning(
@@ -145,7 +146,8 @@ class M8FeishuSupervisorLock:
         else:
             import fcntl
 
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            fcntl_api = cast(Any, fcntl)
+            fcntl_api.flock(handle.fileno(), fcntl_api.LOCK_UN)
         handle.close()
         self._handle = None
 

@@ -102,9 +102,7 @@ def assemble_m8_feishu_live_services(
         status = platform.status()
         if status.candidate_authority_id is None:
             raise EvidenceMissing("Feishu candidate is not configured")
-        return activation_repository.get_current_status(
-            status.candidate_authority_id, clock()
-        )
+        return activation_repository.get_current_status(status.candidate_authority_id, clock())
 
     def binding_by_id(binding_id: str) -> M8FeishuRecipientBindingAuthorityV1:
         activation = current_activation()
@@ -218,9 +216,7 @@ def assemble_m8_feishu_live_services(
             probe_manifest_id=platform_manifest("platform-feishu-live-test-card-v1"),
         )
         with resolver.resolve(runtime.profile, binding) as secrets:
-            run = M8FeishuPersonalDemoService(
-                StdlibM8FeishuHttpTransport(), clock
-            ).send(
+            run = M8FeishuPersonalDemoService(StdlibM8FeishuHttpTransport(), clock).send(
                 probe,
                 secrets.app_id_bytes(),
                 secrets.app_secret_bytes(),

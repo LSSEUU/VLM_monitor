@@ -185,7 +185,7 @@ def _remove_event_uniqueness_and_replace(
             """
         ).fetchone()
         assert table_row is not None and isinstance(table_row[0], str)
-        table_sql = table_row[0]
+        table_sql = table_row[0].replace("\r\n", "\n")
         for clause in (
             "    UNIQUE (run_id, event_id),\n",
             "    UNIQUE (run_id, source_identity_sha256),\n",
@@ -224,7 +224,7 @@ def _duplicate_citation_source_without_uniqueness(database: Path) -> None:
             """
         ).fetchone()
         assert table_row is not None and isinstance(table_row[0], str)
-        table_sql = table_row[0]
+        table_sql = table_row[0].replace("\r\n", "\n")
         for clause in (
             "    PRIMARY KEY (run_id, citation_id),\n",
             "    UNIQUE (run_id, commit_id),\n",

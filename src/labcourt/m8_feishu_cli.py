@@ -90,9 +90,7 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
                     runtime_config,
                     "webhook runtime config",
                 ),
-                runtime_config_storage_manifest_id=(
-                    runtime_config_storage_manifest_id
-                ),
+                runtime_config_storage_manifest_id=(runtime_config_storage_manifest_id),
                 repository_manifest_id=repository_manifest_id,
                 assessment_manifest_id=assessment_manifest_id,
                 busy_timeout_ms=busy_timeout_ms,
@@ -103,9 +101,7 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
             "activation_commit_id": receipt.activation_commit_id,
             "activation_revision": receipt.activation_revision,
             "activation_state": receipt.activation_state,
-            "business_event_ingress_permitted": (
-                receipt.business_event_ingress_permitted
-            ),
+            "business_event_ingress_permitted": (receipt.business_event_ingress_permitted),
             "listener_autostart_permitted": receipt.listener_autostart_permitted,
             "production_external_ingress_permitted": (
                 receipt.production_external_ingress_permitted
@@ -179,21 +175,14 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
         summary = {
             "activation_commit_id": receipt.activation_receipt.activation_commit_id,
             "activation_state": receipt.activation_state,
-            "automatic_reactivation_permitted": (
-                receipt.automatic_reactivation_permitted
-            ),
+            "automatic_reactivation_permitted": (receipt.automatic_reactivation_permitted),
             "revocation_commit_id": receipt.revocation_commit_id,
-            "sandbox_external_ingress_permitted": (
-                receipt.sandbox_external_ingress_permitted
-            ),
+            "sandbox_external_ingress_permitted": (receipt.sandbox_external_ingress_permitted),
         }
         echo_summary(
             summary,
             json_output,
-            (
-                "Feishu sandbox webhook activation revoked: "
-                f"{receipt.revocation_commit_id}"
-            ),
+            (f"Feishu sandbox webhook activation revoked: {receipt.revocation_commit_id}"),
         )
 
     @feishu.command("webhook-status")
@@ -234,9 +223,7 @@ def register_m8_feishu_commands(root: typer.Typer) -> None:
             "activation_commit_id": status.activation_receipt.activation_commit_id,
             "activation_state": status.activation_state,
             "business_event_ingress_permitted": status.business_event_ingress_permitted,
-            "sandbox_external_ingress_permitted": (
-                status.sandbox_external_ingress_permitted
-            ),
+            "sandbox_external_ingress_permitted": (status.sandbox_external_ingress_permitted),
             "url_challenge_permitted": status.url_challenge_permitted,
         }
         echo_summary(

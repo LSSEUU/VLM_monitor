@@ -65,9 +65,7 @@ def _intent(config: M8FeishuInboundSandboxRuntimeConfigV1) -> M8AdapterActivatio
         runtime_config_ref=config.runtime_config_ref,
         runtime_config_sha256=hashlib.sha256(raw).hexdigest(),
         runtime_config_size_bytes=len(raw),
-        credential_reference_id=(
-            config.profile.outbound_profile.credential_bundle_reference_id
-        ),
+        credential_reference_id=(config.profile.outbound_profile.credential_bundle_reference_id),
         requested_at=BASE_TIME + timedelta(hours=2),
         activation_manifest_id=SHA_D,
     )
@@ -78,9 +76,7 @@ def _receipt() -> M8FeishuInboundSandboxActivationCommitReceiptV1:
     return M8FeishuInboundSandboxActivationCommitReceiptV1(
         activation_intent=_intent(config),
         runtime_config=config,
-        current_readiness_assessment=_assessment(
-            assessed_at=BASE_TIME + timedelta(hours=3)
-        ),
+        current_readiness_assessment=_assessment(assessed_at=BASE_TIME + timedelta(hours=3)),
         current_operations_actor_receipt=_actor_receipt(M8ActorRole.OPERATIONS),
         current_safety_actor_receipt=_actor_receipt(M8ActorRole.SAFETY_OFFICER),
         activation_revision=1,
@@ -279,9 +275,7 @@ def test_inbound_activation_schemas_are_registered() -> None:
         "m8-feishu-inbound-sandbox-activation-status-v1": (
             M8FeishuInboundSandboxActivationStatusV1
         ),
-        "m8-feishu-inbound-sandbox-runtime-config-v1": (
-            M8FeishuInboundSandboxRuntimeConfigV1
-        ),
+        "m8-feishu-inbound-sandbox-runtime-config-v1": (M8FeishuInboundSandboxRuntimeConfigV1),
     }
     assert {name: SCHEMA_MODELS[name] for name in expected} == expected
     assert expected.keys().isdisjoint(SCHEMA_VALIDATION_MODELS)

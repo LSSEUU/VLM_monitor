@@ -179,9 +179,7 @@ class M8AgentChatService:
             ),
         )
 
-    def actor_authority(
-        self, principal: M8ApiPrincipalV1
-    ) -> M8ActorAuthorityCommitReceiptV1:
+    def actor_authority(self, principal: M8ApiPrincipalV1) -> M8ActorAuthorityCommitReceiptV1:
         """Expose the exact current receipt for trusted non-HTTP channel binding."""
 
         return self._operations.session(principal)

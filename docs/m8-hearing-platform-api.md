@@ -7,7 +7,7 @@
 role output、raw-response receipt、补证、Verdict、L5 review 与 backlog failure。
 
 本切片没有修改 M0–M6 wire/authority contracts，也没有修改视觉母版
-`previews/labcourt-ops-ui/`。正式 `src/labcourt/m8_ui_web/` 案件详情页已经读取本 API。它不自动扫描或强迫案件进入会审，
+`docs/design-reference/labcourt-ops-ui/`。正式 `src/labcourt/m8_ui_web/` 案件详情页已经读取本 API。它不自动扫描或强迫案件进入会审，
 不新增纪律处分权限，不暴露 raw model response 内容。
 
 ## 现有 M4 能力审计

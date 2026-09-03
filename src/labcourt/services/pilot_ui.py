@@ -948,8 +948,7 @@ class PilotUiJobManager:
         except (TypeError, ValueError):
             return False
         return any(
-            parameter.name == "progress_observer"
-            or parameter.kind is inspect.Parameter.VAR_KEYWORD
+            parameter.name == "progress_observer" or parameter.kind is inspect.Parameter.VAR_KEYWORD
             for parameter in parameters
         )
 

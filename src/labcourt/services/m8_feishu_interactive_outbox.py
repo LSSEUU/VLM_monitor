@@ -201,9 +201,7 @@ class M8FeishuInteractiveOutboxRunner:
         provider_id: str | None = None
         with self._secrets.resolve(self._profile, binding) as resolved:
             try:
-                token_response = self._http.acquire_tenant_access_token(
-                    self._profile, resolved
-                )
+                token_response = self._http.acquire_tenant_access_token(self._profile, resolved)
             except M8FeishuHttpError as error:
                 raw = self._error_raw(error)
                 disposition = M8NotificationDispatchDisposition.DEFINITELY_NOT_SENT
@@ -301,9 +299,7 @@ class M8FeishuInteractiveOutboxRunner:
         ).encode()
 
     @staticmethod
-    def _binding_for_plan(
-        subject_sha256: str, runtime: M8FeishuSandboxRuntimeConfigV1
-    ) -> str:
+    def _binding_for_plan(subject_sha256: str, runtime: M8FeishuSandboxRuntimeConfigV1) -> str:
         allowlist = runtime.recipient_allowlist
         matching = [
             item.binding_authority_id

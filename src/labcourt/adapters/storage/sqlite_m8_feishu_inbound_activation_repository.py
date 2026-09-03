@@ -73,11 +73,7 @@ def _validate_sha256(value: str, name: str) -> str:
 
 
 def _require_utc(value: datetime, name: str) -> datetime:
-    if (
-        not isinstance(value, datetime)
-        or value.tzinfo is None
-        or value.utcoffset() != timedelta(0)
-    ):
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != timedelta(0):
         raise ValueError(f"M8 Feishu inbound {name} must be timezone-aware UTC")
     return value
 
@@ -117,9 +113,7 @@ class SQLiteM8FeishuInboundActivationRepository(SQLiteM8FeishuActivationReposito
                 "M8 Feishu inbound activation migration ledger is invalid"
             ) from error
         if migration is None or _row_str(migration, "name") != "m8_feishu_inbound_activation":
-            raise RepositoryIntegrityError(
-                "M8 Feishu inbound activation migration 0011 is absent"
-            )
+            raise RepositoryIntegrityError("M8 Feishu inbound activation migration 0011 is absent")
         observed = {
             _row_str(row, "name")
             for row in connection.execute(
@@ -130,9 +124,7 @@ class SQLiteM8FeishuInboundActivationRepository(SQLiteM8FeishuActivationReposito
             ).fetchall()
         }
         if observed != _REQUIRED_OBJECTS:
-            raise RepositoryIntegrityError(
-                "M8 Feishu inbound activation layout is incomplete"
-            )
+            raise RepositoryIntegrityError("M8 Feishu inbound activation layout is incomplete")
 
     def commit_inbound_activation(
         self,
@@ -310,9 +302,7 @@ class SQLiteM8FeishuInboundActivationRepository(SQLiteM8FeishuActivationReposito
                 (candidate_id,),
             ).fetchone()
             if candidate_row is None:
-                raise RepositoryIntegrityError(
-                    "M8 Feishu inbound activation candidate is missing"
-                )
+                raise RepositoryIntegrityError("M8 Feishu inbound activation candidate is missing")
             candidate = self._load_candidate_row(candidate_row)
             evidence = self._load_candidate_evidence(connection, candidate_id)
             readiness: M8AdapterReadinessAssessmentV1 | None = None
@@ -388,9 +378,7 @@ class SQLiteM8FeishuInboundActivationRepository(SQLiteM8FeishuActivationReposito
             )
             latest = self._select_latest_inbound_activation_row(connection, candidate_id)
             if latest is None or _row_str(latest, "activation_commit_id") != commit_id:
-                raise ConcurrentModification(
-                    "M8 Feishu inbound revocation target is not current"
-                )
+                raise ConcurrentModification("M8 Feishu inbound revocation target is not current")
             existing_row = self._select_inbound_revocation_row(connection, commit_id)
             if existing_row is not None:
                 existing = self._load_inbound_revocation_row(
@@ -406,9 +394,7 @@ class SQLiteM8FeishuInboundActivationRepository(SQLiteM8FeishuActivationReposito
                     and existing.revocation_manifest_id == manifest_id
                 ):
                     return existing
-                raise ConcurrentModification(
-                    "M8 Feishu inbound revocation retry conflicts"
-                )
+                raise ConcurrentModification("M8 Feishu inbound revocation retry conflicts")
             revoker = self._load_current_actor(connection, actor_id)
             try:
                 receipt = build_feishu_inbound_sandbox_activation_revocation_commit(
@@ -516,8 +502,7 @@ class SQLiteM8FeishuInboundActivationRepository(SQLiteM8FeishuActivationReposito
         if (
             operations_row is None
             or safety_row is None
-            or self._load_actor_row(operations_row)
-            != receipt.current_operations_actor_receipt
+            or self._load_actor_row(operations_row) != receipt.current_operations_actor_receipt
             or self._load_actor_row(safety_row) != receipt.current_safety_actor_receipt
         ):
             raise RepositoryIntegrityError(
@@ -532,23 +517,18 @@ class SQLiteM8FeishuInboundActivationRepository(SQLiteM8FeishuActivationReposito
                 evidence_row is None
                 or self._load_evidence_row(connection, evidence_row)[0] != evidence
             ):
-                raise RepositoryIntegrityError(
-                    "M8 Feishu inbound activation evidence is missing"
-                )
+                raise RepositoryIntegrityError("M8 Feishu inbound activation evidence is missing")
         expected_bytes = m8_feishu_inbound_runtime_config_bytes(config)
         if (
             canonical_json(receipt.model_dump(mode="json")) != raw_receipt
             or canonical_json(config.model_dump(mode="json"))
             != _row_str(row, "runtime_config_json")
-            or candidate.candidate_authority_id
-            != _row_str(row, "candidate_authority_id")
+            or candidate.candidate_authority_id != _row_str(row, "candidate_authority_id")
             or config.profile.inbound_profile_id != _row_str(row, "inbound_profile_id")
             or config.runtime_config_id != _row_str(row, "runtime_config_id")
             or config.runtime_config_ref != _row_str(row, "runtime_config_ref")
-            or config.public_callback_url_sha256
-            != _row_str(row, "public_callback_url_sha256")
-            or config.tls_configuration_sha256
-            != _row_str(row, "tls_configuration_sha256")
+            or config.public_callback_url_sha256 != _row_str(row, "public_callback_url_sha256")
+            or config.tls_configuration_sha256 != _row_str(row, "tls_configuration_sha256")
             or persisted != expected_bytes
             or len(persisted) != _row_int(row, "runtime_config_size_bytes")
             or hashlib.sha256(persisted).hexdigest()
@@ -584,10 +564,8 @@ class SQLiteM8FeishuInboundActivationRepository(SQLiteM8FeishuActivationReposito
     ) -> M8FeishuInboundSandboxActivationRevocationCommitReceiptV1:
         raw = _row_str(row, "receipt_json")
         try:
-            receipt = (
-                M8FeishuInboundSandboxActivationRevocationCommitReceiptV1.model_validate_json(
-                    raw
-                )
+            receipt = M8FeishuInboundSandboxActivationRevocationCommitReceiptV1.model_validate_json(
+                raw
             )
         except ValidationError as error:
             raise RepositoryIntegrityError(

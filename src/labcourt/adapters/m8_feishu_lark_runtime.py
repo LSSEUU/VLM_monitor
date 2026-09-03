@@ -127,9 +127,7 @@ class M8FeishuLongConnectionRunner:
         dynamic_client.on_reconnecting = lambda: self._record(
             M8FeishuLiveConnectionState.RECONNECTING
         )
-        dynamic_client.on_reconnected = lambda: self._record(
-            M8FeishuLiveConnectionState.READY
-        )
+        dynamic_client.on_reconnected = lambda: self._record(M8FeishuLiveConnectionState.READY)
         original_connect = dynamic_client._connect
 
         async def connect_with_ready() -> None:

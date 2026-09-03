@@ -65,9 +65,7 @@ class M8FeishuDeliveryWorker:
                 plan = notification.audit_event.notification_authority.plan
                 if plan.target.channel != M8NotificationChannelKind.FEISHU:
                     continue
-                self._interactive.run_one(
-                    notification.notification_id, binding, self._worker_token
-                )
+                self._interactive.run_one(notification.notification_id, binding, self._worker_token)
                 completed += 1
             for reminder_status in (
                 M8NotificationStatus.SENT,
@@ -84,9 +82,7 @@ class M8FeishuDeliveryWorker:
                         continue
                     receipt = self._bridge.assess_reminder(notification.notification_id)
                     completed += int(receipt is not None)
-            completed += int(
-                self._agent_replies.run_one(self._worker_token) is not None
-            )
+            completed += int(self._agent_replies.run_one(self._worker_token) is not None)
         except Exception:
             self._heartbeat(
                 M8FeishuWorkerState.FAILED,

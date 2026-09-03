@@ -13,6 +13,8 @@ build/
 .env
 inputs/*
 !inputs/.gitkeep
+!inputs/README.md
+!inputs/goggles-missing.mp4
 weights/
 *.onnx
 *.pt

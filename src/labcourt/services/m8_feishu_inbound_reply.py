@@ -131,9 +131,7 @@ class M8FeishuInboundReplyService:
             and binding.receive_id_sha256 == verified.sender_open_id_sha256
         )
         if len(matches) != 1:
-            raise EvidenceMissing(
-                "M8 Feishu inbound reply has no exact current recipient binding"
-            )
+            raise EvidenceMissing("M8 Feishu inbound reply has no exact current recipient binding")
         binding, target_receipt = matches[0]
         actor_receipt = self._operations.get_current_actor_authority(plan.target.actor_id)
         reply = M8NotificationReplyAuthorityV1(

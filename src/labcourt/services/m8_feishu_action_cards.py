@@ -42,9 +42,7 @@ from labcourt.services.m8_operations_api import M8ApiServiceError, M8OperationsA
 _REASON_BY_ACTION = {
     M8OperationalCaseAction.CONFIRM: M8OperationalCaseReasonCode.VERIFIED_VIOLATION,
     M8OperationalCaseAction.REJECT: M8OperationalCaseReasonCode.FALSE_POSITIVE,
-    M8OperationalCaseAction.REQUEST_EVIDENCE: (
-        M8OperationalCaseReasonCode.MORE_EVIDENCE_REQUIRED
-    ),
+    M8OperationalCaseAction.REQUEST_EVIDENCE: (M8OperationalCaseReasonCode.MORE_EVIDENCE_REQUIRED),
 }
 _SUMMARY_BY_ACTION = {
     M8OperationalCaseAction.CONFIRM: "值班安全管理员通过飞书双重确认核实事件。",
@@ -236,9 +234,7 @@ class M8FeishuActionCardService:
             explicit_human_confirmation=True,
             command_manifest_id=self._command_manifest,
         )
-        committed = self._operations.transition_case_with_authority(
-            actor, case.case_id, request
-        )
+        committed = self._operations.transition_case_with_authority(actor, case.case_id, request)
         receipt = M8FeishuCardActionReceiptV1(
             intent=intent,
             stage=M8FeishuCardStage.COMPLETED,
@@ -290,8 +286,7 @@ class M8FeishuActionCardService:
         if not allow_dispatch_progress:
             if (
                 current.notification_version != intent.notification_version
-                or current.notification_document_sha256
-                != intent.notification_authority_sha256
+                or current.notification_document_sha256 != intent.notification_authority_sha256
             ):
                 raise ConcurrentModification("notification authority changed")
             return
@@ -336,16 +331,13 @@ class M8FeishuActionCardService:
     def _commit_or_reuse_intent(
         self, candidate: M8FeishuCardActionIntentV1
     ) -> M8FeishuCardActionIntentV1:
-        existing = self._live.card_intent_for_token(
-            candidate.confirmation_token_sha256
-        )
+        existing = self._live.card_intent_for_token(candidate.confirmation_token_sha256)
         if existing is None:
             return self._live.commit_card_intent(candidate)
         same_authority = (
             existing.notification_id == candidate.notification_id
             and existing.notification_version == candidate.notification_version
-            and existing.notification_authority_sha256
-            == candidate.notification_authority_sha256
+            and existing.notification_authority_sha256 == candidate.notification_authority_sha256
             and existing.case_id == candidate.case_id
             and existing.case_version == candidate.case_version
             and existing.case_authority_sha256 == candidate.case_authority_sha256
@@ -360,9 +352,7 @@ class M8FeishuActionCardService:
             )
         return existing
 
-    def _stale(
-        self, intent: M8FeishuCardActionIntentV1, failure: M8FeishuLiveFailureCode
-    ) -> None:
+    def _stale(self, intent: M8FeishuCardActionIntentV1, failure: M8FeishuLiveFailureCode) -> None:
         if intent.stage != M8FeishuCardStage.AWAITING_CONFIRMATION:
             return
         self._live.commit_card_receipt(
@@ -390,9 +380,9 @@ class M8FeishuActionCardService:
     def _button(
         text: str, button_type: str, token: str | None, case_id: str | None
     ) -> dict[str, object]:
-        element_id = "btn_" + hashlib.sha256(
-            canonical_bytes((text, token, case_id))
-        ).hexdigest()[:12]
+        element_id = (
+            "btn_" + hashlib.sha256(canonical_bytes((text, token, case_id))).hexdigest()[:12]
+        )
         if case_id is not None:
             return {
                 "tag": "button",

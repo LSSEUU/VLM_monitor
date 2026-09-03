@@ -124,9 +124,7 @@ def test_verified_challenge_rejects_profile_token_time_and_reference_grafts() ->
     with pytest.raises(ValidationError, match="missed its deadline"):
         receipt.model_copy(update={"verified_at": RECEIVED_AT + timedelta(seconds=2)})
     with pytest.raises(ValidationError, match="distinct references"):
-        receipt.model_copy(
-            update={"response_document_ref": receipt.decrypted_challenge_ref}
-        )
+        receipt.model_copy(update={"response_document_ref": receipt.decrypted_challenge_ref})
 
 
 def test_challenge_commit_is_hash_only_audit_not_ingress_authority() -> None:
@@ -169,12 +167,8 @@ def test_challenge_schemas_are_registered_serialization_roots() -> None:
         "m8-feishu-loopback-challenge-listener-profile-v1": (
             M8FeishuLoopbackChallengeListenerProfileV1
         ),
-        "m8-feishu-url-challenge-ingress-request-v1": (
-            M8FeishuUrlChallengeIngressRequestV1
-        ),
-        "m8-feishu-url-challenge-commit-receipt-v1": (
-            M8FeishuUrlChallengeCommitReceiptV1
-        ),
+        "m8-feishu-url-challenge-ingress-request-v1": (M8FeishuUrlChallengeIngressRequestV1),
+        "m8-feishu-url-challenge-commit-receipt-v1": (M8FeishuUrlChallengeCommitReceiptV1),
         "m8-feishu-url-challenge-verification-receipt-v1": (
             M8FeishuUrlChallengeVerificationReceiptV1
         ),

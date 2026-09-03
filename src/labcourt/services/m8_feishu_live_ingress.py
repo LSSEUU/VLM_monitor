@@ -124,9 +124,7 @@ class M8FeishuLiveIngressService:
         claimed = self._repository.claim_inbound(result.job.inbound_event.inbound_event_id)
         if claimed is None:
             return {"toast": {"type": "info", "content": "该操作已处理"}}
-        response = execute(
-            ingress.action_token, result.job.inbound_event.sender_open_id_sha256
-        )
+        response = execute(ingress.action_token, result.job.inbound_event.sender_open_id_sha256)
         self._repository.commit_inbound_job(
             claimed.model_copy(
                 update={

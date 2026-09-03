@@ -84,14 +84,10 @@ def execute_m8_personal_demo_student_appeal(
     if confirmed is not True:
         raise ValueError("M8 personal Demo student appeal requires explicit confirmation")
     access = M8PersonalDemoLocalAccessV1.model_validate_json(_read_bounded(access_path))
-    ppe = M8PersonalDemoPpeCaseReceiptV1.model_validate_json(
-        _read_bounded(ppe_case_receipt_path)
-    )
+    ppe = M8PersonalDemoPpeCaseReceiptV1.model_validate_json(_read_bounded(ppe_case_receipt_path))
     case_path = f"/api/m8/cases/{ppe.case_id}"
     try:
-        case = M8OperationalCaseCommitReceiptV1.model_validate_json(
-            _call(access, "GET", case_path)
-        )
+        case = M8OperationalCaseCommitReceiptV1.model_validate_json(_call(access, "GET", case_path))
         request = M8ApiCaseTransitionRequestV1(
             source_case_version=case.case_version,
             source_case_authority_sha256=case.case_document_sha256,

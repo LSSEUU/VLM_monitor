@@ -104,8 +104,7 @@ class EnvironmentM8FeishuInboundSecretResolver:
             )
         if (
             configured.encrypt_key_reference_id != profile.encrypt_key_reference_id
-            or configured.verification_token_reference_id
-            != profile.verification_token_reference_id
+            or configured.verification_token_reference_id != profile.verification_token_reference_id
         ):
             raise M8FeishuInboundSecretResolutionError(
                 M8FeishuInboundSecretResolutionFailureCode.PROFILE_REFERENCE_MISMATCH

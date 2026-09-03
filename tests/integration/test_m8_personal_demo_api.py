@@ -249,8 +249,7 @@ def test_demo_sensor_discovery_and_device_health_reuse_role_scoped_projection(
             assert all(item["source"]["simulated"] is True for item in sensors)
             assert all(item["observation_state"] for item in health)
             assert all(
-                item["certified_fire_detection_claim_permitted"] is False
-                for item in sensors
+                item["certified_fire_detection_claim_permitted"] is False for item in sensors
             )
         for path in (
             "/api/m8/campuses/campus-demo/device-health",
@@ -552,10 +551,7 @@ def test_demo_api_streams_verified_recorded_media_with_role_scoped_ranges(
     output = tmp_path / "recorded-media-api"
     database = output / "labcourt.sqlite3"
     input_media = tmp_path / "authorized-camera.mp4"
-    media_bytes = (
-        b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
-        b"\x00\x00\x00\x10mdat12345678"
-    )
+    media_bytes = b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2\x00\x00\x00\x10mdat12345678"
     input_media.write_bytes(media_bytes)
     binding = bind_m8_personal_demo_recorded_media(database, input_media, output)
     (output / "camera-media-receipt.json").write_text(

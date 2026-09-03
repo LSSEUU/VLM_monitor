@@ -74,8 +74,7 @@ class M8FeishuAgentAuthorityWorker:
             if current != context.actor_authority:
                 raise ValueError("Feishu actor authority changed")
             if (
-                context.recipient_binding.receive_id_sha256
-                != event.sender_open_id_sha256
+                context.recipient_binding.receive_id_sha256 != event.sender_open_id_sha256
                 or context.recipient_binding.target.actor_id != current.authority.actor_id
                 or not context.recipient_binding.active
             ):
@@ -171,9 +170,7 @@ class M8FeishuAgentAuthorityWorker:
             actor_id=context.actor_authority.authority.actor_id,
             conversation_id=projection.conversation_id,
             turn_id=turn_id,
-            recipient_binding_authority_id=(
-                context.recipient_binding.binding_authority_id
-            ),
+            recipient_binding_authority_id=(context.recipient_binding.binding_authority_id),
             reply_to_provider_message_id=provider_message_id,
             content_ref=f"feishu-agent-answer-{digest[:24]}",
             content_sha256=digest,

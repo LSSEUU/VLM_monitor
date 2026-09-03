@@ -664,8 +664,7 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
         else:
             typer.echo(
-                "LabCourt PERSONAL DEMO student notification queued: "
-                "SIMULATED LOCAL MESSAGE CARD"
+                "LabCourt PERSONAL DEMO student notification queued: SIMULATED LOCAL MESSAGE CARD"
             )
 
     @demo.command("ppe-appeal-resolve")
@@ -921,8 +920,7 @@ def register_m8_demo_commands(root: typer.Typer) -> None:
             typer.echo(json.dumps(summary, ensure_ascii=False, sort_keys=True))
         else:
             typer.echo(
-                "LabCourt PERSONAL DEMO student notification reply committed offline: "
-                f"{kind.value}"
+                f"LabCourt PERSONAL DEMO student notification reply committed offline: {kind.value}"
             )
 
 

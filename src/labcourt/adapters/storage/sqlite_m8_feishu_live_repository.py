@@ -211,13 +211,13 @@ class SQLiteM8FeishuLiveRepository:
                 "SELECT route_json FROM m8_feishu_duty_route_revisions "
                 "ORDER BY route_revision DESC LIMIT 1"
             ).fetchone()
-        return None if row is None else M8FeishuDutyRouteV1.model_validate_json(
-            _row_str(row, "route_json")
+        return (
+            None
+            if row is None
+            else M8FeishuDutyRouteV1.model_validate_json(_row_str(row, "route_json"))
         )
 
-    def record_heartbeat(
-        self, heartbeat: M8FeishuRuntimeHeartbeatV1
-    ) -> M8FeishuRuntimeHeartbeatV1:
+    def record_heartbeat(self, heartbeat: M8FeishuRuntimeHeartbeatV1) -> M8FeishuRuntimeHeartbeatV1:
         with self._write() as connection:
             connection.execute(
                 "INSERT OR IGNORE INTO m8_feishu_runtime_heartbeats VALUES (?, ?, ?, ?)",
@@ -237,8 +237,10 @@ class SQLiteM8FeishuLiveRepository:
                 "WHERE component = ? ORDER BY observed_at DESC, heartbeat_id DESC LIMIT 1",
                 (component,),
             ).fetchone()
-        return None if row is None else M8FeishuRuntimeHeartbeatV1.model_validate_json(
-            _row_str(row, "heartbeat_json")
+        return (
+            None
+            if row is None
+            else M8FeishuRuntimeHeartbeatV1.model_validate_json(_row_str(row, "heartbeat_json"))
         )
 
     def enqueue_inbound(
@@ -358,9 +360,7 @@ class SQLiteM8FeishuLiveRepository:
                 (job.inbound_event.inbound_event_id,),
             ).fetchone()
             if prior is not None:
-                persisted = M8FeishuInboundJobV1.model_validate_json(
-                    _row_str(prior, "job_json")
-                )
+                persisted = M8FeishuInboundJobV1.model_validate_json(_row_str(prior, "job_json"))
                 if persisted != job:
                     raise M8FeishuLiveRepositoryError("inbound job already completed differently")
                 return persisted
@@ -474,9 +474,7 @@ class SQLiteM8FeishuLiveRepository:
                 (turn_id, conversation_id, origin, _utc_text(self._clock())),
             )
 
-    def commit_card_intent(
-        self, intent: M8FeishuCardActionIntentV1
-    ) -> M8FeishuCardActionIntentV1:
+    def commit_card_intent(self, intent: M8FeishuCardActionIntentV1) -> M8FeishuCardActionIntentV1:
         with self._write() as connection:
             prior = connection.execute(
                 "SELECT intent_json FROM m8_feishu_card_action_intents "
@@ -511,8 +509,10 @@ class SQLiteM8FeishuLiveRepository:
                 "WHERE confirmation_token_sha256 = ?",
                 (token_sha256,),
             ).fetchone()
-        return None if row is None else M8FeishuCardActionIntentV1.model_validate_json(
-            _row_str(row, "intent_json")
+        return (
+            None
+            if row is None
+            else M8FeishuCardActionIntentV1.model_validate_json(_row_str(row, "intent_json"))
         )
 
     def commit_card_receipt(
@@ -544,8 +544,10 @@ class SQLiteM8FeishuLiveRepository:
                 "SELECT receipt_json FROM m8_feishu_card_action_receipts WHERE intent_id = ?",
                 (intent_id,),
             ).fetchone()
-        return None if row is None else M8FeishuCardActionReceiptV1.model_validate_json(
-            _row_str(row, "receipt_json")
+        return (
+            None
+            if row is None
+            else M8FeishuCardActionReceiptV1.model_validate_json(_row_str(row, "receipt_json"))
         )
 
     def commit_alert_bridge(
@@ -573,22 +575,20 @@ class SQLiteM8FeishuLiveRepository:
             )
         return receipt
 
-    def alert_bridge(
-        self, case_id: str, case_version: int
-    ) -> M8FeishuAlertBridgeReceiptV1 | None:
+    def alert_bridge(self, case_id: str, case_version: int) -> M8FeishuAlertBridgeReceiptV1 | None:
         with self._read() as connection:
             row = connection.execute(
                 "SELECT receipt_json FROM m8_feishu_alert_bridge_receipts "
                 "WHERE source_case_id = ? AND source_case_version = ?",
                 (case_id, case_version),
             ).fetchone()
-        return None if row is None else M8FeishuAlertBridgeReceiptV1.model_validate_json(
-            _row_str(row, "receipt_json")
+        return (
+            None
+            if row is None
+            else M8FeishuAlertBridgeReceiptV1.model_validate_json(_row_str(row, "receipt_json"))
         )
 
-    def commit_reminder(
-        self, receipt: M8FeishuReminderReceiptV1
-    ) -> M8FeishuReminderReceiptV1:
+    def commit_reminder(self, receipt: M8FeishuReminderReceiptV1) -> M8FeishuReminderReceiptV1:
         with self._write() as connection:
             prior = connection.execute(
                 "SELECT receipt_json FROM m8_feishu_reminder_receipts "
@@ -617,8 +617,10 @@ class SQLiteM8FeishuLiveRepository:
                 "WHERE source_dispatch_request_id = ?",
                 (dispatch_request_id,),
             ).fetchone()
-        return None if row is None else M8FeishuReminderReceiptV1.model_validate_json(
-            _row_str(row, "receipt_json")
+        return (
+            None
+            if row is None
+            else M8FeishuReminderReceiptV1.model_validate_json(_row_str(row, "receipt_json"))
         )
 
     def enqueue_agent_reply(

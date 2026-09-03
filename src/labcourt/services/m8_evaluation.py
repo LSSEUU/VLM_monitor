@@ -16,6 +16,7 @@ from labcourt.adapters.opencv_video import (
     probe_caller_attested_stream_manifest,
 )
 from labcourt.adapters.storage.secure_workspace import SecureWorkspace
+from labcourt.adapters.storage.sqlite_authority import SQLiteAuthorityError
 from labcourt.adapters.storage.sqlite_m8_evaluation_repository import (
     SQLiteM8EvaluationRepository,
 )
@@ -52,6 +53,7 @@ from labcourt.services.m8_platform_demo import M8PlatformDemoService
 
 _MAX_PILOT_FRAMES = 108_000
 _QUEUE_POLL_SECONDS = 0.25
+_RETRYABLE_QUEUE_STORAGE_FAILURES = frozenset({"WINDOWS_AUTHORITY_OPEN_FAILED"})
 _READ_ROLES = {
     M8ActorRole.OPERATIONS,
     M8ActorRole.SAFETY_OFFICER,
@@ -427,18 +429,24 @@ class M8EvaluationService:
             if self._stop.is_set():
                 return
             while not self._stop.is_set():
-                with self._lock:
-                    queued = sorted(
-                        (
-                            item
-                            for item in self._repository.list_runs()
-                            if item.state == M8EvaluationRunState.QUEUED
-                        ),
-                        key=lambda item: (item.queued_at, item.campaign_id, item.ordinal),
-                    )
-                    if not queued:
-                        break
-                    selected = queued[0]
+                try:
+                    with self._lock:
+                        queued = sorted(
+                            (
+                                item
+                                for item in self._repository.list_runs()
+                                if item.state == M8EvaluationRunState.QUEUED
+                            ),
+                            key=lambda item: (item.queued_at, item.campaign_id, item.ordinal),
+                        )
+                        if not queued:
+                            break
+                        selected = queued[0]
+                except SQLiteAuthorityError as error:
+                    if error.reason_code not in _RETRYABLE_QUEUE_STORAGE_FAILURES:
+                        raise
+                    self._stop.wait(_QUEUE_POLL_SECONDS)
+                    continue
                 self._execute_run(selected)
 
     def _execute_run(self, queued: M8EvaluationRunV1) -> None:

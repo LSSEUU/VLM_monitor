@@ -21,9 +21,7 @@ def _profile() -> M8FeishuInboundWebhookProfileV1:
     return _webhook_profile().model_copy(
         update={
             "encrypt_key_sha256": hashlib.sha256(ENCRYPT_KEY.encode()).hexdigest(),
-            "verification_token_sha256": hashlib.sha256(
-                VERIFICATION_TOKEN.encode()
-            ).hexdigest(),
+            "verification_token_sha256": hashlib.sha256(VERIFICATION_TOKEN.encode()).hexdigest(),
         }
     )
 
@@ -119,10 +117,7 @@ def test_resolver_rejects_unknown_profile_or_reference_graft() -> None:
     unknown = profile.model_copy(update={"profile_manifest_id": "f" * 64})
     with pytest.raises(M8FeishuInboundSecretResolutionError) as captured:
         _resolver().resolve(unknown)
-    assert (
-        captured.value.code
-        == M8FeishuInboundSecretResolutionFailureCode.PROFILE_NOT_CONFIGURED
-    )
+    assert captured.value.code == M8FeishuInboundSecretResolutionFailureCode.PROFILE_NOT_CONFIGURED
 
     grafted = _binding(profile)
     grafted = M8FeishuInboundEnvironmentSecretBinding(
@@ -142,8 +137,7 @@ def test_resolver_rejects_unknown_profile_or_reference_graft() -> None:
     with pytest.raises(M8FeishuInboundSecretResolutionError) as captured:
         resolver.resolve(profile)
     assert (
-        captured.value.code
-        == M8FeishuInboundSecretResolutionFailureCode.PROFILE_REFERENCE_MISMATCH
+        captured.value.code == M8FeishuInboundSecretResolutionFailureCode.PROFILE_REFERENCE_MISMATCH
     )
 
 

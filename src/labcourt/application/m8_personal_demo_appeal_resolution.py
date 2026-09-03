@@ -89,24 +89,19 @@ def execute_m8_personal_demo_appeal_resolution(
     if not isinstance(resolution, M8AppealResolution):
         raise TypeError("M8 personal Demo appeal resolution must be closed and typed")
     access = M8PersonalDemoLocalAccessV1.model_validate_json(_read_bounded(access_path))
-    ppe = M8PersonalDemoPpeCaseReceiptV1.model_validate_json(
-        _read_bounded(ppe_case_receipt_path)
-    )
+    ppe = M8PersonalDemoPpeCaseReceiptV1.model_validate_json(_read_bounded(ppe_case_receipt_path))
     case_path = f"/api/m8/cases/{ppe.case_id}"
     reason_code = {
         M8AppealResolution.UPHELD: M8OperationalCaseReasonCode.APPEAL_UPHELD,
         M8AppealResolution.OVERTURNED: M8OperationalCaseReasonCode.APPEAL_OVERTURNED,
     }[resolution]
     try:
-        case = M8OperationalCaseCommitReceiptV1.model_validate_json(
-            _call(access, "GET", case_path)
-        )
+        case = M8OperationalCaseCommitReceiptV1.model_validate_json(_call(access, "GET", case_path))
         if case.status != M8OperationalCaseStatus.APPEALED:
             raise ValueError("M8 personal Demo appeal resolution requires an appealed PPE Case")
         authority = case.audit_event.case_authority
-        if (
-            authority.subject_actor_id != "student-demo"
-            or authority.create_command.source_ids != (ppe.source_id,)
+        if authority.subject_actor_id != "student-demo" or authority.create_command.source_ids != (
+            ppe.source_id,
         ):
             raise ValueError("M8 personal Demo appeal Case is not the exact PPE authority")
         request = M8ApiCaseTransitionRequestV1(

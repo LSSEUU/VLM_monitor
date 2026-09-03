@@ -49,11 +49,7 @@ def fail(operation: str, error: Exception) -> NoReturn:
 
 
 def echo_summary(summary: dict[str, object], json_output: bool, message: str) -> None:
-    typer.echo(
-        json.dumps(summary, ensure_ascii=True, sort_keys=True)
-        if json_output
-        else message
-    )
+    typer.echo(json.dumps(summary, ensure_ascii=True, sort_keys=True) if json_output else message)
 
 
 __all__ = [

@@ -142,9 +142,7 @@ def test_inbound_event_is_closed_and_job_completion_binds_agent_turn() -> None:
     assert event.clear_sender_identifier_persisted is False
 
     with pytest.raises(ValidationError, match="requires Agent authorities"):
-        queued.model_copy(
-            update={"state": M8FeishuInboundJobState.COMPLETED, "state_revision": 3}
-        )
+        queued.model_copy(update={"state": M8FeishuInboundJobState.COMPLETED, "state_revision": 3})
 
 
 def test_card_intent_is_closed_single_use_boundary_with_ten_minute_expiry() -> None:

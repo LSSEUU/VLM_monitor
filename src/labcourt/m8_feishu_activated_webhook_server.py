@@ -42,12 +42,7 @@ def _body_ref(prefix: str, body_sha256: str) -> str:
 
 
 def _canonical_positive_integer(value: str, name: str) -> int:
-    if (
-        not value.isascii()
-        or not value.isdigit()
-        or value.startswith("0")
-        or len(value) > 16
-    ):
+    if not value.isascii() or not value.isdigit() or value.startswith("0") or len(value) > 16:
         raise ValueError(f"M8 Feishu activated webhook {name} is not canonical")
     return int(value)
 
@@ -79,9 +74,8 @@ class M8FeishuActivatedWebhookHttpServer(ThreadingHTTPServer):
         self.ingress_clock = clock
 
     def current_status(self, assessed_at: datetime) -> M8FeishuInboundSandboxActivationStatusV1:
-        candidate_id = (
-            self.startup_status.activation_receipt.runtime_config.profile.outbound_profile.candidate.candidate_authority_id
-        )
+        profile = self.startup_status.activation_receipt.runtime_config.profile
+        candidate_id = profile.outbound_profile.candidate.candidate_authority_id
         status = self.activation_repository.get_current_inbound_status(
             candidate_id,
             assessed_at,

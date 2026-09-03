@@ -293,8 +293,9 @@ def test_platform_login_rbac_static_routes_and_sensor_emergency(
             assert document["document"]["logical_document_id"] == "sop-goggles"
             assert document["content_integrity"] == "VERIFIED"
             assert document["network_used"] is False
-            assert hashlib.sha256(document["content"].encode("utf-8")).hexdigest() == (
-                document["document"]["content_sha256"]
+            assert (
+                hashlib.sha256(document["content"].encode("utf-8")).hexdigest()
+                == (document["document"]["content_sha256"])
             )
         query_status, query = _request(
             server.server_port,
@@ -958,9 +959,7 @@ def test_platform_evidence_workspace_projects_annotations_and_sealed_privacy(
             "x2": 840,
             "y2": 720,
         }
-        assert workspace["frame_annotations"][0]["detections"][0]["keypoints"][0][
-            "name"
-        ] == "nose"
+        assert workspace["frame_annotations"][0]["detections"][0]["keypoints"][0]["name"] == "nose"
         by_role = {item["role"]: item for item in workspace["evidence"]}
         assert by_role["PANORAMA"]["access"] == "SEALED_LOCAL"
         assert by_role["PANORAMA"]["media_url"] is None
@@ -979,9 +978,7 @@ def test_platform_evidence_workspace_projects_annotations_and_sealed_privacy(
         assert leader_workspace["view_scope"] == "SUMMARY_ONLY"
         assert leader_workspace["media_url"] is None
         assert leader_workspace["frame_annotations"] == []
-        assert {item["access"] for item in leader_workspace["evidence"]} == {
-            "SUMMARY_ONLY"
-        }
+        assert {item["access"] for item in leader_workspace["evidence"]} == {"SUMMARY_ONLY"}
     finally:
         server.shutdown()
         server.server_close()

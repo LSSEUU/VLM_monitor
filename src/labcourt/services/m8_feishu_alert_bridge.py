@@ -111,9 +111,7 @@ class M8FeishuAlertBridgeService:
         prior = self._live.alert_bridge(case.case_id, case.case_version)
         return prior if prior is not None else self._bridge(case, source_notification_id)
 
-    def assess_reminder(
-        self, source_notification_id: str
-    ) -> M8FeishuReminderReceiptV1 | None:
+    def assess_reminder(self, source_notification_id: str) -> M8FeishuReminderReceiptV1 | None:
         source = self._notifications.get_current_notification(source_notification_id)
         source_plan = source.audit_event.notification_authority.plan
         # A reminder is a terminal derivative of the initial emergency alert;

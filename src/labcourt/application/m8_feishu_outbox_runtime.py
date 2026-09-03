@@ -62,17 +62,12 @@ def _require_database(database_path: str | Path) -> Path:
 
 
 def _workflow(document: bytes) -> M8NotificationWorkflowManifestAuthorityV1:
-    if (
-        not isinstance(document, bytes)
-        or not 0 < len(document) <= MAX_M8_RUNTIME_CONFIG_BYTES
-    ):
+    if not isinstance(document, bytes) or not 0 < len(document) <= MAX_M8_RUNTIME_CONFIG_BYTES:
         raise ValueError("M8 Feishu outbox workflow document exceeds the allowed bound")
     workflow = M8NotificationWorkflowManifestAuthorityV1.model_validate_json(document)
     canonical = canonical_json(workflow.model_dump(mode="json")).encode("utf-8")
     if document != canonical:
-        raise ContractViolation(
-            "M8 Feishu outbox workflow document must be exact canonical bytes"
-        )
+        raise ContractViolation("M8 Feishu outbox workflow document must be exact canonical bytes")
     return workflow
 
 
@@ -177,14 +172,10 @@ def _prepare_runtime(
     resolver = EnvironmentM8FeishuSecretResolver(
         (
             M8FeishuEnvironmentSecretBinding(
-                credential_bundle_reference_id=(
-                    config.profile.credential_bundle_reference_id
-                ),
+                credential_bundle_reference_id=(config.profile.credential_bundle_reference_id),
                 app_id_env=app_id_env,
                 app_secret_env=app_secret_env,
-                receive_id_env_by_reference=(
-                    (binding.receive_id_reference, receive_id_env),
-                ),
+                receive_id_env_by_reference=((binding.receive_id_reference, receive_id_env),),
             ),
         ),
         environment=runtime_environment,

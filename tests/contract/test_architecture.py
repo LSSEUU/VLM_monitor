@@ -7,6 +7,41 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).parents[2]
 SOURCE_ROOT = PROJECT_ROOT / "src"
+APPLICATION_ROOT = SOURCE_ROOT / "labcourt" / "application"
+
+# M8 keeps these executable composition roots in application/ for compatibility.
+# Their adapter imports are explicit here so ordinary application modules remain
+# constrained to inward-facing layers.
+M8_ADAPTER_COMPOSITION_ROOTS = frozenset(
+    {
+        "m8_feishu_emergency_demo.py",
+        "m8_feishu_live_assembly.py",
+        "m8_feishu_outbox_authority.py",
+        "m8_feishu_outbox_runtime.py",
+        "m8_feishu_webhook_authority.py",
+        "m8_feishu_webhook_runtime.py",
+        "m8_personal_demo_api.py",
+        "m8_personal_demo_bootstrap.py",
+        "m8_personal_demo_camera.py",
+        "m8_personal_demo_knowledge.py",
+        "m8_personal_demo_notification.py",
+        "m8_personal_demo_ppe_case.py",
+        "m8_personal_demo_ppe_notification.py",
+        "m8_platform_bootstrap.py",
+        "m8_platform_demo_api.py",
+    }
+)
+M8_COMPOSITION_ROOT_EXTRA_IMPORTS = {
+    "m8_feishu_webhook_runtime.py": (
+        "cryptography.hazmat.primitives",
+        "labcourt.m8_feishu_activated_webhook_server",
+    ),
+    "m8_personal_demo_api.py": ("labcourt.m8_api_server",),
+    "m8_platform_demo_api.py": (
+        "labcourt.config_loader",
+        "labcourt.m8_platform_server",
+    ),
+}
 
 
 def _module_name(path: Path) -> str:
@@ -95,7 +130,9 @@ def test_domain_imports_only_stdlib_contracts_and_domain() -> None:
 
 
 def test_application_imports_only_pydantic_and_allowed_project_layers() -> None:
-    for path in (SOURCE_ROOT / "labcourt" / "application").rglob("*.py"):
+    for path in APPLICATION_ROOT.rglob("*.py"):
+        adapter_prefix = ("labcourt.adapters",) if path.name in M8_ADAPTER_COMPOSITION_ROOTS else ()
+        composition_root_imports = M8_COMPOSITION_ROOT_EXTRA_IMPORTS.get(path.name, ())
         _assert_import_allowlist(
             path,
             project_prefixes=(
@@ -105,6 +142,9 @@ def test_application_imports_only_pydantic_and_allowed_project_layers() -> None:
                 "labcourt.domain",
                 "labcourt.exceptions",
                 "labcourt.ports",
+                "labcourt.services",
+                *adapter_prefix,
+                *composition_root_imports,
             ),
         )
 

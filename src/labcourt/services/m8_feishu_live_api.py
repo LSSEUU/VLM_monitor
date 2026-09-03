@@ -77,11 +77,9 @@ class M8FeishuLiveApiService:
             and connection is not None
             and connection.connection_state == M8FeishuLiveConnectionState.READY
             and authority is not None
-            and authority.worker_state
-            in {M8FeishuWorkerState.READY, M8FeishuWorkerState.BUSY}
+            and authority.worker_state in {M8FeishuWorkerState.READY, M8FeishuWorkerState.BUSY}
             and delivery is not None
-            and delivery.worker_state
-            in {M8FeishuWorkerState.READY, M8FeishuWorkerState.BUSY}
+            and delivery.worker_state in {M8FeishuWorkerState.READY, M8FeishuWorkerState.BUSY}
             and route is not None
             and route.active
         )

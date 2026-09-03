@@ -54,6 +54,7 @@ class M8PlatformAgentIntentRouter:
 
         def has(*terms: str) -> bool:
             return any(term in text for term in terms)
+
         if has("飞书", "feishu") and has("测试", "测试卡", "test card"):
             return M8PlatformAgentIntentV2.FEISHU_TEST_CARD_ACTION
         if has("飞书", "feishu") and has("送达", "失败", "最近", "delivery"):
@@ -83,11 +84,7 @@ class M8PlatformAgentIntentRouter:
             "概述",
             "汇总",
         )
-        if (
-            has("案件", "事件")
-            and has("确认", "处置", "核实", "confirm")
-            and not case_query_cue
-        ):
+        if has("案件", "事件") and has("确认", "处置", "核实", "confirm") and not case_query_cue:
             return M8PlatformAgentIntentV2.CASE_TRANSITION_ACTION
         if has("通知", "消息"):
             return M8PlatformAgentIntentV2.NOTIFICATION_QUERY
@@ -206,10 +203,9 @@ class M8PlatformAgentService:
             return M8PlatformAgentQueryResponseV2(
                 outcome="ANSWERED",
                 normalized_intent=intent,
-                    answer=(
-                        "已绑定案件当前版本与文档 fence；"
-                        "确认时案件接口仍会重新执行 RBAC 和版本校验。"
-                    ),
+                answer=(
+                    "已绑定案件当前版本与文档 fence；确认时案件接口仍会重新执行 RBAC 和版本校验。"
+                ),
                 source_refs=(pending.case_id, pending.audit_event_id),
                 proposed_action=M8PlatformProposedActionV2(
                     action_kind=M8PlatformAgentActionKindV2.CASE_TRANSITION,

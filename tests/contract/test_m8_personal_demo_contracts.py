@@ -99,9 +99,7 @@ def test_personal_demo_schemas_are_exported() -> None:
     assert SCHEMA_MODELS["m8-personal-demo-recorded-media-receipt-v1"] is (
         M8PersonalDemoRecordedMediaReceiptV1
     )
-    assert SCHEMA_MODELS["m8-personal-demo-ppe-case-receipt-v1"] is (
-        M8PersonalDemoPpeCaseReceiptV1
-    )
+    assert SCHEMA_MODELS["m8-personal-demo-ppe-case-receipt-v1"] is (M8PersonalDemoPpeCaseReceiptV1)
     assert SCHEMA_MODELS["m8-personal-demo-ppe-notification-receipt-v1"] is (
         M8PersonalDemoPpeNotificationReceiptV1
     )
@@ -350,8 +348,6 @@ def test_ppe_outcome_receipt_binds_terminal_appeal_without_case_power() -> None:
     assert receipt.case_transition_permitted is False
     assert receipt.direct_disciplinary_action_permitted is False
     assert (
-        M8PersonalDemoPpeOutcomeNotificationReceiptV1.model_validate_json(
-            receipt.model_dump_json()
-        )
+        M8PersonalDemoPpeOutcomeNotificationReceiptV1.model_validate_json(receipt.model_dump_json())
         == receipt
     )

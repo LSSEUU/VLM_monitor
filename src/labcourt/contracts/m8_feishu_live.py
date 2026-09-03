@@ -158,9 +158,7 @@ class M8FeishuDutyRouteV1(FrozenContractModel):
 
 
 class M8FeishuRuntimeHeartbeatV1(FrozenContractModel):
-    schema_version: Literal["m8-feishu-runtime-heartbeat-v1"] = (
-        "m8-feishu-runtime-heartbeat-v1"
-    )
+    schema_version: Literal["m8-feishu-runtime-heartbeat-v1"] = "m8-feishu-runtime-heartbeat-v1"
     component: Literal["LONG_CONNECTION", "AUTHORITY_WORKER", "DELIVERY_WORKER"]
     connection_state: M8FeishuLiveConnectionState | None = None
     worker_state: M8FeishuWorkerState | None = None
@@ -379,9 +377,7 @@ class M8FeishuConversationChannelProjectionV1(FrozenContractModel):
 
 
 class M8FeishuCardActionIntentV1(FrozenContractModel):
-    schema_version: Literal["m8-feishu-card-action-intent-v1"] = (
-        "m8-feishu-card-action-intent-v1"
-    )
+    schema_version: Literal["m8-feishu-card-action-intent-v1"] = "m8-feishu-card-action-intent-v1"
     notification_id: Sha256Hex
     notification_version: int = Field(gt=0, strict=True)
     notification_authority_sha256: Sha256Hex
@@ -444,9 +440,7 @@ class M8FeishuCardActionIntentV1(FrozenContractModel):
 
 
 class M8FeishuCardActionReceiptV1(FrozenContractModel):
-    schema_version: Literal["m8-feishu-card-action-receipt-v1"] = (
-        "m8-feishu-card-action-receipt-v1"
-    )
+    schema_version: Literal["m8-feishu-card-action-receipt-v1"] = "m8-feishu-card-action-receipt-v1"
     intent: M8FeishuCardActionIntentV1
     stage: Literal[
         M8FeishuCardStage.COMPLETED,
@@ -511,9 +505,7 @@ class M8FeishuAlertBridgeReceiptV1(FrozenContractModel):
     @model_validator(mode="after")
     def validate_outcome(self) -> Self:
         queued = self.outcome == M8FeishuAlertBridgeOutcome.QUEUED
-        if queued != (
-            self.queued_notification_id is not None and self.duty_route_id is not None
-        ):
+        if queued != (self.queued_notification_id is not None and self.duty_route_id is not None):
             raise ValueError("M8 Feishu queued alert bridge requires dispatch authorities")
         return self
 
@@ -536,9 +528,7 @@ class M8FeishuAlertBridgeReceiptV1(FrozenContractModel):
 
 
 class M8FeishuReminderReceiptV1(FrozenContractModel):
-    schema_version: Literal["m8-feishu-reminder-receipt-v1"] = (
-        "m8-feishu-reminder-receipt-v1"
-    )
+    schema_version: Literal["m8-feishu-reminder-receipt-v1"] = "m8-feishu-reminder-receipt-v1"
     source_dispatch_request_id: Sha256Hex
     source_notification_id: Sha256Hex
     outcome: M8FeishuReminderOutcome

@@ -1,41 +1,19 @@
 # LabCourt Coding Agent Rules
 
-The product baseline is `docs/request.md`. The executable implementation
-specification is `docs/spec/labcourt-vibe-coding-spec.md`.
-The additive campus-operations production track is specified by
-`docs/spec/labcourt-campus-operations-spec.md`; it must not change the frozen
-M0-M6 wire contracts or authority semantics.
+项目基线是 `docs/request.md`。可执行规范是：
 
-Never load, invoke, or follow a skill whose name starts with `superpowers:`.
+- `docs/spec/labcourt-vibe-coding-spec.md`：冻结的 M0–M6 核心。
+- `docs/spec/labcourt-campus-operations-spec.md`：不改变 M0–M6 的增量 M8。
 
-1. Read the executable specification, the current milestone, and existing tests
-   before starting work.
-2. Implement one verifiable slice from one milestone at a time. Do not skip a
-   prerequisite milestone.
-3. Work contract-first: change Pydantic models, generated schemas, and contract
-   tests before business behavior.
-4. `domain/` must not import model, database, HTTP, OpenCV, Torch, or cloud SDK
-   packages.
-5. The default path must run without a GPU or network connection.
-6. Every external model call needs a fake, timeout, cache, manifest, and raw
-   response reference.
-7. Never guess structured model output with a permissive free-text parser.
-8. Never use VLM output as the source of objective counts, duration, identity,
-   coordinates, or evidence existence.
-9. Never implement face recognition or cross-camera re-identification.
-10. Future compliance must not erase a past violation under `STRICT_CAUSAL`.
-11. Machine-generated weak labels are not ground truth.
-12. Do not claim accuracy, latency, or cost results without a real evaluation
-    artifact.
-13. Do not swallow exceptions. Convert failure into a typed exit or case state.
-14. Do not put API keys or unredacted real-person images in logs, fixtures, or
-    commits.
-15. Run the smallest relevant tests for every change and all milestone quality
-    gates before declaring the milestone complete.
-16. Split modules by responsibility; interfaces should be understandable
-    without reading implementation details.
-17. Describe contract, state transition, scenario coverage, and manifest impact
-    in every commit or pull request.
-18. If a request conflicts with a system axiom, record an ADR and preserve the
-    axiom.
-19. 不要频繁测试，不要把时间和工作量浪费在安全上，选择最优开发路线并提升效率，当前环境无真实敏感信息，首要目的是先制作具备基础功能的 demo 用于展示。
+1. 开始工作前阅读适用规范、当前代码和相关测试；一次只实现一个可验证切片，不跳过前置里程碑。
+2. 契约优先：先改 Pydantic models、生成 schemas 和 contract tests，再改业务行为、适配器、CLI 或 API。
+3. `domain/` 只能依赖纯规则和契约，不导入数据库、HTTP、OpenCV、Torch 或云 SDK。
+4. 默认路径必须离线、无 GPU、无真实外部账户；外部模型调用必须有 fake、timeout、cache、manifest 和 raw response reference。
+5. 不用宽松自由文本解析猜测结构化输出；VLM 不是客观计数、时长、身份、坐标或证据存在性的 authority。
+6. 保持 frame index、确定性 ID、evidence closure、manifest、`STRICT_CAUSAL` 和 SQLite authority 语义；未来合规不得抹去历史违规。
+7. 角色、scope、capability 必须由服务端从持久化 authority 解引用；关键迁移需要版本/hash、审计和明确人工确认。
+8. 禁止人脸识别、face embedding、跨摄像头 ReID；机器弱标签不是 ground truth；系统不得直接执行纪律处分。
+9. 不吞异常：将失败转换为 typed exit、backlog 或 case state。不得在日志、fixture、提交中放 API key、secret、bearer token 或未脱敏真实人员图像。
+10. 变更应说明 contract、状态迁移、场景覆盖和 manifest 影响；必要时记录 ADR。运行最小相关测试及质量门禁，不声称未经评估的准确率、延迟、成本或合规结果。
+
+不要加载、调用或遵循名称以 `superpowers:` 开头的 skill。

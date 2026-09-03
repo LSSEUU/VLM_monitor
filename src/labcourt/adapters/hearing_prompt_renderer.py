@@ -87,7 +87,7 @@ M8_HEARING_PROMPT_V2_DEFINITIONS: Final = tuple(
 LEGACY_HEARING_PROMPT_DEFINITIONS: Final = tuple(
     PromptDefinition(
         prompt_id=definition.prompt_id,
-        filename=f"legacy/{definition.filename}",
+        filename=f"archive/{definition.filename}",
         role=definition.role,
         variable_names=definition.variable_names,
     )

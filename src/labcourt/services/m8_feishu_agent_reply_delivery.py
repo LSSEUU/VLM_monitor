@@ -120,9 +120,7 @@ class M8FeishuAgentReplyDeliveryWorker:
                     or resolved.binding_authority_id != binding.binding_authority_id
                 ):
                     raise ValueError("M8 Feishu Agent reply secret lease changed authority")
-                token_response = self._http.acquire_tenant_access_token(
-                    self._profile, resolved
-                )
+                token_response = self._http.acquire_tenant_access_token(self._profile, resolved)
                 token_wire = _TokenWire.model_validate_json(token_response.body)
                 if (
                     token_response.status_code != 200

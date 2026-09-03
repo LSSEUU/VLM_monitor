@@ -450,9 +450,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 route_request = M8FeishuDutyRouteRevisionRequestV1.model_validate_json(
                     self._json_body()
                 )
-                route = self.server.feishu_live_service.revise_duty_route(
-                    principal, route_request
-                )
+                route = self.server.feishu_live_service.revise_duty_route(principal, route_request)
                 self._json(HTTPStatus.CREATED, route.model_dump(mode="json"))
                 return
             if segments == (
@@ -468,9 +466,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 test_dispatch_receipt = self.server.feishu_live_service.dispatch_test_card(
                     principal, test_dispatch_request
                 )
-                self._json(
-                    HTTPStatus.OK, test_dispatch_receipt.model_dump(mode="json")
-                )
+                self._json(HTTPStatus.OK, test_dispatch_receipt.model_dump(mode="json"))
                 return
             if (
                 len(segments) == 5
@@ -478,9 +474,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 and segments[4] == "feishu-dispatches"
             ):
                 notification_dispatch_request = (
-                    M8FeishuNotificationDispatchRequestV1.model_validate_json(
-                        self._json_body()
-                    )
+                    M8FeishuNotificationDispatchRequestV1.model_validate_json(self._json_body())
                 )
                 notification_dispatch_receipt = (
                     self.server.feishu_live_service.dispatch_notification(
@@ -683,9 +677,7 @@ class M8PlatformRequestHandler(M8ApiRequestHandler):
                 "agent",
                 "conversations",
             ):
-                receipt = self.server.agent_chat_service.remove_conversation(
-                    principal, segments[4]
-                )
+                receipt = self.server.agent_chat_service.remove_conversation(principal, segments[4])
                 self._json(HTTPStatus.OK, receipt.model_dump(mode="json"))
                 return
         except M8AuthenticationError as error:

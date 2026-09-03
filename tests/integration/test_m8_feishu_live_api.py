@@ -82,8 +82,7 @@ def test_runtime_http_is_honest_when_unconfigured_and_channel_is_actor_scoped(
         channel_code, channel = _request(
             server.server_port,
             "GET",
-            "/api/m8/agent/conversations/"
-            f"{created['conversation_id']}/channel-projection",
+            f"/api/m8/agent/conversations/{created['conversation_id']}/channel-projection",
             token=operations,
         )
         assert channel_code == 200 and channel is None
@@ -120,9 +119,7 @@ def test_runtime_status_requires_active_platform_route_and_all_fresh_workers(
             activation_status_id=platform.activation_status_id,
             route_revision=1,
             committed_at=now,
-            repository_manifest_id=platform_manifest(
-                "platform-feishu-live-repository-v1"
-            ),
+            repository_manifest_id=platform_manifest("platform-feishu-live-repository-v1"),
         )
     )
     for heartbeat in (

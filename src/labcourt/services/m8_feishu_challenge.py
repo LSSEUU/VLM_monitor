@@ -64,8 +64,7 @@ class M8FeishuUrlChallengeResult:
         if not isinstance(response_body, bytes) or not response_body:
             raise TypeError("M8 Feishu URL challenge result requires exact response bytes")
         if (
-            hashlib.sha256(response_body).hexdigest()
-            != receipt.response_document_sha256
+            hashlib.sha256(response_body).hexdigest() != receipt.response_document_sha256
             or len(response_body) != receipt.response_document_size_bytes
         ):
             raise ContractViolation("M8 Feishu URL challenge response bytes changed")
@@ -127,8 +126,7 @@ class M8FeishuUrlChallengeService:
             not encrypted_body
             or len(encrypted_body) != ingress_request.encrypted_body_size_bytes
             or len(encrypted_body) > profile.raw_body_max_bytes
-            or hashlib.sha256(encrypted_body).hexdigest()
-            != ingress_request.encrypted_body_sha256
+            or hashlib.sha256(encrypted_body).hexdigest() != ingress_request.encrypted_body_sha256
         ):
             raise ContractViolation("M8 Feishu URL challenge request bytes changed")
 

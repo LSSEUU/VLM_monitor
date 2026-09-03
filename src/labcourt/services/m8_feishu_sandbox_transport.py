@@ -148,8 +148,7 @@ class M8FeishuSandboxSendService:
             or preflight.recipient_binding not in runtime.recipient_allowlist
             or (
                 dispatch_authorization_id is not None
-                and status.activation_receipt.activation_commit_id
-                != dispatch_authorization_id
+                and status.activation_receipt.activation_commit_id != dispatch_authorization_id
             )
         ):
             raise ConcurrentModification("M8 Feishu sandbox activation is not current")

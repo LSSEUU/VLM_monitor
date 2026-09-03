@@ -89,9 +89,7 @@ class M8CaseMemoryProjectionV1(FrozenContractModel):
 class M8KnowledgeQueryProjectionV1(FrozenContractModel):
     """Explain one existing deterministic answer without inventing quality metrics."""
 
-    schema_version: Literal["m8-knowledge-query-projection-v1"] = (
-        "m8-knowledge-query-projection-v1"
-    )
+    schema_version: Literal["m8-knowledge-query-projection-v1"] = "m8-knowledge-query-projection-v1"
     normalized_query: str = Field(min_length=1, max_length=1_024)
     normalized_intent: M8KnowledgeNormalizedIntent
     applied_document_types: tuple[M8KnowledgeDocumentType, ...] = Field(

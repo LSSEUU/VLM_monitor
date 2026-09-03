@@ -11,7 +11,7 @@ from labcourt.cli import app
 PROJECT_ROOT = Path(__file__).parents[2]
 
 
-def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
+def test_demo_commands_and_consolidated_windows_entry_are_explicit() -> None:
     root = get_command(app)
     assert isinstance(root, TyperGroup)
     demo = root.commands["demo"]
@@ -26,9 +26,7 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert {"--output", "--port", "--check", "--json"} <= api_options
     platform = demo.commands["platform"]
     assert isinstance(platform, TyperCommand)
-    platform_options = {
-        option for parameter in platform.params for option in parameter.opts
-    }
+    platform_options = {option for parameter in platform.params for option in parameter.opts}
     assert {"--output", "--input", "--port", "--check", "--json"} <= platform_options
     case_action = demo.commands["case-action"]
     assert isinstance(case_action, TyperCommand)
@@ -65,39 +63,18 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
     assert {"--reason", "--output", "--confirmed", "--json"} <= student_appeal_options
     ppe_reply = demo.commands["ppe-notification-reply"]
     assert isinstance(ppe_reply, TyperCommand)
-    ppe_reply_options = {
-        option for parameter in ppe_reply.params for option in parameter.opts
-    }
-    assert {"--kind", "--text", "--output", "--confirmed", "--json"} <= (
-        ppe_reply_options
-    )
+    ppe_reply_options = {option for parameter in ppe_reply.params for option in parameter.opts}
+    assert {"--kind", "--text", "--output", "--confirmed", "--json"} <= (ppe_reply_options)
     appeal_resolution = demo.commands["ppe-appeal-resolve"]
     assert isinstance(appeal_resolution, TyperCommand)
     resolution_options = {
         option for parameter in appeal_resolution.params for option in parameter.opts
     }
-    assert {"--resolution", "--reason", "--output", "--confirmed", "--json"} <= (
-        resolution_options
-    )
+    assert {"--resolution", "--reason", "--output", "--confirmed", "--json"} <= (resolution_options)
 
     for name in (
-        "labcourt-demo-bootstrap.ps1",
-        "labcourt-demo-api.ps1",
-        "labcourt-demo-case-action.ps1",
-        "labcourt-demo-camera.ps1",
-        "labcourt-demo-ppe-case.ps1",
-        "labcourt-demo-ppe-notification.ps1",
-        "labcourt-demo-ppe-notification-deliver.ps1",
-        "labcourt-demo-ppe-notification-reply.ps1",
-        "labcourt-demo-ppe-appeal-resolve.ps1",
-        "labcourt-demo-ppe-outcome-notification.ps1",
-        "labcourt-demo-ppe-outcome-deliver.ps1",
-        "labcourt-demo-ppe-outcome-acknowledge.ps1",
-        "labcourt-demo-notification.ps1",
-        "labcourt-demo-notification-deliver.ps1",
-        "labcourt-demo-notification-acknowledge.ps1",
+        "labcourt-demo.ps1",
         "labcourt-demo-start.ps1",
-        "labcourt-demo-student-appeal.ps1",
         "labcourt-demo-e2e.ps1",
         "labcourt-platform-start.ps1",
     ):
@@ -115,6 +92,10 @@ def test_demo_bootstrap_command_and_windows_entry_are_explicit() -> None:
             check=False,
         )
         assert parsed.returncode == 0
-    platform_cmd = PROJECT_ROOT / "labcourt-platform-start.cmd"
-    assert platform_cmd.is_file()
-    assert "labcourt-platform-start.ps1" in platform_cmd.read_text(encoding="utf-8")
+
+    assert [path.name for path in PROJECT_ROOT.glob("*.cmd")] == ["labcourt.cmd"]
+    launcher = (PROJECT_ROOT / "labcourt.cmd").read_text(encoding="utf-8")
+    assert "scripts\\windows\\labcourt-demo.ps1" in launcher
+    assert "scripts\\windows\\labcourt-demo-start.ps1" in launcher
+    assert "scripts\\windows\\labcourt-demo-e2e.ps1" in launcher
+    assert "scripts\\windows\\labcourt-platform-start.ps1" in launcher

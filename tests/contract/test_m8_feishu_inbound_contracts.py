@@ -155,13 +155,9 @@ def test_verified_reply_rejects_future_provider_time_and_raw_reference_graft() -
     receipt = _verified()
 
     with pytest.raises(ValidationError, match="implausibly in the future"):
-        receipt.model_copy(
-            update={"event_created_at": RECEIVED_AT + timedelta(minutes=6)}
-        )
+        receipt.model_copy(update={"event_created_at": RECEIVED_AT + timedelta(minutes=6)})
     with pytest.raises(ValidationError, match="distinct references"):
-        receipt.model_copy(
-            update={"content_document_ref": receipt.decrypted_event_ref}
-        )
+        receipt.model_copy(update={"content_document_ref": receipt.decrypted_event_ref})
 
 
 def test_commit_receipt_binds_ordered_raw_inventory_and_no_business_transition() -> None:
@@ -208,9 +204,7 @@ def test_inbound_schemas_are_registered_serialization_roots() -> None:
     from labcourt.schema_registry import SCHEMA_MODELS, SCHEMA_VALIDATION_MODELS
 
     expected = {
-        "m8-feishu-inbound-message-commit-receipt-v1": (
-            M8FeishuInboundMessageCommitReceiptV1
-        ),
+        "m8-feishu-inbound-message-commit-receipt-v1": (M8FeishuInboundMessageCommitReceiptV1),
         "m8-feishu-inbound-message-verification-receipt-v1": (
             M8FeishuInboundMessageVerificationReceiptV1
         ),
